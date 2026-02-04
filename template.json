@@ -1,0 +1,111 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Laravel React Starter Template - Variable definitions for init.sh",
+  "placeholders": {
+    "{{APP_NAME}}": {
+      "description": "Human-readable application name (e.g., 'My Awesome App')",
+      "prompt": "Application name",
+      "default": "Laravel App",
+      "validation": "^[a-zA-Z0-9 ]+$"
+    },
+    "{{PROJECT_NAME}}": {
+      "description": "Project slug for package names, database (e.g., 'my-awesome-app')",
+      "prompt": "Project name (kebab-case)",
+      "default": "laravel-app",
+      "validation": "^[a-z0-9-]+$",
+      "transform": "kebab-case"
+    },
+    "{{VENDOR_NAME}}": {
+      "description": "Vendor name for composer.json (e.g., 'acme')",
+      "prompt": "Vendor/organization name",
+      "default": "acme",
+      "validation": "^[a-z0-9-]+$"
+    },
+    "{{APP_DOMAIN}}": {
+      "description": "Domain name without protocol (e.g., 'example.com')",
+      "prompt": "Domain name",
+      "default": "example.com",
+      "validation": "^[a-z0-9.-]+$"
+    },
+    "{{APP_DESCRIPTION}}": {
+      "description": "Short description for package.json and meta tags",
+      "prompt": "Application description",
+      "default": "A Laravel application",
+      "validation": "^.{10,200}$"
+    },
+    "{{TERMS_URL}}": {
+      "description": "URL to Terms of Service page",
+      "prompt": "Terms of Service URL",
+      "default": "/terms",
+      "optional": true
+    },
+    "{{PRIVACY_URL}}": {
+      "description": "URL to Privacy Policy page",
+      "prompt": "Privacy Policy URL",
+      "default": "/privacy",
+      "optional": true
+    }
+  },
+  "features": {
+    "billing": {
+      "prompt": "Enable billing/subscriptions (Stripe)?",
+      "default": false,
+      "requires": ["laravel/cashier"],
+      "envVars": {
+        "FEATURE_BILLING": "true"
+      }
+    },
+    "social_auth": {
+      "prompt": "Enable social authentication (Google/GitHub)?",
+      "default": false,
+      "requires": ["laravel/socialite"],
+      "envVars": {
+        "FEATURE_SOCIAL_AUTH": "true"
+      }
+    },
+    "email_verification": {
+      "prompt": "Require email verification?",
+      "default": true,
+      "envVars": {
+        "FEATURE_EMAIL_VERIFICATION": "true"
+      }
+    },
+    "api_tokens": {
+      "prompt": "Enable API token management?",
+      "default": true,
+      "envVars": {
+        "FEATURE_API_TOKENS": "true"
+      }
+    }
+  },
+  "files": {
+    "always": [
+      ".env.example",
+      "composer.json",
+      "package.json",
+      "vite.config.ts",
+      "tsconfig.json",
+      "tsconfig.app.json",
+      "tsconfig.node.json",
+      "config/features.php"
+    ],
+    "billing": [
+      "app/Http/Controllers/BillingController.php",
+      "app/Http/Controllers/WebhookController.php",
+      "app/Services/PlanLimitService.php",
+      "config/plans.php",
+      "resources/js/Pages/Pricing.tsx"
+    ],
+    "social_auth": [
+      "app/Http/Controllers/Auth/SocialAuthController.php",
+      "app/Services/SocialAuthService.php",
+      "app/Models/SocialAccount.php",
+      "database/migrations/*_create_social_accounts_table.php"
+    ]
+  },
+  "cleanup": [
+    "template.json",
+    "scripts/init.sh",
+    "TEMPLATE_README.md"
+  ]
+}
