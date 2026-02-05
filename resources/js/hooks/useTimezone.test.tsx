@@ -1,8 +1,10 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { useTimezone } from './useTimezone';
-import { server } from '@/test/setup';
 import { http, HttpResponse } from 'msw';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import { server } from '@/test/setup';
+
+import { useTimezone } from './useTimezone';
 
 describe('useTimezone Hook', () => {
   const mockBrowserTimezone = 'America/New_York';

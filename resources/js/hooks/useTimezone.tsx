@@ -1,5 +1,4 @@
 import { useState, useCallback } from "react";
-import { usePage } from "@inertiajs/react";
 
 interface UseTimezoneOptions {
   initialTimezone?: string;

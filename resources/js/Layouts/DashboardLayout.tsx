@@ -1,6 +1,9 @@
-import { PropsWithChildren } from "react";
-import { Link, usePage } from "@inertiajs/react";
 import { Home, User, Settings, LogOut, Menu } from "lucide-react";
+
+import { PropsWithChildren } from "react";
+
+import { Link, usePage } from "@inertiajs/react";
+
 import { Logo, TextLogo } from "@/Components/branding/Logo";
 import { ThemeToggle } from "@/Components/theme";
 import { Button } from "@/Components/ui/button";

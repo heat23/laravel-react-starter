@@ -1,4 +1,5 @@
 import { Shield, FolderLock } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 interface AnimatedShieldProps {

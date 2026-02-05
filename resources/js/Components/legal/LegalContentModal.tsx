@@ -1,11 +1,10 @@
-import { X } from "lucide-react";
+import { Button } from "@/Components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/Components/ui/dialog";
-import { Button } from "@/Components/ui/button";
 
 interface LegalContentModalProps {
   type: "terms" | "privacy" | null;

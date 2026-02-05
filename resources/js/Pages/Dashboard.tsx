@@ -1,9 +1,11 @@
-import { Head } from "@inertiajs/react";
 import { Activity, Users, CreditCard, TrendingUp, BarChart3 } from "lucide-react";
-import DashboardLayout from "@/Layouts/DashboardLayout";
+
+import { Head } from "@inertiajs/react";
+
 import PageHeader from "@/Components/layout/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
 import { EmptyState } from "@/Components/ui/empty-state";
+import DashboardLayout from "@/Layouts/DashboardLayout";
 
 // Placeholder stats - replace with real data
 const stats = [

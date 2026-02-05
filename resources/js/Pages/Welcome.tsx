@@ -1,7 +1,9 @@
-import { Head, Link } from "@inertiajs/react";
 import { ArrowRight, CheckCircle2, Shield, Zap, Users } from "lucide-react";
-import { Button } from "@/Components/ui/button";
+
+import { Head, Link } from "@inertiajs/react";
+
 import { Logo, TextLogo } from "@/Components/branding/Logo";
+import { Button } from "@/Components/ui/button";
 
 interface WelcomeProps {
   canLogin: boolean;

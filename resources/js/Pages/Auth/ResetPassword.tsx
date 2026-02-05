@@ -1,6 +1,9 @@
-import { FormEventHandler } from "react";
-import { Link, useForm } from "@inertiajs/react";
 import { Mail, Lock } from "lucide-react";
+
+import { FormEventHandler } from "react";
+
+import { Link, useForm } from "@inertiajs/react";
+
 import InputError from "@/Components/InputError";
 import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";

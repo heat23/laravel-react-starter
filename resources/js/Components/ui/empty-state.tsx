@@ -1,6 +1,9 @@
-import { ReactNode } from "react";
 import { LucideIcon } from "lucide-react";
+
+import { ReactNode } from "react";
+
 import { cn } from "@/lib/utils";
+
 import { AnimatedShield, AnimatedFolderShield } from "./animated-shield";
 
 interface EmptyStateProps {

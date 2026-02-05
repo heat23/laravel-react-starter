@@ -1,6 +1,7 @@
-import { useState, useMemo } from "react";
 import { Check, ChevronsUpDown, Globe } from "lucide-react";
-import { cn } from "@/lib/utils";
+
+import { useState, useMemo } from "react";
+
 import { Button } from "@/Components/ui/button";
 import {
   Command,
@@ -15,6 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/Components/ui/popover";
+import { cn } from "@/lib/utils";
 
 // Common timezones grouped by region
 const TIMEZONES = [

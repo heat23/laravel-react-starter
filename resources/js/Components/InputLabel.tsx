@@ -1,4 +1,5 @@
 import { LabelHTMLAttributes } from "react";
+
 import { cn } from "@/lib/utils";
 
 interface InputLabelProps extends LabelHTMLAttributes<HTMLLabelElement> {

@@ -1,7 +1,8 @@
 import '@testing-library/jest-dom';
-import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import { setupServer } from 'msw/node';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+
 import { handlers } from './mocks/handlers';
 
 // Setup MSW server

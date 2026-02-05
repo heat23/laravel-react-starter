@@ -1,9 +1,12 @@
 import './bootstrap';
 import '../css/app.css';
 
-import { Suspense } from 'react';
-import { createInertiaApp } from '@inertiajs/react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
+
+import { Suspense } from 'react';
+
+import { createInertiaApp } from '@inertiajs/react';
+
 import { ThemeProvider } from '@/Components/theme';
 import { Toaster } from '@/Components/ui/sonner';
 import { TooltipProvider } from '@/Components/ui/tooltip';

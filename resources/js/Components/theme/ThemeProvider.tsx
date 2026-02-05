@@ -1,6 +1,9 @@
-import { useEffect, useState, ReactNode } from "react";
-import { usePage } from "@inertiajs/react";
 import axios from "axios";
+
+import { useEffect, useState, ReactNode } from "react";
+
+import { usePage } from "@inertiajs/react";
+
 import { ThemeContext } from "./theme-context";
 
 type Theme = "light" | "dark" | "system";

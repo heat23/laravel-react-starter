@@ -13,6 +13,7 @@ export default [
             "public/**",
             "bootstrap/ssr/**",
             "storage/**",
+            "coverage/**",
             "*.config.js",
             "*.config.ts",
             "resources/js/ziggy.js",
@@ -133,7 +134,25 @@ export default [
                         "sibling",
                         "index",
                     ],
-                    "newlines-between": "never",
+                    "newlines-between": "always",
+                    pathGroups: [
+                        {
+                            pattern: "react",
+                            group: "external",
+                            position: "after",
+                        },
+                        {
+                            pattern: "@inertiajs/**",
+                            group: "external",
+                            position: "after",
+                        },
+                        {
+                            pattern: "@/**",
+                            group: "internal",
+                            position: "after",
+                        },
+                    ],
+                    pathGroupsExcludedImportTypes: ["react"],
                     alphabetize: {
                         order: "asc",
                         caseInsensitive: true,

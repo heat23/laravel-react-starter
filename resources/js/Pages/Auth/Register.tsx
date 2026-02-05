@@ -1,5 +1,3 @@
-import { useState, FormEventHandler } from "react";
-import { Link, useForm } from "@inertiajs/react";
 import {
   Eye,
   EyeOff,
@@ -17,6 +15,11 @@ import {
   CheckCircle2,
   LucideIcon,
 } from "lucide-react";
+
+import { useState, FormEventHandler } from "react";
+
+import { Link, useForm } from "@inertiajs/react";
+
 import InputError from "@/Components/InputError";
 import { LegalContentModal } from "@/Components/legal/LegalContentModal";
 import { Button } from "@/Components/ui/button";
@@ -53,7 +56,7 @@ const passwordRequirements: PasswordRequirement[] = [
   { id: "number", label: "One number", test: (p) => /\d/.test(p) },
 ];
 
-const features: Feature[] = [
+const _features: Feature[] = [
   {
     icon: Shield,
     title: "Secure by Default",

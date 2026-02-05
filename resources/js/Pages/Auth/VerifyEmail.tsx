@@ -1,6 +1,9 @@
-import { useState } from "react";
-import { Link, useForm } from "@inertiajs/react";
 import { CheckCircle2, Mail, RefreshCw, Loader2 } from "lucide-react";
+
+import { useState } from "react";
+
+import { Link, useForm } from "@inertiajs/react";
+
 import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
 import AuthLayout from "@/Layouts/AuthLayout";

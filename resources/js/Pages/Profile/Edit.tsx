@@ -1,13 +1,17 @@
-import { useState } from "react";
-import { Head, usePage } from "@inertiajs/react";
 import axios from "axios";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+
+import { useState } from "react";
+
+import { Head } from "@inertiajs/react";
+
 import PageHeader from "@/Components/layout/PageHeader";
 import { TimezoneSelector } from "@/Components/settings/TimezoneSelector";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Label } from "@/Components/ui/label";
 import DashboardLayout from "@/Layouts/DashboardLayout";
+
 import DeleteUserForm from "./Partials/DeleteUserForm";
 import UpdatePasswordForm from "./Partials/UpdatePasswordForm";
 import UpdateProfileInformationForm from "./Partials/UpdateProfileInformationForm";

@@ -1,5 +1,7 @@
 import { PropsWithChildren, ReactNode } from "react";
+
 import { Head, Link } from "@inertiajs/react";
+
 import { Logo, TextLogo } from "@/Components/branding/Logo";
 import { ThemeToggle } from "@/Components/theme";
 

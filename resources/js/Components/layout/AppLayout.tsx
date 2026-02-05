@@ -1,7 +1,10 @@
+import { Menu } from "lucide-react";
+
 import { ReactNode, useState } from "react";
-import { Link, usePage } from "@inertiajs/react";
-import { Menu, Shield } from "lucide-react";
-import { Logo, TextLogo } from "@/Components/branding/Logo";
+
+import { Link } from "@inertiajs/react";
+
+import { Logo } from "@/Components/branding/Logo";
 import { NavLink } from "@/Components/NavLink";
 import { Button } from "@/Components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/Components/ui/sheet";

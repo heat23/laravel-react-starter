@@ -6,9 +6,11 @@
  * - SEO crawlability - search engines see fully rendered HTML
  * - Initial page load performance - no JS needed for first paint
  */
+import ReactDOMServer from 'react-dom/server';
+
 import { createInertiaApp } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
-import ReactDOMServer from 'react-dom/server';
+
 import { ThemeProvider } from '@/Components/theme';
 import { TooltipProvider } from '@/Components/ui/tooltip';
 

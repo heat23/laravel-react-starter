@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { route as ziggyRoute } from 'ziggy-js';
+
 import { Ziggy } from './ziggy.js';
 
 window.axios = axios;

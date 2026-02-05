@@ -1,7 +1,10 @@
-import { useState, FormEventHandler } from "react";
-import { Link, useForm } from "@inertiajs/react";
 import { Eye, EyeOff, Mail, Lock, Github, ArrowRight } from "lucide-react";
 import { z } from "zod";
+
+import { useState, FormEventHandler } from "react";
+
+import { Link, useForm } from "@inertiajs/react";
+
 import InputError from "@/Components/InputError";
 import { LegalContentModal } from "@/Components/legal/LegalContentModal";
 import { Button } from "@/Components/ui/button";

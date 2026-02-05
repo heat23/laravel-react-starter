@@ -1,5 +1,7 @@
-import React, { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+
+import React, { Component, ErrorInfo, ReactNode } from "react";
+
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
 

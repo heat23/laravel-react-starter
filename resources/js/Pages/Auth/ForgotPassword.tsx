@@ -1,6 +1,9 @@
-import { FormEventHandler } from "react";
-import { Link, useForm } from "@inertiajs/react";
 import { Mail, CheckCircle2 } from "lucide-react";
+
+import { FormEventHandler } from "react";
+
+import { Link, useForm } from "@inertiajs/react";
+
 import InputError from "@/Components/InputError";
 import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";

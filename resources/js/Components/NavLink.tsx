@@ -1,4 +1,5 @@
 import { Link, InertiaLinkProps } from "@inertiajs/react";
+
 import { cn } from "@/lib/utils";
 
 interface NavLinkProps extends InertiaLinkProps {

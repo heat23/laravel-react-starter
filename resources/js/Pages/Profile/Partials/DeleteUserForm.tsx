@@ -1,6 +1,9 @@
-import { useRef, useState } from "react";
-import { useForm } from "@inertiajs/react";
 import { AlertTriangle, Loader2, Trash2 } from "lucide-react";
+
+import { useRef, useState } from "react";
+
+import { useForm } from "@inertiajs/react";
+
 import {
   AlertDialog,
   AlertDialogAction,

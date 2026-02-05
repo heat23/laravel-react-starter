@@ -1,7 +1,11 @@
-import { FormEventHandler, useRef } from 'react';
 import { Transition } from '@headlessui/react';
-import { useForm } from '@inertiajs/react';
 import { CheckCircle2 } from 'lucide-react';
+
+import { FormEventHandler, useRef } from 'react';
+
+import { useForm } from '@inertiajs/react';
+
+
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
