@@ -114,6 +114,13 @@ describe('Login Page', () => {
       expect(screen.getByText(/keep me signed in for 14 days/i)).toBeInTheDocument();
     });
 
+    it('renders singular "day" for 1 day', () => {
+      render(<Login canResetPassword={true} rememberDays={1} />);
+
+      expect(screen.getByText(/keep me signed in for 1 day$/i)).toBeInTheDocument();
+      expect(screen.queryByText(/1 days/i)).not.toBeInTheDocument();
+    });
+
     it('renders create account link', () => {
       render(<Login canResetPassword={true} />);
 

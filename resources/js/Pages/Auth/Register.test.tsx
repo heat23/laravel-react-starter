@@ -16,7 +16,7 @@ vi.mock('@inertiajs/react', async () => {
   return {
     ...actual,
     useForm: vi.fn(() => ({
-      data: { name: '', email: '', password: '', password_confirmation: '' },
+      data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
       setData: mockSetData,
       post: mockPost,
       processing: false,
@@ -68,7 +68,7 @@ describe('Register Page', () => {
     });
     // Reset to default mock state with empty password (password strength hidden)
     mockedUseForm.mockReturnValue({
-      data: { name: '', email: '', password: '', password_confirmation: '' },
+      data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
       setData: mockSetData,
       post: mockPost,
       processing: false,
@@ -108,8 +108,30 @@ describe('Register Page', () => {
     it('renders terms checkbox', () => {
       render(<Register />);
 
-      expect(screen.getByRole('checkbox')).toBeInTheDocument();
-      expect(screen.getByText(/i agree to the/i)).toBeInTheDocument();
+      // There are two checkboxes now (remember me and terms)
+      const checkboxes = screen.getAllByRole('checkbox');
+      expect(checkboxes.length).toBeGreaterThanOrEqual(2);
+      // Check the terms checkbox exists by its unique id
+      expect(screen.getByRole('checkbox', { name: /i agree to the/i })).toBeInTheDocument();
+    });
+
+    it('renders remember me checkbox with default days', () => {
+      render(<Register />);
+
+      expect(screen.getByText(/keep me signed in for 30 days/i)).toBeInTheDocument();
+    });
+
+    it('renders remember me checkbox with custom days', () => {
+      render(<Register rememberDays={14} />);
+
+      expect(screen.getByText(/keep me signed in for 14 days/i)).toBeInTheDocument();
+    });
+
+    it('renders singular "day" for 1 day', () => {
+      render(<Register rememberDays={1} />);
+
+      expect(screen.getByText(/keep me signed in for 1 day$/i)).toBeInTheDocument();
+      expect(screen.queryByText(/1 days/i)).not.toBeInTheDocument();
     });
 
     it('renders submit button', () => {
@@ -195,7 +217,7 @@ describe('Register Page', () => {
   describe('password strength', () => {
     it('shows password strength indicator when password is entered', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'test', password_confirmation: '' },
+        data: { name: '', email: '', password: 'test', password_confirmation: '', remember: false },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -216,7 +238,7 @@ describe('Register Page', () => {
 
     it('displays "Weak" for passwords under 25% strength', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'a', password_confirmation: '' },
+        data: { name: '', email: '', password: 'a', password_confirmation: '', remember: false },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -231,7 +253,7 @@ describe('Register Page', () => {
 
     it('displays "Strong" for passwords meeting all requirements', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'Password1', password_confirmation: '' },
+        data: { name: '', email: '', password: 'Password1', password_confirmation: '', remember: false },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -246,7 +268,7 @@ describe('Register Page', () => {
 
     it('shows requirement items', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'test', password_confirmation: '' },
+        data: { name: '', email: '', password: 'test', password_confirmation: '', remember: false },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -352,7 +374,7 @@ describe('Register Page', () => {
 
     it('calls post with register route on valid submission', async () => {
       mockedUseForm.mockReturnValue({
-        data: { name: 'Test', email: 'test@test.com', password: 'Password1', password_confirmation: 'Password1' },
+        data: { name: 'Test', email: 'test@test.com', password: 'Password1', password_confirmation: 'Password1', remember: false },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -362,9 +384,9 @@ describe('Register Page', () => {
 
       render(<Register />);
 
-      // Accept terms
-      const checkbox = screen.getByRole('checkbox');
-      await user.click(checkbox);
+      // Accept terms (the terms checkbox has id="terms")
+      const termsCheckbox = screen.getByRole('checkbox', { name: /i agree to the/i });
+      await user.click(termsCheckbox);
 
       const submitButton = screen.getByRole('button', { name: /create account/i });
       await user.click(submitButton);
@@ -406,7 +428,7 @@ describe('Register Page', () => {
   describe('processing state', () => {
     it('shows "Creating account..." when processing', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'Password1', password_confirmation: '' },
+        data: { name: '', email: '', password: 'Password1', password_confirmation: '', remember: false },
         setData: mockSetData,
         post: mockPost,
         processing: true,
@@ -421,7 +443,7 @@ describe('Register Page', () => {
 
     it('disables submit button when processing', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'Password1', password_confirmation: '' },
+        data: { name: '', email: '', password: 'Password1', password_confirmation: '', remember: false },
         setData: mockSetData,
         post: mockPost,
         processing: true,
@@ -437,7 +459,7 @@ describe('Register Page', () => {
 
     it('disables social buttons when form is processing', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: '', password_confirmation: '' },
+        data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
         setData: mockSetData,
         post: mockPost,
         processing: true,
@@ -470,7 +492,7 @@ describe('Register Page', () => {
 
     it('displays server name error', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: '', password_confirmation: '' },
+        data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -485,7 +507,7 @@ describe('Register Page', () => {
 
     it('displays server email error', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: '', password_confirmation: '' },
+        data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -500,7 +522,7 @@ describe('Register Page', () => {
 
     it('displays server password error', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: '', password_confirmation: '' },
+        data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -515,7 +537,7 @@ describe('Register Page', () => {
 
     it('displays server password_confirmation error', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: '', password_confirmation: '' },
+        data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
         setData: mockSetData,
         post: mockPost,
         processing: false,

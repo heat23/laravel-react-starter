@@ -43,6 +43,7 @@ class RegisteredUserController extends Controller
             'features' => [
                 'socialAuth' => config('features.social_auth.enabled', false),
             ],
+            'rememberDays' => config('auth.remember.duration', 30),
         ]);
     }
 
@@ -96,7 +97,7 @@ class RegisteredUserController extends Controller
             }
         }
 
-        Auth::login($user);
+        Auth::login($user, $request->boolean('remember', false));
 
         $this->auditService->logRegistration($user);
 

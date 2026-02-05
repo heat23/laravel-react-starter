@@ -35,6 +35,10 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [clientErrors, setClientErrors] = useState<{ email?: string; password?: string }>({});
   const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
+
+  // Helper for grammatically correct day/days
+  const dayText = rememberDays === 1 ? 'day' : 'days';
+
   const { data, setData, post, processing, errors, reset } = useForm({
     email: "",
     password: "",
@@ -256,7 +260,7 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
               onCheckedChange={(checked) => setData("remember", checked === true)}
             />
             <Label htmlFor="remember" className="text-sm font-normal text-muted-foreground cursor-pointer">
-              Keep me signed in for {rememberDays} days
+              Keep me signed in for {rememberDays} {dayText}
             </Label>
           </div>
 

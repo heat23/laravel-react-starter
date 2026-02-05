@@ -31,9 +31,7 @@ class AuthenticatedSessionController extends Controller
         return Inertia::render('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
-            // Calculate remember days from session lifetime config.
-            // Default 43200 minutes = 30 days. Divide by 1440 (minutes/day) to get days.
-            'rememberDays' => (int) ceil(config('session.lifetime', 43200) / 1440),
+            'rememberDays' => config('auth.remember.duration', 30),
             'features' => [
                 'socialAuth' => config('features.social_auth.enabled', false),
             ],

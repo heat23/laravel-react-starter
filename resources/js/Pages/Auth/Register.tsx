@@ -44,6 +44,7 @@ interface Feature {
 
 interface RegisterProps {
   error?: string;
+  rememberDays?: number;
   features?: {
     socialAuth?: boolean;
   };
@@ -79,16 +80,21 @@ const _features: Feature[] = [
   },
 ];
 
-export default function Register({ error, features }: RegisterProps) {
+export default function Register({ error, rememberDays = 30, features }: RegisterProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
+
+  // Helper for grammatically correct day/days
+  const dayText = rememberDays === 1 ? 'day' : 'days';
+
   const { data, setData, post, processing, errors, reset } = useForm({
     name: "",
     email: "",
     password: "",
     password_confirmation: "",
+    remember: false,
   });
 
   const passedRequirements = passwordRequirements.filter((req) => req.test(data.password)).length;
@@ -366,6 +372,17 @@ export default function Register({ error, features }: RegisterProps) {
               />
             </div>
             <InputError message={errors.password_confirmation} className="text-xs" />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="remember-register"
+              checked={data.remember}
+              onCheckedChange={(checked) => setData("remember", checked === true)}
+            />
+            <Label htmlFor="remember-register" className="text-sm font-normal text-muted-foreground cursor-pointer">
+              Keep me signed in for {rememberDays} {dayText}
+            </Label>
           </div>
 
           <div className="flex items-start space-x-2">
