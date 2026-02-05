@@ -1,0 +1,56 @@
+
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
+/resources/js/ziggy.js
+# OS File
+.DS_STORE
+
+# IDE Files
+.editorconfig
+
+# Laravel & NPM
+public/.user.ini
+public/php.ini
+/vendor/
+node_modules/
+npm-debug.log
+yarn-error.log
+bootstrap/compiled.php
+app/storage/
+public/storage
+public/hot
+public/build
+public/build/**
+public/vendor/telescope
+
+# SSR build artifacts (except manifest)
+/bootstrap/ssr/*
+!/bootstrap/ssr/ssr-manifest.json
+public_html/storage
+public_html/hot
+storage/*.key
+e2e-report/
+e2e-report/*
+
+# Database files (protect local dev data from tests)
+/database/database.sqlite
+/database/database.sqlite-journal
+/database/database.testing.sqlite
+/database/database.testing.sqlite-journal
+Homestead.yaml
+Homestead.json
+/.vagrant
+.phpunit.result.cache
+error_log
+.htaccess
+coverage-report*/
+test-results.xml
+.phpunit.cache/test-results
+coverage/
+coverage-backend/
+logs/
+.playwright-mcp/
+ux-audit/
+e2e-results/
+e2e-audit-results/

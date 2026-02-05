@@ -1,12 +1,12 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "{{VENDOR_NAME}}/{{PROJECT_NAME}}",
+    "name": "heatware/laravel-react-starter",
     "type": "project",
-    "description": "{{APP_DESCRIPTION}}",
+    "description": "Laravel React Starter Template",
     "keywords": ["laravel", "react", "inertia", "starter"],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.4",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",

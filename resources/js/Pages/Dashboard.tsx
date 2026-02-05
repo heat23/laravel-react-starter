@@ -1,8 +1,9 @@
 import { Head } from "@inertiajs/react";
-import { Activity, Users, CreditCard, TrendingUp } from "lucide-react";
+import { Activity, Users, CreditCard, TrendingUp, BarChart3 } from "lucide-react";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import PageHeader from "@/Components/layout/PageHeader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
+import { EmptyState } from "@/Components/ui/empty-state";
 
 // Placeholder stats - replace with real data
 const stats = [
@@ -73,9 +74,14 @@ export default function Dashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-                {/* Placeholder for chart */}
-                <p>Chart placeholder - integrate your preferred charting library</p>
+              <div className="h-[200px] flex items-center justify-center">
+                <EmptyState
+                  icon={BarChart3}
+                  title="Analytics Coming Soon"
+                  description="Charts and insights will appear here once you have activity data."
+                  size="sm"
+                  animated={false}
+                />
               </div>
             </CardContent>
           </Card>
@@ -89,10 +95,13 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {/* Placeholder for activity feed */}
-                <p className="text-sm text-muted-foreground">
-                  No recent activity to show.
-                </p>
+                <EmptyState
+                  icon={Activity}
+                  title="No Recent Activity"
+                  description="Your recent actions will appear here as you use the app."
+                  size="sm"
+                  animated={false}
+                />
               </div>
             </CardContent>
           </Card>

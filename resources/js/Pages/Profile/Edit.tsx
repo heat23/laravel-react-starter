@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Head, usePage } from "@inertiajs/react";
 import axios from "axios";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import PageHeader from "@/Components/layout/PageHeader";
 import { TimezoneSelector } from "@/Components/settings/TimezoneSelector";
@@ -33,7 +33,11 @@ export default function Edit({ mustVerifyEmail, status, timezone: initialTimezon
             });
             toast.success("Timezone updated successfully");
         } catch (error) {
-            toast.error("Failed to update timezone");
+            // Log error details for debugging, but show user-friendly message
+            if (error instanceof Error) {
+                console.error("Timezone update error:", error.message);
+            }
+            toast.error("Failed to update timezone. Please check your connection and try again.");
             setTimezone(timezone); // Revert on error
         } finally {
             setIsSaving(false);
@@ -75,11 +79,19 @@ export default function Edit({ mustVerifyEmail, status, timezone: initialTimezon
                                     <p className="text-sm text-muted-foreground">
                                         All dates and times will be displayed in your selected timezone.
                                     </p>
-                                    <TimezoneSelector
-                                        value={timezone}
-                                        onChange={handleTimezoneChange}
-                                        disabled={isSaving}
-                                    />
+                                    <div className="flex items-center gap-3">
+                                        <TimezoneSelector
+                                            value={timezone}
+                                            onChange={handleTimezoneChange}
+                                            disabled={isSaving}
+                                        />
+                                        {isSaving && (
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                <span className="text-sm">Saving...</span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>

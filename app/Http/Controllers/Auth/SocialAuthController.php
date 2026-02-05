@@ -7,6 +7,7 @@ use App\Services\SocialAuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Laravel\Socialite\Facades\Socialite;
 
 /**
@@ -101,17 +102,24 @@ class SocialAuthController extends Controller
 
         $user = $request->user();
 
-        // Don't allow disconnecting if user has no password and this is their only auth method
-        if (! $user->hasPassword()) {
-            $socialAccountCount = $user->socialAccounts()->count();
-            if ($socialAccountCount <= 1) {
-                return back()->with('error', 'You must set a password before disconnecting your social account.');
-            }
+        try {
+            DB::transaction(function () use ($user, $provider) {
+                // Don't allow disconnecting if user has no password and this is their only auth method
+                if (! $user->hasPassword()) {
+                    // Lock social accounts to prevent race conditions during count check
+                    $socialAccountCount = $user->socialAccounts()->lockForUpdate()->count();
+                    if ($socialAccountCount <= 1) {
+                        throw new \Exception('Cannot disconnect last authentication method.');
+                    }
+                }
+
+                // Delete the social account
+                $user->socialAccounts()->where('provider', $provider)->delete();
+            });
+
+            return back()->with('status', ucfirst($provider).' account disconnected.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'You must set a password before disconnecting your last social account.');
         }
-
-        // Delete the social account
-        $user->socialAccounts()->where('provider', $provider)->delete();
-
-        return back()->with('status', ucfirst($provider).' account disconnected.');
     }
 }

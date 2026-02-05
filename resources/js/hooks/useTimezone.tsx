@@ -40,7 +40,10 @@ export function useTimezone(options: UseTimezoneOptions = {}) {
       setTimezone(newTimezone);
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save timezone");
+      const message = err instanceof Error
+          ? err.message
+          : "Unable to save preference. Please try again.";
+      setError(message);
       return false;
     } finally {
       setIsSaving(false);

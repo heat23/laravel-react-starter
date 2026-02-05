@@ -1,11 +1,17 @@
-import { FormEventHandler } from 'react';
+import { FormEventHandler, useState } from 'react';
 import { Transition } from '@headlessui/react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 import { CheckCircle2 } from 'lucide-react';
+import { z } from 'zod';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+
+const profileSchema = z.object({
+    name: z.string().trim().min(1, "Name is required").max(255, "Name is too long"),
+    email: z.string().trim().email("Please enter a valid email address"),
+});
 
 interface User {
     name: string;
@@ -31,6 +37,7 @@ export default function UpdateProfileInformationForm({
     className = '',
 }: UpdateProfileInformationFormProps) {
     const user = usePage<PageProps>().props.auth.user;
+    const [clientErrors, setClientErrors] = useState<{ name?: string; email?: string }>({});
 
     const { data, setData, patch, errors, processing, recentlySuccessful } =
         useForm({
@@ -38,9 +45,33 @@ export default function UpdateProfileInformationForm({
             email: user.email,
         });
 
+    const validateField = (field: 'name' | 'email', value: string) => {
+        try {
+            profileSchema.shape[field].parse(value);
+            setClientErrors(prev => ({ ...prev, [field]: undefined }));
+        } catch (e) {
+            if (e instanceof z.ZodError) {
+                setClientErrors(prev => ({ ...prev, [field]: e.errors[0].message }));
+            }
+        }
+    };
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
+        // Validate all fields before submit
+        const result = profileSchema.safeParse(data);
+        if (!result.success) {
+            const fieldErrors: { name?: string; email?: string } = {};
+            result.error.errors.forEach(err => {
+                const field = err.path[0] as 'name' | 'email';
+                fieldErrors[field] = err.message;
+            });
+            setClientErrors(fieldErrors);
+            return;
+        }
+
+        setClientErrors({});
         patch(route('profile.update'));
     };
 
@@ -55,12 +86,13 @@ export default function UpdateProfileInformationForm({
                         className="mt-1 block w-full"
                         value={data.name}
                         onChange={(e) => setData('name', e.target.value)}
+                        onBlur={(e) => validateField('name', e.target.value)}
                         required
                         isFocused
                         autoComplete="name"
                     />
 
-                    <InputError className="mt-2" message={errors.name} />
+                    <InputError className="mt-2" message={clientErrors.name || errors.name} />
                 </div>
 
                 <div>
@@ -72,11 +104,12 @@ export default function UpdateProfileInformationForm({
                         className="mt-1 block w-full"
                         value={data.email}
                         onChange={(e) => setData('email', e.target.value)}
+                        onBlur={(e) => validateField('email', e.target.value)}
                         required
                         autoComplete="username"
                     />
 
-                    <InputError className="mt-2" message={errors.email} />
+                    <InputError className="mt-2" message={clientErrors.email || errors.email} />
                 </div>
 
                 {mustVerifyEmail && user.email_verified_at === null && (

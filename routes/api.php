@@ -76,8 +76,13 @@ if (config('features.api_tokens.enabled', true)) {
             ]);
         });
 
-        Route::delete('/{tokenId}', function (Request $request, $tokenId) {
-            $request->user()->tokens()->where('id', $tokenId)->delete();
+        Route::delete('/{tokenId}', function (Request $request, int $tokenId) {
+            $deleted = $request->user()->tokens()->where('id', $tokenId)->delete();
+
+            if (!$deleted) {
+                return response()->json(['message' => 'Token not found.'], 404);
+            }
+
             return response()->json(['success' => true]);
         });
     });

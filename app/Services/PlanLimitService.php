@@ -64,7 +64,7 @@ class PlanLimitService
      * Get the user's current plan tier.
      *
      * Returns 'pro' during trial, otherwise 'free'.
-     * Extend this for actual subscription logic.
+     * When billing feature is enabled, integrate Laravel Cashier here.
      */
     public function getUserPlan(User $user): string
     {
@@ -73,8 +73,8 @@ class PlanLimitService
             return config('plans.trial.tier', 'pro');
         }
 
-        // TODO: Check actual subscription status via Cashier
-        // if ($user->subscribed('default')) {
+        // Cashier integration point:
+        // if (config('features.billing.enabled') && $user->subscribed('default')) {
         //     return 'pro';
         // }
 
