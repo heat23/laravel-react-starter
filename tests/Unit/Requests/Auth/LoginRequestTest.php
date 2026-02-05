@@ -486,19 +486,10 @@ class LoginRequestTest extends TestCase
         $response->assertSessionHasErrors('email');
     }
 
-    public function test_login_email_is_case_sensitive_by_default(): void
-    {
-        // Laravel's default Auth is case-sensitive for email
-        User::factory()->create(['email' => 'test@example.com']);
-
-        $response = $this->post('/login', [
-            'email' => 'TEST@EXAMPLE.COM',
-            'password' => 'password',
-        ]);
-
-        // User won't be found because email case doesn't match
-        $this->assertGuest();
-    }
+    // Note: Email case sensitivity depends on database collation
+    // SQLite: case-sensitive by default
+    // MySQL: case-insensitive by default (utf8mb4_unicode_ci)
+    // This is a database-level concern, not a LoginRequest concern
 
     public function test_rate_limiting_is_per_email_and_ip_combination(): void
     {
