@@ -20,7 +20,8 @@ const PageLoader = () => (
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
-const pages = import.meta.glob('./Pages/**/*.{tsx,jsx}');
+// Exclude test files from production build - they were adding ~598KB (Vitest + test files)
+const pages = import.meta.glob(['./Pages/**/*.{tsx,jsx}', '!**/*.test.{tsx,jsx}']);
 
 createInertiaApp({
     title: (title) => title ? `${title} | ${appName}` : appName,

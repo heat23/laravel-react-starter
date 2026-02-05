@@ -122,7 +122,7 @@ export default function Register({ error, features }: RegisterProps) {
       </div>
 
       <div className="space-y-4">
-        {features.map((feature, index) => (
+        {_features.map((feature, index) => (
           <div
             key={feature.title}
             className="flex items-start gap-4 animate-fade-in"

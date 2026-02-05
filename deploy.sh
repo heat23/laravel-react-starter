@@ -40,10 +40,12 @@ alias php="$PHP_BIN"
 alias composer="$PHP_BIN $COMPOSER_BIN"
 
 # Colors for output (fallback if _common.sh not sourced)
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+if [[ -z "${RED:-}" ]]; then
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    YELLOW='\033[1;33m'
+    NC='\033[0m' # No Color
+fi
 
 say()  { echo -e "${NC}$*"; }
 pass() { echo -e "${GREEN}✅ $*${NC}"; }
@@ -336,20 +338,41 @@ say "============================================================"
 
 
 # -------------------------
-# Step 12: Redis Connection Test via Laravel
+# Step 12: Redis Connection Test via Laravel (if using Redis)
 # -------------------------
 say ""
-say "Step 12: Testing Redis connection via Laravel..."
+say "Step 12: Testing Redis connection via Laravel (if configured)..."
 
-if $PHP_BIN artisan tinker --execute="Redis::ping();" 2>/dev/null | grep -q "PONG"; then
-    pass "Laravel can connect to Redis"
+# Check if any driver uses Redis
+NEEDS_REDIS=false
+for DRIVER_VAR in SESSION_DRIVER CACHE_STORE QUEUE_CONNECTION; do
+    DRIVER_VALUE=$(grep "^${DRIVER_VAR}=" .env 2>/dev/null | cut -d'=' -f2 | tr -d '"' | tr -d "'" | xargs)
+    if [[ "$DRIVER_VALUE" == "redis" ]]; then
+        NEEDS_REDIS=true
+        break
+    fi
+done
+
+if [[ "$NEEDS_REDIS" == "false" ]]; then
+    say "  No Redis-backed drivers configured - skipping"
 else
-    # Try alternative check
-    REDIS_CHECK=$($PHP_BIN artisan tinker --execute="try { \Illuminate\Support\Facades\Cache::store('redis')->put('deploy_test', 'ok', 10); echo \Illuminate\Support\Facades\Cache::store('redis')->get('deploy_test'); } catch (\Exception \$e) { echo 'FAILED: ' . \$e->getMessage(); }" 2>/dev/null || echo "FAILED")
-    if [[ "$REDIS_CHECK" == "ok" ]]; then
-        pass "Laravel Redis cache is working"
+    # Use inline PHP to test Redis connection (avoids PsySH trust issues)
+    REDIS_TEST=$($PHP_BIN -r "
+        require 'vendor/autoload.php';
+        \$app = require_once 'bootstrap/app.php';
+        \$app->make('Illuminate\Contracts\Console\Kernel')->bootstrap();
+        try {
+            \Illuminate\Support\Facades\Redis::ping();
+            echo 'PONG';
+        } catch (Exception \$e) {
+            echo 'FAILED: ' . \$e->getMessage();
+        }
+    " 2>&1 || echo "FAILED: Script execution error")
+
+    if [[ "$REDIS_TEST" == "PONG" ]]; then
+        pass "Laravel can connect to Redis"
     else
-        fail "Laravel cannot connect to Redis!\nCheck your REDIS_* configuration in .env\nError: $REDIS_CHECK"
+        fail "Laravel cannot connect to Redis!\nCheck your REDIS_* configuration in .env\nError: $REDIS_TEST"
     fi
 fi
 
@@ -367,7 +390,7 @@ pass "Configuration validation passed"
 say ""
 say "Step 14: Running HTTP health checks..."
 
-APP_URL=$(grep -oE 'APP_URL=.*' .env | cut -d '=' -f2 | tr -d '"' | tr -d "'")
+APP_URL=$(grep '^APP_URL=' .env | cut -d '=' -f2 | tr -d '"' | tr -d "'")
 say "  Testing: $APP_URL"
 
 # Wait a moment for caches to warm up

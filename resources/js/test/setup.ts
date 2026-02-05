@@ -119,3 +119,11 @@ globalThis.IntersectionObserver = vi.fn().mockImplementation(() => ({
   unobserve: vi.fn(),
   disconnect: vi.fn(),
 }));
+
+// Mock pointer capture APIs (used by Radix UI)
+Element.prototype.hasPointerCapture = vi.fn(() => false);
+Element.prototype.setPointerCapture = vi.fn();
+Element.prototype.releasePointerCapture = vi.fn();
+
+// Mock scrollIntoView (used by Radix UI)
+Element.prototype.scrollIntoView = vi.fn();
