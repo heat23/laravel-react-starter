@@ -78,7 +78,7 @@ return [
     */
 
     'remember' => [
-        'duration' => env('REMEMBER_ME_DAYS', 30),
+        'duration' => (int) env('REMEMBER_ME_DAYS', 30),
     ],
 
 ];
