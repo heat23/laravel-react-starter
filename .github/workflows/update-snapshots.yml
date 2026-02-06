@@ -1,0 +1,95 @@
+name: Update E2E Snapshots
+
+on:
+  workflow_dispatch:
+
+env:
+  PHP_VERSION: "8.4"
+  NODE_VERSION: "22"
+
+jobs:
+  update-snapshots:
+    name: Update Playwright Snapshots
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, dom, fileinfo, mysql
+          tools: composer:v2
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Setup Laravel environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Configure environment
+        run: |
+          echo "APP_URL=http://localhost:8000" >> .env
+          echo "DB_CONNECTION=mysql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=testing" >> .env
+          echo "DB_USERNAME=root" >> .env
+          echo "DB_PASSWORD=password" >> .env
+
+      - name: Run database migrations
+        run: php artisan migrate --force
+
+      - name: Generate Ziggy routes
+        run: php artisan ziggy:generate
+
+      - name: Build production assets
+        run: npm run build
+
+      - name: Update Playwright snapshots
+        run: npx playwright test --update-snapshots
+        env:
+          CI: true
+
+      - name: Create Pull Request with updated snapshots
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "Update Playwright snapshots from CI environment"
+          title: "Update Playwright E2E snapshots"
+          body: |
+            Automated PR to update Playwright visual regression snapshots.
+
+            These snapshots were generated in the CI Linux environment to ensure
+            they match the rendering in GitHub Actions.
+          branch: update-playwright-snapshots
+          delete-branch: true
