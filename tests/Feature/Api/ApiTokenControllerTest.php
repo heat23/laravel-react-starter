@@ -56,7 +56,7 @@ class ApiTokenControllerTest extends TestCase
 
         $response->assertOk()
             ->assertJsonStructure([
-                ['id', 'name', 'abilities', 'last_used_at', 'created_at'],
+                ['id', 'name', 'abilities', 'last_used_at', 'expires_at', 'created_at'],
             ])
             ->assertJsonPath('0.name', 'My Token')
             ->assertJsonPath('0.abilities', ['read', 'write']);

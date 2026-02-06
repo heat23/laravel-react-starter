@@ -13,8 +13,8 @@
         {{-- Google Analytics 4 - Production Only --}}
         @production
             @if(config('services.google.analytics_id'))
-                <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
-                <script>
+                <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}" nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}"></script>
+                <script nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">
                     window.dataLayer = window.dataLayer || [];
                     function gtag(){dataLayer.push(arguments);}
                     gtag('js', new Date());
@@ -24,7 +24,7 @@
         @endproduction
 
         <!-- Scripts -->
-        @routes
+        @routes(null, Illuminate\Support\Facades\Vite::cspNonce())
         @viteReactRefresh
         @vite(['resources/js/app.tsx', "resources/js/Pages/{$page['component']}.tsx"])
         @inertiaHead

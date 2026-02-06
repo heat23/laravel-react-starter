@@ -18,6 +18,9 @@ vi.mock('@inertiajs/react', async () => {
             email: 'test@example.com',
           },
         },
+        features: {
+          notifications: false,
+        },
       },
     })),
     Link: ({
@@ -62,6 +65,9 @@ describe('DashboardLayout', () => {
             name: 'Test User',
             email: 'test@example.com',
           },
+        },
+        features: {
+          notifications: false,
         },
       },
     } as ReturnType<typeof usePage>);
@@ -345,6 +351,7 @@ describe('DashboardLayout', () => {
               email: 'john@example.com',
             },
           },
+          features: { notifications: false },
         },
       } as ReturnType<typeof usePage>);
 
@@ -366,6 +373,7 @@ describe('DashboardLayout', () => {
               email: 'jane@example.com',
             },
           },
+          features: { notifications: false },
         },
       } as ReturnType<typeof usePage>);
 
@@ -393,6 +401,7 @@ describe('DashboardLayout', () => {
               email: 'lower@example.com',
             },
           },
+          features: { notifications: false },
         },
       } as ReturnType<typeof usePage>);
 

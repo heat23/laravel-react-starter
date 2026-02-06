@@ -52,7 +52,11 @@ class HandleInertiaRequests extends Middleware
                 'emailVerification' => config('features.email_verification.enabled', true),
                 'apiTokens' => config('features.api_tokens.enabled', true),
                 'userSettings' => config('features.user_settings.enabled', true),
+                'notifications' => config('features.notifications.enabled', false),
             ],
+            'notifications_unread_count' => fn () => config('features.notifications.enabled', false) && $request->user()
+                ? $request->user()->unreadNotifications()->count()
+                : 0,
         ];
     }
 }

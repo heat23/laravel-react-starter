@@ -2,85 +2,63 @@
 
 namespace App\Services;
 
+use App\Jobs\PersistAuditLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
-/**
- * Audit Service
- *
- * Simple audit logging for security-relevant events.
- * Logs to Laravel's default logger (storage/logs/laravel.log).
- *
- * For production, consider:
- * - Storing audits in database (audit_logs table)
- * - Using dedicated audit packages (owen-it/laravel-auditing)
- * - Sending to external audit services (Datadog, Papertrail)
- */
 class AuditService
 {
-    /**
-     * Log a user login event.
-     */
     public function logLogin(?User $user = null): void
     {
         $user = $user ?? Auth::user();
 
-        Log::channel('single')->info('User logged in', [
-            'event' => 'auth.login',
-            'user_id' => $user?->id,
+        $this->persist('auth.login', $user?->id, [
             'email' => $user?->email,
-            'ip' => request()->ip(),
-            'user_agent' => request()->userAgent(),
-            'timestamp' => now()->toISOString(),
         ]);
     }
 
-    /**
-     * Log a user logout event.
-     */
     public function logLogout(?User $user = null): void
     {
         $user = $user ?? Auth::user();
 
-        Log::channel('single')->info('User logged out', [
-            'event' => 'auth.logout',
-            'user_id' => $user?->id,
+        $this->persist('auth.logout', $user?->id, [
             'email' => $user?->email,
-            'ip' => request()->ip(),
-            'timestamp' => now()->toISOString(),
         ]);
     }
 
-    /**
-     * Log a user registration event.
-     */
     public function logRegistration(User $user): void
     {
-        Log::channel('single')->info('User registered', [
-            'event' => 'auth.register',
-            'user_id' => $user->id,
+        $this->persist('auth.register', $user->id, [
             'email' => $user->email,
             'signup_source' => $user->signup_source ?? 'direct',
-            'ip' => request()->ip(),
-            'timestamp' => now()->toISOString(),
         ]);
     }
 
     /**
-     * Log a generic audit event.
-     *
-     * Use this for custom events that don't fit the standard patterns.
+     * Log a generic audit event. Metadata values should be scalar types
+     * (strings, numbers, booleans) — never pass raw user input without sanitization.
      */
     public function log(string $event, array $context = []): void
     {
-        $defaultContext = [
-            'event' => $event,
-            'user_id' => Auth::id(),
-            'ip' => request()->ip(),
-            'timestamp' => now()->toISOString(),
-        ];
+        $this->persist($event, Auth::id(), $context);
+    }
 
-        Log::channel('single')->info($event, array_merge($defaultContext, $context));
+    private function persist(string $event, ?int $userId, array $metadata = []): void
+    {
+        $ip = request()->ip();
+        $userAgent = request()->userAgent();
+
+        PersistAuditLog::dispatch($event, $userId, $ip, $userAgent, $metadata);
+
+        Log::channel('single')->info($event, [
+            'event' => $event,
+            'user_id' => $userId,
+            'ip' => $ip,
+            'user_agent' => $userAgent,
+            'request_id' => request()?->attributes?->get('request_id'),
+            'metadata' => $metadata,
+            'timestamp' => now()->toISOString(),
+        ]);
     }
 }

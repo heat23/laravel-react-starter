@@ -6,7 +6,6 @@ use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
@@ -158,24 +157,15 @@ class RegistrationSecurityTest extends TestCase
 
     public function test_registration_audits_event(): void
     {
-        Log::shouldReceive('channel')
-            ->with('single')
-            ->once()
-            ->andReturnSelf();
-
-        Log::shouldReceive('info')
-            ->once()
-            ->withArgs(function ($message, $context) {
-                return $message === 'User registered'
-                    && $context['event'] === 'auth.register'
-                    && $context['email'] === 'audit@example.com';
-            });
-
         $this->post('/register', [
             'name' => 'Test User',
             'email' => 'audit@example.com',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
+        ]);
+
+        $this->assertDatabaseHas('audit_logs', [
+            'event' => 'auth.register',
         ]);
     }
 

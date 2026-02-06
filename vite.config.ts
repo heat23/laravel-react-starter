@@ -33,6 +33,7 @@ const vendorChunkGroups = [
       pkg === "tailwind-merge" ||
       pkg === "tailwindcss-animate",
   },
+  { name: "charts-vendor", match: (pkg: string) => pkg === "recharts" || pkg.startsWith("d3-") },
 ];
 
 const manualChunks = (id: string): string | undefined => {

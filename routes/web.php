@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Billing\BillingController;
 use App\Http\Controllers\Billing\PricingController;
+use App\Http\Controllers\ChartsController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Settings\ApiTokenPageController;
 use App\Http\Controllers\WelcomeController;
@@ -27,6 +29,7 @@ Route::middleware(array_filter([
     config('features.email_verification.enabled', true) ? 'verified' : null,
 ]))->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/dashboard/charts', [ChartsController::class, 'index'])->name('dashboard.charts');
 });
 
 // Profile routes
@@ -50,5 +53,8 @@ if (config('features.billing.enabled', false)) {
         Route::get('/pricing', PricingController::class)->name('pricing');
     });
 }
+
+// Health check (controller handles its own authorization)
+Route::get('/health', HealthCheckController::class)->name('health');
 
 require __DIR__.'/auth.php';

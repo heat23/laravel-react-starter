@@ -81,4 +81,17 @@ return [
     'user_settings' => [
         'enabled' => env('FEATURE_USER_SETTINGS', true),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, adds in-app notification system with bell icon dropdown,
+    | unread count badge, and mark-as-read functionality.
+    |
+    */
+    'notifications' => [
+        'enabled' => env('FEATURE_NOTIFICATIONS', false),
+    ],
 ];

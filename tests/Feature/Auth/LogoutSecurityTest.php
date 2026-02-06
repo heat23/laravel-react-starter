@@ -4,7 +4,6 @@ namespace Tests\Feature\Auth;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class LogoutSecurityTest extends TestCase
@@ -74,22 +73,14 @@ class LogoutSecurityTest extends TestCase
 
     public function test_logout_audits_event(): void
     {
-        Log::shouldReceive('channel')
-            ->with('single')
-            ->once()
-            ->andReturnSelf();
-
-        Log::shouldReceive('info')
-            ->once()
-            ->withArgs(function ($message, $context) {
-                return $message === 'User logged out'
-                    && $context['event'] === 'auth.logout'
-                    && $context['email'] === 'audit@example.com';
-            });
-
         $user = User::factory()->create(['email' => 'audit@example.com']);
 
         $this->actingAs($user)->post('/logout');
+
+        $this->assertDatabaseHas('audit_logs', [
+            'event' => 'auth.logout',
+            'user_id' => $user->id,
+        ]);
     }
 
     // ============================================

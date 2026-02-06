@@ -17,6 +17,9 @@ vi.mock('@inertiajs/react', async () => {
             email: 'test@example.com',
           },
         },
+        features: {
+          notifications: false,
+        },
       },
     })),
     Head: ({ title }: { title: string }) => <title>{title}</title>,
@@ -47,6 +50,9 @@ describe('Dashboard', () => {
             name: 'Test User',
             email: 'test@example.com',
           },
+        },
+        features: {
+          notifications: false,
         },
       },
     } as ReturnType<typeof usePage>);

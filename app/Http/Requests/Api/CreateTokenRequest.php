@@ -20,6 +20,7 @@ class CreateTokenRequest extends FormRequest
             'name' => 'required|string|max:255',
             'abilities' => 'array',
             'abilities.*' => 'string',
+            'expires_at' => 'nullable|date|after:now',
         ];
     }
 }

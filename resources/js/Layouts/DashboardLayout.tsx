@@ -5,6 +5,7 @@ import { PropsWithChildren } from "react";
 import { Link, usePage } from "@inertiajs/react";
 
 import { Logo, TextLogo } from "@/Components/branding/Logo";
+import { NotificationDropdown } from "@/Components/notifications/NotificationDropdown";
 import { ThemeToggle } from "@/Components/theme";
 import { Button } from "@/Components/ui/button";
 import {
@@ -30,6 +31,9 @@ interface PageProps {
       email: string;
     };
   };
+  features: {
+    notifications: boolean;
+  };
 }
 
 const navItems = [
@@ -38,7 +42,7 @@ const navItems = [
 ];
 
 export default function DashboardLayout({ children }: PropsWithChildren) {
-  const { auth } = usePage<PageProps>().props;
+  const { auth, features } = usePage<PageProps>().props;
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,6 +78,7 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
           {/* Right side - Theme toggle and User menu */}
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            {features.notifications && <NotificationDropdown />}
 
             {/* User Menu */}
             <DropdownMenu>

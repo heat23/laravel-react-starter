@@ -18,6 +18,15 @@ export interface Auth {
   theme?: 'light' | 'dark' | 'system';
 }
 
+export interface Features {
+  billing: boolean;
+  socialAuth: boolean;
+  emailVerification: boolean;
+  apiTokens: boolean;
+  userSettings: boolean;
+  notifications: boolean;
+}
+
 export interface PageProps {
   auth: Auth;
   flash: {
@@ -25,6 +34,8 @@ export interface PageProps {
     error?: string;
   };
   errors: Record<string, string>;
+  features: Features;
+  notifications_unread_count: number;
 }
 
 // Common pagination type
@@ -36,6 +47,20 @@ export interface PaginatedResponse<T> {
   total: number;
   from: number;
   to: number;
+}
+
+// Notifications
+export interface AppNotification {
+  id: string;
+  type: string;
+  data: {
+    title: string;
+    message: string;
+    action_url?: string;
+    icon?: string;
+  };
+  read_at: string | null;
+  created_at: string;
 }
 
 // Form state helpers
