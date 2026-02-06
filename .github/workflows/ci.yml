@@ -384,3 +384,11 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+      - name: Upload screenshot diffs
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: screenshot-diffs
+          path: tests/e2e/__screenshots__/**/*-diff.png
+          retention-days: 7
