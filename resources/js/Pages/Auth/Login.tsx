@@ -11,7 +11,9 @@ import { Button } from "@/Components/ui/button";
 import { Checkbox } from "@/Components/ui/checkbox";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
+import { LoadingButton } from "@/Components/ui/loading-button";
 import { Separator } from "@/Components/ui/separator";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import AuthLayout from "@/Layouts/AuthLayout";
 
 // P1-004: Client-side Zod validation for instant feedback
@@ -33,7 +35,7 @@ interface LoginProps {
 export default function Login({ status, canResetPassword, error, rememberDays = 30, features }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
-  const [clientErrors, setClientErrors] = useState<{ email?: string; password?: string }>({});
+  const { errors: clientErrors, validateField, validateAll, clearError } = useFormValidation(loginSchema);
   const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
 
   // Helper for grammatically correct day/days
@@ -45,31 +47,11 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
     remember: false,
   });
 
-  // Client-side validation on blur for instant feedback
-  const validateField = (field: "email" | "password", value: string) => {
-    const result = loginSchema.shape[field].safeParse(value);
-    setClientErrors((prev) => ({
-      ...prev,
-      [field]: result.success ? undefined : result.error.errors[0]?.message,
-    }));
-  };
-
   const handleSubmit: FormEventHandler = (e) => {
     e.preventDefault();
 
-    // Validate all fields before submission
-    const result = loginSchema.safeParse(data);
-    if (!result.success) {
-      const fieldErrors: { email?: string; password?: string } = {};
-      result.error.errors.forEach((err) => {
-        const field = err.path[0] as "email" | "password";
-        fieldErrors[field] = err.message;
-      });
-      setClientErrors(fieldErrors);
-      return;
-    }
+    if (!validateAll(data)) return;
 
-    setClientErrors({});
     post(route("login"), {
       onFinish: () => reset("password"),
     });
@@ -123,7 +105,7 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
                 className="w-full h-12 text-base"
                 type="button"
                 onClick={() => handleSocialLogin("github")}
-                disabled={socialLoading !== null}
+                disabled={socialLoading !== null || processing}
               >
                 <Github className="mr-2 h-5 w-5" />
                 {socialLoading === "github" ? "Redirecting..." : "GitHub"}
@@ -133,7 +115,7 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
                 className="w-full h-12 text-base"
                 type="button"
                 onClick={() => handleSocialLogin("google")}
-                disabled={socialLoading !== null}
+                disabled={socialLoading !== null || processing}
               >
                 <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                   <path
@@ -191,19 +173,18 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
                 value={data.email}
                 onChange={(e) => {
                   setData("email", e.target.value);
-                  // Clear client error when user starts typing
-                  if (clientErrors.email) {
-                    setClientErrors((prev) => ({ ...prev, email: undefined }));
-                  }
+                  if (clientErrors.email) clearError("email");
                 }}
                 onBlur={(e) => validateField("email", e.target.value)}
                 className="pl-10"
                 autoComplete="username"
                 autoFocus
                 required
+                aria-describedby={(clientErrors.email || errors.email) ? "login-email-error" : undefined}
+                aria-invalid={!!(clientErrors.email || errors.email)}
               />
             </div>
-            <InputError message={clientErrors.email || errors.email} className="text-xs" />
+            <InputError id="login-email-error" message={clientErrors.email || errors.email} className="text-xs" />
           </div>
 
           <div className="space-y-2">
@@ -227,21 +208,21 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
                 value={data.password}
                 onChange={(e) => {
                   setData("password", e.target.value);
-                  // Clear client error when user starts typing
-                  if (clientErrors.password) {
-                    setClientErrors((prev) => ({ ...prev, password: undefined }));
-                  }
+                  if (clientErrors.password) clearError("password");
                 }}
                 onBlur={(e) => validateField("password", e.target.value)}
                 className="pl-10 pr-10"
                 autoComplete="current-password"
                 required
+                aria-describedby={(clientErrors.password || errors.password) ? "login-password-error" : undefined}
+                aria-invalid={!!(clientErrors.password || errors.password)}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Toggle password visibility"
+                className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -250,7 +231,7 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
                 )}
               </button>
             </div>
-            <InputError message={clientErrors.password || errors.password} className="text-xs" />
+            <InputError id="login-password-error" message={clientErrors.password || errors.password} className="text-xs" />
           </div>
 
           <div className="flex items-center space-x-2">
@@ -264,10 +245,10 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
             </Label>
           </div>
 
-          <Button type="submit" className="w-full group" size="lg" disabled={processing}>
-            {processing ? "Signing in..." : "Sign in"}
+          <LoadingButton type="submit" className="w-full group" size="lg" loading={processing} loadingText="Signing in...">
+            Sign in
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </Button>
+          </LoadingButton>
         </form>
 
         {/* Register Link */}

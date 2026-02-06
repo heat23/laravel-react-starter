@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -410,7 +410,7 @@ describe('Register Page', () => {
     it('toggles password visibility on button click', async () => {
       render(<Register />);
 
-      const toggleButton = screen.getByRole('button', { name: /toggle password/i });
+      const toggleButton = screen.getByRole('button', { name: /show password/i });
       const passwordInput = screen.getByLabelText(/^password$/i);
 
       expect(passwordInput).toHaveAttribute('type', 'password');
@@ -418,6 +418,7 @@ describe('Register Page', () => {
       await user.click(toggleButton);
 
       expect(passwordInput).toHaveAttribute('type', 'text');
+      expect(screen.getByRole('button', { name: /hide password/i })).toBeInTheDocument();
     });
   });
 
@@ -472,10 +473,9 @@ describe('Register Page', () => {
       const githubButton = screen.getByRole('button', { name: /github/i });
       const googleButton = screen.getByRole('button', { name: /google/i });
 
-      // Social buttons are only disabled during social loading, not form processing
-      // This test documents the current behavior
-      expect(githubButton).not.toBeDisabled();
-      expect(googleButton).not.toBeDisabled();
+      // Social buttons are now disabled when form is processing
+      expect(githubButton).toBeDisabled();
+      expect(googleButton).toBeDisabled();
     });
   });
 
@@ -577,7 +577,7 @@ describe('Register Page', () => {
     it('toggle button has aria-label', () => {
       render(<Register />);
 
-      const toggleButton = screen.getByRole('button', { name: /toggle password/i });
+      const toggleButton = screen.getByRole('button', { name: /show password/i });
       expect(toggleButton).toHaveAttribute('aria-label');
     });
   });

@@ -10,6 +10,7 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 interface UpdatePasswordFormProps {
     className?: string;
@@ -29,11 +30,14 @@ export default function UpdatePasswordForm({ className = '' }: UpdatePasswordFor
         reset,
         processing,
         recentlySuccessful,
+        isDirty,
     } = useForm({
         current_password: '',
         password: '',
         password_confirmation: '',
     });
+
+    useUnsavedChanges(isDirty);
 
     const updatePassword: FormEventHandler = (e) => {
         e.preventDefault();

@@ -24,6 +24,7 @@
   "resources/js/Components/ui/empty-state.tsx": [],
   "resources/js/Components/ui/input.tsx": [],
   "resources/js/Components/ui/label.tsx": [],
+  "resources/js/Components/ui/loading-button.tsx": [],
   "resources/js/Components/ui/popover.tsx": [],
   "resources/js/Components/ui/progress.tsx": [],
   "resources/js/Components/ui/separator.tsx": [],
@@ -54,6 +55,9 @@
   "resources/js/Pages/Profile/Partials/UpdateProfileInformationForm.tsx": [],
   "resources/js/Pages/Welcome.test.tsx": [],
   "resources/js/Pages/Welcome.tsx": [],
+  "resources/js/hooks/useFormValidation.ts": [],
+  "resources/js/hooks/useTimezone.tsx": [],
+  "resources/js/hooks/useUnsavedChanges.ts": [],
   "resources/js/lib/utils.ts": [],
   "resources/js/ssr.tsx": []
 }

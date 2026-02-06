@@ -363,11 +363,11 @@ describe('ResetPassword Page', () => {
 
       render(<ResetPassword {...defaultProps} />);
 
-      const submitButton = screen.getByRole('button', { name: /reset password/i });
+      const submitButton = screen.getByRole('button', { name: /resetting/i });
       expect(submitButton).toBeDisabled();
     });
 
-    it('button text remains same during processing', () => {
+    it('button shows loading text during processing', () => {
       mockedUseForm.mockReturnValue({
         data: { token: 'test', email: 'test@example.com', password: '', password_confirmation: '' },
         setData: mockSetData,
@@ -379,7 +379,7 @@ describe('ResetPassword Page', () => {
 
       render(<ResetPassword {...defaultProps} />);
 
-      expect(screen.getByRole('button', { name: /reset password/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /resetting/i })).toBeInTheDocument();
     });
   });
 

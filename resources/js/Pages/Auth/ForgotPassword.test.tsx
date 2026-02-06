@@ -194,11 +194,11 @@ describe('ForgotPassword Page', () => {
 
       render(<ForgotPassword />);
 
-      const submitButton = screen.getByRole('button', { name: /email password reset link/i });
+      const submitButton = screen.getByRole('button', { name: /sending/i });
       expect(submitButton).toBeDisabled();
     });
 
-    it('button text remains same during processing', () => {
+    it('button shows loading text during processing', () => {
       mockedUseForm.mockReturnValue({
         data: { email: '' },
         setData: mockSetData,
@@ -209,7 +209,7 @@ describe('ForgotPassword Page', () => {
 
       render(<ForgotPassword />);
 
-      expect(screen.getByRole('button', { name: /email password reset link/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /sending/i })).toBeInTheDocument();
     });
   });
 

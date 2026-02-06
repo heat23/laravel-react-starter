@@ -26,6 +26,7 @@ import { Button } from "@/Components/ui/button";
 import { Checkbox } from "@/Components/ui/checkbox";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
+import { LoadingButton } from "@/Components/ui/loading-button";
 import { Progress } from "@/Components/ui/progress";
 import { Separator } from "@/Components/ui/separator";
 import AuthLayout from "@/Layouts/AuthLayout";
@@ -197,7 +198,7 @@ export default function Register({ error, rememberDays = 30, features }: Registe
                 className="w-full h-12 text-base"
                 type="button"
                 onClick={() => handleSocialLogin("github")}
-                disabled={socialLoading !== null}
+                disabled={socialLoading !== null || processing}
               >
                 <Github className="mr-2 h-5 w-5" />
                 {socialLoading === "github" ? "Redirecting..." : "GitHub"}
@@ -207,7 +208,7 @@ export default function Register({ error, rememberDays = 30, features }: Registe
                 className="w-full h-12 text-base"
                 type="button"
                 onClick={() => handleSocialLogin("google")}
-                disabled={socialLoading !== null}
+                disabled={socialLoading !== null || processing}
               >
                 <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                   <path
@@ -261,9 +262,11 @@ export default function Register({ error, rememberDays = 30, features }: Registe
                 className="pl-10"
                 autoComplete="name"
                 required
+                aria-describedby={errors.name ? "register-name-error" : undefined}
+                aria-invalid={!!errors.name}
               />
             </div>
-            <InputError message={errors.name} className="text-xs" />
+            <InputError id="register-name-error" message={errors.name} className="text-xs" />
           </div>
 
           <div className="space-y-2">
@@ -279,9 +282,11 @@ export default function Register({ error, rememberDays = 30, features }: Registe
                 className="pl-10"
                 autoComplete="username"
                 required
+                aria-describedby={errors.email ? "register-email-error" : undefined}
+                aria-invalid={!!errors.email}
               />
             </div>
-            <InputError message={errors.email} className="text-xs" />
+            <InputError id="register-email-error" message={errors.email} className="text-xs" />
           </div>
 
           <div className="space-y-3">
@@ -301,8 +306,9 @@ export default function Register({ error, rememberDays = 30, features }: Registe
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Toggle password visibility"
+                className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-pressed={showPassword}
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -353,7 +359,7 @@ export default function Register({ error, rememberDays = 30, features }: Registe
                 </div>
               </div>
             )}
-            <InputError message={errors.password} className="text-xs" />
+            <InputError id="register-password-error" message={errors.password} className="text-xs" />
           </div>
 
           <div className="space-y-2">
@@ -371,7 +377,7 @@ export default function Register({ error, rememberDays = 30, features }: Registe
                 required
               />
             </div>
-            <InputError message={errors.password_confirmation} className="text-xs" />
+            <InputError id="register-password-confirmation-error" message={errors.password_confirmation} className="text-xs" />
           </div>
 
           <div className="flex items-center space-x-2">
@@ -412,15 +418,17 @@ export default function Register({ error, rememberDays = 30, features }: Registe
             </Label>
           </div>
 
-          <Button
+          <LoadingButton
             type="submit"
             className="w-full group"
             size="lg"
-            disabled={processing || !acceptTerms || passwordStrength < 100}
+            loading={processing}
+            loadingText="Creating account..."
+            disabled={!acceptTerms || passwordStrength < 100}
           >
-            {processing ? "Creating account..." : "Create account"}
+            Create account
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </Button>
+          </LoadingButton>
         </form>
 
         {/* Login Link */}

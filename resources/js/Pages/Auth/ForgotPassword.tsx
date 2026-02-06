@@ -6,9 +6,9 @@ import { Link, useForm } from "@inertiajs/react";
 
 import InputError from "@/Components/InputError";
 import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
-import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
+import { LoadingButton } from "@/Components/ui/loading-button";
 import AuthLayout from "@/Layouts/AuthLayout";
 
 interface ForgotPasswordProps {
@@ -58,14 +58,16 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
                 autoFocus
                 onChange={(e) => setData("email", e.target.value)}
                 required
+                aria-describedby={errors.email ? "forgot-email-error" : undefined}
+                aria-invalid={!!errors.email}
               />
             </div>
-            <InputError message={errors.email} className="text-xs" />
+            <InputError id="forgot-email-error" message={errors.email} className="text-xs" />
           </div>
 
-          <Button type="submit" className="w-full" size="lg" disabled={processing}>
+          <LoadingButton type="submit" className="w-full" size="lg" loading={processing} loadingText="Sending...">
             Email Password Reset Link
-          </Button>
+          </LoadingButton>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">

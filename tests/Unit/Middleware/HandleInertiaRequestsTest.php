@@ -76,7 +76,11 @@ class HandleInertiaRequestsTest extends TestCase
         $shared = $this->middleware->share($request);
 
         $this->assertNotNull($shared['auth']['user']);
-        $this->assertEquals($user->id, $shared['auth']['user']->id);
+        $this->assertEquals($user->id, $shared['auth']['user']['id']);
+        $this->assertEquals($user->name, $shared['auth']['user']['name']);
+        $this->assertEquals($user->email, $shared['auth']['user']['email']);
+        $this->assertArrayHasKey('email_verified_at', $shared['auth']['user']);
+        $this->assertArrayHasKey('has_password', $shared['auth']['user']);
     }
 
     // ============================================

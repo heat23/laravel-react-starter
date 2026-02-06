@@ -1,8 +1,5 @@
-import axios from "axios";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-
-import { useState } from "react";
 
 import { Head } from "@inertiajs/react";
 
@@ -10,6 +7,7 @@ import PageHeader from "@/Components/layout/PageHeader";
 import { TimezoneSelector } from "@/Components/settings/TimezoneSelector";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
 import { Label } from "@/Components/ui/label";
+import { useTimezone } from "@/hooks/useTimezone";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 
 import DeleteUserForm from "./Partials/DeleteUserForm";
@@ -23,28 +21,16 @@ interface EditProps {
 }
 
 export default function Edit({ mustVerifyEmail, status, timezone: initialTimezone }: EditProps) {
-    const defaultTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const [timezone, setTimezone] = useState(initialTimezone || defaultTimezone);
-    const [isSaving, setIsSaving] = useState(false);
+    const { timezone, setTimezone: saveTimezone, isSaving } = useTimezone({
+        initialTimezone,
+    });
 
     const handleTimezoneChange = async (newTimezone: string) => {
-        setTimezone(newTimezone);
-        setIsSaving(true);
-        try {
-            await axios.post("/api/settings", {
-                key: "timezone",
-                value: newTimezone,
-            });
+        const success = await saveTimezone(newTimezone);
+        if (success) {
             toast.success("Timezone updated successfully");
-        } catch (error) {
-            // Log error details for debugging, but show user-friendly message
-            if (error instanceof Error) {
-                console.error("Timezone update error:", error.message);
-            }
+        } else {
             toast.error("Failed to update timezone. Please check your connection and try again.");
-            setTimezone(timezone); // Revert on error
-        } finally {
-            setIsSaving(false);
         }
     };
 

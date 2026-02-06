@@ -40,7 +40,7 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
 
         {(status === "verification-link-sent" || resent) && (
           <Alert
-            className="border-success/30 bg-success/10 text-success dark:text-success"
+            className="border-success/30 bg-success/10 text-success"
             role="alert"
             aria-live="polite"
           >

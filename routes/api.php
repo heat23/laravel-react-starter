@@ -39,7 +39,7 @@ if (config('features.user_settings.enabled', true)) {
             $user->setSetting($request->key, $request->value);
 
             return response()->json(['success' => true]);
-        });
+        })->middleware('throttle:30,1');
     });
 }
 
@@ -47,15 +47,19 @@ if (config('features.user_settings.enabled', true)) {
 if (config('features.api_tokens.enabled', true)) {
     Route::middleware('auth:sanctum')->prefix('tokens')->group(function () {
         Route::get('/', function (Request $request) {
-            return $request->user()->tokens()->get()->map(function ($token) {
-                return [
-                    'id' => $token->id,
-                    'name' => $token->name,
-                    'abilities' => $token->abilities,
-                    'last_used_at' => $token->last_used_at,
-                    'created_at' => $token->created_at,
-                ];
-            });
+            return $request->user()->tokens()
+                ->select(['id', 'tokenable_id', 'tokenable_type', 'name', 'abilities', 'last_used_at', 'created_at'])
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(function ($token) {
+                    return [
+                        'id' => $token->id,
+                        'name' => $token->name,
+                        'abilities' => $token->abilities,
+                        'last_used_at' => $token->last_used_at?->toISOString(),
+                        'created_at' => $token->created_at->toISOString(),
+                    ];
+                });
         });
 
         Route::post('/', function (Request $request) {

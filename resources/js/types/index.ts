@@ -10,8 +10,7 @@ export interface User {
   name: string;
   email: string;
   email_verified_at: string | null;
-  created_at: string;
-  updated_at: string;
+  has_password: boolean;
 }
 
 export interface Auth {

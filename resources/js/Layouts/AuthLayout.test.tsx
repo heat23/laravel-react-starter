@@ -103,7 +103,7 @@ describe('AuthLayout', () => {
     });
 
     it('does not render left footer when not provided', () => {
-      const { container } = render(
+      render(
         <AuthLayout>
           <div>Content</div>
         </AuthLayout>,
@@ -243,7 +243,7 @@ describe('AuthLayout', () => {
 
   describe('form container', () => {
     it('centers children in form container', () => {
-      const { container } = render(
+      render(
         <AuthLayout>
           <div data-testid="form-content">Form Content</div>
         </AuthLayout>,

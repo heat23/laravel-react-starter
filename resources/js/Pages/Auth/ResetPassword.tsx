@@ -5,9 +5,9 @@ import { FormEventHandler } from "react";
 import { Link, useForm } from "@inertiajs/react";
 
 import InputError from "@/Components/InputError";
-import { Button } from "@/Components/ui/button";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
+import { LoadingButton } from "@/Components/ui/loading-button";
 import AuthLayout from "@/Layouts/AuthLayout";
 
 interface ResetPasswordProps {
@@ -54,9 +54,11 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                 autoComplete="username"
                 onChange={(e) => setData("email", e.target.value)}
                 required
+                aria-describedby={errors.email ? "reset-email-error" : undefined}
+                aria-invalid={!!errors.email}
               />
             </div>
-            <InputError message={errors.email} className="text-xs" />
+            <InputError id="reset-email-error" message={errors.email} className="text-xs" />
           </div>
 
           <div className="space-y-2">
@@ -73,9 +75,11 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                 autoFocus
                 onChange={(e) => setData("password", e.target.value)}
                 required
+                aria-describedby={errors.password ? "reset-password-error" : undefined}
+                aria-invalid={!!errors.password}
               />
             </div>
-            <InputError message={errors.password} className="text-xs" />
+            <InputError id="reset-password-error" message={errors.password} className="text-xs" />
           </div>
 
           <div className="space-y-2">
@@ -91,14 +95,16 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
                 autoComplete="new-password"
                 onChange={(e) => setData("password_confirmation", e.target.value)}
                 required
+                aria-describedby={errors.password_confirmation ? "reset-password-confirmation-error" : undefined}
+                aria-invalid={!!errors.password_confirmation}
               />
             </div>
-            <InputError message={errors.password_confirmation} className="text-xs" />
+            <InputError id="reset-password-confirmation-error" message={errors.password_confirmation} className="text-xs" />
           </div>
 
-          <Button type="submit" className="w-full" size="lg" disabled={processing}>
+          <LoadingButton type="submit" className="w-full" size="lg" loading={processing} loadingText="Resetting...">
             Reset Password
-          </Button>
+          </LoadingButton>
         </form>
 
         <p className="text-center text-sm text-muted-foreground">

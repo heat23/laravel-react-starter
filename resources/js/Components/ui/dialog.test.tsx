@@ -1,8 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
+
 import { createRef, useState } from 'react';
 
+import { Button } from './button';
 import {
   Dialog,
   DialogContent,
@@ -12,10 +14,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
-  DialogOverlay,
-  DialogPortal,
 } from './dialog';
-import { Button } from './button';
 
 // Helper component for testing
 const DialogExample = ({

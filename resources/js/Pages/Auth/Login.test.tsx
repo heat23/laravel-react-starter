@@ -244,7 +244,7 @@ describe('Login Page', () => {
     it('toggles password visibility on button click', async () => {
       render(<Login canResetPassword={true} />);
 
-      const toggleButton = screen.getByRole('button', { name: /toggle password visibility/i });
+      const toggleButton = screen.getByRole('button', { name: /show password/i });
       const passwordInput = screen.getByLabelText('Password');
 
       // Initially hidden
@@ -253,9 +253,11 @@ describe('Login Page', () => {
       // Click to show
       await user.click(toggleButton);
       expect(passwordInput).toHaveAttribute('type', 'text');
+      expect(screen.getByRole('button', { name: /hide password/i })).toBeInTheDocument();
 
       // Click to hide again
-      await user.click(toggleButton);
+      const hideButton = screen.getByRole('button', { name: /hide password/i });
+      await user.click(hideButton);
       expect(passwordInput).toHaveAttribute('type', 'password');
     });
   });
@@ -448,7 +450,7 @@ describe('Login Page', () => {
       render(<Login canResetPassword={true} />);
 
       expect(
-        screen.getByRole('button', { name: /toggle password visibility/i })
+        screen.getByRole('button', { name: /show password/i })
       ).toBeInTheDocument();
     });
   });

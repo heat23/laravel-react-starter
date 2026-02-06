@@ -27,15 +27,19 @@ class ApiTokenController extends Controller
             abort(404, 'API tokens feature is not enabled.');
         }
 
-        $tokens = $request->user()->tokens()->get()->map(function ($token) {
-            return [
-                'id' => $token->id,
-                'name' => $token->name,
-                'abilities' => $token->abilities,
-                'last_used_at' => $token->last_used_at?->toISOString(),
-                'created_at' => $token->created_at->toISOString(),
-            ];
-        });
+        $tokens = $request->user()->tokens()
+            ->select(['id', 'tokenable_id', 'tokenable_type', 'name', 'abilities', 'last_used_at', 'created_at'])
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function ($token) {
+                return [
+                    'id' => $token->id,
+                    'name' => $token->name,
+                    'abilities' => $token->abilities,
+                    'last_used_at' => $token->last_used_at?->toISOString(),
+                    'created_at' => $token->created_at->toISOString(),
+                ];
+            });
 
         return response()->json([
             'tokens' => $tokens,

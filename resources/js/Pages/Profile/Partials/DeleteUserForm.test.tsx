@@ -238,9 +238,7 @@ describe('DeleteUserForm', () => {
       const triggerButton = screen.getByRole('button', { name: /delete account/i });
       await user.click(triggerButton);
 
-      // Get the delete button inside the dialog (submit type)
-      const deleteConfirmButton = screen.getByRole('button', { name: /^delete account$/i });
-      // Need to find the one that's a submit button
+      // Need to find the submit button
       const submitButtons = screen.getAllByRole('button').filter(
         btn => btn.getAttribute('type') === 'submit'
       );

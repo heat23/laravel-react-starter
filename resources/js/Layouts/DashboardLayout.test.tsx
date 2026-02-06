@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -23,7 +23,7 @@ vi.mock('@inertiajs/react', async () => {
     Link: ({
       children,
       href,
-      method,
+      method: _method,
       as,
     }: {
       children: React.ReactNode;
