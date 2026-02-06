@@ -71,7 +71,7 @@ scripts/init.sh        # First-time setup (configure project name, features)
 **Backend:**
 - Form Requests for validation (never inline `$request->validate()`)
 - Services for business logic, controllers stay thin
-- External API calls in Jobs only (`app/Jobs/` — ready but currently empty)
+- External API calls in Jobs only (create `app/Jobs/` when needed — not yet created)
 - Constructor injection for dependencies
 - Custom exceptions in `app/Exceptions/` when needed (currently uses Laravel defaults)
 
@@ -90,6 +90,7 @@ scripts/init.sh        # First-time setup (configure project name, features)
 - Frontend: Vitest + @testing-library/react (`npm test`)
 - Database: SQLite in-memory for tests
 - All auth pages have `.test.tsx` counterparts
+- E2E: Playwright (`tests/e2e/`) — auth smoke tests
 
 **Migrations:**
 - Always check before adding/dropping columns: `Schema::hasColumn()`
@@ -121,7 +122,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 - JS tests with Vitest
 - Build verification (TypeScript + ESLint + production build)
 - Code quality: Laravel Pint
-- Security: `composer audit` + `npm audit`
+- Security: `composer audit` + `npm audit` (npm audit uses `continue-on-error` — reports but doesn't block. Tighten before production launch.)
 
 Note: Local tests use SQLite in-memory, CI uses MySQL 8.0.
 

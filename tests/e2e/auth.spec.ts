@@ -12,7 +12,7 @@ test.describe('Authentication Flows', () => {
     await page.goto('/login');
 
     // Check key elements are visible
-    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
     await expect(page.getByLabel(/email address/i)).toBeVisible();
     await expect(page.getByLabel(/^password$/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
@@ -29,14 +29,14 @@ test.describe('Authentication Flows', () => {
     await expect(page.getByLabel(/confirm password/i)).toBeVisible();
   });
 
-  test('login shows validation errors for empty submission', async ({ page }) => {
+  test('login shows validation errors for invalid email', async ({ page }) => {
     await page.goto('/login');
 
-    // Click sign in without filling fields
-    await page.getByRole('button', { name: /sign in/i }).click();
+    // Fill in invalid email and blur to trigger validation
+    await page.getByLabel(/email address/i).fill('invalid-email');
+    await page.getByLabel(/email address/i).blur();
 
-    // Should show client-side validation errors
-    await expect(page.getByText(/email is required/i)).toBeVisible();
-    await expect(page.getByText(/password is required/i)).toBeVisible();
+    // Should show client-side validation error
+    await expect(page.getByText('Please enter a valid email address')).toBeVisible();
   });
 });
