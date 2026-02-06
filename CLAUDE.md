@@ -6,7 +6,7 @@ This is a reusable starter template. All features are toggleable via `config/fea
 
 ## Feature Flags
 
-Check `config/features.php` and `.env` before implementing. Features default off unless env var is set:
+Check `config/features.php` and `.env` before implementing. Features default off unless noted in table:
 
 | Flag | Env Var | What it enables |
 |------|---------|-----------------|
@@ -34,21 +34,26 @@ Check `config/features.php` and `.env` before implementing. Features default off
 - `SessionDataMigrationService` — migrate guest session data on login
 - `SocialAuthService` — OAuth provider abstraction
 
+**Tenancy:** Single-tenant. Do not add account/org/workspace scoping unless explicitly requested.
+
 **Routes:**
 - `routes/web.php` — pages (feature-gated with `if (config('features.*.enabled'))`)
 - `routes/auth.php` — auth (Breeze + social auth + email verification)
 - `routes/api.php` — Sanctum-protected API (user, settings, tokens)
+- Health check: `/up` (configured in `bootstrap/app.php`)
 
 ## How to Add a New Feature
 
-1. **Migration:** `php artisan make:migration create_{table}_table` — follow patterns in `database/migrations/CLAUDE.md`
+1. **Migration:** `php artisan make:migration create_{table}_table` — follow existing migration patterns in `database/migrations/`
 2. **Model:** `php artisan make:model {Name}` — add to User relationship if user-owned
-3. **Form Request:** Create in `app/Http/Requests/` — always implement `authorize()` and `rules()`
-4. **Controller:** Create in `app/Http/Controllers/` — use constructor injection, Form Requests, policy auth
-5. **Page:** Create in `resources/js/Pages/` — use `usePage()` for shared props, `useForm()` for forms
-6. **Route:** Add to `routes/web.php` — wrap in feature flag if optional, always name routes
-7. **Feature flag (if optional):** Add to `config/features.php` with env var default
-8. **Tests:** Write Pest tests in `tests/Feature/` and `tests/Unit/` — see `tests/` structure
+3. **Factory:** Create in `database/factories/` — required for any new model to keep tests easy
+4. **Form Request:** Create in `app/Http/Requests/` — always implement `authorize()` and `rules()`
+5. **Controller:** Create in `app/Http/Controllers/` — use constructor injection, Form Requests, policy auth
+6. **Policy (if user-owned):** Create in `app/Policies/` — register in `AppServiceProvider` if needed. Only `UserPolicy` exists currently.
+7. **Page:** Create in `resources/js/Pages/` — use `usePage()` for shared props, `useForm()` for forms
+8. **Route:** Add to `routes/web.php` — wrap in feature flag if optional, always name routes. Add API route to `routes/api.php` if applicable.
+9. **Feature flag (if optional):** Add to `config/features.php` with env var default
+10. **Tests:** Write Pest tests in `tests/Feature/` and `tests/Unit/` — see `tests/` structure
 
 ## Commands
 
@@ -66,8 +71,9 @@ scripts/init.sh        # First-time setup (configure project name, features)
 **Backend:**
 - Form Requests for validation (never inline `$request->validate()`)
 - Services for business logic, controllers stay thin
-- External API calls in Jobs only
+- External API calls in Jobs only (`app/Jobs/` — ready but currently empty)
 - Constructor injection for dependencies
+- Custom exceptions in `app/Exceptions/` when needed (currently uses Laravel defaults)
 
 **Frontend:**
 - UI primitives in `Components/ui/` (Radix + CVA + `cn()` from `lib/utils`)
@@ -75,6 +81,8 @@ scripts/init.sh        # First-time setup (configure project name, features)
 - Forms: Inertia `useForm()` hook
 - Icons: Lucide React only
 - Shared props via `usePage()`, feature-gated UI via `features` prop
+- Custom hooks in `hooks/`: `useMobile`, `useFormValidation`, `useTimezone`, `useUnsavedChanges`
+- Shared Inertia props must stay minimal (auth summary + feature flags + flash). Never send whole Eloquent models — use explicit arrays.
 
 **Testing:**
 - Framework: Pest (not PHPUnit) — use `it()` / `test()` syntax
@@ -86,8 +94,8 @@ scripts/init.sh        # First-time setup (configure project name, features)
 **Migrations:**
 - Always check before adding/dropping columns: `Schema::hasColumn()`
 - New columns on existing tables: nullable or with default (never bare NOT NULL)
-- Foreign keys: `->constrained()->cascadeOnDelete()`
-- Feature-conditional migrations: `if (!config('features.*.enabled')) return;`
+- Foreign keys: `->constrained()->cascadeOnDelete()` (auto-indexed)
+- Feature-conditional migrations: only for whole-table creation (`Schema::hasTable` check). Never gate column additions/removals on feature flags — causes schema drift.
 
 ## Key Tables
 
@@ -95,3 +103,31 @@ scripts/init.sh        # First-time setup (configure project name, features)
 - `social_accounts` — OAuth credentials (feature-gated)
 - `user_settings` — key-value preferences
 - `personal_access_tokens` — Sanctum API tokens
+
+## Security Infrastructure
+
+Already implemented — verify before duplicating:
+- Rate limiting: registration (5/min), login (5 attempts, IP+email), password reset (3/min), email verification (6/min), API settings (30/min)
+- CSRF via Sanctum middleware
+- Session regeneration on login
+- Configurable remember-me duration (`REMEMBER_ME_DAYS` env)
+- Audit logging via `AuditService` (login, logout, registration with IP + user agent)
+- Custom queued `SendEmailVerificationNotification` listener (overrides framework default via `EventServiceProvider::configureEmailVerification()`)
+
+## CI/CD
+
+GitHub Actions (`.github/workflows/ci.yml`):
+- PHP tests with PCOV coverage (MySQL 8.0, 4 parallel workers)
+- JS tests with Vitest
+- Build verification (TypeScript + ESLint + production build)
+- Code quality: Laravel Pint
+- Security: `composer audit` + `npm audit`
+
+Note: Local tests use SQLite in-memory, CI uses MySQL 8.0.
+
+## Deployment
+
+- `deploy/` — nginx gzip + static cache configs, supervisor config
+- `scripts/` — `vps-setup.sh`, `vps-verify.sh`, `setup-horizon.sh`, `init.sh`
+- No Docker/containerization (VPS-based deployment)
+- Trusted proxies not configured — add `TrustProxies` middleware if deploying behind load balancer/CDN
