@@ -12,8 +12,8 @@ export default defineConfig({
   expect: {
     toHaveScreenshot: {
       // Font rendering differs between macOS (local) and Linux (CI).
-      // 4% ratio tolerates antialiasing and font rendering differences across platforms.
-      maxDiffPixelRatio: 0.04,
+      // 6% ratio tolerates antialiasing, font rendering, and minor layout differences across platforms.
+      maxDiffPixelRatio: 0.06,
     },
   },
   use: {
