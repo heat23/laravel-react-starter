@@ -3,14 +3,18 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   outputDir: './tests/e2e/results',
-  snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{arg}{ext}',
+  snapshotPathTemplate: '{testDir}/__screenshots__/{testFilePath}/{projectName}/{arg}{ext}',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   expect: {
-    toHaveScreenshot: { maxDiffPixelRatio: 0.01 },
+    toHaveScreenshot: {
+      // Font rendering differs between macOS (local) and Linux (CI).
+      // 2% ratio tolerates antialiasing differences across platforms.
+      maxDiffPixelRatio: 0.02,
+    },
   },
   use: {
     baseURL: 'http://localhost:8000',

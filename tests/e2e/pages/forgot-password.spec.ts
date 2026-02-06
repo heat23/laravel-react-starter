@@ -1,13 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 import {
-  collectConsoleErrors,
-  assertNoConsoleErrors,
-  assertCssLoaded,
-  assertJsLoaded,
-  assertPageIsStyled,
-  enableDarkMode,
+  assertAssetsLoadedCleanly,
   assertDarkModeApplied,
+  assertDesktopAuthLayout,
+  assertMobileAuthLayout,
+  collectConsoleErrors,
+  enableDarkMode,
 } from '../fixtures/helpers';
 
 test.describe('Forgot Password Page', () => {
@@ -15,11 +14,7 @@ test.describe('Forgot Password Page', () => {
     const errors = collectConsoleErrors(page);
     await page.goto('/forgot-password');
     await page.waitForLoadState('networkidle');
-
-    assertNoConsoleErrors(errors);
-    await assertCssLoaded(page);
-    await assertJsLoaded(page);
-    await assertPageIsStyled(page);
+    await assertAssetsLoadedCleanly(page, errors);
   });
 
   test('renders all key elements on desktop', async ({ page }, testInfo) => {
@@ -28,7 +23,9 @@ test.describe('Forgot Password Page', () => {
 
     // Heading
     await expect(page.getByRole('heading', { name: /forgot your password/i })).toBeVisible();
-    await expect(page.getByText(/enter your email and we'll send you a password reset link/i)).toBeVisible();
+    await expect(
+      page.getByText(/enter your email and we'll send you a password reset link/i),
+    ).toBeVisible();
 
     // Form
     await expect(page.getByLabel(/email address/i)).toBeVisible();
@@ -37,42 +34,28 @@ test.describe('Forgot Password Page', () => {
     // Back link
     await expect(page.getByRole('link', { name: /back to sign in/i })).toBeVisible();
 
-    // Desktop: left branded panel visible
-    const leftPanel = page.locator('.hidden.lg\\:flex').first();
-    await expect(leftPanel).toBeVisible();
+    // Desktop layout
+    await assertDesktopAuthLayout(page);
   });
 
-  test('renders correctly on mobile', async ({ page }, testInfo) => {
+  test('shows mobile layout on small viewport', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-mobile', 'Mobile only');
     await page.goto('/forgot-password');
 
-    // Mobile header visible
-    const mobileHeader = page.locator('header.lg\\:hidden');
-    await expect(mobileHeader).toBeVisible();
-
-    // Left panel hidden
-    const leftPanel = page.locator('.hidden.lg\\:flex').first();
-    await expect(leftPanel).not.toBeVisible();
-
-    // Form accessible
+    await assertMobileAuthLayout(page);
     await expect(page.getByLabel(/email address/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /email password reset link/i })).toBeVisible();
   });
 
-  test('renders correctly on tablet', async ({ page }, testInfo) => {
+  test('shows mobile layout on tablet viewport', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-tablet', 'Tablet only');
     await page.goto('/forgot-password');
 
-    const mobileHeader = page.locator('header.lg\\:hidden');
-    await expect(mobileHeader).toBeVisible();
-
-    const leftPanel = page.locator('.hidden.lg\\:flex').first();
-    await expect(leftPanel).not.toBeVisible();
-
+    await assertMobileAuthLayout(page);
     await expect(page.getByLabel(/email address/i)).toBeVisible();
   });
 
-  test('renders correctly in dark mode', async ({ page }, testInfo) => {
+  test('dark mode renders without errors', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     const errors = collectConsoleErrors(page);
     await page.goto('/forgot-password');
@@ -80,7 +63,7 @@ test.describe('Forgot Password Page', () => {
 
     await expect(page.getByRole('heading', { name: /forgot your password/i })).toBeVisible();
     await assertDarkModeApplied(page);
-    assertNoConsoleErrors(errors);
+    expect(errors).toHaveLength(0);
   });
 
   test('back to sign in link points to login', async ({ page }, testInfo) => {
@@ -91,18 +74,34 @@ test.describe('Forgot Password Page', () => {
     expect(href).toContain('/login');
   });
 
-  test('visual regression - light mode', async ({ page }, testInfo) => {
+  // Visual regression --------------------------------------------------------
+
+  test('visual regression — desktop light', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/forgot-password');
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveScreenshot('forgot-password-light.png', { fullPage: true });
   });
 
-  test('visual regression - dark mode', async ({ page }, testInfo) => {
+  test('visual regression — desktop dark', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/forgot-password');
     await page.waitForLoadState('networkidle');
     await enableDarkMode(page);
     await expect(page).toHaveScreenshot('forgot-password-dark.png', { fullPage: true });
+  });
+
+  test('visual regression — mobile', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-mobile', 'Mobile only');
+    await page.goto('/forgot-password');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveScreenshot('forgot-password-mobile.png', { fullPage: true });
+  });
+
+  test('visual regression — tablet', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-tablet', 'Tablet only');
+    await page.goto('/forgot-password');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveScreenshot('forgot-password-tablet.png', { fullPage: true });
   });
 });

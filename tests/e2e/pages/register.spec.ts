@@ -1,13 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 import {
-  collectConsoleErrors,
-  assertNoConsoleErrors,
-  assertCssLoaded,
-  assertJsLoaded,
-  assertPageIsStyled,
-  enableDarkMode,
+  assertAssetsLoadedCleanly,
   assertDarkModeApplied,
+  assertDesktopAuthLayout,
+  assertMobileAuthLayout,
+  collectConsoleErrors,
+  enableDarkMode,
 } from '../fixtures/helpers';
 
 test.describe('Register Page', () => {
@@ -15,11 +14,7 @@ test.describe('Register Page', () => {
     const errors = collectConsoleErrors(page);
     await page.goto('/register');
     await page.waitForLoadState('networkidle');
-
-    assertNoConsoleErrors(errors);
-    await assertCssLoaded(page);
-    await assertJsLoaded(page);
-    await assertPageIsStyled(page);
+    await assertAssetsLoadedCleanly(page, errors);
   });
 
   test('renders all key elements on desktop', async ({ page }, testInfo) => {
@@ -35,48 +30,32 @@ test.describe('Register Page', () => {
     await expect(page.getByLabel(/email address/i)).toBeVisible();
     await expect(page.getByLabel(/^password$/i)).toBeVisible();
     await expect(page.getByLabel(/confirm password/i)).toBeVisible();
-
-    // Password toggle
     await expect(page.getByRole('button', { name: /show password/i })).toBeVisible();
 
-    // Terms checkbox
+    // Checkboxes
     await expect(page.getByText(/i agree to the/i)).toBeVisible();
-
-    // Remember me checkbox
     await expect(page.getByText(/keep me signed in/i)).toBeVisible();
 
-    // Submit button
+    // Submit + link
     await expect(page.getByRole('button', { name: /create account/i })).toBeVisible();
-
-    // Login link
     await expect(page.getByRole('link', { name: /sign in instead/i })).toBeVisible();
 
-    // Desktop: left branded panel with features
-    const leftPanel = page.locator('.hidden.lg\\:flex').first();
-    await expect(leftPanel).toBeVisible();
+    // Desktop layout — left branded panel with feature highlights
+    await assertDesktopAuthLayout(page);
     await expect(page.getByText('Secure by Default')).toBeVisible();
     await expect(page.getByText('Modern Stack')).toBeVisible();
     await expect(page.getByText('Stay Informed')).toBeVisible();
     await expect(page.getByText('Lightning Fast')).toBeVisible();
-
-    // Left panel footer
     await expect(page.getByText('Free to get started')).toBeVisible();
     await expect(page.getByText('No credit card required')).toBeVisible();
   });
 
-  test('renders correctly on mobile', async ({ page }, testInfo) => {
+  test('shows mobile layout on small viewport', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-mobile', 'Mobile only');
     await page.goto('/register');
 
-    // Mobile header visible
-    const mobileHeader = page.locator('header.lg\\:hidden');
-    await expect(mobileHeader).toBeVisible();
+    await assertMobileAuthLayout(page);
 
-    // Left branded panel hidden
-    const leftPanel = page.locator('.hidden.lg\\:flex').first();
-    await expect(leftPanel).not.toBeVisible();
-
-    // Form still accessible
     await expect(page.getByLabel(/full name/i)).toBeVisible();
     await expect(page.getByLabel(/email address/i)).toBeVisible();
     await expect(page.getByLabel(/^password$/i)).toBeVisible();
@@ -84,22 +63,16 @@ test.describe('Register Page', () => {
     await expect(page.getByRole('button', { name: /create account/i })).toBeVisible();
   });
 
-  test('renders correctly on tablet', async ({ page }, testInfo) => {
+  test('shows mobile layout on tablet viewport', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-tablet', 'Tablet only');
     await page.goto('/register');
 
-    // Tablet below lg breakpoint — mobile layout
-    const mobileHeader = page.locator('header.lg\\:hidden');
-    await expect(mobileHeader).toBeVisible();
-
-    const leftPanel = page.locator('.hidden.lg\\:flex').first();
-    await expect(leftPanel).not.toBeVisible();
-
+    await assertMobileAuthLayout(page);
     await expect(page.getByLabel(/full name/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /create account/i })).toBeVisible();
   });
 
-  test('renders correctly in dark mode', async ({ page }, testInfo) => {
+  test('dark mode renders without errors', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     const errors = collectConsoleErrors(page);
     await page.goto('/register');
@@ -107,7 +80,7 @@ test.describe('Register Page', () => {
 
     await expect(page.getByRole('heading', { name: /create your account/i })).toBeVisible();
     await assertDarkModeApplied(page);
-    assertNoConsoleErrors(errors);
+    expect(errors).toHaveLength(0);
   });
 
   test('password strength indicator shows requirements', async ({ page }, testInfo) => {
@@ -116,13 +89,13 @@ test.describe('Register Page', () => {
 
     const passwordInput = page.getByLabel(/^password$/i);
 
-    // Type a weak password
+    // Weak password — requirements visible but not all met
     await passwordInput.fill('ab');
     await expect(page.getByText('At least 8 characters')).toBeVisible();
     await expect(page.getByText('One uppercase letter')).toBeVisible();
     await expect(page.getByText('One number')).toBeVisible();
 
-    // Type a strong password
+    // Strong password — all requirements visible
     await passwordInput.fill('StrongPass1');
     await expect(page.getByText('At least 8 characters')).toBeVisible();
     await expect(page.getByText('One uppercase letter')).toBeVisible();
@@ -130,50 +103,64 @@ test.describe('Register Page', () => {
     await expect(page.getByText('One number')).toBeVisible();
   });
 
-  test('create account button disabled until terms accepted and password strong', async ({ page }, testInfo) => {
+  test('submit button disabled until terms accepted and password strong', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/register');
 
     const submitButton = page.getByRole('button', { name: /create account/i });
 
-    // Initially disabled (no terms, no password)
+    // Initially disabled
     await expect(submitButton).toBeDisabled();
 
-    // Fill strong password but no terms
+    // Strong password but no terms → still disabled
     await page.getByLabel(/^password$/i).fill('StrongPass1');
     await expect(submitButton).toBeDisabled();
 
-    // Accept terms
+    // Accept terms → enabled
     await page.getByLabel(/i agree to the/i).check();
     await expect(submitButton).toBeEnabled();
   });
 
-  test('social auth buttons consistency', async ({ page }, testInfo) => {
+  test('social auth buttons present when feature enabled', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/register');
 
-    const socialButtons = page.locator('button', { hasText: /google|github/i });
-    const count = await socialButtons.count();
+    const hasSocialAuth = (await page.locator('button', { hasText: /google|github/i }).count()) > 0;
+    test.skip(!hasSocialAuth, 'Social auth feature is disabled in this environment');
 
-    if (count > 0) {
-      await expect(page.getByRole('button', { name: /google/i })).toBeVisible();
-      await expect(page.getByRole('button', { name: /github/i })).toBeVisible();
-      await expect(page.getByText(/or register with email/i)).toBeVisible();
-    }
+    await expect(page.getByRole('button', { name: /google/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /github/i })).toBeVisible();
+    await expect(page.getByText(/or register with email/i)).toBeVisible();
   });
 
-  test('visual regression - light mode', async ({ page }, testInfo) => {
+  // Visual regression --------------------------------------------------------
+
+  test('visual regression — desktop light', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/register');
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveScreenshot('register-light.png', { fullPage: true });
   });
 
-  test('visual regression - dark mode', async ({ page }, testInfo) => {
+  test('visual regression — desktop dark', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/register');
     await page.waitForLoadState('networkidle');
     await enableDarkMode(page);
     await expect(page).toHaveScreenshot('register-dark.png', { fullPage: true });
+  });
+
+  test('visual regression — mobile', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-mobile', 'Mobile only');
+    await page.goto('/register');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveScreenshot('register-mobile.png', { fullPage: true });
+  });
+
+  test('visual regression — tablet', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-tablet', 'Tablet only');
+    await page.goto('/register');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveScreenshot('register-tablet.png', { fullPage: true });
   });
 });

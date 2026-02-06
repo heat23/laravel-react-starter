@@ -1,13 +1,12 @@
 import { test, expect } from '@playwright/test';
 
 import {
-  collectConsoleErrors,
-  assertNoConsoleErrors,
-  assertCssLoaded,
-  assertJsLoaded,
-  assertPageIsStyled,
-  enableDarkMode,
+  assertAssetsLoadedCleanly,
   assertDarkModeApplied,
+  assertDesktopAuthLayout,
+  assertMobileAuthLayout,
+  collectConsoleErrors,
+  enableDarkMode,
 } from '../fixtures/helpers';
 
 test.describe('Login Page', () => {
@@ -15,11 +14,7 @@ test.describe('Login Page', () => {
     const errors = collectConsoleErrors(page);
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
-
-    assertNoConsoleErrors(errors);
-    await assertCssLoaded(page);
-    await assertJsLoaded(page);
-    await assertPageIsStyled(page);
+    await assertAssetsLoadedCleanly(page, errors);
   });
 
   test('renders all key elements on desktop', async ({ page }, testInfo) => {
@@ -33,43 +28,28 @@ test.describe('Login Page', () => {
     // Form fields
     await expect(page.getByLabel(/email address/i)).toBeVisible();
     await expect(page.getByLabel(/^password$/i)).toBeVisible();
-
-    // Password toggle
     await expect(page.getByRole('button', { name: /show password/i })).toBeVisible();
-
-    // Remember me checkbox
     await expect(page.getByText(/keep me signed in/i)).toBeVisible();
-
-    // Submit button
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
 
     // Links
     await expect(page.getByRole('link', { name: /forgot password/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /create one for free/i })).toBeVisible();
 
-    // Footer - Terms and Privacy
+    // Footer — legal buttons
     await expect(page.getByRole('button', { name: /terms of service/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /privacy policy/i })).toBeVisible();
 
-    // Desktop: left branded panel visible
-    const leftPanel = page.locator('.hidden.lg\\:flex').first();
-    await expect(leftPanel).toBeVisible();
-
-    // Desktop: theme toggle visible
+    // Desktop layout
+    await assertDesktopAuthLayout(page);
     await expect(page.getByRole('button', { name: /toggle theme/i }).first()).toBeVisible();
   });
 
-  test('renders correctly on mobile', async ({ page }, testInfo) => {
+  test('shows mobile layout on small viewport', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-mobile', 'Mobile only');
     await page.goto('/login');
 
-    // Mobile header visible
-    const mobileHeader = page.locator('header.lg\\:hidden');
-    await expect(mobileHeader).toBeVisible();
-
-    // Left branded panel hidden on mobile
-    const leftPanel = page.locator('.hidden.lg\\:flex').first();
-    await expect(leftPanel).not.toBeVisible();
+    await assertMobileAuthLayout(page);
 
     // Form still accessible
     await expect(page.getByLabel(/email address/i)).toBeVisible();
@@ -77,22 +57,17 @@ test.describe('Login Page', () => {
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
   });
 
-  test('renders correctly on tablet', async ({ page }, testInfo) => {
+  test('shows mobile layout on tablet viewport', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-tablet', 'Tablet only');
     await page.goto('/login');
 
-    // Tablet (768px) is below lg breakpoint (1024px), same as mobile layout
-    const mobileHeader = page.locator('header.lg\\:hidden');
-    await expect(mobileHeader).toBeVisible();
-
-    const leftPanel = page.locator('.hidden.lg\\:flex').first();
-    await expect(leftPanel).not.toBeVisible();
-
+    // 768px is below the lg (1024px) breakpoint — same layout as mobile
+    await assertMobileAuthLayout(page);
     await expect(page.getByLabel(/email address/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
   });
 
-  test('renders correctly in dark mode', async ({ page }, testInfo) => {
+  test('dark mode renders without errors', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     const errors = collectConsoleErrors(page);
     await page.goto('/login');
@@ -100,55 +75,70 @@ test.describe('Login Page', () => {
 
     await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
     await assertDarkModeApplied(page);
-    assertNoConsoleErrors(errors);
+    expect(errors).toHaveLength(0);
   });
 
-  test('password toggle works', async ({ page }, testInfo) => {
+  test('password toggle switches input type', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/login');
 
     const passwordInput = page.locator('#password');
     await expect(passwordInput).toHaveAttribute('type', 'password');
 
-    // Use dispatchEvent — the toggle button is small (16x16) and absolutely positioned,
-    // which can cause Playwright's native click to miss React's synthetic event handler
-    await page.locator('button[aria-label="Show password"]').dispatchEvent('click');
+    // The toggle button is absolutely positioned inside the input wrapper.
+    // The input element's box overlaps the button, absorbing pointer events
+    // before they reach the button. Use evaluate() to trigger the DOM click
+    // directly — this fires React's synthetic onClick handler correctly.
+    const showBtn = page.locator('button[aria-label="Show password"]');
+    await showBtn.evaluate((el) => (el as HTMLElement).click());
     await expect(passwordInput).toHaveAttribute('type', 'text');
 
-    await expect(page.locator('button[aria-label="Hide password"]')).toBeVisible();
-    await page.locator('button[aria-label="Hide password"]').dispatchEvent('click');
+    const hideBtn = page.locator('button[aria-label="Hide password"]');
+    await expect(hideBtn).toBeVisible();
+    await hideBtn.evaluate((el) => (el as HTMLElement).click());
     await expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
-  test('social auth buttons consistency', async ({ page }, testInfo) => {
+  test('social auth buttons present when feature enabled', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/login');
 
-    // Feature flag determines if social auth is shown.
-    // If any social button exists, both Google and GitHub should be present.
-    const socialButtons = page.locator('button', { hasText: /google|github/i });
-    const count = await socialButtons.count();
+    const hasSocialAuth = (await page.locator('button', { hasText: /google|github/i }).count()) > 0;
+    test.skip(!hasSocialAuth, 'Social auth feature is disabled in this environment');
 
-    if (count > 0) {
-      await expect(page.getByRole('button', { name: /google/i })).toBeVisible();
-      await expect(page.getByRole('button', { name: /github/i })).toBeVisible();
-      await expect(page.getByText(/or continue with email/i)).toBeVisible();
-    }
-    // If count is 0, social auth is disabled — that's valid too
+    await expect(page.getByRole('button', { name: /google/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /github/i })).toBeVisible();
+    await expect(page.getByText(/or continue with email/i)).toBeVisible();
   });
 
-  test('visual regression - light mode', async ({ page }, testInfo) => {
+  // Visual regression --------------------------------------------------------
+
+  test('visual regression — desktop light', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveScreenshot('login-light.png', { fullPage: true });
   });
 
-  test('visual regression - dark mode', async ({ page }, testInfo) => {
+  test('visual regression — desktop dark', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
     await enableDarkMode(page);
     await expect(page).toHaveScreenshot('login-dark.png', { fullPage: true });
+  });
+
+  test('visual regression — mobile', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-mobile', 'Mobile only');
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveScreenshot('login-mobile.png', { fullPage: true });
+  });
+
+  test('visual regression — tablet', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-tablet', 'Tablet only');
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveScreenshot('login-tablet.png', { fullPage: true });
   });
 });

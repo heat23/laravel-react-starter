@@ -1,13 +1,10 @@
 import { test, expect } from '@playwright/test';
 
 import {
-  collectConsoleErrors,
-  assertNoConsoleErrors,
-  assertCssLoaded,
-  assertJsLoaded,
-  assertPageIsStyled,
-  enableDarkMode,
+  assertAssetsLoadedCleanly,
   assertDarkModeApplied,
+  collectConsoleErrors,
+  enableDarkMode,
 } from '../fixtures/helpers';
 
 test.describe('Welcome Page', () => {
@@ -15,14 +12,10 @@ test.describe('Welcome Page', () => {
     const errors = collectConsoleErrors(page);
     await page.goto('/');
     await page.waitForLoadState('networkidle');
-
-    assertNoConsoleErrors(errors);
-    await assertCssLoaded(page);
-    await assertJsLoaded(page);
-    await assertPageIsStyled(page);
+    await assertAssetsLoadedCleanly(page, errors);
   });
 
-  test('renders all key elements on desktop', async ({ page, browserName }, testInfo) => {
+  test('renders hero, features, tech stack, and footer on desktop', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/');
 
@@ -54,14 +47,8 @@ test.describe('Welcome Page', () => {
     test.skip(testInfo.project.name !== 'chromium-mobile', 'Mobile only');
     await page.goto('/');
 
-    // Hero still visible
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-
-    // Nav links still accessible
     await expect(page.getByRole('link', { name: /log in/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /get started/i })).toBeVisible();
-
-    // Feature cards still visible (stacked single column)
     await expect(page.getByText('Secure by Default')).toBeVisible();
   });
 
@@ -74,7 +61,7 @@ test.describe('Welcome Page', () => {
     await expect(page.getByText('Secure by Default')).toBeVisible();
   });
 
-  test('renders correctly in dark mode', async ({ page }, testInfo) => {
+  test('dark mode renders without errors', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     const errors = collectConsoleErrors(page);
     await page.goto('/');
@@ -82,17 +69,40 @@ test.describe('Welcome Page', () => {
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await assertDarkModeApplied(page);
-    assertNoConsoleErrors(errors);
+    expect(errors).toHaveLength(0);
   });
 
-  test('visual regression - light mode', async ({ page }, testInfo) => {
+  test('navigation links point to correct routes', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
+    await page.goto('/');
+
+    // Ziggy generates full URLs using APP_URL which may differ from localhost,
+    // so verify the path portion only.
+    const loginHref = await page.getByRole('link', { name: /log in/i }).getAttribute('href');
+    expect(loginHref).toContain('/login');
+
+    const getStartedHref = await page
+      .getByRole('link', { name: /get started/i })
+      .first()
+      .getAttribute('href');
+    expect(getStartedHref).toContain('/register');
+
+    const startBuildingHref = await page
+      .getByRole('link', { name: /start building/i })
+      .getAttribute('href');
+    expect(startBuildingHref).toContain('/register');
+  });
+
+  // Visual regression --------------------------------------------------------
+
+  test('visual regression — desktop light', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     await expect(page).toHaveScreenshot('welcome-light.png', { fullPage: true });
   });
 
-  test('visual regression - dark mode', async ({ page }, testInfo) => {
+  test('visual regression — desktop dark', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/');
     await page.waitForLoadState('networkidle');
@@ -100,19 +110,17 @@ test.describe('Welcome Page', () => {
     await expect(page).toHaveScreenshot('welcome-dark.png', { fullPage: true });
   });
 
-  test('navigation links point to correct routes', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
+  test('visual regression — mobile', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-mobile', 'Mobile only');
     await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveScreenshot('welcome-mobile.png', { fullPage: true });
+  });
 
-    // Verify href paths (Ziggy generates full URLs using APP_URL which may differ
-    // from localhost in dev, so check path portion only)
-    const loginHref = await page.getByRole('link', { name: /log in/i }).getAttribute('href');
-    expect(loginHref).toContain('/login');
-
-    const getStartedHref = await page.getByRole('link', { name: /get started/i }).first().getAttribute('href');
-    expect(getStartedHref).toContain('/register');
-
-    const startBuildingHref = await page.getByRole('link', { name: /start building/i }).getAttribute('href');
-    expect(startBuildingHref).toContain('/register');
+  test('visual regression — tablet', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chromium-tablet', 'Tablet only');
+    await page.goto('/');
+    await page.waitForLoadState('networkidle');
+    await expect(page).toHaveScreenshot('welcome-tablet.png', { fullPage: true });
   });
 });

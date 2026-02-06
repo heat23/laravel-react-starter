@@ -1,40 +1,50 @@
 import { type Page, expect } from '@playwright/test';
 
+// ---------------------------------------------------------------------------
+// Dark mode
+// ---------------------------------------------------------------------------
+
 /**
  * Enable dark mode by adding .dark class to <html>, matching ThemeProvider behavior.
+ * Waits for the CSS custom property to propagate so assertions are reliable.
  */
 export async function enableDarkMode(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    document.documentElement.classList.add('dark');
-  });
-  // Allow CSS transitions to complete
-  await page.waitForTimeout(300);
+  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  await page.waitForFunction(
+    () =>
+      document.documentElement.classList.contains('dark') &&
+      window.getComputedStyle(document.body).backgroundColor !== 'rgb(255, 255, 255)',
+    { timeout: 3000 },
+  );
 }
 
 /**
- * Enable light mode by removing .dark class from <html>.
+ * Assert dark mode is active and visually applied.
  */
-export async function enableLightMode(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    document.documentElement.classList.remove('dark');
-  });
-  await page.waitForTimeout(300);
+export async function assertDarkModeApplied(page: Page): Promise<void> {
+  const isDark = await page.evaluate(() => document.documentElement.classList.contains('dark'));
+  expect(isDark).toBe(true);
+
+  const bgColor = await page.evaluate(() =>
+    window.getComputedStyle(document.body).backgroundColor,
+  );
+  expect(bgColor, 'Dark mode background should not be white').not.toBe('rgb(255, 255, 255)');
 }
+
+// ---------------------------------------------------------------------------
+// Console errors
+// ---------------------------------------------------------------------------
 
 /**
  * Start collecting console errors. Call before navigation.
- * Returns an array that will be populated with error messages.
+ * Returns an array that accumulates error messages from console and uncaught exceptions.
  */
 export function collectConsoleErrors(page: Page): string[] {
   const errors: string[] = [];
   page.on('console', (msg) => {
-    if (msg.type() === 'error') {
-      errors.push(msg.text());
-    }
+    if (msg.type() === 'error') errors.push(msg.text());
   });
-  page.on('pageerror', (err) => {
-    errors.push(err.message);
-  });
+  page.on('pageerror', (err) => errors.push(err.message));
   return errors;
 }
 
@@ -45,58 +55,79 @@ export function assertNoConsoleErrors(errors: string[]): void {
   expect(errors, `Console errors found: ${errors.join(', ')}`).toHaveLength(0);
 }
 
+// ---------------------------------------------------------------------------
+// Asset loading
+// ---------------------------------------------------------------------------
+
 /**
- * Assert that CSS stylesheets loaded (at least one <link rel="stylesheet"> or <style> tag).
+ * Assert that Vite-built CSS loaded (checks for manifest-hashed asset pattern).
  */
 export async function assertCssLoaded(page: Page): Promise<void> {
-  const styleCount = await page.evaluate(() => {
-    const links = document.querySelectorAll('link[rel="stylesheet"]');
-    const styles = document.querySelectorAll('style');
-    return links.length + styles.length;
+  const cssHref = await page.evaluate(() => {
+    const link = document.querySelector('link[rel="stylesheet"][href*="/build/assets/"]');
+    return link?.getAttribute('href') ?? null;
   });
-  expect(styleCount).toBeGreaterThan(0);
+  expect(cssHref, 'No Vite CSS bundle found matching /build/assets/*.css').toBeTruthy();
 }
 
 /**
- * Assert that JS bundles loaded (at least one <script> with src).
+ * Assert that Vite-built JS loaded (checks for manifest-hashed asset pattern).
  */
 export async function assertJsLoaded(page: Page): Promise<void> {
-  const scriptCount = await page.evaluate(() => {
-    return document.querySelectorAll('script[src]').length;
+  const jsSrc = await page.evaluate(() => {
+    const script = document.querySelector('script[src*="/build/assets/"]');
+    return script?.getAttribute('src') ?? null;
   });
-  expect(scriptCount).toBeGreaterThan(0);
+  expect(jsSrc, 'No Vite JS bundle found matching /build/assets/*.js').toBeTruthy();
 }
 
 /**
- * Assert the page is styled (not showing browser-default unstyled content).
- * Checks that body background is not plain white (#ffffff / rgb(255, 255, 255)).
+ * Assert the page is styled (Tailwind classes applied, not browser-default rendering).
  */
 export async function assertPageIsStyled(page: Page): Promise<void> {
-  const bgColor = await page.evaluate(() => {
-    return window.getComputedStyle(document.body).backgroundColor;
-  });
-  // A styled page should have some background set via CSS variables.
-  // Browser default is typically rgb(255, 255, 255) — but our theme may also be white-ish.
-  // Instead, verify a Tailwind-generated class is actually applied somewhere.
-  const hasTailwindClasses = await page.evaluate(() => {
-    return document.querySelector('[class*="min-h-screen"]') !== null;
-  });
-  expect(hasTailwindClasses).toBe(true);
+  const hasTailwindClasses = await page.evaluate(
+    () => document.querySelector('[class*="min-h-screen"]') !== null,
+  );
+  expect(
+    hasTailwindClasses,
+    'No Tailwind min-h-screen class found — page may be unstyled',
+  ).toBe(true);
 }
 
 /**
- * Assert dark mode changed the background color from light mode.
+ * Run the standard asset loading suite: no console errors, CSS/JS loaded, page styled.
+ * Call after page.goto() and page.waitForLoadState('networkidle').
  */
-export async function assertDarkModeApplied(page: Page): Promise<void> {
-  const isDark = await page.evaluate(() => {
-    return document.documentElement.classList.contains('dark');
-  });
-  expect(isDark).toBe(true);
+export async function assertAssetsLoadedCleanly(
+  page: Page,
+  errors: string[],
+): Promise<void> {
+  assertNoConsoleErrors(errors);
+  await assertCssLoaded(page);
+  await assertJsLoaded(page);
+  await assertPageIsStyled(page);
+}
 
-  // Verify the computed background color differs from pure white
-  const bgColor = await page.evaluate(() => {
-    return window.getComputedStyle(document.body).backgroundColor;
-  });
-  // In dark mode, background should not be white
-  expect(bgColor).not.toBe('rgb(255, 255, 255)');
+// ---------------------------------------------------------------------------
+// Layout (AuthLayout responsive checks)
+// ---------------------------------------------------------------------------
+
+/**
+ * Assert the desktop AuthLayout is rendered (left branded panel visible).
+ */
+export async function assertDesktopAuthLayout(page: Page): Promise<void> {
+  const leftPanel = page.locator('.hidden.lg\\:flex').first();
+  await expect(leftPanel).toBeVisible();
+}
+
+/**
+ * Assert the mobile/tablet AuthLayout is rendered (mobile header visible, left panel hidden).
+ * AuthLayout breakpoint is lg (1024px), so both mobile (375px) and tablet (768px) see this.
+ */
+export async function assertMobileAuthLayout(page: Page): Promise<void> {
+  const mobileHeader = page.locator('header.lg\\:hidden');
+  await expect(mobileHeader).toBeVisible();
+
+  const leftPanel = page.locator('.hidden.lg\\:flex').first();
+  await expect(leftPanel).not.toBeVisible();
 }
