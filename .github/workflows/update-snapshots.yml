@@ -3,6 +3,10 @@ name: Update E2E Snapshots
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+  pull-requests: write
+
 env:
   PHP_VERSION: "8.4"
   NODE_VERSION: "22"
