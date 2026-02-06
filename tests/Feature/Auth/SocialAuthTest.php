@@ -31,7 +31,7 @@ class SocialAuthTest extends TestCase
         $this->routesRegistered = \Route::has('social.disconnect');
 
         // Create social_accounts table if it doesn't exist
-        if (!\Schema::hasTable('social_accounts')) {
+        if (! \Schema::hasTable('social_accounts')) {
             \Schema::create('social_accounts', function ($table) {
                 $table->id();
                 $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -58,7 +58,7 @@ class SocialAuthTest extends TestCase
      */
     protected function skipIfRoutesNotRegistered(): void
     {
-        if (!$this->routesRegistered) {
+        if (! $this->routesRegistered) {
             $this->markTestSkipped('Social auth routes are not registered. Enable FEATURE_SOCIAL_AUTH=true.');
         }
     }

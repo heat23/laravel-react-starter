@@ -19,7 +19,7 @@ class UserSettingTest extends TestCase
         // Enable user_settings feature and create table if it doesn't exist
         config(['features.user_settings.enabled' => true]);
 
-        if (!\Schema::hasTable('user_settings')) {
+        if (! \Schema::hasTable('user_settings')) {
             \Schema::create('user_settings', function ($table) {
                 $table->id();
                 $table->foreignId('user_id')->constrained()->cascadeOnDelete();

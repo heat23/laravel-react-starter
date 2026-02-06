@@ -61,7 +61,7 @@ class SocialAccount extends Model
      */
     public function isTokenExpired(): bool
     {
-        if (!$this->token_expires_at) {
+        if (! $this->token_expires_at) {
             return false;
         }
 

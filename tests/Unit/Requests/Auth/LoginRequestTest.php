@@ -9,7 +9,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class LoginRequestTest extends TestCase
@@ -361,7 +360,7 @@ class LoginRequestTest extends TestCase
 
     public function test_throttle_key_uses_lowercase_email(): void
     {
-        $request = new LoginRequest();
+        $request = new LoginRequest;
         $request->merge(['email' => 'TEST@EXAMPLE.COM']);
         $request->setUserResolver(fn () => null);
 
@@ -376,7 +375,7 @@ class LoginRequestTest extends TestCase
 
     public function test_throttle_key_includes_ip_address(): void
     {
-        $request = new LoginRequest();
+        $request = new LoginRequest;
         $request->merge(['email' => 'test@example.com']);
         $request->setUserResolver(fn () => null);
         $request->server->set('REMOTE_ADDR', '192.168.1.100');
@@ -388,7 +387,7 @@ class LoginRequestTest extends TestCase
 
     public function test_throttle_key_format_is_email_pipe_ip(): void
     {
-        $request = new LoginRequest();
+        $request = new LoginRequest;
         $request->merge(['email' => 'test@example.com']);
         $request->setUserResolver(fn () => null);
         $request->server->set('REMOTE_ADDR', '127.0.0.1');
@@ -400,7 +399,7 @@ class LoginRequestTest extends TestCase
 
     public function test_throttle_key_handles_unicode_email(): void
     {
-        $request = new LoginRequest();
+        $request = new LoginRequest;
         $request->merge(['email' => 'tëst@example.com']);
         $request->setUserResolver(fn () => null);
         $request->server->set('REMOTE_ADDR', '127.0.0.1');
@@ -413,7 +412,7 @@ class LoginRequestTest extends TestCase
 
     public function test_throttle_key_handles_mixed_case_unicode(): void
     {
-        $request = new LoginRequest();
+        $request = new LoginRequest;
         $request->merge(['email' => 'TËST@EXAMPLE.COM']);
         $request->setUserResolver(fn () => null);
         $request->server->set('REMOTE_ADDR', '127.0.0.1');
@@ -460,7 +459,7 @@ class LoginRequestTest extends TestCase
 
     public function test_login_with_very_long_email_fails(): void
     {
-        $longEmail = str_repeat('a', 300) . '@example.com';
+        $longEmail = str_repeat('a', 300).'@example.com';
 
         $response = $this->post('/login', [
             'email' => $longEmail,

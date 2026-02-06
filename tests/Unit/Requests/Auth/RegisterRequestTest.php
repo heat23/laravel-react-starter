@@ -164,7 +164,7 @@ class RegisterRequestTest extends TestCase
 
     public function test_rules_email_max_length_255(): void
     {
-        $longEmail = str_repeat('a', 250) . '@example.com';
+        $longEmail = str_repeat('a', 250).'@example.com';
 
         $response = $this->post('/register', [
             'name' => 'Test User',

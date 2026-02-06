@@ -15,7 +15,7 @@ class TokenDeletionTest extends TestCase
         parent::setUp();
 
         // Skip if API tokens feature is disabled
-        if (!config('features.api_tokens.enabled', true)) {
+        if (! config('features.api_tokens.enabled', true)) {
             $this->markTestSkipped('API tokens feature is disabled.');
         }
     }

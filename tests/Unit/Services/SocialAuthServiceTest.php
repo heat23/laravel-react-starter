@@ -25,7 +25,7 @@ class SocialAuthServiceTest extends TestCase
         config(['features.social_auth.enabled' => true]);
 
         // Create the social_accounts table if it doesn't exist
-        if (!\Schema::hasTable('social_accounts')) {
+        if (! \Schema::hasTable('social_accounts')) {
             \Schema::create('social_accounts', function ($table) {
                 $table->id();
                 $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -40,7 +40,7 @@ class SocialAuthServiceTest extends TestCase
             });
         }
 
-        $this->service = new SocialAuthService();
+        $this->service = new SocialAuthService;
     }
 
     protected function tearDown(): void

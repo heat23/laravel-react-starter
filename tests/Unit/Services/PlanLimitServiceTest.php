@@ -17,7 +17,7 @@ class PlanLimitServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new PlanLimitService();
+        $this->service = new PlanLimitService;
     }
 
     // ============================================

@@ -16,7 +16,7 @@ class SessionDataMigrationServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->service = new SessionDataMigrationService();
+        $this->service = new SessionDataMigrationService;
     }
 
     // ============================================
@@ -182,7 +182,7 @@ class SessionDataMigrationServiceTest extends TestCase
 
     public function test_service_can_be_instantiated(): void
     {
-        $service = new SessionDataMigrationService();
+        $service = new SessionDataMigrationService;
 
         $this->assertInstanceOf(SessionDataMigrationService::class, $service);
     }

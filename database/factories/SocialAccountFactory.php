@@ -37,7 +37,7 @@ class SocialAccountFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'provider' => 'google',
-            'provider_id' => 'google-' . $this->faker->uuid(),
+            'provider_id' => 'google-'.$this->faker->uuid(),
         ]);
     }
 
@@ -48,7 +48,7 @@ class SocialAccountFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'provider' => 'github',
-            'provider_id' => 'github-' . $this->faker->numberBetween(1000000, 9999999),
+            'provider_id' => 'github-'.$this->faker->numberBetween(1000000, 9999999),
         ]);
     }
 

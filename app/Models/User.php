@@ -99,9 +99,10 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getSetting(string $key, mixed $default = null): mixed
     {
-        if (!class_exists(UserSetting::class)) {
+        if (! class_exists(UserSetting::class)) {
             return $default;
         }
+
         return UserSetting::getValue($this->id, $key, $default);
     }
 
@@ -110,9 +111,10 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function setSetting(string $key, mixed $value): mixed
     {
-        if (!class_exists(UserSetting::class)) {
+        if (! class_exists(UserSetting::class)) {
             return null;
         }
+
         return UserSetting::setValue($this->id, $key, $value);
     }
 }

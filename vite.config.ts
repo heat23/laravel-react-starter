@@ -14,7 +14,7 @@ const vendorChunkGroups = [
   { name: "ui-radix", match: (pkg: string) => pkg.startsWith("@radix-ui/") },
   { name: "ui-icons", match: (pkg: string) => pkg === "lucide-react" },
   { name: "dates", match: (pkg: string) => pkg === "date-fns" },
-  { name: "forms", match: (pkg: string) => pkg === "react-hook-form" || pkg === "@hookform/resolvers" || pkg === "zod" },
+  { name: "forms", match: (pkg: string) => pkg === "zod" },
   {
     name: "ui-widgets",
     match: (pkg: string) =>

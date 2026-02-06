@@ -51,7 +51,7 @@ class UserSetting extends Model
                 ->where('key', $key)
                 ->first();
 
-            if (!$setting) {
+            if (! $setting) {
                 return $default;
             }
 

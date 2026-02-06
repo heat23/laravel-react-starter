@@ -18,7 +18,7 @@ class EmailVerificationTest extends TestCase
         parent::setUp();
 
         // Only run these tests if email verification is enabled
-        if (!config('features.email_verification.enabled', true)) {
+        if (! config('features.email_verification.enabled', true)) {
             $this->markTestSkipped('Email verification feature is disabled.');
         }
     }

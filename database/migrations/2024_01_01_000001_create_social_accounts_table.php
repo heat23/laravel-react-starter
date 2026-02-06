@@ -19,7 +19,7 @@ return new class extends Migration
     public function up(): void
     {
         // Only create table if social auth feature is enabled
-        if (!config('features.social_auth.enabled', false)) {
+        if (! config('features.social_auth.enabled', false)) {
             return;
         }
 

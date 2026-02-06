@@ -21,7 +21,7 @@ class UserTest extends TestCase
         config(['features.social_auth.enabled' => true]);
         config(['features.user_settings.enabled' => true]);
 
-        if (!\Schema::hasTable('social_accounts')) {
+        if (! \Schema::hasTable('social_accounts')) {
             \Schema::create('social_accounts', function ($table) {
                 $table->id();
                 $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -36,7 +36,7 @@ class UserTest extends TestCase
             });
         }
 
-        if (!\Schema::hasTable('user_settings')) {
+        if (! \Schema::hasTable('user_settings')) {
             \Schema::create('user_settings', function ($table) {
                 $table->id();
                 $table->foreignId('user_id')->constrained()->cascadeOnDelete();

@@ -3,6 +3,8 @@
   "resources/js/Components/InputLabel.tsx": [],
   "resources/js/Components/PrimaryButton.tsx": [],
   "resources/js/Components/TextInput.tsx": [],
+  "resources/js/Components/auth/PasswordStrengthIndicator.tsx": [],
+  "resources/js/Components/auth/SocialAuthButtons.tsx": [],
   "resources/js/Components/branding/Logo.tsx": [],
   "resources/js/Components/layout/PageHeader.tsx": [],
   "resources/js/Components/legal/LegalContentModal.tsx": [],

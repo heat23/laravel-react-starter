@@ -16,8 +16,7 @@ class RememberMeTest extends TestCase
 
         $response = $this->get(route('login'));
 
-        $response->assertInertia(fn ($page) =>
-            $page->where('rememberDays', 14)
+        $response->assertInertia(fn ($page) => $page->where('rememberDays', 14)
         );
     }
 
@@ -26,8 +25,7 @@ class RememberMeTest extends TestCase
         // Use default config (30 days)
         $response = $this->get(route('login'));
 
-        $response->assertInertia(fn ($page) =>
-            $page->where('rememberDays', 30)
+        $response->assertInertia(fn ($page) => $page->where('rememberDays', 30)
         );
     }
 
@@ -37,8 +35,7 @@ class RememberMeTest extends TestCase
 
         $response = $this->get(route('register'));
 
-        $response->assertInertia(fn ($page) =>
-            $page->where('rememberDays', 14)
+        $response->assertInertia(fn ($page) => $page->where('rememberDays', 14)
         );
     }
 
@@ -47,8 +44,7 @@ class RememberMeTest extends TestCase
         // Use default config (30 days)
         $response = $this->get(route('register'));
 
-        $response->assertInertia(fn ($page) =>
-            $page->where('rememberDays', 30)
+        $response->assertInertia(fn ($page) => $page->where('rememberDays', 30)
         );
     }
 

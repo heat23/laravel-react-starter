@@ -16,7 +16,7 @@ class UserPolicyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->policy = new UserPolicy();
+        $this->policy = new UserPolicy;
     }
 
     public function test_user_can_update_their_own_profile(): void

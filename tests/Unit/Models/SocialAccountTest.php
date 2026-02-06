@@ -19,7 +19,7 @@ class SocialAccountTest extends TestCase
         // Enable social auth feature for tests and create the table if it doesn't exist
         config(['features.social_auth.enabled' => true]);
 
-        if (!\Schema::hasTable('social_accounts')) {
+        if (! \Schema::hasTable('social_accounts')) {
             \Schema::create('social_accounts', function ($table) {
                 $table->id();
                 $table->foreignId('user_id')->constrained()->cascadeOnDelete();
