@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class CreateTokenRequest extends FormRequest
 {
@@ -18,9 +19,22 @@ class CreateTokenRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'abilities' => 'array',
-            'abilities.*' => 'string',
+            'abilities' => 'array|max:10',
+            'abilities.*' => ['string', Rule::in(['read', 'write', 'delete'])],
             'expires_at' => 'nullable|date|after:now',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'abilities.*.in' => 'Invalid permission. Allowed values: read, write, delete.',
+            'abilities.max' => 'You can assign up to 10 permissions per token.',
+            'name.required' => 'Please provide a name for this token.',
+            'expires_at.after' => 'Expiration date must be in the future.',
         ];
     }
 }

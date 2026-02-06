@@ -1,4 +1,3 @@
-import { Transition } from '@headlessui/react';
 import { CheckCircle2 } from 'lucide-react';
 import { z } from 'zod';
 
@@ -7,9 +6,9 @@ import { FormEventHandler } from 'react';
 import { Link, useForm, usePage } from '@inertiajs/react';
 
 import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { LoadingButton } from '@/Components/ui/loading-button';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import type { User } from '@/types';
@@ -58,12 +57,11 @@ export default function UpdateProfileInformationForm({
     return (
         <section className={className}>
             <form onSubmit={submit} className="space-y-6">
-                <div>
-                    <InputLabel htmlFor="name" value="Name" />
+                <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
 
-                    <TextInput
+                    <Input
                         id="name"
-                        className="mt-1 block w-full"
                         value={data.name}
                         onChange={(e) => {
                             setData('name', e.target.value);
@@ -71,20 +69,21 @@ export default function UpdateProfileInformationForm({
                         }}
                         onBlur={(e) => validateField('name', e.target.value)}
                         required
-                        isFocused
+                        autoFocus
                         autoComplete="name"
+                        aria-describedby={(clientErrors.name || errors.name) ? "profile-name-error" : undefined}
+                        aria-invalid={!!(clientErrors.name || errors.name)}
                     />
 
-                    <InputError className="mt-2" message={clientErrors.name || errors.name} />
+                    <InputError id="profile-name-error" className="mt-2" message={clientErrors.name || errors.name} />
                 </div>
 
-                <div>
-                    <InputLabel htmlFor="email" value="Email" />
+                <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
 
-                    <TextInput
+                    <Input
                         id="email"
                         type="email"
-                        className="mt-1 block w-full"
                         value={data.email}
                         onChange={(e) => {
                             setData('email', e.target.value);
@@ -93,9 +92,11 @@ export default function UpdateProfileInformationForm({
                         onBlur={(e) => validateField('email', e.target.value)}
                         required
                         autoComplete="username"
+                        aria-describedby={(clientErrors.email || errors.email) ? "profile-email-error" : undefined}
+                        aria-invalid={!!(clientErrors.email || errors.email)}
                     />
 
-                    <InputError className="mt-2" message={clientErrors.email || errors.email} />
+                    <InputError id="profile-email-error" className="mt-2" message={clientErrors.email || errors.email} />
                 </div>
 
                 {mustVerifyEmail && user.email_verified_at === null && (
@@ -106,7 +107,7 @@ export default function UpdateProfileInformationForm({
                                 href={route('verification.send')}
                                 method="post"
                                 as="button"
-                                className="rounded-md text-sm text-muted-foreground underline hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                                className="rounded-md text-sm text-muted-foreground underline hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             >
                                 Click here to re-send the verification email.
                             </Link>
@@ -122,20 +123,14 @@ export default function UpdateProfileInformationForm({
                 )}
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton disabled={processing}>Save Profile</PrimaryButton>
+                    <LoadingButton loading={processing} loadingText="Saving...">Save Profile</LoadingButton>
 
-                    <Transition
-                        show={recentlySuccessful}
-                        enter="transition ease-in-out"
-                        enterFrom="opacity-0"
-                        leave="transition ease-in-out"
-                        leaveTo="opacity-0"
-                    >
-                        <p className="text-sm text-success flex items-center gap-1.5">
+                    {recentlySuccessful && (
+                        <p className="text-sm text-success flex items-center gap-1.5 animate-fade-in">
                             <CheckCircle2 className="h-4 w-4" />
                             Changes saved successfully
                         </p>
-                    </Transition>
+                    )}
                 </div>
             </form>
         </section>

@@ -80,7 +80,7 @@ class SocialAuthController extends Controller
         $this->socialAuthService->linkSocialAccount($user, $socialUser, $provider);
 
         // Log the user in
-        Auth::login($user, remember: true);
+        Auth::login($user, remember: false);
 
         // Update last login timestamp
         if (method_exists($user, 'updateLastLogin')) {

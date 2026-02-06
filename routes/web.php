@@ -4,7 +4,9 @@ use App\Http\Controllers\Billing\BillingController;
 use App\Http\Controllers\Billing\PricingController;
 use App\Http\Controllers\ChartsController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Settings\ApiTokenPageController;
 use App\Http\Controllers\WelcomeController;
@@ -23,13 +25,24 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::get('/', WelcomeController::class)->name('welcome');
 
-// Dashboard (requires auth + verification if enabled)
+// Onboarding (route always registered; middleware checks feature flag)
+Route::middleware('auth')->group(function () {
+    Route::get('/onboarding', OnboardingController::class)->name('onboarding');
+});
+
+// Dashboard (requires auth + verification if enabled + onboarding middleware)
 Route::middleware(array_filter([
     'auth',
     config('features.email_verification.enabled', true) ? 'verified' : null,
+    'onboarding',
 ]))->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/dashboard/charts', [ChartsController::class, 'index'])->name('dashboard.charts');
+});
+
+// Export routes
+Route::middleware(['auth', 'throttle:10,1'])->group(function () {
+    Route::get('/export/users', [ExportController::class, 'users'])->name('export.users');
 });
 
 // Profile routes

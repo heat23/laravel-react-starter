@@ -15,6 +15,7 @@ class TokenController extends Controller
         $tokens = $request->user()->tokens()
             ->select(['id', 'tokenable_id', 'tokenable_type', 'name', 'abilities', 'last_used_at', 'expires_at', 'created_at'])
             ->orderByDesc('created_at')
+            ->take(50)
             ->get()
             ->map(fn ($token) => [
                 'id' => $token->id,

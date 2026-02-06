@@ -94,4 +94,17 @@ return [
     'notifications' => [
         'enabled' => env('FEATURE_NOTIFICATIONS', false),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Onboarding
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, new users are guided through a welcome wizard before
+    | accessing the dashboard. Stores completion timestamp in user_settings.
+    |
+    */
+    'onboarding' => [
+        'enabled' => env('FEATURE_ONBOARDING', false),
+    ],
 ];

@@ -1,10 +1,11 @@
-import { Home, User, Settings, LogOut, Menu } from "lucide-react";
+import { LogOut, Menu, Settings, User } from "lucide-react";
 
 import { PropsWithChildren } from "react";
 
 import { Link, usePage } from "@inertiajs/react";
 
 import { Logo, TextLogo } from "@/Components/branding/Logo";
+import { CommandPalette, useCommandPalette } from "@/Components/command-palette";
 import { NotificationDropdown } from "@/Components/notifications/NotificationDropdown";
 import { ThemeToggle } from "@/Components/theme";
 import { Button } from "@/Components/ui/button";
@@ -23,29 +24,23 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/Components/ui/sheet";
-
-interface PageProps {
-  auth: {
-    user: {
-      name: string;
-      email: string;
-    };
-  };
-  features: {
-    notifications: boolean;
-  };
-}
-
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/profile", label: "Profile", icon: User },
-];
+import { getVisibleNavItems } from "@/config/navigation";
+import type { PageProps } from "@/types";
 
 export default function DashboardLayout({ children }: PropsWithChildren) {
   const { auth, features } = usePage<PageProps>().props;
+  const navItems = getVisibleNavItems(features);
+  const { open, setOpen } = useCommandPalette();
 
   return (
     <div className="min-h-screen bg-background">
+      <a
+        href="#main-content"
+        className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:z-100 focus-visible:bg-background focus-visible:px-4 focus-visible:py-2 focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        Skip to main content
+      </a>
+
       {/* Desktop Navigation */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
@@ -85,16 +80,16 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    {auth.user.name.charAt(0).toUpperCase()}
+                    {auth.user!.name.charAt(0).toUpperCase()}
                   </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{auth.user.name}</p>
+                    <p className="text-sm font-medium leading-none">{auth.user!.name}</p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      {auth.user.email}
+                      {auth.user!.email}
                     </p>
                   </div>
                 </DropdownMenuLabel>
@@ -163,7 +158,9 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1">{children}</main>
+
+      <CommandPalette open={open} onOpenChange={setOpen} />
     </div>
   );
 }

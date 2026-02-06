@@ -33,7 +33,15 @@ export default function Welcome({ canLogin, canRegister }: WelcomeProps) {
 
   return (
     <>
-      <Head title="Welcome" />
+      <Head title="Welcome">
+        <meta name="description" content="A modern Laravel starter template with React, TypeScript, and Tailwind CSS. Everything you need to ship faster." />
+        <meta property="og:title" content={`${appName} - Build your next great application`} />
+        <meta property="og:description" content="A modern Laravel starter template with React, TypeScript, and Tailwind CSS. Everything you need to ship faster." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content={`${appName} - Build your next great application`} />
+        <meta name="twitter:description" content="A modern Laravel starter template with React, TypeScript, and Tailwind CSS. Everything you need to ship faster." />
+      </Head>
 
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
         {/* Navigation */}

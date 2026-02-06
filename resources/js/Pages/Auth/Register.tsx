@@ -16,7 +16,7 @@ import { z } from "zod";
 
 import { useState, FormEventHandler } from "react";
 
-import { Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm } from "@inertiajs/react";
 
 import { PasswordStrengthIndicator, type PasswordRequirement } from "@/Components/auth/PasswordStrengthIndicator";
 import { SocialAuthButtons } from "@/Components/auth/SocialAuthButtons";
@@ -60,7 +60,7 @@ const passwordRequirements: PasswordRequirement[] = [
   { id: "number", label: "One number", test: (p) => /\d/.test(p) },
 ];
 
-const _features: Feature[] = [
+const sellingPoints: Feature[] = [
   {
     icon: Shield,
     title: "Secure by Default",
@@ -129,7 +129,7 @@ export default function Register({ error, rememberDays = 30, features }: Registe
       </div>
 
       <div className="space-y-4">
-        {_features.map((feature, index) => (
+        {sellingPoints.map((feature, index) => (
           <div
             key={feature.title}
             className="flex items-start gap-4 animate-fade-in"
@@ -178,6 +178,7 @@ export default function Register({ error, rememberDays = 30, features }: Registe
 
   return (
     <AuthLayout leftContent={leftContent} leftFooter={leftFooter} footer={footer}>
+      <Head title="Create account" />
       <div className="space-y-8">
         {/* Header */}
         <div className="text-center lg:text-left">

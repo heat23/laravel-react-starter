@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { useState, FormEventHandler } from "react";
 
-import { Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm } from "@inertiajs/react";
 
 import { SocialAuthButtons } from "@/Components/auth/SocialAuthButtons";
 import InputError from "@/Components/InputError";
@@ -78,6 +78,7 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
 
   return (
     <AuthLayout footer={footer}>
+      <Head title="Log in" />
       <div className="space-y-8">
         {/* Header */}
         <div className="text-center lg:text-left">

@@ -17,14 +17,21 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->get('/user', function (Request $request) {
+    $user = $request->user();
+
+    return response()->json([
+        'id' => $user->id,
+        'name' => $user->name,
+        'email' => $user->email,
+        'email_verified_at' => $user->email_verified_at?->toISOString(),
+    ]);
 });
 
 // User settings API (for theme persistence, etc.)
 if (config('features.user_settings.enabled', true)) {
     Route::middleware('auth:sanctum')->group(function () {
-        Route::get('/settings', [UserSettingsController::class, 'index']);
+        Route::get('/settings', [UserSettingsController::class, 'index'])->middleware('throttle:60,1');
         Route::post('/settings', [UserSettingsController::class, 'store'])->middleware('throttle:30,1');
     });
 }

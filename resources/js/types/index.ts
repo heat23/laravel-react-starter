@@ -25,6 +25,7 @@ export interface Features {
   apiTokens: boolean;
   userSettings: boolean;
   notifications: boolean;
+  onboarding: boolean;
 }
 
 export interface PageProps {

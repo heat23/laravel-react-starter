@@ -23,20 +23,50 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->prepend(\App\Http\Middleware\RequestIdMiddleware::class);
 
+        $proxies = $_SERVER['TRUSTED_PROXIES'] ?? $_ENV['TRUSTED_PROXIES'] ?? '';
+        if ($proxies !== '') {
+            $proxyHeaders = $_SERVER['TRUSTED_PROXY_HEADERS'] ?? $_ENV['TRUSTED_PROXY_HEADERS'] ?? 'HEADER_X_FORWARDED_ALL';
+            $middleware->trustProxies(
+                at: $proxies === '*' ? '*' : array_map('trim', explode(',', $proxies)),
+                headers: match ($proxyHeaders) {
+                    'HEADER_FORWARDED' => Request::HEADER_FORWARDED,
+                    'HEADER_X_FORWARDED_AWS_ELB' => Request::HEADER_X_FORWARDED_AWS_ELB,
+                    default => Request::HEADER_X_FORWARDED_FOR
+                        | Request::HEADER_X_FORWARDED_HOST
+                        | Request::HEADER_X_FORWARDED_PORT
+                        | Request::HEADER_X_FORWARDED_PROTO,
+                }
+            );
+        }
+
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
+
+        $middleware->alias([
+            'onboarding' => \App\Http\Middleware\EnsureOnboardingCompleted::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // Add request context to all exception logs
-        $exceptions->context(fn () => [
-            'request_id' => request()?->attributes?->get('request_id'),
-            'user_id' => auth()->id(),
-            'url' => request()?->path(),
-            'method' => request()?->method(),
-        ]);
+        $exceptions->context(function () {
+            try {
+                $request = request();
+                $userId = auth()->id();
+            } catch (\Throwable) {
+                $request = null;
+                $userId = null;
+            }
+
+            return [
+                'request_id' => $request?->attributes?->get('request_id'),
+                'user_id' => $userId,
+                'url' => $request?->path(),
+                'method' => $request?->method(),
+            ];
+        });
 
         // JSON error envelope for API requests
         $exceptions->renderable(function (Throwable $e, Request $request) {

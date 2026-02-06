@@ -2,7 +2,7 @@ import { CheckCircle2, Mail, RefreshCw, Loader2 } from "lucide-react";
 
 import { useState } from "react";
 
-import { Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm } from "@inertiajs/react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
@@ -25,6 +25,7 @@ export default function VerifyEmail({ status }: VerifyEmailProps) {
 
   return (
     <AuthLayout>
+      <Head title="Verify email" />
       <div className="space-y-8">
         <div className="text-center lg:text-left space-y-3">
           <div className="mx-auto lg:mx-0 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">

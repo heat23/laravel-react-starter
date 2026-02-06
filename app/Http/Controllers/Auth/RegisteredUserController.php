@@ -11,6 +11,7 @@ use App\Services\SessionDataMigrationService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
@@ -56,11 +57,22 @@ class RegisteredUserController extends Controller
     {
         $validated = $request->validated();
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-        ]);
+        $user = DB::transaction(function () use ($validated) {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+            ]);
+
+            // Start trial for new users if enabled
+            if ($this->planLimitService->isTrialEnabled()) {
+                $this->planLimitService->startTrial($user);
+                $trialDays = config('plans.trial.days', 14);
+                session()->flash('trial_started', "Welcome! You have a {$trialDays}-day free Pro trial.");
+            }
+
+            return $user;
+        });
 
         try {
             event(new Registered($user));
@@ -69,14 +81,7 @@ class RegisteredUserController extends Controller
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
-            session()->flash('warning', 'Account created, but we could not send the verification email. Please try again later.');
-        }
-
-        // Start trial for new users if enabled
-        if ($this->planLimitService->isTrialEnabled()) {
-            $this->planLimitService->startTrial($user);
-            $trialDays = config('plans.trial.days', 14);
-            session()->flash('trial_started', "Welcome! You have a {$trialDays}-day free Pro trial.");
+            session()->flash('warning', 'Account created, but we could not send the verification email. You can resend it from your profile settings.');
         }
 
         // Migrate session data before logging in

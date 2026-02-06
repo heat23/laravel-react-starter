@@ -203,7 +203,7 @@ class SocialAuthServiceTest extends TestCase
         $this->assertEquals('github', $user->signup_source);
     }
 
-    public function test_find_or_create_generates_hashed_password(): void
+    public function test_find_or_create_sets_null_password_for_social_users(): void
     {
         $socialUser = $this->mockSocialUser([
             'id' => 'new-user',
@@ -212,11 +212,8 @@ class SocialAuthServiceTest extends TestCase
 
         $user = $this->service->findOrCreateUser($socialUser, 'google');
 
-        // Password should be set and hashed (not plaintext)
-        $this->assertNotNull($user->password);
-        $this->assertNotEquals('', $user->password);
-        // Hashed passwords start with $2y$ (bcrypt) or similar
-        $this->assertTrue(strlen($user->password) > 50);
+        // Social-only users should have null password (no random hash)
+        $this->assertNull($user->password);
     }
 
     public function test_find_or_create_does_not_modify_existing_user_data(): void

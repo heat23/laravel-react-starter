@@ -53,9 +53,14 @@ class HandleInertiaRequests extends Middleware
                 'apiTokens' => config('features.api_tokens.enabled', true),
                 'userSettings' => config('features.user_settings.enabled', true),
                 'notifications' => config('features.notifications.enabled', false),
+                'onboarding' => config('features.onboarding.enabled', false),
             ],
             'notifications_unread_count' => fn () => config('features.notifications.enabled', false) && $request->user()
-                ? $request->user()->unreadNotifications()->count()
+                ? cache()->remember(
+                    "user:{$request->user()->id}:unread_notif_count",
+                    60,
+                    fn () => $request->user()->unreadNotifications()->count()
+                )
                 : 0,
         ];
     }

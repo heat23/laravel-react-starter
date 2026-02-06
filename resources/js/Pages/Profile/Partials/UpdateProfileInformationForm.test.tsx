@@ -371,7 +371,7 @@ describe('UpdateProfileInformationForm', () => {
 
       render(<UpdateProfileInformationForm mustVerifyEmail={false} />);
 
-      const submitButton = screen.getByRole('button', { name: /save profile/i });
+      const submitButton = screen.getByRole('button', { name: /saving/i });
       expect(submitButton).toBeDisabled();
     });
   });

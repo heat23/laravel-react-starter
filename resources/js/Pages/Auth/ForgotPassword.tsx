@@ -2,7 +2,7 @@ import { Mail, CheckCircle2 } from "lucide-react";
 
 import { FormEventHandler } from "react";
 
-import { Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm } from "@inertiajs/react";
 
 import InputError from "@/Components/InputError";
 import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
@@ -27,6 +27,7 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
 
   return (
     <AuthLayout>
+      <Head title="Forgot password" />
       <div className="space-y-8">
         <div className="text-center lg:text-left">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">Forgot your password?</h2>

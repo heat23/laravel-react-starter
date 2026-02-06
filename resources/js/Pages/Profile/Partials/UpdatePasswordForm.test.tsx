@@ -203,7 +203,7 @@ describe('UpdatePasswordForm', () => {
 
       render(<UpdatePasswordForm />);
 
-      const submitButton = screen.getByRole('button', { name: /update password/i });
+      const submitButton = screen.getByRole('button', { name: /updating/i });
       expect(submitButton).toBeDisabled();
     });
   });

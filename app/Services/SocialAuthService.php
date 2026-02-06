@@ -4,8 +4,6 @@ namespace App\Services;
 
 use App\Models\SocialAccount;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Laravel\Socialite\Contracts\User as SocialUser;
 
 /**
@@ -45,7 +43,7 @@ class SocialAuthService
         return User::create([
             'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
             'email' => $socialUser->getEmail(),
-            'password' => Hash::make(Str::random(32)), // Random password for OAuth users
+            'password' => null, // No password for OAuth-only users
             'email_verified_at' => now(), // OAuth users are considered verified
             'signup_source' => $provider,
         ]);

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\DeleteAccountRequest;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\AuditService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,10 @@ use Inertia\Response;
 
 class ProfileController extends Controller
 {
+    public function __construct(
+        private AuditService $auditService
+    ) {}
+
     /**
      * Display the user's profile form.
      */
@@ -52,6 +57,11 @@ class ProfileController extends Controller
         $this->authorize('delete', $request->user());
 
         $user = $request->user();
+
+        $this->auditService->log('account.deleted', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+        ]);
 
         Auth::logout();
 

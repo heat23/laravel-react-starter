@@ -1,15 +1,13 @@
-import { Transition } from '@headlessui/react';
 import { CheckCircle2 } from 'lucide-react';
 
 import { FormEventHandler, useRef } from 'react';
 
 import { useForm } from '@inertiajs/react';
 
-
 import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { LoadingButton } from '@/Components/ui/loading-button';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 interface UpdatePasswordFormProps {
@@ -78,13 +76,10 @@ export default function UpdatePasswordForm({ className = '' }: UpdatePasswordFor
     return (
         <section className={className}>
             <form onSubmit={updatePassword} className="space-y-6">
-                <div>
-                    <InputLabel
-                        htmlFor="current_password"
-                        value="Current Password"
-                    />
+                <div className="space-y-2">
+                    <Label htmlFor="current_password">Current Password</Label>
 
-                    <TextInput
+                    <Input
                         id="current_password"
                         ref={currentPasswordInput}
                         value={data.current_password}
@@ -92,82 +87,77 @@ export default function UpdatePasswordForm({ className = '' }: UpdatePasswordFor
                             setData('current_password', e.target.value)
                         }
                         type="password"
-                        className="mt-1 block w-full"
                         autoComplete="current-password"
                         required
+                        aria-describedby={errors.current_password ? "password-current-error" : undefined}
+                        aria-invalid={!!errors.current_password}
                     />
 
                     <InputError
+                        id="password-current-error"
                         message={errors.current_password}
-                        className="mt-2"
                     />
                 </div>
 
-                <div>
-                    <InputLabel htmlFor="password" value="New Password" />
+                <div className="space-y-2">
+                    <Label htmlFor="password">New Password</Label>
 
-                    <TextInput
+                    <Input
                         id="password"
                         ref={passwordInput}
                         value={data.password}
                         onChange={(e) => setData('password', e.target.value)}
                         type="password"
-                        className="mt-1 block w-full"
                         autoComplete="new-password"
                         required
+                        aria-describedby={errors.password ? "password-new-error" : undefined}
+                        aria-invalid={!!errors.password}
                     />
 
-                    <InputError message={errors.password} className="mt-2" />
+                    <InputError id="password-new-error" message={errors.password} />
                 </div>
 
-                <div>
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Confirm Password"
-                    />
+                <div className="space-y-2">
+                    <Label htmlFor="password_confirmation">Confirm Password</Label>
 
-                    <TextInput
+                    <Input
                         id="password_confirmation"
                         value={data.password_confirmation}
                         onChange={(e) =>
                             setData('password_confirmation', e.target.value)
                         }
                         type="password"
-                        className="mt-1 block w-full"
                         autoComplete="new-password"
                         required
+                        aria-describedby={errors.password_confirmation ? "password-confirm-error" : undefined}
+                        aria-invalid={!!errors.password_confirmation}
                     />
 
                     <InputError
+                        id="password-confirm-error"
                         message={errors.password_confirmation}
-                        className="mt-2"
                     />
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <PrimaryButton
+                    <LoadingButton
+                        loading={processing}
+                        loadingText="Updating..."
                         disabled={
-                            processing ||
                             !data.current_password ||
                             !data.password ||
                             !data.password_confirmation
                         }
                     >
                         Update Password
-                    </PrimaryButton>
+                    </LoadingButton>
 
-                    <Transition
-                        show={recentlySuccessful}
-                        enter="transition ease-in-out"
-                        enterFrom="opacity-0"
-                        leave="transition ease-in-out"
-                        leaveTo="opacity-0"
-                    >
-                        <p className="text-sm text-success flex items-center gap-1.5">
+                    {recentlySuccessful && (
+                        <p className="text-sm text-success flex items-center gap-1.5 animate-fade-in">
                             <CheckCircle2 className="h-4 w-4" />
                             Changes saved successfully
                         </p>
-                    </Transition>
+                    )}
                 </div>
             </form>
         </section>
