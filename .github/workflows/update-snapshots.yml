@@ -85,15 +85,19 @@ jobs:
         env:
           CI: true
 
-      - name: Create Pull Request with updated snapshots
-        uses: peter-evans/create-pull-request@v7
-        with:
-          commit-message: "Update Playwright snapshots from CI environment"
-          title: "Update Playwright E2E snapshots"
-          body: |
-            Automated PR to update Playwright visual regression snapshots.
+      - name: Commit and push updated snapshots
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add tests/e2e/__screenshots__/
+          if git diff --staged --quiet; then
+            echo "No snapshot changes detected"
+            exit 0
+          fi
+          git commit -m "Update Playwright snapshots from CI environment
 
-            These snapshots were generated in the CI Linux environment to ensure
-            they match the rendering in GitHub Actions.
-          branch: update-playwright-snapshots
-          delete-branch: true
+          Regenerated visual regression snapshots in Linux CI environment
+          to match GitHub Actions rendering.
+
+          Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
+          git push
