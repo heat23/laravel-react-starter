@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   LucideIcon,
 } from "lucide-react";
+import { z } from "zod";
 
 import { useState, FormEventHandler } from "react";
 
@@ -29,7 +30,18 @@ import { Label } from "@/Components/ui/label";
 import { LoadingButton } from "@/Components/ui/loading-button";
 import { Progress } from "@/Components/ui/progress";
 import { Separator } from "@/Components/ui/separator";
+import { useFormValidation } from "@/hooks/useFormValidation";
 import AuthLayout from "@/Layouts/AuthLayout";
+
+const registerSchema = z.object({
+  name: z.string().min(1, "Name is required").max(255, "Name is too long"),
+  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+  password_confirmation: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.password === data.password_confirmation, {
+  message: "Passwords do not match",
+  path: ["password_confirmation"],
+});
 
 interface PasswordRequirement {
   id: string;
@@ -86,6 +98,7 @@ export default function Register({ error, rememberDays = 30, features }: Registe
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
+  const { errors: clientErrors, validateField, validateAll, clearError, setErrors: setClientErrors } = useFormValidation(registerSchema);
 
   // Helper for grammatically correct day/days
   const dayText = rememberDays === 1 ? 'day' : 'days';
@@ -103,6 +116,9 @@ export default function Register({ error, rememberDays = 30, features }: Registe
 
   const handleSubmit: FormEventHandler = (e) => {
     e.preventDefault();
+
+    if (!validateAll(data)) return;
+
     post(route("register"), {
       onFinish: () => reset("password", "password_confirmation"),
     });
@@ -258,15 +274,19 @@ export default function Register({ error, rememberDays = 30, features }: Registe
                 type="text"
                 placeholder="John Doe"
                 value={data.name}
-                onChange={(e) => setData("name", e.target.value)}
+                onChange={(e) => {
+                  setData("name", e.target.value);
+                  if (clientErrors.name) clearError("name");
+                }}
+                onBlur={(e) => validateField("name", e.target.value)}
                 className="pl-10"
                 autoComplete="name"
                 required
-                aria-describedby={errors.name ? "register-name-error" : undefined}
-                aria-invalid={!!errors.name}
+                aria-describedby={(clientErrors.name || errors.name) ? "register-name-error" : undefined}
+                aria-invalid={!!(clientErrors.name || errors.name)}
               />
             </div>
-            <InputError id="register-name-error" message={errors.name} className="text-xs" />
+            <InputError id="register-name-error" message={clientErrors.name || errors.name} className="text-xs" />
           </div>
 
           <div className="space-y-2">
@@ -278,15 +298,19 @@ export default function Register({ error, rememberDays = 30, features }: Registe
                 type="email"
                 placeholder="you@example.com"
                 value={data.email}
-                onChange={(e) => setData("email", e.target.value)}
+                onChange={(e) => {
+                  setData("email", e.target.value);
+                  if (clientErrors.email) clearError("email");
+                }}
+                onBlur={(e) => validateField("email", e.target.value)}
                 className="pl-10"
                 autoComplete="username"
                 required
-                aria-describedby={errors.email ? "register-email-error" : undefined}
-                aria-invalid={!!errors.email}
+                aria-describedby={(clientErrors.email || errors.email) ? "register-email-error" : undefined}
+                aria-invalid={!!(clientErrors.email || errors.email)}
               />
             </div>
-            <InputError id="register-email-error" message={errors.email} className="text-xs" />
+            <InputError id="register-email-error" message={clientErrors.email || errors.email} className="text-xs" />
           </div>
 
           <div className="space-y-3">
@@ -298,10 +322,16 @@ export default function Register({ error, rememberDays = 30, features }: Registe
                 type={showPassword ? "text" : "password"}
                 placeholder="Create a strong password"
                 value={data.password}
-                onChange={(e) => setData("password", e.target.value)}
+                onChange={(e) => {
+                  setData("password", e.target.value);
+                  if (clientErrors.password) clearError("password");
+                }}
+                onBlur={(e) => validateField("password", e.target.value)}
                 className="pl-10 pr-10"
                 autoComplete="new-password"
                 required
+                aria-describedby={(clientErrors.password || errors.password) ? "register-password-error" : undefined}
+                aria-invalid={!!(clientErrors.password || errors.password)}
               />
               <button
                 type="button"
@@ -359,7 +389,7 @@ export default function Register({ error, rememberDays = 30, features }: Registe
                 </div>
               </div>
             )}
-            <InputError id="register-password-error" message={errors.password} className="text-xs" />
+            <InputError id="register-password-error" message={clientErrors.password || errors.password} className="text-xs" />
           </div>
 
           <div className="space-y-2">
@@ -371,13 +401,28 @@ export default function Register({ error, rememberDays = 30, features }: Registe
                 type={showPassword ? "text" : "password"}
                 placeholder="Re-enter your password"
                 value={data.password_confirmation}
-                onChange={(e) => setData("password_confirmation", e.target.value)}
+                onChange={(e) => {
+                  setData("password_confirmation", e.target.value);
+                  if (clientErrors.password_confirmation) clearError("password_confirmation");
+                }}
+                onBlur={(e) => {
+                  const val = e.target.value;
+                  if (!val) {
+                    validateField("password_confirmation", val);
+                  } else if (val !== data.password) {
+                    setClientErrors(prev => ({ ...prev, password_confirmation: "Passwords do not match" }));
+                  } else {
+                    setClientErrors(prev => ({ ...prev, password_confirmation: undefined }));
+                  }
+                }}
                 className="pl-10 pr-10"
                 autoComplete="new-password"
                 required
+                aria-describedby={(clientErrors.password_confirmation || errors.password_confirmation) ? "register-password-confirmation-error" : undefined}
+                aria-invalid={!!(clientErrors.password_confirmation || errors.password_confirmation)}
               />
             </div>
-            <InputError id="register-password-confirmation-error" message={errors.password_confirmation} className="text-xs" />
+            <InputError id="register-password-confirmation-error" message={clientErrors.password_confirmation || errors.password_confirmation} className="text-xs" />
           </div>
 
           <div className="flex items-center space-x-2">

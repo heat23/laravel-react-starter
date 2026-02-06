@@ -8,6 +8,7 @@
 #   3. Build Verification - Ensures production build succeeds + TypeScript check
 #   4. Code Quality - PHP Pint linting (PR only)
 #   5. Security Audit - Composer and NPM vulnerability scanning
+#   6. E2E Tests - Playwright smoke tests against running Laravel server
 #
 # Performance optimizations:
 #   - PCOV for coverage (2-4x faster than Xdebug)
@@ -287,3 +288,99 @@ jobs:
       - name: Run npm audit
         run: npm audit --audit-level=high
         continue-on-error: true  # Don't fail on high vulns, just report
+
+  # ============================================================================
+  # E2E Tests (Playwright)
+  # ============================================================================
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: mbstring, dom, fileinfo, mysql
+          tools: composer:v2
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Setup Laravel environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Configure environment
+        run: |
+          echo "APP_URL=http://localhost:8000" >> .env
+          echo "DB_CONNECTION=mysql" >> .env
+          echo "DB_HOST=127.0.0.1" >> .env
+          echo "DB_PORT=3306" >> .env
+          echo "DB_DATABASE=testing" >> .env
+          echo "DB_USERNAME=root" >> .env
+          echo "DB_PASSWORD=password" >> .env
+
+      - name: Run database migrations
+        run: php artisan migrate --force
+
+      - name: Generate Ziggy routes
+        run: php artisan ziggy:generate
+
+      - name: Build production assets
+        run: npm run build
+
+      - name: Run E2E tests
+        run: npx playwright test
+        env:
+          CI: true
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

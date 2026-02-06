@@ -45,7 +45,7 @@ if (config('features.user_settings.enabled', true)) {
 
 // API token management (for users managing their own tokens)
 if (config('features.api_tokens.enabled', true)) {
-    Route::middleware('auth:sanctum')->prefix('tokens')->group(function () {
+    Route::middleware(['auth:sanctum', 'throttle:20,1'])->prefix('tokens')->group(function () {
         Route::get('/', function (Request $request) {
             return $request->user()->tokens()
                 ->select(['id', 'tokenable_id', 'tokenable_type', 'name', 'abilities', 'last_used_at', 'created_at'])

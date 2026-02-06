@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\RateLimiter;
 use Tests\TestCase;
 
 class ApiTokenControllerTest extends TestCase
@@ -14,6 +15,7 @@ class ApiTokenControllerTest extends TestCase
     {
         parent::setUp();
         config(['features.api_tokens.enabled' => true]);
+        RateLimiter::clear('127.0.0.1');
     }
 
     // ============================================
@@ -246,5 +248,30 @@ class ApiTokenControllerTest extends TestCase
         $response = $this->deleteJson('/api/tokens/1');
 
         $response->assertUnauthorized();
+    }
+
+    // ============================================
+    // Rate limiting tests
+    // ============================================
+
+    public function test_token_creation_is_rate_limited(): void
+    {
+        $user = User::factory()->create();
+
+        // Make 20 requests (the limit)
+        for ($i = 0; $i < 20; $i++) {
+            $this->actingAs($user, 'sanctum')
+                ->postJson('/api/tokens', [
+                    'name' => "Token {$i}",
+                ]);
+        }
+
+        // 21st request should be rate limited
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/tokens', [
+                'name' => 'One Too Many',
+            ]);
+
+        $response->assertStatus(429);
     }
 }

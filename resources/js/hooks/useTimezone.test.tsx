@@ -20,11 +20,6 @@ describe('useTimezone Hook', () => {
         }) as Intl.DateTimeFormat
     );
 
-    // Mock document.cookie for XSRF token
-    Object.defineProperty(document, 'cookie', {
-      writable: true,
-      value: 'XSRF-TOKEN=test-token-value',
-    });
   });
 
   afterEach(() => {
@@ -132,7 +127,7 @@ describe('useTimezone Hook', () => {
       });
 
       expect(capturedHeaders?.get('Content-Type')).toBe('application/json');
-      expect(capturedHeaders?.get('Accept')).toBe('application/json');
+      expect(capturedHeaders?.get('Accept')).toContain('application/json');
     });
 
     it('updates timezone state on success', async () => {
@@ -219,7 +214,7 @@ describe('useTimezone Hook', () => {
         await result.current.setTimezone('Europe/Paris');
       });
 
-      expect(result.current.error).toBe('Failed to save timezone');
+      expect(result.current.error).toBe('Unable to save timezone. Please try again.');
     });
 
     it('returns false on failure', async () => {
@@ -290,8 +285,7 @@ describe('useTimezone Hook', () => {
       expect(result.current.error).not.toBeNull();
     });
 
-    it('provides generic error message for non-Error exceptions', async () => {
-      // This tests the catch branch that handles non-Error objects
+    it('provides user-friendly error message for all failures', async () => {
       server.use(
         http.post('/api/settings', () => {
           return new HttpResponse(null, { status: 403 });
@@ -304,7 +298,7 @@ describe('useTimezone Hook', () => {
         await result.current.setTimezone('Europe/Paris');
       });
 
-      expect(result.current.error).toBe('Failed to save timezone');
+      expect(result.current.error).toBe('Unable to save timezone. Please try again.');
     });
   });
 

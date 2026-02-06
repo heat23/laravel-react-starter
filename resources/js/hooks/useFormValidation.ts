@@ -1,12 +1,22 @@
 import { z } from 'zod';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
-export function useFormValidation<T extends z.ZodObject<z.ZodRawShape>>(schema: T) {
+type SchemaWithShape = z.ZodObject<z.ZodRawShape> | z.ZodEffects<z.ZodObject<z.ZodRawShape>>;
+
+function getShape(schema: SchemaWithShape): z.ZodRawShape {
+    if (schema instanceof z.ZodEffects) {
+        return (schema._def.schema as z.ZodObject<z.ZodRawShape>).shape;
+    }
+    return schema.shape;
+}
+
+export function useFormValidation<T extends SchemaWithShape>(schema: T) {
     const [errors, setErrors] = useState<Partial<Record<keyof z.infer<T>, string>>>({});
+    const shape = useMemo(() => getShape(schema), [schema]);
 
     const validateField = useCallback((field: keyof z.infer<T>, value: unknown) => {
-        const fieldSchema = schema.shape[field as string];
+        const fieldSchema = shape[field as string];
         if (!fieldSchema) return;
 
         const result = (fieldSchema as z.ZodTypeAny).safeParse(value);
@@ -14,7 +24,7 @@ export function useFormValidation<T extends z.ZodObject<z.ZodRawShape>>(schema: 
             ...prev,
             [field]: result.success ? undefined : result.error.errors[0]?.message,
         }));
-    }, [schema]);
+    }, [shape]);
 
     const validateAll = useCallback((data: z.infer<T>) => {
         const result = schema.safeParse(data);

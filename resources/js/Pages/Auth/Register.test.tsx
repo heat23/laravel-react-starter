@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
@@ -328,6 +328,142 @@ describe('Register Page', () => {
       await user.click(screen.getByTestId('close-modal'));
 
       expect(screen.queryByTestId('legal-modal')).not.toBeInTheDocument();
+    });
+  });
+
+  // ============================================
+  // Client-side validation tests
+  // ============================================
+
+  describe('client-side validation', () => {
+    it('shows name required error on blur with empty name', async () => {
+      render(<Register />);
+
+      const nameInput = screen.getByLabelText(/full name/i);
+      await user.click(nameInput);
+      await user.tab(); // blur
+
+      await waitFor(() => {
+        expect(screen.getByText(/name is required/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows email required error on blur with empty email', async () => {
+      render(<Register />);
+
+      const emailInput = screen.getByLabelText(/email address/i);
+      await user.click(emailInput);
+      await user.tab(); // blur
+
+      await waitFor(() => {
+        expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows invalid email error for malformed email', async () => {
+      render(<Register />);
+
+      const emailInput = screen.getByLabelText(/email address/i) as HTMLInputElement;
+      emailInput.value = 'notanemail';
+      fireEvent.blur(emailInput);
+
+      await waitFor(() => {
+        expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows password min length error on blur with short password', async () => {
+      render(<Register />);
+
+      const passwordInput = screen.getByLabelText(/^password$/i) as HTMLInputElement;
+      passwordInput.value = 'short';
+      fireEvent.blur(passwordInput);
+
+      await waitFor(() => {
+        expect(screen.getByText(/password must be at least 8 characters/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows confirmation required error on blur with empty confirmation', async () => {
+      render(<Register />);
+
+      const confirmInput = screen.getByLabelText(/confirm password/i);
+      await user.click(confirmInput);
+      await user.tab(); // blur
+
+      await waitFor(() => {
+        expect(screen.getByText(/please confirm your password/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows mismatch error when confirmation differs from password on blur', async () => {
+      mockedUseForm.mockReturnValue({
+        data: { name: '', email: '', password: 'Password1', password_confirmation: '', remember: false },
+        setData: mockSetData,
+        post: mockPost,
+        processing: false,
+        errors: {},
+        reset: mockReset,
+      } as ReturnType<typeof useForm>);
+
+      render(<Register />);
+
+      const confirmInput = screen.getByLabelText(/confirm password/i) as HTMLInputElement;
+      confirmInput.value = 'DifferentPassword';
+      fireEvent.blur(confirmInput);
+
+      await waitFor(() => {
+        expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
+      });
+    });
+
+    it('clears name error when user starts typing', async () => {
+      render(<Register />);
+
+      const nameInput = screen.getByLabelText(/full name/i);
+
+      // Trigger error
+      await user.click(nameInput);
+      await user.tab();
+
+      await waitFor(() => {
+        expect(screen.getByText(/name is required/i)).toBeInTheDocument();
+      });
+
+      // Start typing to clear error
+      await user.click(nameInput);
+      await user.type(nameInput, 'J');
+
+      expect(mockSetData).toHaveBeenCalled();
+    });
+
+    it('prevents form submission with validation errors', async () => {
+      render(<Register />);
+
+      // Accept terms and set strong password so button is not disabled by those checks
+      mockedUseForm.mockReturnValue({
+        data: { name: '', email: '', password: 'Password1', password_confirmation: 'Password1', remember: false },
+        setData: mockSetData,
+        post: mockPost,
+        processing: false,
+        errors: {},
+        reset: mockReset,
+      } as ReturnType<typeof useForm>);
+
+      // Re-render with valid password (enables submit button)
+      const { unmount } = render(<Register />);
+
+      // Accept terms checkbox
+      const termsCheckbox = screen.getAllByRole('checkbox', { name: /i agree to the/i })[0];
+      await user.click(termsCheckbox);
+
+      const submitButton = screen.getAllByRole('button', { name: /create account/i })[0];
+      await user.click(submitButton);
+
+      // post should not be called due to empty name/email failing validation
+      expect(mockPost).not.toHaveBeenCalled();
+
+      unmount();
     });
   });
 

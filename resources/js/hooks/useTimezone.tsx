@@ -1,3 +1,5 @@
+import axios from "axios";
+
 import { useState, useCallback } from "react";
 
 interface UseTimezoneOptions {
@@ -15,34 +17,15 @@ export function useTimezone(options: UseTimezoneOptions = {}) {
     setError(null);
 
     try {
-      const response = await fetch("/api/settings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "X-XSRF-TOKEN": document.cookie
-            .split("; ")
-            .find((row) => row.startsWith("XSRF-TOKEN="))
-            ?.split("=")[1] || "",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          key: "timezone",
-          value: newTimezone,
-        }),
+      await axios.post("/api/settings", {
+        key: "timezone",
+        value: newTimezone,
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to save timezone");
-      }
 
       setTimezone(newTimezone);
       return true;
-    } catch (err) {
-      const message = err instanceof Error
-          ? err.message
-          : "Unable to save preference. Please try again.";
-      setError(message);
+    } catch {
+      setError("Unable to save timezone. Please try again.");
       return false;
     } finally {
       setIsSaving(false);
