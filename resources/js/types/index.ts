@@ -11,6 +11,7 @@ export interface User {
   email: string;
   email_verified_at: string | null;
   has_password: boolean;
+  two_factor_enabled?: boolean;
 }
 
 export interface Auth {
@@ -26,6 +27,9 @@ export interface Features {
   userSettings: boolean;
   notifications: boolean;
   onboarding: boolean;
+  apiDocs: boolean;
+  twoFactor: boolean;
+  webhooks: boolean;
 }
 
 export interface PageProps {
@@ -61,6 +65,29 @@ export interface AppNotification {
     icon?: string;
   };
   read_at: string | null;
+  created_at: string;
+}
+
+// Webhooks
+export interface WebhookEndpoint {
+  id: number;
+  url: string;
+  events: string[];
+  description: string | null;
+  active: boolean;
+  secret?: string;
+  deliveries_count?: number;
+  created_at: string;
+}
+
+export interface WebhookDelivery {
+  id: number;
+  uuid: string;
+  event_type: string;
+  status: 'pending' | 'success' | 'failed';
+  response_code: number | null;
+  attempts: number;
+  delivered_at: string | null;
   created_at: string;
 }
 

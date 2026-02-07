@@ -107,4 +107,45 @@ return [
     'onboarding' => [
         'enabled' => env('FEATURE_ONBOARDING', false),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | API Documentation (Scribe)
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, interactive API documentation is available at /docs.
+    | Requires: knuckleswtf/scribe dev dependency.
+    |
+    */
+    'api_docs' => [
+        'enabled' => env('FEATURE_API_DOCS', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Two-Factor Authentication
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, users can set up TOTP-based 2FA for their accounts.
+    | Requires: laragear/two-factor package.
+    |
+    */
+    'two_factor' => [
+        'enabled' => env('FEATURE_TWO_FACTOR', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Webhooks (Incoming & Outgoing)
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, supports incoming webhook processing (GitHub, Stripe)
+    | and outgoing webhook delivery to user-configured endpoints.
+    |
+    */
+    'webhooks' => [
+        'enabled' => env('FEATURE_WEBHOOKS', false),
+        'max_endpoints_free' => env('WEBHOOK_ENDPOINTS_MAX_FREE', 3),
+        'max_endpoints_pro' => env('WEBHOOK_ENDPOINTS_MAX_PRO', 20),
+    ],
 ];

@@ -1,4 +1,4 @@
-import { LogOut, Menu, Settings, User } from "lucide-react";
+import { FileText, LogOut, Menu, Radio, Settings, Shield, User } from "lucide-react";
 
 import { PropsWithChildren } from "react";
 
@@ -106,6 +106,30 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                     Settings
                   </Link>
                 </DropdownMenuItem>
+                {features.twoFactor && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings/security" className="cursor-pointer">
+                      <Shield className="mr-2 h-4 w-4" />
+                      Security
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {features.webhooks && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings/webhooks" className="cursor-pointer">
+                      <Radio className="mr-2 h-4 w-4" />
+                      Webhooks
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {features.apiDocs && (
+                  <DropdownMenuItem asChild>
+                    <a href="/docs" target="_blank" rel="noopener noreferrer" className="cursor-pointer">
+                      <FileText className="mr-2 h-4 w-4" />
+                      API Docs
+                    </a>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link

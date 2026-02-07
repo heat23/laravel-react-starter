@@ -2,7 +2,8 @@ import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
 import laravel from 'laravel-vite-plugin';
-import { defineConfig } from "vite";
+import { visualizer } from "rollup-plugin-visualizer";
+import { defineConfig, type PluginOption } from "vite";
 
 const getPackageName = (id: string): string | null => {
   const match = id.match(/node_modules\/([^/]+\/[^/]+|[^/]+)/);
@@ -58,6 +59,14 @@ export default defineConfig(({ mode }) => {
       }),
       react(),
       tailwindcss(),
+      process.env.ANALYZE === "true" &&
+        (visualizer({
+          filename: "stats.html",
+          template: "treemap",
+          gzipSize: true,
+          brotliSize: true,
+          open: !process.env.CI,
+        }) as PluginOption),
     ].filter(Boolean),
     resolve: {
       alias: {

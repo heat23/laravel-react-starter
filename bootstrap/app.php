@@ -45,8 +45,13 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        $middleware->api(append: [
+            \App\Http\Middleware\RateLimitHeaders::class,
+        ]);
+
         $middleware->alias([
             'onboarding' => \App\Http\Middleware\EnsureOnboardingCompleted::class,
+            'verify-webhook' => \App\Http\Middleware\VerifyWebhookSignature::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
@@ -108,11 +113,21 @@ return Application::configure(basePath: dirname(__DIR__))
                 default => 'Internal server error',
             };
 
-            return response()->json([
+            $response = response()->json([
                 'message' => $message,
                 'errors' => (object) [],
                 'status' => $status,
             ], $status);
+
+            if ($e instanceof ThrottleRequestsException) {
+                $retryAfter = $e->getHeaders()['Retry-After'] ?? null;
+                if ($retryAfter !== null) {
+                    $response->headers->set('Retry-After', (string) $retryAfter);
+                    $response->headers->set('X-RateLimit-Reset', (string) (time() + (int) $retryAfter));
+                }
+            }
+
+            return $response;
         });
 
         // Inertia error pages for web requests

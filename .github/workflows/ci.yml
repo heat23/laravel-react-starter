@@ -217,6 +217,10 @@ jobs:
           echo "Build artifacts verified:"
           ls -la public/build/
 
+      - name: Check bundle size
+        run: bash scripts/check-bundle-size.sh
+        continue-on-error: true
+
   # ============================================================================
   # Code Quality (runs on PR only)
   # ============================================================================

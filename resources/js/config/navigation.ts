@@ -1,4 +1,4 @@
-import { CreditCard, Home, Key, User } from "lucide-react";
+import { CreditCard, Home, Key, Radio, Shield, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import type { Features } from "@/types";
@@ -33,6 +33,20 @@ export const navigationGroups: NavGroup[] = [
         icon: Key,
         shortcut: "G T",
         featureFlag: "apiTokens",
+      },
+      {
+        href: "/settings/security",
+        label: "Security",
+        icon: Shield,
+        shortcut: "G S",
+        featureFlag: "twoFactor",
+      },
+      {
+        href: "/settings/webhooks",
+        label: "Webhooks",
+        icon: Radio,
+        shortcut: "G W",
+        featureFlag: "webhooks",
       },
       {
         href: "/billing",

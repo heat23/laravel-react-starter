@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laragear\TwoFactor\Contracts\TwoFactorAuthenticatable;
+use Laragear\TwoFactor\TwoFactorAuthentication;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -16,10 +18,10 @@ use Laravel\Sanctum\HasApiTokens;
  * To disable email verification, remove "implements MustVerifyEmail"
  * or check config('features.email_verification.enabled').
  */
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes, TwoFactorAuthentication;
 
     /**
      * The attributes that are mass assignable.
@@ -84,6 +86,15 @@ class User extends Authenticatable implements MustVerifyEmail
     public function socialAccounts(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(SocialAccount::class);
+    }
+
+    /**
+     * Get the webhook endpoints for the user.
+     * (Only used when webhooks feature is enabled)
+     */
+    public function webhookEndpoints(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(WebhookEndpoint::class);
     }
 
     /**

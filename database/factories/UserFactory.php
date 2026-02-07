@@ -41,4 +41,17 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    /**
+     * Indicate the user has two-factor authentication enabled.
+     */
+    public function withTwoFactor(): static
+    {
+        return $this->afterCreating(function (\App\Models\User $user) {
+            $user->createTwoFactorAuth();
+            // Directly enable to avoid caching the TOTP code as "used"
+            // (confirmTwoFactorAuth validates the code which marks it used in cache)
+            $user->enableTwoFactorAuth();
+        });
+    }
 }

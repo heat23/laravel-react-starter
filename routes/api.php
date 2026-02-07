@@ -3,6 +3,8 @@
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserSettingsController;
+use App\Http\Controllers\Api\WebhookEndpointController;
+use App\Http\Controllers\Webhook\IncomingWebhookController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -17,6 +19,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+/**
+ * @group Authentication
+ *
+ * @authenticated
+ *
+ * @response 200 {"id":1,"name":"John Doe","email":"john@example.com","email_verified_at":"2026-01-01T00:00:00.000000Z"}
+ */
 Route::middleware(['auth:sanctum', 'throttle:60,1'])->get('/user', function (Request $request) {
     $user = $request->user();
 
@@ -52,3 +61,21 @@ if (config('features.api_tokens.enabled', true)) {
         Route::delete('/{tokenId}', [TokenController::class, 'destroy']);
     });
 }
+
+// Webhook endpoint management (feature-gated in controller constructor)
+Route::middleware(['auth:sanctum', 'throttle:30,1'])->prefix('webhooks')->group(function () {
+    Route::get('/', [WebhookEndpointController::class, 'index']);
+    Route::post('/', [WebhookEndpointController::class, 'store']);
+    Route::get('/{endpointId}', [WebhookEndpointController::class, 'show']);
+    Route::patch('/{endpointId}', [WebhookEndpointController::class, 'update']);
+    Route::delete('/{endpointId}', [WebhookEndpointController::class, 'destroy']);
+    Route::get('/{endpointId}/deliveries', [WebhookEndpointController::class, 'deliveries']);
+    Route::post('/{endpointId}/test', [WebhookEndpointController::class, 'test']);
+});
+
+// Incoming webhooks (signature-verified, no auth required)
+Route::prefix('webhooks/incoming')->group(function () {
+    Route::post('/{provider}', [IncomingWebhookController::class, 'handle'])
+        ->middleware(['verify-webhook', 'throttle:120,1'])
+        ->name('webhooks.incoming');
+});

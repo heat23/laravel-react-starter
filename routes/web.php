@@ -8,7 +8,10 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SeoController;
 use App\Http\Controllers\Settings\ApiTokenPageController;
+use App\Http\Controllers\Settings\TwoFactorController;
+use App\Http\Controllers\Settings\WebhookPageController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -66,6 +69,33 @@ if (config('features.billing.enabled', false)) {
         Route::get('/pricing', PricingController::class)->name('pricing');
     });
 }
+
+// Two-Factor Authentication settings (feature-gated in controller constructor)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/settings/security', [TwoFactorController::class, 'index'])
+        ->name('settings.security');
+    Route::post('/settings/security/enable', [TwoFactorController::class, 'enable'])
+        ->name('two-factor.enable');
+    Route::post('/settings/security/confirm', [TwoFactorController::class, 'confirm'])
+        ->name('two-factor.confirm');
+    Route::delete('/settings/security/disable', [TwoFactorController::class, 'disable'])
+        ->name('two-factor.disable');
+    Route::get('/settings/security/recovery-codes', [TwoFactorController::class, 'recoveryCodes'])
+        ->middleware('throttle:5,1')
+        ->name('two-factor.recovery-codes');
+    Route::post('/settings/security/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes'])
+        ->middleware('throttle:5,1')
+        ->name('two-factor.recovery-codes.regenerate');
+});
+
+// Webhooks settings (feature-gated in controller constructor)
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/settings/webhooks', WebhookPageController::class)->name('settings.webhooks');
+});
+
+// SEO routes
+Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 
 // Health check (controller handles its own authorization)
 Route::get('/health', HealthCheckController::class)->name('health');

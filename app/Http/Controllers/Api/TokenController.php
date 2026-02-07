@@ -8,8 +8,22 @@ use DateTimeImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
+/**
+ * @group API Tokens
+ *
+ * Manage personal access tokens for API authentication.
+ */
 class TokenController extends Controller
 {
+    /**
+     * List tokens
+     *
+     * Get all API tokens for the authenticated user.
+     *
+     * @authenticated
+     *
+     * @response 200 [{"id":1,"name":"My Token","abilities":["*"],"last_used_at":null,"expires_at":null,"created_at":"2026-01-01T00:00:00.000000Z"}]
+     */
     public function index(Request $request): JsonResponse
     {
         $tokens = $request->user()->tokens()
@@ -29,6 +43,15 @@ class TokenController extends Controller
         return response()->json($tokens);
     }
 
+    /**
+     * Create token
+     *
+     * Create a new personal access token.
+     *
+     * @authenticated
+     *
+     * @response 200 {"token":"1|abc123...","id":1}
+     */
     public function store(CreateTokenRequest $request): JsonResponse
     {
         $expiresAt = $request->validated('expires_at')
@@ -47,6 +70,18 @@ class TokenController extends Controller
         ]);
     }
 
+    /**
+     * Delete token
+     *
+     * Revoke and delete a personal access token.
+     *
+     * @authenticated
+     *
+     * @urlParam tokenId integer required The token ID. Example: 1
+     *
+     * @response 200 {"success":true}
+     * @response 404 {"message":"Token not found."}
+     */
     public function destroy(Request $request, int $tokenId): JsonResponse
     {
         $deleted = $request->user()->tokens()->where('id', $tokenId)->delete();

@@ -45,6 +45,17 @@ class AuthenticatedSessionController extends Controller
     {
         $request->authenticate();
 
+        $user = Auth::user();
+
+        // Redirect to 2FA challenge if enabled for this user
+        if (config('features.two_factor.enabled') && $user->hasTwoFactorEnabled()) {
+            Auth::logout();
+            $request->session()->put('login.id', $user->id);
+            $request->session()->put('login.remember', $request->boolean('remember'));
+
+            return redirect()->route('two-factor.challenge');
+        }
+
         $request->session()->regenerate();
 
         $this->auditService->logLogin();

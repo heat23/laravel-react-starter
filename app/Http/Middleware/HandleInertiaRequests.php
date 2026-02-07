@@ -38,6 +38,9 @@ class HandleInertiaRequests extends Middleware
                     'email' => $request->user()->email,
                     'email_verified_at' => $request->user()->email_verified_at?->toISOString(),
                     'has_password' => $request->user()->hasPassword(),
+                    'two_factor_enabled' => config('features.two_factor.enabled', false)
+                        ? $request->user()->hasTwoFactorEnabled()
+                        : false,
                 ] : null,
             ],
             'flash' => [
@@ -54,6 +57,9 @@ class HandleInertiaRequests extends Middleware
                 'userSettings' => config('features.user_settings.enabled', true),
                 'notifications' => config('features.notifications.enabled', false),
                 'onboarding' => config('features.onboarding.enabled', false),
+                'apiDocs' => config('features.api_docs.enabled', false),
+                'twoFactor' => config('features.two_factor.enabled', false),
+                'webhooks' => config('features.webhooks.enabled', false),
             ],
             'notifications_unread_count' => fn () => config('features.notifications.enabled', false) && $request->user()
                 ? cache()->remember(
