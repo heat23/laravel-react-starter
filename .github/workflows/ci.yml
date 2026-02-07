@@ -380,6 +380,7 @@ jobs:
         run: npx playwright test
         env:
           CI: true
+          UPDATE_SNAPSHOTS: false
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -393,6 +394,8 @@ jobs:
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: screenshot-diffs
-          path: tests/e2e/__screenshots__/**/*-diff.png
+          name: screenshot-results
+          path: |
+            tests/e2e/results/**/*-actual.png
+            tests/e2e/results/**/*-diff.png
           retention-days: 7

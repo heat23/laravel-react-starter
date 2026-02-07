@@ -17,6 +17,8 @@ export default defineConfig({
       // Font rendering differs between macOS (local) and Linux (CI).
       // 6% ratio tolerates antialiasing, font rendering, and minor layout differences across platforms.
       maxDiffPixelRatio: 0.06,
+      // Allow small dimension differences due to platform-specific font rendering
+      maxDiffPixels: 100,
     },
   },
   use: {
@@ -26,13 +28,17 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium-desktop',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        deviceScaleFactor: 1,
+      },
     },
     {
       name: 'chromium-tablet',
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 768, height: 1024 },
+        deviceScaleFactor: 1,
       },
     },
     {
@@ -40,6 +46,9 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         viewport: { width: 375, height: 667 },
+        deviceScaleFactor: 2,
+        isMobile: true,
+        hasTouch: true,
       },
     },
   ],
