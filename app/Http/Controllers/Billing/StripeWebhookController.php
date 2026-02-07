@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Billing;
 
 use App\Services\AuditService;
+use App\Services\PlanLimitService;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Http\Controllers\WebhookController;
+use Laravel\Cashier\Subscription;
 use Symfony\Component\HttpFoundation\Response;
 
 class StripeWebhookController extends WebhookController
@@ -26,15 +28,41 @@ class StripeWebhookController extends WebhookController
         $response = parent::handleCustomerSubscriptionCreated($payload);
 
         $this->logWebhookEvent('subscription.created', $payload);
+        $this->invalidatePlanCache($payload);
 
         return $response;
     }
 
     protected function handleCustomerSubscriptionUpdated(array $payload): Response
     {
+        $subscriptionId = $payload['data']['object']['id'] ?? null;
+        $eventTimestamp = $payload['created'] ?? null;
+
+        // Reject out-of-order webhook events
+        if ($subscriptionId && $eventTimestamp) {
+            $subscription = Subscription::where('stripe_id', $subscriptionId)->first();
+
+            if ($subscription && $subscription->last_webhook_at && $eventTimestamp <= $subscription->last_webhook_at) {
+                Log::warning('Out-of-order webhook rejected', [
+                    'subscription_id' => $subscriptionId,
+                    'event_timestamp' => $eventTimestamp,
+                    'last_processed_at' => $subscription->last_webhook_at,
+                ]);
+
+                return $this->successMethod();
+            }
+        }
+
         $response = parent::handleCustomerSubscriptionUpdated($payload);
 
+        // Update sequence tracking after successful processing
+        if ($subscriptionId && $eventTimestamp) {
+            Subscription::where('stripe_id', $subscriptionId)
+                ->update(['last_webhook_at' => $eventTimestamp]);
+        }
+
         $this->logWebhookEvent('subscription.updated', $payload);
+        $this->invalidatePlanCache($payload);
 
         return $response;
     }
@@ -44,6 +72,7 @@ class StripeWebhookController extends WebhookController
         $response = parent::handleCustomerSubscriptionDeleted($payload);
 
         $this->logWebhookEvent('subscription.deleted', $payload);
+        $this->invalidatePlanCache($payload);
 
         return $response;
     }
@@ -66,6 +95,17 @@ class StripeWebhookController extends WebhookController
     {
         $this->logWebhookEvent('invoice.payment_failed', $payload);
 
+        $customerId = $payload['data']['object']['customer'] ?? null;
+        if ($customerId) {
+            $user = \App\Models\User::where('stripe_id', $customerId)->first();
+            if ($user) {
+                $user->notify(new \App\Notifications\PaymentFailedNotification(
+                    invoiceId: $payload['data']['object']['id'] ?? '',
+                    subscriptionId: $payload['data']['object']['subscription'] ?? '',
+                ));
+            }
+        }
+
         return $this->successMethod();
     }
 
@@ -81,6 +121,44 @@ class StripeWebhookController extends WebhookController
         $this->logWebhookEvent('customer.updated', $payload);
 
         return $this->successMethod();
+    }
+
+    protected function handleChargeRefunded(array $payload): Response
+    {
+        $this->logWebhookEvent('charge.refunded', $payload);
+
+        $customerId = $payload['data']['object']['customer'] ?? null;
+        if ($customerId) {
+            $user = \App\Models\User::where('stripe_id', $customerId)->first();
+            if ($user) {
+                $user->notify(new \App\Notifications\RefundProcessedNotification(
+                    chargeId: $payload['data']['object']['id'] ?? '',
+                    amountRefunded: $payload['data']['object']['amount_refunded'] ?? 0,
+                    currency: $payload['data']['object']['currency'] ?? 'usd',
+                    reason: $payload['data']['object']['refunds']['data'][0]['reason'] ?? null,
+                ));
+            }
+        }
+
+        return $this->successMethod();
+    }
+
+    private function invalidatePlanCache(array $payload): void
+    {
+        try {
+            $customerId = $payload['data']['object']['customer']
+                ?? $payload['data']['object']['id']
+                ?? null;
+
+            if ($customerId) {
+                $user = \App\Models\User::where('stripe_id', $customerId)->first();
+                if ($user) {
+                    app(PlanLimitService::class)->invalidateUserPlanCache($user);
+                }
+            }
+        } catch (\Throwable) {
+            // Cache invalidation should never break webhook processing
+        }
     }
 
     private function logWebhookEvent(string $action, array $payload): void

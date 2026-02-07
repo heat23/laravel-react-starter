@@ -74,3 +74,4 @@ lighthouse-report*
 # Bundle analysis
 stats.html
 .bundle-baseline.json
+.vibe-cache/

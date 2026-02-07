@@ -222,3 +222,99 @@ it('rejects webhook with expired timestamp', function () {
 
     $response->assertForbidden();
 });
+
+// ============================================
+// Webhook sequence validation
+// ============================================
+
+it('rejects out-of-order subscription updated webhook', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_seq_test']);
+    $subscription = createSubscription($user, [
+        'stripe_id' => 'sub_seq_test',
+        'last_webhook_at' => 1700000100,
+    ]);
+
+    // Send an event with an older timestamp
+    $payload = createStripeWebhookPayload('customer.subscription.updated', [
+        'id' => 'sub_seq_test',
+        'customer' => 'cus_seq_test',
+        'status' => 'canceled',
+        'items' => [
+            'data' => [[
+                'id' => 'si_seq_1',
+                'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'],
+                'quantity' => 1,
+            ]],
+        ],
+    ]);
+    // Override the created timestamp to be older
+    $payload['created'] = 1700000050;
+
+    $response = postStripeWebhook($payload);
+
+    $response->assertOk(); // Return 200 to Stripe but skip processing
+
+    // Verify subscription was NOT updated (still active, not canceled)
+    $subscription->refresh();
+    expect($subscription->stripe_status)->toBe('active');
+});
+
+it('processes newer webhook and updates last_webhook_at', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_seq_test_2']);
+    $subscription = createSubscription($user, [
+        'stripe_id' => 'sub_seq_test_2',
+        'last_webhook_at' => 1700000050,
+    ]);
+
+    $newerTimestamp = 1700000100;
+    $payload = createStripeWebhookPayload('customer.subscription.updated', [
+        'id' => 'sub_seq_test_2',
+        'customer' => 'cus_seq_test_2',
+        'status' => 'active',
+        'items' => [
+            'data' => [[
+                'id' => 'si_seq_2',
+                'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'],
+                'quantity' => 1,
+            ]],
+        ],
+    ]);
+    $payload['created'] = $newerTimestamp;
+
+    $response = postStripeWebhook($payload);
+
+    $response->assertOk();
+
+    $subscription->refresh();
+    expect($subscription->last_webhook_at)->toBe($newerTimestamp);
+});
+
+it('processes first webhook when last_webhook_at is null', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_seq_test_3']);
+    $subscription = createSubscription($user, [
+        'stripe_id' => 'sub_seq_test_3',
+        'last_webhook_at' => null,
+    ]);
+
+    $eventTimestamp = 1700000100;
+    $payload = createStripeWebhookPayload('customer.subscription.updated', [
+        'id' => 'sub_seq_test_3',
+        'customer' => 'cus_seq_test_3',
+        'status' => 'active',
+        'items' => [
+            'data' => [[
+                'id' => 'si_seq_3',
+                'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'],
+                'quantity' => 1,
+            ]],
+        ],
+    ]);
+    $payload['created'] = $eventTimestamp;
+
+    $response = postStripeWebhook($payload);
+
+    $response->assertOk();
+
+    $subscription->refresh();
+    expect($subscription->last_webhook_at)->toBe($eventTimestamp);
+});

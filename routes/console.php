@@ -10,3 +10,7 @@ Artisan::command('inspire', function () {
 
 Schedule::command('audit:prune')->daily();
 Schedule::command('sanctum:prune-expired')->daily();
+
+if (config('features.billing.enabled', false)) {
+    Schedule::command('subscriptions:check-incomplete')->everyFifteenMinutes();
+}

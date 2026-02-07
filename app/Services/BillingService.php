@@ -2,12 +2,20 @@
 
 namespace App\Services;
 
+use App\Exceptions\ConcurrentOperationException;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Subscription;
 
 class BillingService
 {
+    /**
+     * Lock timeout in seconds: 30s Stripe API + 5s buffer.
+     */
+    private const LOCK_TIMEOUT = 35;
+
     /**
      * Resolve which plan tier a user belongs to based on their active subscription's Stripe price.
      */
@@ -32,17 +40,21 @@ class BillingService
         ?string $coupon = null,
         int $quantity = 1,
     ): Subscription {
-        $builder = $user->newSubscription('default', $priceId)->quantity($quantity);
+        return $this->withLock("subscription:create:{$user->id}", function () use ($user, $priceId, $paymentMethod, $coupon, $quantity) {
+            return DB::transaction(function () use ($user, $priceId, $paymentMethod, $coupon, $quantity) {
+                $builder = $user->newSubscription('default', $priceId)->quantity($quantity);
 
-        if ($coupon) {
-            $builder->withCoupon($coupon);
-        }
+                if ($coupon) {
+                    $builder->withCoupon($coupon);
+                }
 
-        if ($paymentMethod) {
-            return $builder->create($paymentMethod);
-        }
+                if ($paymentMethod) {
+                    return $builder->create($paymentMethod);
+                }
 
-        return $builder->create();
+                return $builder->create();
+            });
+        });
     }
 
     /**
@@ -50,16 +62,20 @@ class BillingService
      */
     public function cancelSubscription(User $user, bool $immediately = false): Subscription
     {
-        $subscription = $user->subscription('default');
-        $subscription->setRelation('owner', $user);
-        $subscription->loadMissing('items');
-        $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
+        return $this->withLock("subscription:cancel:{$user->id}", function () use ($user, $immediately) {
+            return DB::transaction(function () use ($user, $immediately) {
+                $subscription = $user->subscription('default');
+                $subscription->setRelation('owner', $user);
+                $subscription->loadMissing('items');
+                $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
 
-        if ($immediately) {
-            return $subscription->cancelNow();
-        }
+                if ($immediately) {
+                    return $subscription->cancelNow();
+                }
 
-        return $subscription->cancel();
+                return $subscription->cancel();
+            });
+        });
     }
 
     /**
@@ -67,12 +83,16 @@ class BillingService
      */
     public function resumeSubscription(User $user): Subscription
     {
-        $subscription = $user->subscription('default');
-        $subscription->setRelation('owner', $user);
-        $subscription->loadMissing('items');
-        $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
+        return $this->withLock("subscription:resume:{$user->id}", function () use ($user) {
+            return DB::transaction(function () use ($user) {
+                $subscription = $user->subscription('default');
+                $subscription->setRelation('owner', $user);
+                $subscription->loadMissing('items');
+                $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
 
-        return $subscription->resume();
+                return $subscription->resume();
+            });
+        });
     }
 
     /**
@@ -80,12 +100,16 @@ class BillingService
      */
     public function swapPlan(User $user, string $newPriceId): Subscription
     {
-        $subscription = $user->subscription('default');
-        $subscription->setRelation('owner', $user);
-        $subscription->loadMissing('items');
-        $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
+        return $this->withLock("subscription:swap:{$user->id}", function () use ($user, $newPriceId) {
+            return DB::transaction(function () use ($user, $newPriceId) {
+                $subscription = $user->subscription('default');
+                $subscription->setRelation('owner', $user);
+                $subscription->loadMissing('items');
+                $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
 
-        return $subscription->swap($newPriceId);
+                return $subscription->swap($newPriceId);
+            });
+        });
     }
 
     /**
@@ -93,12 +117,16 @@ class BillingService
      */
     public function updateQuantity(User $user, int $quantity): Subscription
     {
-        $subscription = $user->subscription('default');
-        $subscription->setRelation('owner', $user);
-        $subscription->loadMissing('items');
-        $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
+        return $this->withLock("subscription:quantity:{$user->id}", function () use ($user, $quantity) {
+            return DB::transaction(function () use ($user, $quantity) {
+                $subscription = $user->subscription('default');
+                $subscription->setRelation('owner', $user);
+                $subscription->loadMissing('items');
+                $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
 
-        return $subscription->updateQuantity($quantity);
+                return $subscription->updateQuantity($quantity);
+            });
+        });
     }
 
     /**
@@ -200,5 +228,25 @@ class BillingService
         ]);
 
         return 'free';
+    }
+
+    /**
+     * Execute a callback within a Redis lock to prevent concurrent operations.
+     *
+     * @throws ConcurrentOperationException
+     */
+    private function withLock(string $key, callable $callback): mixed
+    {
+        $lock = Cache::lock($key, self::LOCK_TIMEOUT);
+
+        if (! $lock->get()) {
+            throw new ConcurrentOperationException;
+        }
+
+        try {
+            return $callback();
+        } finally {
+            $lock->release();
+        }
     }
 }

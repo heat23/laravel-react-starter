@@ -46,10 +46,20 @@ expect()->extend('toBeOne', function () {
  */
 function ensureCashierTablesExist(): void
 {
+    // Drop and recreate to ensure schema matches latest version
+    if (Schema::hasTable('subscriptions')) {
+        // Check if it has the new columns - if not, drop and recreate
+        if (! Schema::hasColumn('subscriptions', 'billable_type')) {
+            Schema::dropIfExists('subscriptions');
+        }
+    }
+
     if (! Schema::hasTable('subscriptions')) {
         Schema::create('subscriptions', function ($table) {
             $table->id();
-            $table->foreignId('user_id');
+            $table->string('billable_type')->nullable();
+            $table->foreignId('billable_id')->nullable();
+            $table->foreignId('user_id')->nullable(); // For Cashier compatibility (uses user_id, not polymorphic)
             $table->string('type');
             $table->string('stripe_id')->unique();
             $table->string('stripe_status');
@@ -57,9 +67,23 @@ function ensureCashierTablesExist(): void
             $table->integer('quantity')->nullable();
             $table->timestamp('trial_ends_at')->nullable();
             $table->timestamp('ends_at')->nullable();
+            $table->unsignedBigInteger('last_webhook_at')->nullable();
             $table->timestamps();
+            $table->index(['billable_type', 'billable_id']);
             $table->index(['user_id', 'stripe_status']);
+            $table->index('last_webhook_at');
         });
+
+        // Add unique constraint to prevent duplicate active subscriptions (SQLite partial index)
+        // Uses billable_type/billable_id for forward compatibility
+        $driver = DB::getDriverName();
+        if ($driver === 'sqlite') {
+            DB::statement('
+                CREATE UNIQUE INDEX subscriptions_unique_active
+                ON subscriptions (COALESCE(billable_id, user_id), type)
+                WHERE ends_at IS NULL
+            ');
+        }
     }
     if (! Schema::hasTable('subscription_items')) {
         Schema::create('subscription_items', function ($table) {
@@ -83,6 +107,8 @@ function createSubscription(\App\Models\User $user, array $overrides = []): \Lar
     ensureCashierTablesExist();
 
     $subscription = \Laravel\Cashier\Subscription::create(array_merge([
+        'billable_type' => \App\Models\User::class,
+        'billable_id' => $user->id,
         'user_id' => $user->id,
         'type' => 'default',
         'stripe_id' => 'sub_'.Illuminate\Support\Str::random(14),

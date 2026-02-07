@@ -6,6 +6,7 @@ use Laravel\Cashier\Exceptions\IncompletePayment;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
+    config(['features.billing.coming_soon' => false]);
     ensureCashierTablesExist();
     registerBillingRoutes();
 });
@@ -217,6 +218,40 @@ it('rejects coupon exceeding max length', function () {
     ]);
 
     $response->assertSessionHasErrors('coupon');
+});
+
+it('rejects checkout when coming_soon feature flag is set', function () {
+    config(['features.billing.coming_soon' => true]);
+
+    $user = User::factory()->create(['email_verified_at' => now()]);
+
+    $response = $this->actingAs($user)->post('/billing/subscribe', [
+        'price_id' => 'price_pro_monthly',
+        'payment_method' => 'pm_card_visa',
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHas('error', 'This plan is coming soon and not yet available for purchase.');
+});
+
+it('allows checkout when coming_soon feature flag is false', function () {
+    config(['features.billing.coming_soon' => false]);
+
+    $user = User::factory()->create(['email_verified_at' => now()]);
+
+    $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('createSubscription')
+        ->once()
+        ->andReturnUsing(fn () => createSubscription($user, ['stripe_price' => 'price_pro_monthly']));
+    app()->instance(BillingService::class, $mock);
+
+    $response = $this->actingAs($user)->post('/billing/subscribe', [
+        'price_id' => 'price_pro_monthly',
+        'payment_method' => 'pm_card_visa',
+    ]);
+
+    $response->assertRedirect(route('billing.index'));
+    $response->assertSessionHas('success');
 });
 
 it('handles Stripe API error during subscription creation', function () {

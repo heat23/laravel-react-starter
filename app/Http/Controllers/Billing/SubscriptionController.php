@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Exceptions\ConcurrentOperationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Billing\CancelSubscriptionRequest;
 use App\Http\Requests\Billing\SubscribeRequest;
@@ -10,6 +11,7 @@ use App\Http\Requests\Billing\UpdatePaymentMethodRequest;
 use App\Http\Requests\Billing\UpdateQuantityRequest;
 use App\Services\AuditService;
 use App\Services\BillingService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -36,6 +38,12 @@ class SubscriptionController extends Controller
         $quantity = $request->validated('quantity', 1);
 
         $tier = $this->billingService->resolveTierFromPrice($priceId);
+
+        $tierConfig = config("plans.{$tier}");
+        if (! empty($tierConfig['coming_soon'] ?? false) || config('features.billing.coming_soon', false)) {
+            return back()->with('error', 'This plan is coming soon and not yet available for purchase.');
+        }
+
         $seatError = $this->billingService->validateSeatCount($tier, $quantity);
         if ($seatError) {
             return back()->with('error', $seatError);
@@ -58,6 +66,8 @@ class SubscriptionController extends Controller
             ]);
 
             return redirect()->route('billing.index')->with('success', 'Subscription created successfully.');
+        } catch (ConcurrentOperationException) {
+            return back()->with('error', 'A subscription request is already in progress. Please try again.');
         } catch (IncompletePayment $e) {
             return back()->with('error', 'Payment requires additional confirmation. Please try again.');
         } catch (ApiErrorException $e) {
@@ -71,13 +81,17 @@ class SubscriptionController extends Controller
         }
     }
 
-    public function cancel(CancelSubscriptionRequest $request): RedirectResponse
+    public function cancel(CancelSubscriptionRequest $request): RedirectResponse|JsonResponse
     {
         $user = $request->user();
         $user->loadMissing('subscriptions.items');
         $immediately = $request->validated('immediately', false);
 
         if (! $user->subscribed('default')) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'No active subscription to cancel.'], 400);
+            }
+
             return back()->with('error', 'No active subscription to cancel.');
         }
 
@@ -93,24 +107,42 @@ class SubscriptionController extends Controller
                 ? 'Subscription canceled immediately.'
                 : 'Subscription will be canceled at the end of the billing period.';
 
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message]);
+            }
+
             return redirect()->route('billing.index')->with('success', $message);
+        } catch (ConcurrentOperationException) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'A cancellation request is already in progress. Please try again.'], 409);
+            }
+
+            return back()->with('error', 'A cancellation request is already in progress. Please try again.');
         } catch (ApiErrorException $e) {
             Log::error('Stripe API error during cancellation', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
 
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unable to process your request. Please try again.'], 500);
+            }
+
             return back()->with('error', 'Unable to process your request. Please try again.');
         }
     }
 
-    public function resume(Request $request): RedirectResponse
+    public function resume(Request $request): RedirectResponse|JsonResponse
     {
         $user = $request->user();
         $user->loadMissing('subscriptions.items');
 
         $subscription = $user->subscription('default');
         if (! $subscription || ! $subscription->onGracePeriod()) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'No canceled subscription to resume.'], 400);
+            }
+
             return back()->with('error', 'No canceled subscription to resume.');
         }
 
@@ -121,12 +153,26 @@ class SubscriptionController extends Controller
                 'user_id' => $user->id,
             ]);
 
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Subscription resumed successfully.']);
+            }
+
             return redirect()->route('billing.index')->with('success', 'Subscription resumed successfully.');
+        } catch (ConcurrentOperationException) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'A resume request is already in progress. Please try again.'], 409);
+            }
+
+            return back()->with('error', 'A resume request is already in progress. Please try again.');
         } catch (ApiErrorException $e) {
             Log::error('Stripe API error during resume', [
                 'user_id' => $user->id,
                 'error' => $e->getMessage(),
             ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unable to process your request. Please try again.'], 500);
+            }
 
             return back()->with('error', 'Unable to process your request. Please try again.');
         }
@@ -155,6 +201,8 @@ class SubscriptionController extends Controller
             ]);
 
             return redirect()->route('billing.index')->with('success', 'Plan updated successfully.');
+        } catch (ConcurrentOperationException) {
+            return back()->with('error', 'A plan change is already in progress. Please try again.');
         } catch (IncompletePayment $e) {
             return back()->with('error', 'Payment requires additional confirmation. Please try again.');
         } catch (ApiErrorException $e) {
@@ -194,6 +242,8 @@ class SubscriptionController extends Controller
             ]);
 
             return redirect()->route('billing.index')->with('success', 'Seat count updated successfully.');
+        } catch (ConcurrentOperationException) {
+            return back()->with('error', 'A quantity update is already in progress. Please try again.');
         } catch (IncompletePayment $e) {
             return back()->with('error', 'Payment requires additional confirmation. Please try again.');
         } catch (ApiErrorException $e) {

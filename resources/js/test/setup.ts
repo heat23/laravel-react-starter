@@ -58,6 +58,15 @@ const mockRoutes: Record<string, string> = {
   'social.redirect': '/auth/redirect',
   'social.disconnect': '/auth/disconnect',
   'logout': '/logout',
+  'billing.index': '/billing',
+  'billing.subscribe': '/billing/subscribe',
+  'billing.cancel': '/billing/cancel',
+  'billing.resume': '/billing/resume',
+  'billing.swap': '/billing/swap',
+  'billing.portal': '/billing/portal',
+  'billing.quantity': '/billing/quantity',
+  'billing.payment-method': '/billing/payment-method',
+  'pricing': '/pricing',
 };
 
 const routeFn = (name: string, params?: Record<string, unknown>): string => {

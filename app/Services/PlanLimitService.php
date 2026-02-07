@@ -4,17 +4,13 @@ namespace App\Services;
 
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
-/**
- * Plan Limit Service
- *
- * Simplified service for managing subscription plan limits and trials.
- * Works with config/plans.php and config/features.php settings.
- *
- * For full subscription management, integrate Laravel Cashier.
- */
 class PlanLimitService
 {
+    private const PLAN_CACHE_TTL = 10;
+
     public function __construct(
         private BillingService $billingService,
     ) {}
@@ -65,24 +61,26 @@ class PlanLimitService
     }
 
     /**
-     * Get the user's current plan tier.
+     * Get the user's current plan tier (cached).
      *
-     * Resolves tier from: trial > active subscription > free.
-     * Subscription tier is determined by the Stripe price ID on the subscription.
+     * Resolves tier from: trial > active subscription (with grace period) > free.
      */
     public function getUserPlan(User $user): string
     {
-        // During trial, user has trial-tier access
-        if ($this->isOnTrial($user)) {
-            return config('plans.trial.tier', 'pro');
-        }
+        return Cache::remember(
+            "user:{$user->id}:plan_tier",
+            self::PLAN_CACHE_TTL,
+            fn () => $this->resolveUserPlan($user)
+        );
+    }
 
-        // Resolve tier from active subscription's Stripe price
-        if (config('features.billing.enabled') && $user->subscribed('default')) {
-            return $this->billingService->resolveUserTier($user);
-        }
-
-        return 'free';
+    /**
+     * Invalidate the cached plan tier for a user.
+     * Call after subscription state changes (webhooks, cancel, resume, etc.).
+     */
+    public function invalidateUserPlanCache(User $user): void
+    {
+        Cache::forget("user:{$user->id}:plan_tier");
     }
 
     /**
@@ -111,5 +109,51 @@ class PlanLimitService
         }
 
         return $currentCount < $limit;
+    }
+
+    /**
+     * Resolve the user's plan tier without caching.
+     */
+    private function resolveUserPlan(User $user): string
+    {
+        // During trial, user has trial-tier access
+        if ($this->isOnTrial($user)) {
+            return config('plans.trial.tier', 'pro');
+        }
+
+        // Resolve tier from subscription's Stripe price
+        if (config('features.billing.enabled')) {
+            $subscription = $user->subscription('default');
+
+            if (! $subscription) {
+                return 'free';
+            }
+
+            // Past-due grace period enforcement
+            if ($subscription->stripe_status === 'past_due') {
+                $graceDays = config('plans.past_due_grace_days', 7);
+                $graceExpiry = $subscription->updated_at->addDays($graceDays);
+
+                if (now()->isAfter($graceExpiry)) {
+                    Log::info('Past_due grace period expired, reverting to free tier', [
+                        'user_id' => $user->id,
+                        'subscription_id' => $subscription->id,
+                        'grace_days' => $graceDays,
+                    ]);
+
+                    return 'free';
+                }
+
+                // Within grace period — resolve tier from price directly
+                return $this->billingService->resolveTierFromPrice($subscription->stripe_price);
+            }
+
+            // Active, trialing, or on grace period subscriptions
+            if ($subscription->active()) {
+                return $this->billingService->resolveTierFromPrice($subscription->stripe_price);
+            }
+        }
+
+        return 'free';
     }
 }

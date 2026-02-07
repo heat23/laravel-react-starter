@@ -140,6 +140,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Past Due Grace Period
+    |--------------------------------------------------------------------------
+    |
+    | Number of days to allow continued access after a subscription enters
+    | past_due status. After this period, the user reverts to the free tier.
+    |
+    */
+    'past_due_grace_days' => (int) env('PAST_DUE_GRACE_DAYS', 7),
+
+    /*
+    |--------------------------------------------------------------------------
     | Trial Configuration
     |--------------------------------------------------------------------------
     */
