@@ -85,17 +85,22 @@ test.describe('Login Page', () => {
     const passwordInput = page.locator('#password');
     await expect(passwordInput).toHaveAttribute('type', 'password');
 
-    // The toggle button is absolutely positioned inside the input wrapper.
-    // The input element's box overlaps the button, absorbing pointer events
-    // before they reach the button. Use evaluate() to trigger the DOM click
-    // directly — this fires React's synthetic onClick handler correctly.
+    // Dispatch and retry briefly: hydration can lag on fast CI-like runs.
     const showBtn = page.locator('button[aria-label="Show password"]');
-    await showBtn.evaluate((el) => (el as HTMLElement).click());
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await showBtn.dispatchEvent('click');
+      if ((await passwordInput.getAttribute('type')) === 'text') break;
+      await page.waitForTimeout(75);
+    }
     await expect(passwordInput).toHaveAttribute('type', 'text');
 
     const hideBtn = page.locator('button[aria-label="Hide password"]');
     await expect(hideBtn).toBeVisible();
-    await hideBtn.evaluate((el) => (el as HTMLElement).click());
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      await hideBtn.dispatchEvent('click');
+      if ((await passwordInput.getAttribute('type')) === 'password') break;
+      await page.waitForTimeout(75);
+    }
     await expect(passwordInput).toHaveAttribute('type', 'password');
   });
 

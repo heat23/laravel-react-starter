@@ -3,13 +3,11 @@ import '../css/app.css';
 
 import { createRoot, hydrateRoot } from 'react-dom/client';
 
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 
 import { createInertiaApp } from '@inertiajs/react';
 
 import { ThemeProvider } from '@/Components/theme';
-import { Toaster } from '@/Components/ui/sonner';
-import { TooltipProvider } from '@/Components/ui/tooltip';
 
 // Loading fallback for lazy-loaded pages
 const PageLoader = () => (
@@ -22,6 +20,16 @@ const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 // Exclude test files from production build - they were adding ~598KB (Vitest + test files)
 const pages = import.meta.glob(['./Pages/**/*.{tsx,jsx}', '!**/*.test.{tsx,jsx}']);
+
+const LazyTooltipProvider = lazy(async () => {
+    const module = await import('@/Components/ui/tooltip');
+    return { default: module.TooltipProvider };
+});
+
+const LazyToaster = lazy(async () => {
+    const module = await import('@/Components/ui/sonner');
+    return { default: module.Toaster };
+});
 
 createInertiaApp({
     title: (title) => title ? `${title} | ${appName}` : appName,
@@ -55,14 +63,27 @@ createInertiaApp({
                                     )
                               : page;
 
+                    const shouldDisableGlobalUi =
+                        (Component as { disableGlobalUi?: boolean }).disableGlobalUi === true;
+
+                    const renderPageContent = () => (
+                        <Suspense fallback={<PageLoader />}>
+                            {content}
+                        </Suspense>
+                    );
+
                     return (
                         <ThemeProvider>
-                            <TooltipProvider>
-                                <Suspense fallback={<PageLoader />}>
-                                    {content}
+                            {shouldDisableGlobalUi ? (
+                                renderPageContent()
+                            ) : (
+                                <Suspense fallback={renderPageContent()}>
+                                    <LazyTooltipProvider>
+                                        {renderPageContent()}
+                                        <LazyToaster richColors position="top-right" />
+                                    </LazyTooltipProvider>
                                 </Suspense>
-                                <Toaster richColors position="top-right" />
-                            </TooltipProvider>
+                            )}
                         </ThemeProvider>
                     );
                 }}

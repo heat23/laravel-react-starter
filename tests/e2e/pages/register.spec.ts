@@ -90,13 +90,15 @@ test.describe('Register Page', () => {
     const passwordInput = page.getByLabel(/^password$/i);
 
     // Weak password — requirements visible but not all met
-    await passwordInput.fill('ab');
+    await passwordInput.click();
+    await passwordInput.type('ab', { delay: 30 });
     await expect(page.getByText('At least 8 characters')).toBeVisible();
     await expect(page.getByText('One uppercase letter')).toBeVisible();
     await expect(page.getByText('One number')).toBeVisible();
 
     // Strong password — all requirements visible
-    await passwordInput.fill('StrongPass1');
+    await passwordInput.clear();
+    await passwordInput.type('StrongPass1', { delay: 30 });
     await expect(page.getByText('At least 8 characters')).toBeVisible();
     await expect(page.getByText('One uppercase letter')).toBeVisible();
     await expect(page.getByText('One lowercase letter')).toBeVisible();
@@ -113,11 +115,15 @@ test.describe('Register Page', () => {
     await expect(submitButton).toBeDisabled();
 
     // Strong password but no terms → still disabled
-    await page.getByLabel(/^password$/i).fill('StrongPass1');
+    const passwordInput = page.getByLabel(/^password$/i);
+    await passwordInput.click();
+    await passwordInput.type('StrongPass1', { delay: 30 });
     await expect(submitButton).toBeDisabled();
 
     // Accept terms → enabled
-    await page.getByLabel(/i agree to the/i).check();
+    const termsCheckbox = page.getByLabel(/i agree to the/i);
+    await termsCheckbox.check();
+    await expect(termsCheckbox).toBeChecked();
     await expect(submitButton).toBeEnabled();
   });
 

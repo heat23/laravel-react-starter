@@ -32,11 +32,13 @@ test.describe('Authentication Flows', () => {
   test('login shows validation errors for invalid email', async ({ page }) => {
     await page.goto('/login');
 
-    // Fill in invalid email and blur to trigger validation
-    await page.getByLabel(/email address/i).fill('invalid-email');
-    await page.getByLabel(/email address/i).blur();
+    // Use keyboard typing for reliable controlled-input updates in headless runs.
+    const emailInput = page.getByLabel(/email address/i);
+    await emailInput.click();
+    await emailInput.type('foo@bar', { delay: 30 });
+    await emailInput.blur();
 
     // Should show client-side validation error
-    await expect(page.getByText('Please enter a valid email address')).toBeVisible();
+    await expect(page.locator('#login-email-error')).toHaveText('Please enter a valid email address');
   });
 });

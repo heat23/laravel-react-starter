@@ -94,6 +94,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // SEO routes
+Route::get('/favicon.ico', function () {
+    $path = public_path('favicon.ico');
+    abort_unless(file_exists($path), 404);
+
+    return response()->file($path, [
+        'Cache-Control' => 'public, max-age=604800, immutable',
+    ]);
+})->name('favicon');
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 

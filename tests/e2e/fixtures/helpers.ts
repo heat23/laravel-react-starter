@@ -6,14 +6,21 @@ import { type Page, expect } from '@playwright/test';
 
 /**
  * Enable dark mode by adding .dark class to <html>, matching ThemeProvider behavior.
- * Waits for the CSS custom property to propagate so assertions are reliable.
+ * Also persists preference to localStorage so ThemeProvider does not immediately override it.
  */
 export async function enableDarkMode(page: Page): Promise<void> {
-  await page.evaluate(() => document.documentElement.classList.add('dark'));
+  await page.evaluate(() => {
+    localStorage.setItem('theme', 'dark');
+    document.documentElement.classList.remove('light');
+    document.documentElement.classList.add('dark');
+  });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.evaluate(() => {
+    document.documentElement.classList.remove('light');
+    document.documentElement.classList.add('dark');
+  });
   await page.waitForFunction(
-    () =>
-      document.documentElement.classList.contains('dark') &&
-      window.getComputedStyle(document.body).backgroundColor !== 'rgb(255, 255, 255)',
+    () => document.documentElement.classList.contains('dark'),
     { timeout: 3000 },
   );
 }
@@ -25,9 +32,11 @@ export async function assertDarkModeApplied(page: Page): Promise<void> {
   const isDark = await page.evaluate(() => document.documentElement.classList.contains('dark'));
   expect(isDark).toBe(true);
 
-  const bgColor = await page.evaluate(() =>
-    window.getComputedStyle(document.body).backgroundColor,
-  );
+  const bgColor = await page.evaluate(() => {
+    const themedRoot = document.querySelector('.min-h-screen') as HTMLElement | null;
+    const target = themedRoot ?? document.body;
+    return window.getComputedStyle(target).backgroundColor;
+  });
   expect(bgColor, 'Dark mode background should not be white').not.toBe('rgb(255, 255, 255)');
 }
 

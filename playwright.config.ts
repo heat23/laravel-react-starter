@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:8000';
+const shouldStartLocalServer = /localhost:8000|127\.0\.0\.1:8000/.test(baseURL);
+
 export default defineConfig({
   testDir: './tests/e2e',
   outputDir: './tests/e2e/results',
@@ -17,7 +20,7 @@ export default defineConfig({
     },
   },
   use: {
-    baseURL: 'http://localhost:8000',
+    baseURL,
     trace: 'on-first-retry',
   },
   projects: [
@@ -40,9 +43,11 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: 'php artisan serve',
-    url: 'http://localhost:8000',
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: shouldStartLocalServer
+    ? {
+        command: 'php artisan serve',
+        url: baseURL,
+        reuseExistingServer: !process.env.CI,
+      }
+    : undefined,
 });

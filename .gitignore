@@ -69,6 +69,7 @@ HANDOFF_*.md
 POLISH_PLAN*.md
 REFACTOR_PLAN*.md
 FEATURE_SPEC_*.md
+lighthouse-report*
 
 # Bundle analysis
 stats.html
