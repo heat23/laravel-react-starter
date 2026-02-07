@@ -32,16 +32,149 @@ expect()->extend('toBeOne', function () {
 
 /*
 |--------------------------------------------------------------------------
-| Functions
+| Billing Test Helpers
 |--------------------------------------------------------------------------
 |
-| While Pest is very powerful out-of-the-box, you may have some testing code specific to your
-| project that you don't want to repeat in every file. Here you can also expose helpers as
-| global functions to help you to reduce the number of lines of code in your test files.
+| Helpers for creating subscription records and Stripe webhook payloads
+| without hitting the Stripe API. Used across all billing tests.
 |
 */
 
-function something()
+/**
+ * Ensure Cashier tables exist for billing tests.
+ * Call in beforeEach() of any billing test file.
+ */
+function ensureCashierTablesExist(): void
 {
-    // ..
+    if (! Schema::hasTable('subscriptions')) {
+        Schema::create('subscriptions', function ($table) {
+            $table->id();
+            $table->foreignId('user_id');
+            $table->string('type');
+            $table->string('stripe_id')->unique();
+            $table->string('stripe_status');
+            $table->string('stripe_price')->nullable();
+            $table->integer('quantity')->nullable();
+            $table->timestamp('trial_ends_at')->nullable();
+            $table->timestamp('ends_at')->nullable();
+            $table->timestamps();
+            $table->index(['user_id', 'stripe_status']);
+        });
+    }
+    if (! Schema::hasTable('subscription_items')) {
+        Schema::create('subscription_items', function ($table) {
+            $table->id();
+            $table->foreignId('subscription_id');
+            $table->string('stripe_id')->unique();
+            $table->string('stripe_product');
+            $table->string('stripe_price');
+            $table->integer('quantity')->nullable();
+            $table->timestamps();
+            $table->index(['subscription_id', 'stripe_price']);
+        });
+    }
+}
+
+/**
+ * Create a subscription record directly in the database.
+ */
+function createSubscription(\App\Models\User $user, array $overrides = []): \Laravel\Cashier\Subscription
+{
+    ensureCashierTablesExist();
+
+    $subscription = \Laravel\Cashier\Subscription::create(array_merge([
+        'user_id' => $user->id,
+        'type' => 'default',
+        'stripe_id' => 'sub_'.Illuminate\Support\Str::random(14),
+        'stripe_status' => 'active',
+        'stripe_price' => 'price_pro_monthly',
+        'quantity' => 1,
+        'trial_ends_at' => null,
+        'ends_at' => null,
+    ], $overrides));
+
+    $subscription->items()->create([
+        'stripe_id' => 'si_'.Illuminate\Support\Str::random(14),
+        'stripe_product' => 'prod_'.Illuminate\Support\Str::random(14),
+        'stripe_price' => $overrides['stripe_price'] ?? 'price_pro_monthly',
+        'quantity' => $overrides['quantity'] ?? 1,
+    ]);
+
+    return $subscription;
+}
+
+/**
+ * Create a team-tier subscription.
+ */
+function createTeamSubscription(\App\Models\User $user, int $seats = 5, array $overrides = []): \Laravel\Cashier\Subscription
+{
+    return createSubscription($user, array_merge([
+        'stripe_price' => 'price_team_monthly',
+        'quantity' => $seats,
+    ], $overrides));
+}
+
+/**
+ * Create an enterprise-tier subscription.
+ */
+function createEnterpriseSubscription(\App\Models\User $user, int $seats = 10, array $overrides = []): \Laravel\Cashier\Subscription
+{
+    return createSubscription($user, array_merge([
+        'stripe_price' => 'price_enterprise_monthly',
+        'quantity' => $seats,
+    ], $overrides));
+}
+
+/**
+ * Register billing routes for tests.
+ *
+ * Routes behind `if (config('features.billing.enabled'))` in web.php are evaluated
+ * at boot time. Setting config in beforeEach() happens after routes are registered,
+ * so billing routes won't exist. This helper re-registers them for tests.
+ */
+function registerBillingRoutes(): void
+{
+    $router = app('router');
+
+    // Public pricing page
+    $router->get('/pricing', [\App\Http\Controllers\Billing\PricingController::class, '__invoke'])
+        ->middleware('web')
+        ->name('pricing');
+
+    $router->middleware(['web', 'auth', 'verified'])->group(function () use ($router) {
+        $router->get('/billing', [\App\Http\Controllers\Billing\BillingController::class, 'index'])->name('billing.index');
+        $router->post('/billing/subscribe', [\App\Http\Controllers\Billing\SubscriptionController::class, 'subscribe'])->name('billing.subscribe');
+        $router->post('/billing/cancel', [\App\Http\Controllers\Billing\SubscriptionController::class, 'cancel'])->name('billing.cancel');
+        $router->post('/billing/resume', [\App\Http\Controllers\Billing\SubscriptionController::class, 'resume'])->name('billing.resume');
+        $router->post('/billing/swap', [\App\Http\Controllers\Billing\SubscriptionController::class, 'swap'])->name('billing.swap');
+        $router->post('/billing/quantity', [\App\Http\Controllers\Billing\SubscriptionController::class, 'updateQuantity'])->name('billing.quantity');
+        $router->post('/billing/payment-method', [\App\Http\Controllers\Billing\SubscriptionController::class, 'updatePaymentMethod'])->name('billing.payment-method');
+        $router->get('/billing/portal', [\App\Http\Controllers\Billing\SubscriptionController::class, 'portal'])->name('billing.portal');
+    });
+
+    // Stripe webhook (no auth - Cashier verifies signature)
+    $router->post('/stripe/webhook', [\App\Http\Controllers\Billing\StripeWebhookController::class, 'handleWebhook'])
+        ->middleware(['web', 'throttle:120,1'])
+        ->name('cashier.webhook');
+
+    // Refresh the route name lookup table so route() helper works
+    $router->getRoutes()->refreshNameLookups();
+    $router->getRoutes()->refreshActionLookups();
+}
+
+/**
+ * Build a Stripe webhook event payload.
+ */
+function createStripeWebhookPayload(string $eventType, array $objectData = [], ?string $eventId = null): array
+{
+    return [
+        'id' => $eventId ?? 'evt_'.Illuminate\Support\Str::random(14),
+        'type' => $eventType,
+        'data' => [
+            'object' => $objectData,
+        ],
+        'livemode' => false,
+        'created' => now()->timestamp,
+        'api_version' => '2023-10-16',
+    ];
 }

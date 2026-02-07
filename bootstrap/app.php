@@ -39,6 +39,8 @@ return Application::configure(basePath: dirname(__DIR__))
             );
         }
 
+        $middleware->validateCsrfTokens(except: ['stripe/webhook']);
+
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,
             \App\Http\Middleware\HandleInertiaRequests::class,
@@ -51,6 +53,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'onboarding' => \App\Http\Middleware\EnsureOnboardingCompleted::class,
+            'subscribed' => \App\Http\Middleware\EnsureSubscribed::class,
             'verify-webhook' => \App\Http\Middleware\VerifyWebhookSignature::class,
         ]);
     })

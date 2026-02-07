@@ -1,358 +1,383 @@
 <?php
 
-namespace Tests\Unit\Services;
-
 use App\Models\User;
 use App\Services\PlanLimitService;
 use Carbon\Carbon;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 
-class PlanLimitServiceTest extends TestCase
-{
-    use RefreshDatabase;
+beforeEach(function () {
+    $this->service = app(PlanLimitService::class);
+});
 
-    private PlanLimitService $service;
+// ============================================
+// isTrialEnabled() tests
+// ============================================
 
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->service = new PlanLimitService;
-    }
+it('returns true when plans.trial.enabled is true', function () {
+    config(['plans.trial.enabled' => true]);
+    config(['features.billing.trial_enabled' => false]);
 
-    // ============================================
-    // isTrialEnabled() tests
-    // ============================================
+    expect($this->service->isTrialEnabled())->toBeTrue();
+});
 
-    public function test_is_trial_enabled_returns_true_when_plans_trial_enabled_is_true(): void
-    {
-        config(['plans.trial.enabled' => true]);
-        config(['features.billing.trial_enabled' => false]);
+it('returns true when features.billing.trial_enabled is true', function () {
+    config(['plans.trial.enabled' => false]);
+    config(['features.billing.trial_enabled' => true]);
 
-        $this->assertTrue($this->service->isTrialEnabled());
-    }
+    expect($this->service->isTrialEnabled())->toBeTrue();
+});
 
-    public function test_is_trial_enabled_returns_true_when_features_billing_trial_enabled_is_true(): void
-    {
-        config(['plans.trial.enabled' => false]);
-        config(['features.billing.trial_enabled' => true]);
+it('returns true when both trial configs are true', function () {
+    config(['plans.trial.enabled' => true]);
+    config(['features.billing.trial_enabled' => true]);
 
-        $this->assertTrue($this->service->isTrialEnabled());
-    }
+    expect($this->service->isTrialEnabled())->toBeTrue();
+});
 
-    public function test_is_trial_enabled_returns_true_when_both_configs_are_true(): void
-    {
-        config(['plans.trial.enabled' => true]);
-        config(['features.billing.trial_enabled' => true]);
+it('returns false when both trial configs are false', function () {
+    config(['plans.trial.enabled' => false]);
+    config(['features.billing.trial_enabled' => false]);
 
-        $this->assertTrue($this->service->isTrialEnabled());
-    }
+    expect($this->service->isTrialEnabled())->toBeFalse();
+});
 
-    public function test_is_trial_enabled_returns_false_when_both_configs_are_false(): void
-    {
-        config(['plans.trial.enabled' => false]);
-        config(['features.billing.trial_enabled' => false]);
+it('returns false when trial configs are not set', function () {
+    config(['plans.trial.enabled' => null]);
+    config(['features.billing.trial_enabled' => null]);
 
-        $this->assertFalse($this->service->isTrialEnabled());
-    }
+    expect($this->service->isTrialEnabled())->toBeFalse();
+});
 
-    public function test_is_trial_enabled_returns_false_when_configs_not_set(): void
-    {
-        config(['plans.trial.enabled' => null]);
-        config(['features.billing.trial_enabled' => null]);
+// ============================================
+// startTrial() tests
+// ============================================
 
-        $this->assertFalse($this->service->isTrialEnabled());
-    }
+it('sets trial_ends_at to configured days', function () {
+    Carbon::setTestNow('2024-01-15 12:00:00');
+    config(['plans.trial.days' => 7]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-    // ============================================
-    // startTrial() tests
-    // ============================================
+    $this->service->startTrial($user);
 
-    public function test_start_trial_sets_trial_ends_at_to_configured_days(): void
-    {
-        Carbon::setTestNow('2024-01-15 12:00:00');
-        config(['plans.trial.days' => 7]);
-        $user = User::factory()->create(['trial_ends_at' => null]);
+    $user->refresh();
+    expect($user->trial_ends_at)->not->toBeNull();
+    expect($user->trial_ends_at->format('Y-m-d H:i:s'))->toBe('2024-01-22 12:00:00');
 
-        $this->service->startTrial($user);
+    Carbon::setTestNow();
+});
 
-        $user->refresh();
-        $this->assertNotNull($user->trial_ends_at);
-        $this->assertEquals('2024-01-22 12:00:00', $user->trial_ends_at->format('Y-m-d H:i:s'));
+it('uses default 14 days when trial days not configured', function () {
+    Carbon::setTestNow('2024-01-01 00:00:00');
+    config(['plans.trial.days' => 14]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-        Carbon::setTestNow();
-    }
+    $this->service->startTrial($user);
 
-    public function test_start_trial_uses_default_14_days_when_not_configured(): void
-    {
-        Carbon::setTestNow('2024-01-01 00:00:00');
-        // Ensure plans.trial.days is not set - the service should use 14 as default
-        // Note: config()->forget() doesn't work as expected, so we test with explicit value
-        config(['plans.trial.days' => 14]);
-        $user = User::factory()->create(['trial_ends_at' => null]);
+    $user->refresh();
+    expect($user->trial_ends_at->format('Y-m-d H:i:s'))->toBe('2024-01-15 00:00:00');
 
-        $this->service->startTrial($user);
+    Carbon::setTestNow();
+});
 
-        $user->refresh();
-        $this->assertEquals('2024-01-15 00:00:00', $user->trial_ends_at->format('Y-m-d H:i:s'));
+it('overwrites existing trial_ends_at', function () {
+    Carbon::setTestNow('2024-06-01 00:00:00');
+    config(['plans.trial.days' => 30]);
+    $user = User::factory()->create(['trial_ends_at' => now()->subDays(10)]);
 
-        Carbon::setTestNow();
-    }
+    $this->service->startTrial($user);
 
-    public function test_start_trial_overwrites_existing_trial_ends_at(): void
-    {
-        Carbon::setTestNow('2024-06-01 00:00:00');
-        config(['plans.trial.days' => 30]);
-        $user = User::factory()->create(['trial_ends_at' => now()->subDays(10)]);
+    $user->refresh();
+    expect($user->trial_ends_at->format('Y-m-d H:i:s'))->toBe('2024-07-01 00:00:00');
 
-        $this->service->startTrial($user);
+    Carbon::setTestNow();
+});
 
-        $user->refresh();
-        $this->assertEquals('2024-07-01 00:00:00', $user->trial_ends_at->format('Y-m-d H:i:s'));
+// ============================================
+// isOnTrial() tests
+// ============================================
 
-        Carbon::setTestNow();
-    }
+it('returns false when trial_ends_at is null', function () {
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-    // ============================================
-    // isOnTrial() tests
-    // ============================================
+    expect($this->service->isOnTrial($user))->toBeFalse();
+});
 
-    public function test_is_on_trial_returns_false_when_trial_ends_at_is_null(): void
-    {
-        $user = User::factory()->create(['trial_ends_at' => null]);
+it('returns true when trial_ends_at is in future', function () {
+    $user = User::factory()->create(['trial_ends_at' => now()->addDays(5)]);
 
-        $this->assertFalse($this->service->isOnTrial($user));
-    }
+    expect($this->service->isOnTrial($user))->toBeTrue();
+});
 
-    public function test_is_on_trial_returns_true_when_trial_ends_at_is_in_future(): void
-    {
-        $user = User::factory()->create(['trial_ends_at' => now()->addDays(5)]);
+it('returns false when trial_ends_at is in past', function () {
+    $user = User::factory()->create(['trial_ends_at' => now()->subDays(1)]);
 
-        $this->assertTrue($this->service->isOnTrial($user));
-    }
+    expect($this->service->isOnTrial($user))->toBeFalse();
+});
 
-    public function test_is_on_trial_returns_false_when_trial_ends_at_is_in_past(): void
-    {
-        $user = User::factory()->create(['trial_ends_at' => now()->subDays(1)]);
+it('returns false when trial_ends_at is exactly now', function () {
+    Carbon::setTestNow('2024-01-15 12:00:00');
+    $user = User::factory()->create(['trial_ends_at' => Carbon::parse('2024-01-15 12:00:00')]);
 
-        $this->assertFalse($this->service->isOnTrial($user));
-    }
+    expect($this->service->isOnTrial($user))->toBeFalse();
 
-    public function test_is_on_trial_returns_false_when_trial_ends_at_is_exactly_now(): void
-    {
-        Carbon::setTestNow('2024-01-15 12:00:00');
-        $user = User::factory()->create(['trial_ends_at' => Carbon::parse('2024-01-15 12:00:00')]);
+    Carbon::setTestNow();
+});
 
-        $this->assertFalse($this->service->isOnTrial($user));
+it('returns true for trial ending in one second', function () {
+    Carbon::setTestNow('2024-01-15 12:00:00');
+    $user = User::factory()->create(['trial_ends_at' => Carbon::parse('2024-01-15 12:00:01')]);
 
-        Carbon::setTestNow();
-    }
+    expect($this->service->isOnTrial($user))->toBeTrue();
 
-    public function test_is_on_trial_returns_true_for_trial_ending_in_one_second(): void
-    {
-        Carbon::setTestNow('2024-01-15 12:00:00');
-        $user = User::factory()->create(['trial_ends_at' => Carbon::parse('2024-01-15 12:00:01')]);
+    Carbon::setTestNow();
+});
 
-        $this->assertTrue($this->service->isOnTrial($user));
+// ============================================
+// trialDaysRemaining() tests
+// ============================================
 
-        Carbon::setTestNow();
-    }
+it('returns zero days remaining when not on trial', function () {
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-    // ============================================
-    // trialDaysRemaining() tests
-    // ============================================
+    expect($this->service->trialDaysRemaining($user))->toBe(0);
+});
 
-    public function test_trial_days_remaining_returns_zero_when_not_on_trial(): void
-    {
-        $user = User::factory()->create(['trial_ends_at' => null]);
+it('returns zero days remaining when trial expired', function () {
+    $user = User::factory()->create(['trial_ends_at' => now()->subDays(5)]);
 
-        $this->assertEquals(0, $this->service->trialDaysRemaining($user));
-    }
+    expect($this->service->trialDaysRemaining($user))->toBe(0);
+});
 
-    public function test_trial_days_remaining_returns_zero_when_trial_expired(): void
-    {
-        $user = User::factory()->create(['trial_ends_at' => now()->subDays(5)]);
+it('returns correct remaining days count', function () {
+    Carbon::setTestNow('2024-01-01 12:00:00');
+    $user = User::factory()->create(['trial_ends_at' => Carbon::parse('2024-01-11 12:00:00')]);
 
-        $this->assertEquals(0, $this->service->trialDaysRemaining($user));
-    }
+    expect($this->service->trialDaysRemaining($user))->toBe(10);
 
-    public function test_trial_days_remaining_returns_correct_count(): void
-    {
-        Carbon::setTestNow('2024-01-01 12:00:00');
-        $user = User::factory()->create(['trial_ends_at' => Carbon::parse('2024-01-11 12:00:00')]);
+    Carbon::setTestNow();
+});
 
-        $this->assertEquals(10, $this->service->trialDaysRemaining($user));
+it('returns zero on last day of trial', function () {
+    Carbon::setTestNow('2024-01-15 08:00:00');
+    $user = User::factory()->create(['trial_ends_at' => Carbon::parse('2024-01-15 23:59:59')]);
 
-        Carbon::setTestNow();
-    }
+    expect($this->service->trialDaysRemaining($user))->toBe(0);
 
-    public function test_trial_days_remaining_returns_zero_on_last_day(): void
-    {
-        Carbon::setTestNow('2024-01-15 08:00:00');
-        $user = User::factory()->create(['trial_ends_at' => Carbon::parse('2024-01-15 23:59:59')]);
+    Carbon::setTestNow();
+});
 
-        // Less than a full day remaining
-        $this->assertEquals(0, $this->service->trialDaysRemaining($user));
+it('returns one when exactly one day left', function () {
+    Carbon::setTestNow('2024-01-15 00:00:00');
+    $user = User::factory()->create(['trial_ends_at' => Carbon::parse('2024-01-16 00:00:00')]);
 
-        Carbon::setTestNow();
-    }
+    expect($this->service->trialDaysRemaining($user))->toBe(1);
 
-    public function test_trial_days_remaining_returns_one_when_exactly_one_day_left(): void
-    {
-        Carbon::setTestNow('2024-01-15 00:00:00');
-        $user = User::factory()->create(['trial_ends_at' => Carbon::parse('2024-01-16 00:00:00')]);
+    Carbon::setTestNow();
+});
 
-        $this->assertEquals(1, $this->service->trialDaysRemaining($user));
+// ============================================
+// getUserPlan() tests
+// ============================================
 
-        Carbon::setTestNow();
-    }
+it('returns pro plan when user is on trial', function () {
+    config(['plans.trial.tier' => 'pro']);
+    $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
 
-    // ============================================
-    // getUserPlan() tests
-    // ============================================
+    expect($this->service->getUserPlan($user))->toBe('pro');
+});
 
-    public function test_get_user_plan_returns_pro_when_on_trial(): void
-    {
-        config(['plans.trial.tier' => 'pro']);
-        $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
+it('returns configured trial tier', function () {
+    config(['plans.trial.tier' => 'premium']);
+    $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
 
-        $this->assertEquals('pro', $this->service->getUserPlan($user));
-    }
+    expect($this->service->getUserPlan($user))->toBe('premium');
+});
 
-    public function test_get_user_plan_returns_configured_trial_tier(): void
-    {
-        config(['plans.trial.tier' => 'premium']);
-        $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
+it('returns pro as default trial tier', function () {
+    config(['plans.trial' => ['enabled' => true]]);
+    $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
 
-        $this->assertEquals('premium', $this->service->getUserPlan($user));
-    }
+    expect($this->service->getUserPlan($user))->toBe('pro');
+});
 
-    public function test_get_user_plan_returns_pro_as_default_trial_tier(): void
-    {
-        // When the tier config key doesn't exist at all, default should be 'pro'
-        // Note: Setting to null means the key exists with null value, so we need to
-        // ensure the key doesn't exist by not setting it (default config behavior)
-        config(['plans.trial' => ['enabled' => true]]); // Set parent without 'tier'
-        $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
+it('returns free plan when not on trial', function () {
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-        $this->assertEquals('pro', $this->service->getUserPlan($user));
-    }
+    expect($this->service->getUserPlan($user))->toBe('free');
+});
 
-    public function test_get_user_plan_returns_free_when_not_on_trial(): void
-    {
-        $user = User::factory()->create(['trial_ends_at' => null]);
+it('returns free plan when trial expired', function () {
+    $user = User::factory()->create(['trial_ends_at' => now()->subDays(1)]);
 
-        $this->assertEquals('free', $this->service->getUserPlan($user));
-    }
+    expect($this->service->getUserPlan($user))->toBe('free');
+});
 
-    public function test_get_user_plan_returns_free_when_trial_expired(): void
-    {
-        $user = User::factory()->create(['trial_ends_at' => now()->subDays(1)]);
+// ============================================
+// getLimit() tests
+// ============================================
 
-        $this->assertEquals('free', $this->service->getUserPlan($user));
-    }
+it('returns configured limit for free plan', function () {
+    config(['plans.free.limits.api_tokens' => 3]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-    // ============================================
-    // getLimit() tests
-    // ============================================
+    expect($this->service->getLimit($user, 'api_tokens'))->toBe(3);
+});
 
-    public function test_get_limit_returns_configured_limit_for_free_plan(): void
-    {
-        config(['plans.free.limits.api_tokens' => 3]);
-        $user = User::factory()->create(['trial_ends_at' => null]);
+it('returns configured limit for pro plan', function () {
+    config(['plans.pro.limits.api_tokens' => 100]);
+    $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
 
-        $this->assertEquals(3, $this->service->getLimit($user, 'api_tokens'));
-    }
+    expect($this->service->getLimit($user, 'api_tokens'))->toBe(100);
+});
 
-    public function test_get_limit_returns_configured_limit_for_pro_plan(): void
-    {
-        config(['plans.pro.limits.api_tokens' => 100]);
-        $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
+it('returns null for unconfigured limit', function () {
+    config(['plans.free.limits' => []]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-        $this->assertEquals(100, $this->service->getLimit($user, 'api_tokens'));
-    }
+    expect($this->service->getLimit($user, 'nonexistent_limit'))->toBeNull();
+});
 
-    public function test_get_limit_returns_null_for_unconfigured_limit(): void
-    {
-        config(['plans.free.limits' => []]);
-        $user = User::factory()->create(['trial_ends_at' => null]);
+it('returns pro limits during trial', function () {
+    config(['plans.free.limits.projects' => 5]);
+    config(['plans.pro.limits.projects' => 50]);
+    $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
 
-        $this->assertNull($this->service->getLimit($user, 'nonexistent_limit'));
-    }
+    expect($this->service->getLimit($user, 'projects'))->toBe(50);
+});
 
-    public function test_get_limit_returns_pro_limits_during_trial(): void
-    {
-        config(['plans.free.limits.projects' => 5]);
-        config(['plans.pro.limits.projects' => 50]);
-        $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
+// ============================================
+// canPerform() tests
+// ============================================
 
-        $this->assertEquals(50, $this->service->getLimit($user, 'projects'));
-    }
+it('returns true when under limit', function () {
+    config(['plans.free.limits.api_tokens' => 5]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-    // ============================================
-    // canPerform() tests
-    // ============================================
+    expect($this->service->canPerform($user, 'api_tokens', 3))->toBeTrue();
+});
 
-    public function test_can_perform_returns_true_when_under_limit(): void
-    {
-        config(['plans.free.limits.api_tokens' => 5]);
-        $user = User::factory()->create(['trial_ends_at' => null]);
+it('returns false when at limit', function () {
+    config(['plans.free.limits.api_tokens' => 5]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-        $this->assertTrue($this->service->canPerform($user, 'api_tokens', 3));
-    }
+    expect($this->service->canPerform($user, 'api_tokens', 5))->toBeFalse();
+});
 
-    public function test_can_perform_returns_false_when_at_limit(): void
-    {
-        config(['plans.free.limits.api_tokens' => 5]);
-        $user = User::factory()->create(['trial_ends_at' => null]);
+it('returns false when over limit', function () {
+    config(['plans.free.limits.api_tokens' => 5]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-        $this->assertFalse($this->service->canPerform($user, 'api_tokens', 5));
-    }
+    expect($this->service->canPerform($user, 'api_tokens', 10))->toBeFalse();
+});
 
-    public function test_can_perform_returns_false_when_over_limit(): void
-    {
-        config(['plans.free.limits.api_tokens' => 5]);
-        $user = User::factory()->create(['trial_ends_at' => null]);
+it('returns true when limit is null meaning unlimited', function () {
+    config(['plans.free.limits.api_tokens' => null]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-        $this->assertFalse($this->service->canPerform($user, 'api_tokens', 10));
-    }
+    expect($this->service->canPerform($user, 'api_tokens', 1000))->toBeTrue();
+});
 
-    public function test_can_perform_returns_true_when_limit_is_null_meaning_unlimited(): void
-    {
-        config(['plans.free.limits.api_tokens' => null]);
-        $user = User::factory()->create(['trial_ends_at' => null]);
+it('returns true with zero current count', function () {
+    config(['plans.free.limits.api_tokens' => 5]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-        $this->assertTrue($this->service->canPerform($user, 'api_tokens', 1000));
-    }
+    expect($this->service->canPerform($user, 'api_tokens', 0))->toBeTrue();
+});
 
-    public function test_can_perform_with_zero_current_count(): void
-    {
-        config(['plans.free.limits.api_tokens' => 5]);
-        $user = User::factory()->create(['trial_ends_at' => null]);
+it('returns false with zero limit and zero count', function () {
+    config(['plans.free.limits.api_tokens' => 0]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
 
-        $this->assertTrue($this->service->canPerform($user, 'api_tokens', 0));
-    }
+    expect($this->service->canPerform($user, 'api_tokens', 0))->toBeFalse();
+});
 
-    public function test_can_perform_returns_true_with_zero_limit_and_zero_count(): void
-    {
-        config(['plans.free.limits.api_tokens' => 0]);
-        $user = User::factory()->create(['trial_ends_at' => null]);
+it('uses pro limits during trial for canPerform', function () {
+    config(['plans.free.limits.projects' => 2]);
+    config(['plans.pro.limits.projects' => 20]);
+    $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
 
-        // 0 is not less than 0, so should return false
-        $this->assertFalse($this->service->canPerform($user, 'api_tokens', 0));
-    }
+    expect($this->service->canPerform($user, 'projects', 15))->toBeTrue();
 
-    public function test_can_perform_uses_pro_limits_during_trial(): void
-    {
-        config(['plans.free.limits.projects' => 2]);
-        config(['plans.pro.limits.projects' => 20]);
-        $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
+    $expiredUser = User::factory()->create(['trial_ends_at' => now()->subDays(1)]);
+    expect($this->service->canPerform($expiredUser, 'projects', 15))->toBeFalse();
+});
 
-        // Should be able to create 15 projects during trial (under pro limit)
-        $this->assertTrue($this->service->canPerform($user, 'projects', 15));
+// ============================================
+// Cashier integration tests
+// ============================================
 
-        // But would fail on free plan
-        $expiredUser = User::factory()->create(['trial_ends_at' => now()->subDays(1)]);
-        $this->assertFalse($this->service->canPerform($expiredUser, 'projects', 15));
-    }
-}
+it('returns pro plan when subscribed and billing enabled', function () {
+    config(['features.billing.enabled' => true]);
+    ensureCashierTablesExist();
+    $user = User::factory()->create(['trial_ends_at' => null]);
+    createSubscription($user, ['stripe_price' => 'price_pro_monthly']);
+
+    expect($this->service->getUserPlan($user->fresh()))->toBe('pro');
+});
+
+it('returns team plan when team subscribed', function () {
+    config(['features.billing.enabled' => true]);
+    ensureCashierTablesExist();
+    $user = User::factory()->create(['trial_ends_at' => null]);
+    createTeamSubscription($user, 5);
+
+    expect($this->service->getUserPlan($user->fresh()))->toBe('team');
+});
+
+it('returns enterprise plan when enterprise subscribed', function () {
+    config(['features.billing.enabled' => true]);
+    ensureCashierTablesExist();
+    $user = User::factory()->create(['trial_ends_at' => null]);
+    createEnterpriseSubscription($user, 10);
+
+    expect($this->service->getUserPlan($user->fresh()))->toBe('enterprise');
+});
+
+it('returns free plan when billing disabled even if subscribed', function () {
+    config(['features.billing.enabled' => false]);
+    ensureCashierTablesExist();
+    $user = User::factory()->create(['trial_ends_at' => null]);
+    createSubscription($user, ['stripe_price' => 'price_pro_monthly']);
+
+    expect($this->service->getUserPlan($user->fresh()))->toBe('free');
+});
+
+it('returns correct tier during grace period', function () {
+    config(['features.billing.enabled' => true]);
+    ensureCashierTablesExist();
+    $user = User::factory()->create(['trial_ends_at' => null]);
+    createTeamSubscription($user, 5, ['ends_at' => now()->addDays(5)]);
+
+    expect($this->service->getUserPlan($user->fresh()))->toBe('team');
+});
+
+it('returns free plan when subscription ended', function () {
+    config(['features.billing.enabled' => true]);
+    ensureCashierTablesExist();
+    $user = User::factory()->create(['trial_ends_at' => null]);
+    createSubscription($user, [
+        'stripe_status' => 'canceled',
+        'ends_at' => now()->subDay(),
+    ]);
+
+    expect($this->service->getUserPlan($user->fresh()))->toBe('free');
+});
+
+it('gives trial precedence over subscription check', function () {
+    config(['features.billing.enabled' => true]);
+    config(['plans.trial.tier' => 'pro']);
+    ensureCashierTablesExist();
+    $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
+
+    expect($this->service->getUserPlan($user))->toBe('pro');
+});
+
+it('gives team subscription user team tier limits', function () {
+    config(['features.billing.enabled' => true]);
+    config(['plans.team.limits.api_tokens' => 25]);
+    config(['plans.pro.limits.api_tokens' => 10]);
+    ensureCashierTablesExist();
+    $user = User::factory()->create(['trial_ends_at' => null]);
+    createTeamSubscription($user, 5);
+
+    expect($this->service->getLimit($user->fresh(), 'api_tokens'))->toBe(25);
+});

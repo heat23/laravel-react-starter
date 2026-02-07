@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\BillingService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -13,6 +14,10 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    public function __construct(
+        private BillingService $billingService,
+    ) {}
 
     /**
      * Determine the current asset version.
@@ -41,6 +46,18 @@ class HandleInertiaRequests extends Middleware
                     'two_factor_enabled' => config('features.two_factor.enabled', false)
                         ? $request->user()->hasTwoFactorEnabled()
                         : false,
+                    'subscription' => config('features.billing.enabled', false) ? function () use ($request) {
+                        $request->user()->loadMissing('subscriptions');
+                        $status = $this->billingService->getSubscriptionStatus($request->user());
+
+                        return [
+                            'subscribed' => $status['subscribed'],
+                            'tier' => $status['tier'],
+                            'on_trial' => $status['on_trial'],
+                            'on_grace_period' => $status['on_grace_period'],
+                            'quantity' => $status['quantity'],
+                        ];
+                    } : null,
                 ] : null,
             ],
             'flash' => [

@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\Billing\BillingController;
 use App\Http\Controllers\Billing\PricingController;
+use App\Http\Controllers\Billing\StripeWebhookController;
+use App\Http\Controllers\Billing\SubscriptionController;
 use App\Http\Controllers\ChartsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
@@ -64,10 +66,24 @@ if (config('features.api_tokens.enabled', true)) {
 
 // Billing routes (optional feature - requires Laravel Cashier)
 if (config('features.billing.enabled', false)) {
+    // Public pricing page
+    Route::get('/pricing', PricingController::class)->name('pricing');
+
     Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
-        Route::get('/pricing', PricingController::class)->name('pricing');
+        Route::post('/billing/subscribe', [SubscriptionController::class, 'subscribe'])->middleware('throttle:5,1')->name('billing.subscribe');
+        Route::post('/billing/cancel', [SubscriptionController::class, 'cancel'])->middleware('throttle:5,1')->name('billing.cancel');
+        Route::post('/billing/resume', [SubscriptionController::class, 'resume'])->middleware('throttle:5,1')->name('billing.resume');
+        Route::post('/billing/swap', [SubscriptionController::class, 'swap'])->middleware('throttle:5,1')->name('billing.swap');
+        Route::post('/billing/quantity', [SubscriptionController::class, 'updateQuantity'])->middleware('throttle:5,1')->name('billing.quantity');
+        Route::post('/billing/payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->middleware('throttle:5,1')->name('billing.payment-method');
+        Route::get('/billing/portal', [SubscriptionController::class, 'portal'])->name('billing.portal');
     });
+
+    // Stripe webhook (no auth - Cashier verifies signature)
+    Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
+        ->middleware('throttle:120,1')
+        ->name('cashier.webhook');
 }
 
 // Two-Factor Authentication settings (feature-gated in controller constructor)

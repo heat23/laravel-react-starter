@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\DeleteAccountRequest;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Jobs\CancelOrphanedStripeSubscription;
 use App\Services\AuditService;
+use App\Services\BillingService;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,7 +19,8 @@ use Inertia\Response;
 class ProfileController extends Controller
 {
     public function __construct(
-        private AuditService $auditService
+        private AuditService $auditService,
+        private BillingService $billingService,
     ) {}
 
     /**
@@ -57,6 +61,26 @@ class ProfileController extends Controller
         $this->authorize('delete', $request->user());
 
         $user = $request->user();
+
+        // Cancel any active subscription before deletion
+        if (config('features.billing.enabled')) {
+            $user->loadMissing('subscriptions.items');
+
+            if ($user->subscribed('default')) {
+                try {
+                    $this->billingService->cancelSubscription($user, immediately: true);
+                } catch (\Throwable $e) {
+                    Log::error('Failed to cancel subscription during account deletion', [
+                        'user_id' => $user->id,
+                        'error' => $e->getMessage(),
+                    ]);
+
+                    if ($user->stripe_id) {
+                        CancelOrphanedStripeSubscription::dispatch($user->stripe_id, $user->id);
+                    }
+                }
+            }
+        }
 
         $this->auditService->log('account.deleted', [
             'user_id' => $user->id,

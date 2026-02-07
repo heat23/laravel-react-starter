@@ -3,6 +3,7 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
          colors="true"
+         cacheDirectory=".phpunit.cache"
 >
     <testsuites>
         <testsuite name="Unit">
@@ -29,5 +30,14 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="STRIPE_SECRET" value="sk_test_fake"/>
+        <env name="STRIPE_WEBHOOK_SECRET" value="whsec_test"/>
+        <env name="STRIPE_PRICE_PRO" value="price_pro_monthly"/>
+        <env name="STRIPE_PRICE_PRO_ANNUAL" value="price_pro_annual"/>
+        <env name="STRIPE_PRICE_TEAM" value="price_team_monthly"/>
+        <env name="STRIPE_PRICE_TEAM_ANNUAL" value="price_team_annual"/>
+        <env name="STRIPE_PRICE_ENTERPRISE" value="price_enterprise_monthly"/>
+        <env name="STRIPE_PRICE_ENTERPRISE_ANNUAL" value="price_enterprise_annual"/>
+        <env name="CASHIER_LOGGER" value=""/>
     </php>
 </phpunit>

@@ -15,6 +15,10 @@ use Carbon\Carbon;
  */
 class PlanLimitService
 {
+    public function __construct(
+        private BillingService $billingService,
+    ) {}
+
     /**
      * Check if trials are enabled in configuration.
      */
@@ -63,20 +67,20 @@ class PlanLimitService
     /**
      * Get the user's current plan tier.
      *
-     * Returns 'pro' during trial, otherwise 'free'.
-     * When billing feature is enabled, integrate Laravel Cashier here.
+     * Resolves tier from: trial > active subscription > free.
+     * Subscription tier is determined by the Stripe price ID on the subscription.
      */
     public function getUserPlan(User $user): string
     {
-        // During trial, user has pro access
+        // During trial, user has trial-tier access
         if ($this->isOnTrial($user)) {
             return config('plans.trial.tier', 'pro');
         }
 
-        // Cashier integration point:
-        // if (config('features.billing.enabled') && $user->subscribed('default')) {
-        //     return 'pro';
-        // }
+        // Resolve tier from active subscription's Stripe price
+        if (config('features.billing.enabled') && $user->subscribed('default')) {
+            return $this->billingService->resolveUserTier($user);
+        }
 
         return 'free';
     }
