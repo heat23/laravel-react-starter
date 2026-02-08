@@ -75,3 +75,5 @@ lighthouse-report*
 stats.html
 .bundle-baseline.json
 .vibe-cache/
+.vibe-locks/
+.vibe.json
