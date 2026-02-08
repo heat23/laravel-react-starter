@@ -17,8 +17,7 @@ it('prevents duplicate active subscriptions at database level', function () {
 
     // Create first active subscription
     DB::table('subscriptions')->insert([
-        'billable_type' => User::class,
-        'billable_id' => $user->id,
+        'user_id' => $user->id,
         'type' => 'default',
         'stripe_id' => 'sub_test_1',
         'stripe_status' => 'active',
@@ -31,8 +30,7 @@ it('prevents duplicate active subscriptions at database level', function () {
     // Attempt to create duplicate active subscription (bypassing application validation)
     expect(function () use ($user, $priceId) {
         DB::table('subscriptions')->insert([
-            'billable_type' => User::class,
-            'billable_id' => $user->id,
+            'user_id' => $user->id,
             'type' => 'default',
             'stripe_id' => 'sub_test_2',
             'stripe_status' => 'active',
@@ -45,7 +43,7 @@ it('prevents duplicate active subscriptions at database level', function () {
 
     // Verify only one active subscription exists
     $activeCount = DB::table('subscriptions')
-        ->where('billable_id', $user->id)
+        ->where('user_id', $user->id)
         ->whereNull('ends_at')
         ->count();
 
@@ -58,8 +56,7 @@ it('allows multiple subscriptions when previous ones are canceled', function () 
 
     // Create first subscription and cancel it
     DB::table('subscriptions')->insert([
-        'billable_type' => User::class,
-        'billable_id' => $user->id,
+        'user_id' => $user->id,
         'type' => 'default',
         'stripe_id' => 'sub_test_1',
         'stripe_status' => 'canceled',
@@ -72,8 +69,7 @@ it('allows multiple subscriptions when previous ones are canceled', function () 
 
     // Create new active subscription - should succeed
     DB::table('subscriptions')->insert([
-        'billable_type' => User::class,
-        'billable_id' => $user->id,
+        'user_id' => $user->id,
         'type' => 'default',
         'stripe_id' => 'sub_test_2',
         'stripe_status' => 'active',
@@ -85,7 +81,7 @@ it('allows multiple subscriptions when previous ones are canceled', function () 
 
     // Verify both subscriptions exist
     $totalCount = DB::table('subscriptions')
-        ->where('billable_id', $user->id)
+        ->where('user_id', $user->id)
         ->count();
 
     expect($totalCount)->toBe(2);
@@ -97,8 +93,7 @@ it('allows active subscription after previous one fully expired', function () {
 
     // Create first subscription that has fully expired
     DB::table('subscriptions')->insert([
-        'billable_type' => User::class,
-        'billable_id' => $user->id,
+        'user_id' => $user->id,
         'type' => 'default',
         'stripe_id' => 'sub_test_1',
         'stripe_status' => 'canceled',
@@ -111,8 +106,7 @@ it('allows active subscription after previous one fully expired', function () {
 
     // Create new active subscription - should succeed because previous has ends_at set
     DB::table('subscriptions')->insert([
-        'billable_type' => User::class,
-        'billable_id' => $user->id,
+        'user_id' => $user->id,
         'type' => 'default',
         'stripe_id' => 'sub_test_2',
         'stripe_status' => 'active',
@@ -124,14 +118,14 @@ it('allows active subscription after previous one fully expired', function () {
 
     // Verify both subscriptions exist
     $totalCount = DB::table('subscriptions')
-        ->where('billable_id', $user->id)
+        ->where('user_id', $user->id)
         ->count();
 
     expect($totalCount)->toBe(2);
 
     // Verify only one active (ends_at NULL)
     $activeCount = DB::table('subscriptions')
-        ->where('billable_id', $user->id)
+        ->where('user_id', $user->id)
         ->whereNull('ends_at')
         ->count();
 
@@ -145,8 +139,7 @@ it('allows different users to have active subscriptions simultaneously', functio
 
     // Create active subscription for user 1
     DB::table('subscriptions')->insert([
-        'billable_type' => User::class,
-        'billable_id' => $user1->id,
+        'user_id' => $user1->id,
         'type' => 'default',
         'stripe_id' => 'sub_test_1',
         'stripe_status' => 'active',
@@ -158,8 +151,7 @@ it('allows different users to have active subscriptions simultaneously', functio
 
     // Create active subscription for user 2 - should succeed (different user)
     DB::table('subscriptions')->insert([
-        'billable_type' => User::class,
-        'billable_id' => $user2->id,
+        'user_id' => $user2->id,
         'type' => 'default',
         'stripe_id' => 'sub_test_2',
         'stripe_status' => 'active',
@@ -170,6 +162,6 @@ it('allows different users to have active subscriptions simultaneously', functio
     ]);
 
     // Verify both users have one active subscription
-    expect(DB::table('subscriptions')->where('billable_id', $user1->id)->whereNull('ends_at')->count())->toBe(1);
-    expect(DB::table('subscriptions')->where('billable_id', $user2->id)->whereNull('ends_at')->count())->toBe(1);
+    expect(DB::table('subscriptions')->where('user_id', $user1->id)->whereNull('ends_at')->count())->toBe(1);
+    expect(DB::table('subscriptions')->where('user_id', $user2->id)->whereNull('ends_at')->count())->toBe(1);
 });
