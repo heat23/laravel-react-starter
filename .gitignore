@@ -79,3 +79,4 @@ stats.html
 .vibe.json
 REVIEW_REPORT_*
 storage/phpstan/cache/*
+.phpunit.cache/*

@@ -33,6 +33,20 @@ class UserFactory extends Factory
     }
 
     /**
+     * Configure the model factory after creating.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (\App\Models\User $user) {
+            // Mark onboarding as completed by default for test users
+            // Tests can explicitly create incomplete onboarding users via onboardingIncomplete()
+            if (config('features.onboarding.enabled') && config('features.user_settings.enabled', true)) {
+                $user->setSetting('onboarding_completed', true);
+            }
+        });
+    }
+
+    /**
      * Indicate that the model's email address should be unverified.
      */
     public function unverified(): static
@@ -62,6 +76,18 @@ class UserFactory extends Factory
             // Directly enable to avoid caching the TOTP code as "used"
             // (confirmTwoFactorAuth validates the code which marks it used in cache)
             $user->enableTwoFactorAuth();
+        });
+    }
+
+    /**
+     * Indicate that onboarding has NOT been completed.
+     * Useful for testing onboarding flows.
+     */
+    public function onboardingIncomplete(): static
+    {
+        return $this->afterCreating(function (\App\Models\User $user) {
+            // Delete the onboarding_completed setting if it was created
+            $user->settings()->where('key', 'onboarding_completed')->delete();
         });
     }
 }

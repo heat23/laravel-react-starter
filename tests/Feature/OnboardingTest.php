@@ -22,7 +22,7 @@ it('redirects unauthenticated user to login', function () {
 });
 
 it('redirects to onboarding from dashboard when not completed', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->onboardingIncomplete()->create();
 
     $response = $this->actingAs($user)->get('/dashboard');
 

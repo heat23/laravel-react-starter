@@ -205,7 +205,9 @@ class UserSettingTest extends TestCase
 
         UserSetting::setValue($user->id, 'existing', 'new_value');
 
-        $this->assertDatabaseCount('user_settings', 1);
+        // Assert that the setting was updated (not duplicated)
+        // Note: User factory may create onboarding_completed setting, so we check specific key
+        expect(UserSetting::where('user_id', $user->id)->where('key', 'existing')->count())->toBe(1);
         $this->assertDatabaseHas('user_settings', [
             'user_id' => $user->id,
             'key' => 'existing',

@@ -66,6 +66,9 @@ class BillingController extends Controller
                     'user_id' => $user->id,
                     'error' => $e->getMessage(),
                 ]);
+
+                // Show user-friendly error message via flash toast (handled by useFlashToasts hook)
+                session()->flash('error', 'Unable to load recent invoices. Please try again later.');
             }
         }
 

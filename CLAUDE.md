@@ -789,6 +789,12 @@ Before claiming a UI feature done:
   - Inertia router calls (`router.patch`, `router.post`) are fire-and-forget — when testing hooks/components that wrap them, mock with `onSuccess` callback invocation to simulate real async behavior
   - For every mutation test, verify both the success path AND the final state (e.g., `$user->fresh()->is_admin` after toggle)
   - Edge case coverage required: soft-deleted users, unverified users, null/missing relationships, concurrent operations
+- **Boot-time route registration limitation:**
+  - Routes conditionally registered at boot time (e.g., `if (config('features.billing.enabled'))` in route files) cannot be tested for both enabled/disabled states in the same test suite
+  - Feature flags set in `phpunit.xml` determine which routes are registered at application boot
+  - Tests can verify route behavior when enabled (route exists) OR when disabled (route returns 404), but not both
+  - Example: BillingFeatureFlagTest is skipped because billing routes are enabled in phpunit.xml
+  - Workaround: Test route-specific logic (controllers, middleware) in unit tests; only test route registration in integration tests matching the phpunit.xml config
 
 **Migrations:**
 - Always check before adding/dropping columns: `Schema::hasColumn()`

@@ -1,9 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import axios from "axios";
 import { toast } from "sonner";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { usePage } from "@inertiajs/react";
 

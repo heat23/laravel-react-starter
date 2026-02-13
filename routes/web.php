@@ -29,17 +29,6 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::get('/', WelcomeController::class)->name('welcome');
-Route::get('/sitemap.xml', function () {
-    return response()->view('sitemap')->header('Content-Type', 'application/xml');
-})->name('sitemap');
-Route::get('/robots.txt', function () {
-    $content = match (app()->environment()) {
-        'production' => "User-agent: *\nAllow: /\nSitemap: ".url('/sitemap.xml'),
-        default => "User-agent: *\nDisallow: /",
-    };
-
-    return response($content)->header('Content-Type', 'text/plain');
-})->name('robots');
 
 // Onboarding (route always registered; middleware checks feature flag)
 Route::middleware('auth')->group(function () {

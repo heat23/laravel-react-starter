@@ -39,5 +39,18 @@
         <env name="STRIPE_PRICE_ENTERPRISE" value="price_enterprise_monthly"/>
         <env name="STRIPE_PRICE_ENTERPRISE_ANNUAL" value="price_enterprise_annual"/>
         <env name="CASHIER_LOGGER" value=""/>
+        <!-- Feature Flags: Only set those that need to be enabled for tests -->
+        <!-- Defaults match config/features.php unless routes need to exist for tests -->
+        <env name="FEATURE_ADMIN" value="true"/>
+        <env name="FEATURE_BILLING" value="true"/>
+        <env name="FEATURE_SOCIAL_AUTH" value="true"/>
+        <env name="FEATURE_EMAIL_VERIFICATION" value="true"/>
+        <env name="FEATURE_API_TOKENS" value="true"/>
+        <env name="FEATURE_USER_SETTINGS" value="true"/>
+        <!-- FEATURE_NOTIFICATIONS defaults to false - let tests that need it set it explicitly -->
+        <env name="FEATURE_ONBOARDING" value="true"/>
+        <!-- FEATURE_API_DOCS defaults to false - let tests that need it set it explicitly -->
+        <env name="FEATURE_TWO_FACTOR" value="true"/>
+        <env name="FEATURE_WEBHOOKS" value="true"/>
     </php>
 </phpunit>

@@ -15,7 +15,7 @@ it('allows through when onboarding feature is disabled', function () {
 it('redirects to onboarding when not completed', function () {
     config()->set('features.onboarding.enabled', true);
 
-    $user = User::factory()->create(['email_verified_at' => now()]);
+    $user = User::factory()->onboardingIncomplete()->create(['email_verified_at' => now()]);
 
     $response = $this->actingAs($user)->get(route('dashboard'));
 

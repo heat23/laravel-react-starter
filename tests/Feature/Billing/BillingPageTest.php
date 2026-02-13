@@ -46,7 +46,10 @@ it('returns subscription info when user is subscribed', function () {
         'stripe_price' => 'price_pro_monthly',
     ]);
 
-    config(['plans.pro.stripe_price_monthly' => 'price_pro_monthly']);
+    config([
+        'plans.pro.stripe_price_monthly' => 'price_pro_monthly',
+        'plans.pro.name' => 'Pro',
+    ]);
 
     $response = $this->actingAs($user)->get('/billing');
 
