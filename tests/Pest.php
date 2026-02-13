@@ -85,7 +85,7 @@ function ensureCashierTablesExist(): void
             $table->index('last_webhook_at');
         });
 
-        // Add unique constraint to prevent duplicate active subscriptions (SQLite partial index)
+        // Add unique constraint to prevent duplicate active subscriptions
         // Uses billable_type/billable_id for forward compatibility
         $driver = DB::getDriverName();
         if ($driver === 'sqlite') {
@@ -93,6 +93,16 @@ function ensureCashierTablesExist(): void
                 CREATE UNIQUE INDEX subscriptions_unique_active
                 ON subscriptions (COALESCE(billable_id, user_id), type)
                 WHERE ends_at IS NULL
+            ');
+        } elseif ($driver === 'mysql') {
+            // MySQL doesn't support partial indexes, use a generated column approach
+            DB::statement('
+                ALTER TABLE subscriptions
+                ADD COLUMN active_flag TINYINT(1) GENERATED ALWAYS AS (IF(ends_at IS NULL, 1, NULL)) STORED
+            ');
+            DB::statement('
+                CREATE UNIQUE INDEX subscriptions_unique_active
+                ON subscriptions (COALESCE(billable_id, user_id), type, active_flag)
             ');
         }
     }
@@ -106,6 +116,8 @@ function ensureCashierTablesExist(): void
             $table->integer('quantity')->nullable();
             $table->timestamps();
             $table->index(['subscription_id', 'stripe_price']);
+            // Composite index for AdminBillingStatsService subquery optimization
+            $table->index(['subscription_id', 'id'], 'subscription_items_subscription_id_id_index');
         });
     }
 }

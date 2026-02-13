@@ -220,5 +220,6 @@ it('stores payload as valid JSON', function () {
 
     $delivery = WebhookDelivery::first();
 
-    expect($delivery->payload)->toBe($payload);
+    // Compare as array to handle key ordering differences between SQLite and MySQL JSON storage
+    expect($delivery->payload)->toMatchArray($payload);
 });

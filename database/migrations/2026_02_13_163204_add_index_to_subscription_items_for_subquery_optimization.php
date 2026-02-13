@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('subscription_items', function (Blueprint $table) {
             // Add composite index for AdminBillingStatsService subquery optimization
             // This index improves performance of correlated subqueries in getFilteredSubscriptions()
-            $table->index(['subscription_id', 'id'], 'idx_subscription_items_sub_id_id');
+            $table->index(['subscription_id', 'id'], 'subscription_items_subscription_id_id_index');
         });
     }
 
@@ -24,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('subscription_items', function (Blueprint $table) {
-            $table->dropIndex('idx_subscription_items_sub_id_id');
+            $table->dropIndex('subscription_items_subscription_id_id_index');
         });
     }
 };
