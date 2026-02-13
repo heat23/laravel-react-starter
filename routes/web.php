@@ -34,9 +34,10 @@ Route::get('/sitemap.xml', function () {
 })->name('sitemap');
 Route::get('/robots.txt', function () {
     $content = match (app()->environment()) {
-        'production' => "User-agent: *\nAllow: /\nSitemap: " . url('/sitemap.xml'),
+        'production' => "User-agent: *\nAllow: /\nSitemap: ".url('/sitemap.xml'),
         default => "User-agent: *\nDisallow: /",
     };
+
     return response($content)->header('Content-Type', 'text/plain');
 })->name('robots');
 

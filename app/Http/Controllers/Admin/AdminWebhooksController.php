@@ -17,7 +17,7 @@ class AdminWebhooksController extends Controller
         $stats = Cache::remember(AdminCacheKey::WEBHOOKS_STATS->value, AdminCacheKey::DEFAULT_TTL, function () {
             $endpoints = DB::table('webhook_endpoints')
                 ->selectRaw('COUNT(*) as total')
-                ->selectRaw("SUM(CASE WHEN active = 1 AND deleted_at IS NULL THEN 1 ELSE 0 END) as active")
+                ->selectRaw('SUM(CASE WHEN active = 1 AND deleted_at IS NULL THEN 1 ELSE 0 END) as active')
                 ->first();
 
             $deliveries = DB::table('webhook_deliveries')

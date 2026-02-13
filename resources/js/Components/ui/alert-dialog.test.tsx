@@ -186,7 +186,9 @@ describe('AlertDialog', () => {
     it('applies custom className', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent className="custom-content">Content</AlertDialogContent>
+          <AlertDialogContent className="custom-content" aria-describedby={undefined}>
+            Content
+          </AlertDialogContent>
         </AlertDialog>,
       );
 
@@ -213,7 +215,7 @@ describe('AlertDialog', () => {
     it('renders children', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogHeader>
               <span data-testid="header-content">Header Content</span>
             </AlertDialogHeader>
@@ -227,7 +229,7 @@ describe('AlertDialog', () => {
     it('applies default classes', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogHeader data-testid="header">Content</AlertDialogHeader>
           </AlertDialogContent>
         </AlertDialog>,
@@ -239,7 +241,7 @@ describe('AlertDialog', () => {
     it('applies custom className', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogHeader className="custom-header" data-testid="header">
               Content
             </AlertDialogHeader>
@@ -263,7 +265,7 @@ describe('AlertDialog', () => {
     it('renders children', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogFooter>
               <Button>Action</Button>
             </AlertDialogFooter>
@@ -277,7 +279,7 @@ describe('AlertDialog', () => {
     it('applies default classes', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogFooter data-testid="footer">Content</AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>,
@@ -294,7 +296,7 @@ describe('AlertDialog', () => {
     it('applies custom className', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogFooter className="custom-footer" data-testid="footer">
               Content
             </AlertDialogFooter>
@@ -318,7 +320,7 @@ describe('AlertDialog', () => {
     it('renders title text', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogTitle>My Title</AlertDialogTitle>
           </AlertDialogContent>
         </AlertDialog>,
@@ -330,7 +332,7 @@ describe('AlertDialog', () => {
     it('applies default classes', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogTitle data-testid="title">Title</AlertDialogTitle>
           </AlertDialogContent>
         </AlertDialog>,
@@ -342,7 +344,7 @@ describe('AlertDialog', () => {
     it('applies custom className', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogTitle className="custom-title" data-testid="title">
               Title
             </AlertDialogTitle>
@@ -366,7 +368,7 @@ describe('AlertDialog', () => {
     it('renders description text', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogDescription>My Description</AlertDialogDescription>
           </AlertDialogContent>
         </AlertDialog>,
@@ -378,7 +380,7 @@ describe('AlertDialog', () => {
     it('applies default classes', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogDescription data-testid="description">Description</AlertDialogDescription>
           </AlertDialogContent>
         </AlertDialog>,
@@ -390,7 +392,7 @@ describe('AlertDialog', () => {
     it('applies custom className', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogDescription className="custom-description" data-testid="description">
               Description
             </AlertDialogDescription>
@@ -414,7 +416,7 @@ describe('AlertDialog', () => {
     it('renders with button variant styles', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogAction>Action</AlertDialogAction>
           </AlertDialogContent>
         </AlertDialog>,
@@ -428,7 +430,7 @@ describe('AlertDialog', () => {
     it('applies custom className', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogAction className="custom-action">Action</AlertDialogAction>
           </AlertDialogContent>
         </AlertDialog>,
@@ -450,7 +452,7 @@ describe('AlertDialog', () => {
     it('renders with outline variant styles', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
           </AlertDialogContent>
         </AlertDialog>,
@@ -464,7 +466,7 @@ describe('AlertDialog', () => {
     it('applies custom className', () => {
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogCancel className="custom-cancel">Cancel</AlertDialogCancel>
           </AlertDialogContent>
         </AlertDialog>,
@@ -559,7 +561,9 @@ describe('AlertDialog', () => {
       const ref = createRef<HTMLDivElement>();
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent ref={ref}>Content</AlertDialogContent>
+          <AlertDialogContent ref={ref} aria-describedby={undefined}>
+            Content
+          </AlertDialogContent>
         </AlertDialog>,
       );
 
@@ -570,7 +574,7 @@ describe('AlertDialog', () => {
       const ref = createRef<HTMLHeadingElement>();
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogTitle ref={ref}>Title</AlertDialogTitle>
           </AlertDialogContent>
         </AlertDialog>,
@@ -583,7 +587,7 @@ describe('AlertDialog', () => {
       const ref = createRef<HTMLParagraphElement>();
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogDescription ref={ref}>Description</AlertDialogDescription>
           </AlertDialogContent>
         </AlertDialog>,
@@ -596,7 +600,7 @@ describe('AlertDialog', () => {
       const ref = createRef<HTMLButtonElement>();
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogAction ref={ref}>Action</AlertDialogAction>
           </AlertDialogContent>
         </AlertDialog>,
@@ -609,7 +613,7 @@ describe('AlertDialog', () => {
       const ref = createRef<HTMLButtonElement>();
       render(
         <AlertDialog open={true}>
-          <AlertDialogContent>
+          <AlertDialogContent aria-describedby={undefined}>
             <AlertDialogCancel ref={ref}>Cancel</AlertDialogCancel>
           </AlertDialogContent>
         </AlertDialog>,

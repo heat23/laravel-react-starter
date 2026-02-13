@@ -21,7 +21,7 @@ class CreateTokenRequest extends FormRequest
             'name' => 'required|string|max:255',
             'abilities' => 'array|max:10',
             'abilities.*' => ['string', Rule::in(['read', 'write', 'delete'])],
-            'expires_at' => 'nullable|date|after:now|before:' . now()->addYear()->format('Y-m-d'),
+            'expires_at' => 'nullable|date|after:now|before:'.now()->addYear()->format('Y-m-d'),
         ];
     }
 

@@ -6,19 +6,96 @@
 
 ## 🛡️ AI Development Safeguards
 
-**IMPORTANT:** When using AI assistants for development, follow the safeguards in [docs/AI_DEVELOPMENT_SAFEGUARDS.md](docs/AI_DEVELOPMENT_SAFEGUARDS.md) to prevent regressions.
+**CRITICAL:** AI assistants MUST follow these workflows to prevent regressions. Human developers should use the same processes when working solo.
 
-**Quick Reference:**
-- ✅ Pre-commit hooks enforce quality gates (`.husky/pre-commit`)
-- ✅ PHPStan static analysis catches bugs early (`vendor/bin/phpstan analyse`)
-- ✅ Contract tests protect critical behavior (`tests/Contracts/`)
-- ✅ Testing guidelines MANDATORY for AI ([docs/TESTING_GUIDELINES.md](docs/TESTING_GUIDELINES.md))
-- ✅ Architectural decisions documented ([docs/adr/](docs/adr/))
+### 📋 Workflow for AI Assistants
 
-**Before claiming any work complete:**
+**When receiving ANY task, use this structured approach:**
+
+#### 1. **Planning Phase** (BEFORE writing code)
+Follow: [docs/PLANNING_CHECKLIST.md](docs/PLANNING_CHECKLIST.md)
+
+**Required steps:**
+- Search for similar implementations (reuse, don't recreate)
+- Check for contract tests in affected area
+- Read relevant ADRs
+- List edge cases
+- Design architecture
+- Plan testing strategy
+- Assess breaking changes
+- Get user approval BEFORE implementation
+
+#### 2. **Implementation Phase** (WHILE writing code)
+Follow: [docs/IMPLEMENTATION_GUARDRAILS.md](docs/IMPLEMENTATION_GUARDRAILS.md)
+
+**Required steps:**
+- Write tests FIRST (TDD for business logic)
+- Run tests after EACH file change
+- Run PHPStan after each PHP file change
+- Commit every 15-30 minutes
+- Self-verify before moving to next step
+- Stop immediately if any check fails
+
+#### 3. **Verification Phase** (AFTER implementation)
+Follow: [docs/TESTING_GUIDELINES.md](docs/TESTING_GUIDELINES.md)
+
+**Required steps:**
 ```bash
-bash scripts/test-quality-check.sh  # Runs all quality gates
+# Full quality gate check
+bash scripts/test-quality-check.sh
+
+# Or run manually:
+php artisan test --parallel
+npm test
+vendor/bin/phpstan analyse
+vendor/bin/pint --test
+npm run lint
+npm run build
+php artisan test tests/Contracts/  # If contract tests exist
 ```
+
+### 📝 Prompt Templates
+
+For structured requests, use templates in [docs/AI_PROMPT_TEMPLATES.md](docs/AI_PROMPT_TEMPLATES.md):
+
+- **Template 1:** Feature Implementation (new features)
+- **Template 2:** Bug Fix (fixing regressions)
+- **Template 3:** Refactoring (improving code structure)
+- **Template 4:** Database Migration (schema changes)
+- **Template 5:** API Endpoint Addition (new API routes)
+
+### 🔒 Defense Layers
+
+**Reactive (Catch after commit):**
+- ✅ Pre-commit hooks (`.husky/pre-commit`) - Block bad commits
+- ✅ CI/CD quality gates (`.github/workflows/ci.yml`) - Block bad merges
+- ✅ Test quality monitoring (`scripts/test-quality-check.sh`) - Detect weak tests
+- ✅ Mutation testing (`infection`) - Verify tests catch bugs
+
+**Proactive (Catch during development):**
+- ✅ Planning checklist - Prevent bad designs
+- ✅ Implementation guardrails - Real-time verification
+- ✅ Contract tests (`tests/Contracts/`) - Protect critical behavior
+- ✅ Architectural Decision Records (`docs/adr/`) - Document assumptions
+- ✅ Prompt templates - Enforce structured thinking
+
+### ⚠️ Critical Rules for AI
+
+**DO NOT:**
+- ❌ Write code before completing planning checklist
+- ❌ Skip tests (TDD is mandatory for business logic)
+- ❌ Accumulate failures (fix immediately, don't continue)
+- ❌ Modify contract tests without user approval
+- ❌ Skip verification steps to "save time"
+- ❌ Claim work complete without running quality gates
+
+**DO:**
+- ✅ Search for existing patterns before creating new ones
+- ✅ Write tests FIRST for business logic
+- ✅ Run checks after EACH file change
+- ✅ Commit frequently (every 15-30 min)
+- ✅ Report verification results before continuing
+- ✅ Stop and ask if anything is unclear
 
 ## Customization via Feature Flags
 
@@ -328,6 +405,248 @@ return Inertia::render('Users/Index', [
     - **Nav/URL prefix collisions:** If adding a new nav item or route, does `startsWith` matching cause false positives with parent routes?
     - **Local state vs URL params:** If a component uses both `useState` and URL-based filters, does `clearFilters` reset ALL local state?
 
+## Error Recovery Playbooks
+
+### Test Failure Diagnosis Protocol
+
+When a test fails after implementation, follow this checklist **in order:**
+
+**Step 1: Classify the Failure**
+- **Type mismatch** (expected array, got object): Check Inertia prop structure
+- **Database state** (expected record not found): Check factory relationships, soft deletes
+- **Timing** (Promise resolved too early): Check async contract (Inertia router is fire-and-forget)
+- **Cache** (stale data): Did you invalidate AdminCacheKey after mutation?
+- **Feature flag** (route 404): Is the feature enabled in phpunit.xml or TestCase?
+
+**Step 2: Common Root Causes by Test Type**
+
+*Feature test redirects to unexpected route:*
+1. Check middleware stack (especially `verified`, `onboarding.completed`)
+2. Check authorization in controller (policy, manual auth checks)
+3. Check feature flag state in test
+4. Check if user is soft-deleted (use `withTrashed()` if needed)
+
+*Unit test returns wrong value:*
+1. Check if dependent methods are mocked correctly
+2. Check if relationships are loaded (call `->load()` before accessing)
+3. Check if cache is returning stale value (call `Cache::flush()` in beforeEach)
+4. Check if config values match expectations
+
+*Integration test with external service:*
+1. Verify mock/fake is called BEFORE model creation
+2. Verify job is dispatched (Queue::fake()) not executed synchronously
+3. Verify webhook signature format matches real provider format
+
+**Step 3: Fixes to NEVER Make**
+- ❌ Remove assertion to make test pass
+- ❌ Change assertion operator to weaker version (`toBe` → `not->toBeNull`)
+- ❌ Add `sleep()` or `usleep()` to fix timing
+- ❌ Disable middleware in test without understanding why it's failing
+- ❌ Use `$this->withoutExceptionHandling()` to pass 500 errors
+
+**Step 4: Fixes That Are Usually Correct**
+- ✅ Eager load relationships before accessing them
+- ✅ Invalidate cache keys after mutations
+- ✅ Add `withTrashed()` to queries that need soft-deleted records
+- ✅ Use `assertSessionHas()` for flash messages, not Inertia assertions
+- ✅ Mock Notification facade BEFORE creating models that dispatch events
+
+### Migration Failure Recovery
+
+**If `php artisan migrate` fails in production:**
+
+1. **DO NOT run `migrate:rollback` blindly** — it might drop production data
+
+2. **Diagnose the failure:**
+   - Check error message for specific issue (duplicate key, missing column, data type mismatch)
+   - Check if migration was partially applied: `SELECT * FROM migrations ORDER BY id DESC LIMIT 5;`
+
+3. **Write a fix migration instead:**
+   ```bash
+   php artisan make:migration fix_failed_migration_issue
+   ```
+
+**Common failure modes and fixes:**
+
+*Duplicate column (column already exists):*
+```php
+// Fix migration:
+public function up(): void
+{
+    Schema::table('users', function (Blueprint $table) {
+        if (!Schema::hasColumn('users', 'phone')) {
+            $table->string('phone')->nullable();
+        }
+    });
+}
+```
+
+*Data type mismatch (existing data doesn't fit new type):*
+```php
+// Failed: $table->integer('quantity')->change(); (but existing data has decimals)
+// Fix migration: migrate data first, then change type
+public function up(): void
+{
+    DB::table('order_items')->update(['quantity' => DB::raw('ROUND(quantity)')]);
+
+    Schema::table('order_items', function (Blueprint $table) {
+        $table->integer('quantity')->change();
+    });
+}
+```
+
+*Foreign key constraint failure (orphaned records exist):*
+```php
+// Fix migration: clean up orphans first
+public function up(): void
+{
+    DB::table('projects')->whereNotIn('user_id', DB::table('users')->pluck('id'))->delete();
+
+    Schema::table('projects', function (Blueprint $table) {
+        $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
+    });
+}
+```
+
+**Two-Phase Deploys for Breaking Schema Changes**
+
+When dropping a column:
+```php
+// ❌ Bad: drop column in same deploy as code removal
+// Problem: Zero-downtime deploy will have old code running with missing column
+
+// ✅ Good: two-phase deploy
+// Deploy 1: Remove code that uses column (migration does nothing)
+// Wait for rollout to complete (15 minutes)
+// Deploy 2: Add migration that drops column
+
+public function up(): void
+{
+    Schema::table('users', function (Blueprint $table) {
+        if (Schema::hasColumn('users', 'old_field')) {
+            $table->dropColumn('old_field');
+        }
+    });
+}
+```
+
+## Test Quality Standards
+
+### Anatomy of a High-Quality Test
+
+```php
+it('admin can toggle user admin status and change is logged', function () {
+    // 1. ARRANGE: Set up preconditions
+    $admin = User::factory()->admin()->create();
+    $targetUser = User::factory()->create(['is_admin' => false]);
+
+    // 2. ACT: Perform the action being tested
+    $response = $this->actingAs($admin)->patch("/admin/users/{$targetUser->id}/toggle-admin");
+
+    // 3. ASSERT: Verify user-visible outcomes
+    $response->assertRedirect();
+    $response->assertSessionHas('flash.type', 'success');
+
+    // 4. ASSERT: Verify database state changed correctly
+    expect($targetUser->fresh()->is_admin)->toBeTrue();
+
+    // 5. ASSERT: Verify side effects occurred
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => 'admin.user.toggle_admin',
+        'user_id' => $admin->id,
+        'data->target_user_id' => $targetUser->id,
+    ]);
+});
+```
+
+### Test Smell Checklist
+
+**❌ Testing implementation details:**
+```php
+// Bad: verifying mock was called
+$service = Mockery::mock(BillingService::class);
+$service->shouldReceive('cancelSubscription')->once();
+// Problem: Refactoring breaks test even if behavior is correct
+```
+
+**✅ Testing user-visible behavior:**
+```php
+// Good: verifying outcome
+$user = User::factory()->withSubscription()->create();
+
+$this->actingAs($user)->delete('/billing/subscription');
+
+expect($user->fresh()->subscription('default'))
+    ->onGracePeriod()->toBeTrue()
+    ->ends_at->toBeInstanceOf(Carbon::class);
+```
+
+**❌ Incomplete assertions:**
+```php
+// Bad: only checks redirect
+$this->actingAs($user)->patch('/profile', ['name' => 'New Name']);
+$this->assertRedirect(); // But did the name actually change?
+```
+
+**✅ Complete assertions:**
+```php
+// Good: verifies redirect AND database state
+$response = $this->actingAs($user)->patch('/profile', ['name' => 'New Name']);
+
+$response->assertRedirect('/profile');
+$response->assertSessionHas('flash.type', 'success');
+expect($user->fresh()->name)->toBe('New Name');
+```
+
+**❌ Test comments that lie:**
+```php
+// Bad: comment doesn't match assertion
+it('route requires authentication', function () {
+    $response = $this->get('/admin/users');
+    $response->assertStatus(403); // Comment says "requires auth", but checks 403 not 401/redirect
+});
+```
+
+**✅ Accurate test comments:**
+```php
+// Good: comment matches assertion
+it('route requires admin role (authenticated non-admins get 403)', function () {
+    $user = User::factory()->create(['is_admin' => false]);
+    $response = $this->actingAs($user)->get('/admin/users');
+    $response->assertStatus(403);
+});
+
+it('route redirects guests to login', function () {
+    $response = $this->get('/admin/users');
+    $response->assertRedirect('/login');
+});
+```
+
+### Edge Case Coverage Checklist
+
+Every feature test MUST include these scenarios (if applicable):
+
+- [ ] **Soft-deleted relationships:** Does code handle `$user->owner` when owner is soft-deleted?
+- [ ] **Null relationships:** Does code handle `$subscription->user` being null after user deletion?
+- [ ] **Unverified users:** Does route allow unverified users when `email_verification.enabled=false`?
+- [ ] **Feature disabled:** Does route return 404 when feature flag is off?
+- [ ] **Concurrent operations:** Does code prevent race conditions (use BillingService pattern)?
+- [ ] **Empty collections:** Does page render correctly with 0 results?
+- [ ] **Pagination edge cases:** Does page 1 show when page 999 requested?
+- [ ] **Authorization edge cases:** Does user B's valid ID give 403 to user A?
+
+**Example: Comprehensive Edge Case Coverage**
+
+See `tests/Feature/Admin/AdminFeatureFlagTest.php` for reference — tests include:
+- Active operation (enable global override)
+- State transitions (disable after enabled)
+- Removal operations (remove override)
+- Protected resource handling (cannot override admin flag)
+- Authorization (non-admin gets 403)
+- Validation (unknown flag name returns error)
+- Side effects (audit logging)
+- Reason/metadata storage
+
 ## Commands
 
 ```bash
@@ -364,6 +683,99 @@ scripts/init.sh        # First-time setup (configure project name, features)
 - Custom hooks in `hooks/`: `useMobile`, `useFormValidation`, `useTimezone`, `useUnsavedChanges`
 - Shared Inertia props must stay minimal (auth summary + feature flags + flash). Never send whole Eloquent models — use explicit arrays.
 
+**Frontend State Management:**
+
+*Decision Tree: Where to Store State*
+
+- **URL Params** (shareable/bookmarkable): Pagination (`?page=2`), filters (`?status=active`), search (`?q=john`), sort order
+- **React useState** (ephemeral UI): Dialog open/closed, form validation errors (before submission), hover/focus state
+- **Inertia Props** (server-driven): Current user auth, feature flags, flash messages, paginated data
+- **localStorage** (UI preferences NOT in user_settings): Sidebar collapsed, table column widths, last visited tab
+- **user_settings table** (sync across devices): Theme (light/dark), timezone, notification preferences
+
+*Common Anti-Pattern:*
+```tsx
+// ❌ Bad: Mixing URL params and useState for filters
+const [status, setStatus] = useState('active'); // local state
+const tier = searchParams.get('tier'); // URL param
+// Problem: clearFilters only clears one source
+
+// ✅ Good: Single source of truth (URL params only)
+const searchParams = new URLSearchParams(window.location.search);
+const status = searchParams.get('status') || 'all';
+const tier = searchParams.get('tier') || 'all';
+function clearFilters() {
+    router.get('/users', {}, { preserveState: true }); // clears ALL
+}
+```
+
+*Inertia Router Fire-and-Forget Behavior (CRITICAL):*
+`router.post()`, `router.patch()`, `router.delete()` return immediately, NOT a Promise.
+
+```tsx
+// ❌ Bad: Awaiting Inertia router calls
+async function deleteUser(id: number) {
+    setLoading(true);
+    await router.delete(`/users/${id}`); // Returns immediately! await does nothing
+    setLoading(false); // Executes before server response
+}
+
+// ✅ Good: Use onSuccess callback
+function deleteUser(id: number) {
+    setLoading(true);
+    router.delete(`/users/${id}`, {
+        onSuccess: () => setLoading(false),
+        onError: () => setLoading(false),
+    });
+}
+
+// ✅ Better: Use LoadingButton component
+<LoadingButton onClick={() => router.delete(`/users/${id}`)}>
+    Delete
+</LoadingButton>
+```
+
+**Accessibility (WCAG 2.1 Level AA Required):**
+
+All new UI components MUST meet these standards:
+
+*Keyboard Navigation:*
+- All interactive elements focusable via Tab
+- Focus visible (outline or ring-2 ring-offset-2)
+- Dialogs trap focus and restore on close
+- Esc key closes dialogs/dropdowns
+
+*Semantic HTML:*
+- Use `<button>` for actions, `<a>` for navigation
+- Use `<label>` for all inputs (not just placeholder)
+- Use semantic elements (`<nav>`, `<main>`, `<aside>`, `<article>`)
+- Heading hierarchy (single `<h1>`, sequential `<h2>`-`<h6>`)
+
+*ARIA Attributes:*
+- `aria-label` on icon-only buttons
+- `aria-describedby` for error messages linked to inputs
+- `aria-live="polite"` for toast notifications (implemented in `Toast.tsx`)
+- `role="alert"` for validation errors
+
+*Color Contrast:*
+- Text: ≥4.5:1 for normal text, ≥3:1 for large text (18px+)
+- Interactive elements: ≥3:1 against background
+- Never rely on color alone (use icons + text)
+
+*Forms:*
+- Associate labels with inputs (`htmlFor={id}`)
+- Show validation errors below field with `aria-describedby`
+- Disable submit button while processing (with loading state)
+
+*Testing Accessibility:*
+Before claiming a UI feature done:
+1. Can you complete the flow with keyboard only? (no mouse)
+2. Do all images have alt text (or `alt=""` for decorative)?
+3. Are loading states announced? (`aria-busy="true"`)
+
+*Existing Accessible Components:*
+- `Button`, `Dialog`, `Toast`, `LoadingButton` (Radix-based, accessibility built-in)
+
 **Testing:**
 - Framework: Pest (not PHPUnit) — use `it()` / `test()` syntax
 - Parallel execution: `php artisan test --parallel`
@@ -383,6 +795,45 @@ scripts/init.sh        # First-time setup (configure project name, features)
 - New columns on existing tables: nullable or with default (never bare NOT NULL)
 - Foreign keys: `->constrained()->cascadeOnDelete()` (auto-indexed)
 - Feature-conditional migrations: only for whole-table creation (`Schema::hasTable` check). Never gate column additions/removals on feature flags — causes schema drift.
+
+**Code Organization (File Placement):**
+
+- **Controllers:** `/app/Http/Controllers/{Domain}/{Name}Controller.php`
+  - Subdirectories: `Admin/`, `Api/`, `Auth/`, `Billing/`, `Settings/`, `Webhook/`
+  - Single-action: `{Verb}{Noun}Controller` (e.g., `ExportUsersController`)
+  - CRUD: `{Resource}Controller` (e.g., `WebhookEndpointController`)
+
+- **Models:** `/app/Models/{Name}.php` (flat structure, no subdirectories)
+
+- **Services:** `/app/Services/{Name}Service.php` (flat structure)
+  - Naming: `{Domain}Service` (e.g., `BillingService`, `WebhookService`)
+  - Never `UserService` or `ProjectService` — keep model logic in model
+
+- **Form Requests:** `/app/Http/Requests/{Domain}/{Action}Request.php`
+  - Example: `/app/Http/Requests/Auth/LoginRequest.php`
+  - Example: `/app/Http/Requests/Admin/UpdateFeatureFlagRequest.php`
+
+- **Policies:** `/app/Policies/{Resource}Policy.php`
+  - Register in `AppServiceProvider` if not auto-discovered
+
+- **Middleware:** `/app/Http/Middleware/{Name}Middleware.php`
+  - Prefer descriptive names: `EnsureOnboardingCompleted` not `CheckOnboarding`
+
+- **Enums:** `/app/Enums/{Name}.php` (use for fixed sets of values)
+
+- **Jobs:** `/app/Jobs/{Domain}/{Name}Job.php` (create when first needed)
+
+- **Commands:** `/app/Console/Commands/{Name}.php`
+  - Signature: `{domain}:{action}` (e.g., `billing:check-incomplete-payments`)
+
+- **React Components:**
+  - Pages: `/resources/js/Pages/{Domain}/{Name}.tsx`
+  - Shared: `/resources/js/Components/{name}.tsx` (kebab-case)
+  - UI primitives: `/resources/js/Components/ui/{name}.tsx`
+
+- **Tests:** Mirror application structure
+  - Feature: `/tests/Feature/{Domain}/{Name}Test.php`
+  - Unit: `/tests/Unit/{Domain}/{Name}Test.php`
 
 ## Key Tables
 
@@ -407,13 +858,140 @@ Already implemented — verify before duplicating:
 - Audit logging via `AuditService` (login, logout, registration with IP + user agent)
 - Custom queued `SendEmailVerificationNotification` listener (overrides framework default via `EventServiceProvider::configureEmailVerification()`)
 
+### Security Patterns & Anti-Patterns
+
+**Input Validation:**
+
+```php
+// ✅ Good: Form Request with authorization
+class UpdateUserRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return $this->user()->can('update', $this->route('user'));
+    }
+
+    public function rules(): array
+    {
+        return [
+            'email' => ['required', 'email', Rule::unique('users')->ignore($this->route('user'))],
+            'role' => ['required', Rule::in(['user', 'admin'])], // whitelist
+        ];
+    }
+}
+
+// ❌ Bad: Trusting client input
+$user->update($request->all()); // client can send is_admin=1
+
+// ✅ Good: Explicit field list
+$user->update($request->only(['name', 'email']));
+```
+
+**Authorization:**
+
+```php
+// ❌ Bad: Only hiding UI (API endpoint still accessible via curl)
+// In Controller: no auth check
+// In TSX: {user.is_admin && <DeleteButton />}
+
+// ✅ Good: Authorize in controller
+public function destroy(User $user): RedirectResponse
+{
+    $this->authorize('delete', $user); // throws 403 if unauthorized
+    $user->delete();
+    return redirect()->route('users.index');
+}
+```
+
+**SQL Injection Prevention:**
+
+```php
+// ❌ Bad: Raw SQL with interpolation
+DB::select("SELECT * FROM users WHERE email = '{$request->email}'");
+
+// ✅ Good: Parameter binding
+DB::select('SELECT * FROM users WHERE email = ?', [$request->email]);
+
+// ✅ Better: Query builder
+User::where('email', $request->email)->first();
+```
+
+**XSS Prevention:**
+
+```tsx
+// ❌ Bad: User content as HTML
+<div dangerouslySetInnerHTML={{__html: comment.body}} />
+
+// ✅ Good: Plain text rendering (React escapes by default)
+<div>{comment.body}</div>
+
+// ✅ If HTML needed: Sanitize with DOMPurify
+import DOMPurify from 'dompurify';
+<div dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(comment.body)}} />
+```
+
+**Mass Assignment Protection:**
+
+```php
+// ❌ Bad: No protection
+class User extends Model {
+    // no $fillable or $guarded
+}
+User::create($request->all()); // client can set is_admin=1
+
+// ✅ Good: Explicit fillable fields
+class User extends Model {
+    protected $fillable = ['name', 'email', 'password'];
+}
+```
+
+**CSRF Protection:**
+
+CSRF enabled by default. Only bypass for webhooks with signature verification.
+
+```php
+// ❌ Bad: Disabling CSRF without signature verification
+protected $except = ['/webhooks/stripe']; // no signature check
+
+// ✅ Good: Signature verification replaces CSRF
+protected $except = ['/webhooks/stripe']; // VerifyWebhookSignature middleware validates HMAC
+```
+
+**Rate Limiting:**
+
+All auth endpoints already rate-limited. When adding new sensitive endpoints:
+
+```php
+Route::middleware(['auth:sanctum', 'throttle:10,1'])->group(function () {
+    Route::post('/admin/users/{user}/impersonate', [ImpersonationController::class, 'start']);
+});
+```
+
+**Secrets Management:**
+
+```php
+// ❌ In config/services.php (committed to git)
+'stripe' => ['secret' => 'sk_live_xxx'], // NEVER
+
+// ✅ In config/services.php (committed to git)
+'stripe' => ['secret' => env('STRIPE_SECRET')], // reads from .env
+```
+
 ## Critical Gotchas
 
 **Billing (DO NOT MODIFY WITHOUT READING):**
-- All subscription mutations MUST use `BillingService` methods — direct Cashier calls will cause race conditions
-- Always eager load `$subscription->load('owner', 'items.subscription')` before Cashier methods to prevent lazy loading violations
-- Redis locks prevent concurrent operations — if lock acquisition fails, operation is rejected with `ConcurrentOperationException`
-- Team/Enterprise tiers have seat constraints (min 1, max 50 for team) — validate before subscription creation
+
+- **Why eager loading is required:** Cashier methods like `cancel()` and `swap()` internally access `$subscription->owner` and nested `$subscription->items->subscription` relationships. Without eager loading, each call triggers lazy loading queries, causing N+1 problems and potential race conditions.
+
+- **Detection rule:** If you're calling ANY Cashier method (`cancel`, `resume`, `swap`, `updateQuantity`, `noProrate`, `anchorBillingCycleOn`), you MUST eager load first: `$subscription->load('owner', 'items.subscription')`
+
+- **Error symptom:** `Attempt to read property "stripe_id" on null` when calling `->cancel()` means `owner` wasn't loaded.
+
+- **Pattern to follow:** See `app/Services/BillingService.php` lines 68-70 for correct eager loading pattern.
+
+- **Redis locks:** All subscription mutations MUST use `BillingService` methods — direct Cashier calls will cause race conditions. Redis locks (35s timeout) prevent concurrent operations. If lock acquisition fails, operation is rejected with `ConcurrentOperationException`.
+
+- **Seat constraints:** Team/Enterprise tiers have min 1, max 50 seats for team tier — validate before subscription creation.
 
 **Webhook Signature Verification:**
 - Incoming webhooks use HMAC-SHA256 with provider-specific secrets (`config/webhooks.php`)

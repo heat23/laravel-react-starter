@@ -33,7 +33,7 @@ class VerifyWebhookSignature
         $timestamp = $this->extractTimestamp($request, $provider);
 
         if ($provider === 'stripe' && $timestamp !== null) {
-            $signedContent = $timestamp . '.' . $payload;
+            $signedContent = $timestamp.'.'.$payload;
         }
 
         $expectedSignature = hash_hmac($config['algorithm'], $signedContent, $config['secret']);

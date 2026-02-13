@@ -181,7 +181,9 @@ describe('Dialog', () => {
     it('applies custom className', () => {
       render(
         <Dialog open={true}>
-          <DialogContent className="custom-content">Content</DialogContent>
+          <DialogContent className="custom-content" aria-describedby={undefined}>
+            Content
+          </DialogContent>
         </Dialog>,
       );
 
@@ -207,7 +209,7 @@ describe('Dialog', () => {
     it('renders children', () => {
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader>
               <span data-testid="header-content">Header Content</span>
             </DialogHeader>
@@ -221,7 +223,7 @@ describe('Dialog', () => {
     it('applies default classes', () => {
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader data-testid="header">Content</DialogHeader>
           </DialogContent>
         </Dialog>,
@@ -233,7 +235,7 @@ describe('Dialog', () => {
     it('applies custom className', () => {
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogHeader className="custom-header" data-testid="header">
               Content
             </DialogHeader>
@@ -257,7 +259,7 @@ describe('Dialog', () => {
     it('renders children', () => {
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogFooter>
               <Button>Action</Button>
             </DialogFooter>
@@ -271,7 +273,7 @@ describe('Dialog', () => {
     it('applies default classes', () => {
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogFooter data-testid="footer">Content</DialogFooter>
           </DialogContent>
         </Dialog>,
@@ -288,7 +290,7 @@ describe('Dialog', () => {
     it('applies custom className', () => {
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogFooter className="custom-footer" data-testid="footer">
               Content
             </DialogFooter>
@@ -312,7 +314,7 @@ describe('Dialog', () => {
     it('renders title text', () => {
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogTitle>My Title</DialogTitle>
           </DialogContent>
         </Dialog>,
@@ -324,7 +326,7 @@ describe('Dialog', () => {
     it('applies default classes', () => {
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogTitle data-testid="title">Title</DialogTitle>
           </DialogContent>
         </Dialog>,
@@ -341,7 +343,7 @@ describe('Dialog', () => {
     it('applies custom className', () => {
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogTitle className="custom-title" data-testid="title">
               Title
             </DialogTitle>
@@ -365,7 +367,7 @@ describe('Dialog', () => {
     it('renders description text', () => {
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogDescription>My Description</DialogDescription>
           </DialogContent>
         </Dialog>,
@@ -377,7 +379,7 @@ describe('Dialog', () => {
     it('applies default classes', () => {
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogDescription data-testid="description">Description</DialogDescription>
           </DialogContent>
         </Dialog>,
@@ -389,7 +391,7 @@ describe('Dialog', () => {
     it('applies custom className', () => {
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogDescription className="custom-description" data-testid="description">
               Description
             </DialogDescription>
@@ -414,7 +416,7 @@ describe('Dialog', () => {
       const handleOpenChange = vi.fn();
       render(
         <Dialog open={true} onOpenChange={handleOpenChange}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogClose asChild>
               <Button>Custom Close</Button>
             </DialogClose>
@@ -508,7 +510,9 @@ describe('Dialog', () => {
       const ref = createRef<HTMLDivElement>();
       render(
         <Dialog open={true}>
-          <DialogContent ref={ref}>Content</DialogContent>
+          <DialogContent ref={ref} aria-describedby={undefined}>
+            Content
+          </DialogContent>
         </Dialog>,
       );
 
@@ -519,7 +523,7 @@ describe('Dialog', () => {
       const ref = createRef<HTMLHeadingElement>();
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogTitle ref={ref}>Title</DialogTitle>
           </DialogContent>
         </Dialog>,
@@ -532,7 +536,7 @@ describe('Dialog', () => {
       const ref = createRef<HTMLParagraphElement>();
       render(
         <Dialog open={true}>
-          <DialogContent>
+          <DialogContent aria-describedby={undefined}>
             <DialogDescription ref={ref}>Description</DialogDescription>
           </DialogContent>
         </Dialog>,

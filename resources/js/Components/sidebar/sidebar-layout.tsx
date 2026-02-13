@@ -12,7 +12,14 @@ import { ThemeToggle } from "@/Components/theme";
 import { Button } from "@/Components/ui/button";
 import { ScrollArea } from "@/Components/ui/scroll-area";
 import { Separator } from "@/Components/ui/separator";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/Components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/Components/ui/sheet";
 import { TooltipProvider } from "@/Components/ui/tooltip";
 import type { AdminNavGroup } from "@/config/admin-navigation";
 import { getVisibleGroups } from "@/config/navigation";
@@ -132,6 +139,9 @@ function SidebarInner({
               <TextLogo className="text-sm" />
               {headerExtra}
             </SheetTitle>
+            <SheetDescription className="sr-only">
+              Navigation menu
+            </SheetDescription>
           </SheetHeader>
           <ScrollArea className="flex-1">
             <MobileSidebarNav

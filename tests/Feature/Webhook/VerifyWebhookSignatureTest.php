@@ -27,7 +27,7 @@ it('verifies stripe signature using timestamp.payload format', function () {
     $secret = 'whsec_test_secret';
 
     // Stripe signs: timestamp.payload
-    $expectedSignature = hash_hmac('sha256', $timestamp . '.' . $payload, $secret);
+    $expectedSignature = hash_hmac('sha256', $timestamp.'.'.$payload, $secret);
     $signatureHeader = "t={$timestamp},v1={$expectedSignature}";
 
     $request = Request::create('/api/webhooks/incoming/stripe', 'POST', [], [], [], [], $payload);
@@ -76,7 +76,7 @@ it('rejects stripe webhook with expired timestamp', function () {
     $timestamp = time() - 600; // 10 minutes ago, exceeds 5-min tolerance
     $secret = 'whsec_test_secret';
 
-    $expectedSignature = hash_hmac('sha256', $timestamp . '.' . $payload, $secret);
+    $expectedSignature = hash_hmac('sha256', $timestamp.'.'.$payload, $secret);
     $signatureHeader = "t={$timestamp},v1={$expectedSignature}";
 
     $request = Request::create('/api/webhooks/incoming/stripe', 'POST', [], [], [], [], $payload);
@@ -102,7 +102,7 @@ it('verifies github signature using payload-only hmac', function () {
     $signature = hash_hmac('sha256', $payload, $secret);
 
     $request = Request::create('/api/webhooks/incoming/github', 'POST', [], [], [], [], $payload);
-    $request->headers->set('X-Hub-Signature-256', 'sha256=' . $signature);
+    $request->headers->set('X-Hub-Signature-256', 'sha256='.$signature);
     $request->setRouteResolver(function () {
         $route = new \Illuminate\Routing\Route('POST', '/api/webhooks/incoming/{provider}', []);
         $route->bind(Request::create('/api/webhooks/incoming/github'));

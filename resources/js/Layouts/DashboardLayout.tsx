@@ -21,6 +21,7 @@ import {
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
@@ -173,6 +174,7 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                     <Logo className="h-6 w-6" />
                     <TextLogo />
                   </SheetTitle>
+                  <SheetDescription className="sr-only">Navigation menu</SheetDescription>
                 </SheetHeader>
                 <nav className="mt-8 flex flex-col gap-2">
                   {navItems.map((item) => (

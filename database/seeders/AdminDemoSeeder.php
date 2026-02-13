@@ -66,7 +66,7 @@ class AdminDemoSeeder extends Seeder
         for ($i = 0; $i < 5; $i++) {
             $users->push(User::factory()->create([
                 'name' => $this->faker->name(),
-                'email' => 'admin' . ($i + 1) . '@demo.test',
+                'email' => 'admin'.($i + 1).'@demo.test',
                 'password' => static::$hashedPassword,
                 'is_admin' => true,
                 'email_verified_at' => $this->faker->dateTimeBetween('-90 days', '-1 day'),
@@ -272,7 +272,7 @@ class AdminDemoSeeder extends Seeder
 
             DB::table('webhook_endpoints')->insert([
                 'user_id' => $this->faker->randomElement($userIds),
-                'url' => 'https://' . $domain . $path,
+                'url' => 'https://'.$domain.$path,
                 'events' => json_encode($this->faker->randomElement($webhookEvents)),
                 'secret' => encrypt(Str::random(32)),
                 'description' => $this->faker->optional(0.7)->sentence(4),
@@ -393,22 +393,22 @@ class AdminDemoSeeder extends Seeder
                 : $this->faker->randomElement($stripeEvents);
 
             $externalId = $provider === 'github'
-                ? 'gh_' . Str::random(16)
-                : 'evt_' . Str::random(24);
+                ? 'gh_'.Str::random(16)
+                : 'evt_'.Str::random(24);
 
             $createdAt = $this->faker->dateTimeBetween('-30 days', 'now');
 
             $payload = $provider === 'github'
                 ? [
                     'action' => explode('.', $eventType)[1] ?? 'triggered',
-                    'repository' => ['full_name' => $this->faker->userName() . '/' . $this->faker->slug(2)],
+                    'repository' => ['full_name' => $this->faker->userName().'/'.$this->faker->slug(2)],
                     'sender' => ['login' => $this->faker->userName()],
                 ]
                 : [
                     'id' => $externalId,
                     'object' => 'event',
                     'type' => $eventType,
-                    'data' => ['object' => ['id' => 'sub_' . Str::random(14), 'customer' => 'cus_' . Str::random(14)]],
+                    'data' => ['object' => ['id' => 'sub_'.Str::random(14), 'customer' => 'cus_'.Str::random(14)]],
                 ];
 
             $rows[] = [
@@ -493,7 +493,7 @@ class AdminDemoSeeder extends Seeder
             ],
             'SubscriptionCreated' => [
                 'title' => 'Subscription activated',
-                'message' => 'Your ' . $this->faker->randomElement(['Pro', 'Team', 'Enterprise']) . ' plan is now active.',
+                'message' => 'Your '.$this->faker->randomElement(['Pro', 'Team', 'Enterprise']).' plan is now active.',
                 'plan' => $this->faker->randomElement(['pro', 'team', 'enterprise']),
             ],
             'SubscriptionCancelled' => [
@@ -503,7 +503,7 @@ class AdminDemoSeeder extends Seeder
             ],
             'PaymentSucceeded' => [
                 'title' => 'Payment received',
-                'message' => 'We received your payment of $' . $this->faker->randomFloat(2, 9.99, 299.99) . '.',
+                'message' => 'We received your payment of $'.$this->faker->randomFloat(2, 9.99, 299.99).'.',
                 'amount' => $this->faker->numberBetween(999, 29999),
                 'currency' => 'usd',
             ],
@@ -515,9 +515,9 @@ class AdminDemoSeeder extends Seeder
             ],
             'SecurityAlert' => [
                 'title' => 'New sign-in detected',
-                'message' => 'A new sign-in was detected from ' . $this->faker->city() . ', ' . $this->faker->country() . '.',
+                'message' => 'A new sign-in was detected from '.$this->faker->city().', '.$this->faker->country().'.',
                 'ip' => $this->faker->ipv4(),
-                'location' => $this->faker->city() . ', ' . $this->faker->countryCode(),
+                'location' => $this->faker->city().', '.$this->faker->countryCode(),
             ],
             'NewFeatureAnnouncement' => [
                 'title' => $this->faker->randomElement(['New: API tokens', 'New: Webhook support', 'New: Dark mode', 'New: CSV export', 'New: Two-factor auth']),
@@ -525,7 +525,7 @@ class AdminDemoSeeder extends Seeder
             ],
             'UsageLimitWarning' => [
                 'title' => 'Approaching usage limit',
-                'message' => 'You have used ' . $this->faker->numberBetween(80, 95) . '% of your monthly quota.',
+                'message' => 'You have used '.$this->faker->numberBetween(80, 95).'% of your monthly quota.',
                 'usage_percent' => $this->faker->numberBetween(80, 95),
             ],
             'WeeklyReport' => [
@@ -606,7 +606,7 @@ class AdminDemoSeeder extends Seeder
             $rows[] = [
                 'tokenable_type' => 'App\\Models\\User',
                 'tokenable_id' => $this->faker->randomElement($userIds),
-                'name' => $this->faker->randomElement($tokenNames) . ' ' . $this->faker->numberBetween(1, 99),
+                'name' => $this->faker->randomElement($tokenNames).' '.$this->faker->numberBetween(1, 99),
                 'token' => hash('sha256', Str::random(40)),
                 'abilities' => $this->faker->randomElement($abilitySets),
                 'last_used_at' => $hasBeenUsed ? $this->faker->dateTimeBetween($createdAt, 'now')->format('Y-m-d H:i:s') : null,

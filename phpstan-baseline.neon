@@ -1,0 +1,421 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:notifications\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Console/Commands/CheckIncompletePayments.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:notify\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Console/Commands/CheckIncompletePayments.php
+
+		-
+			message: '#^Method App\\Helpers\\QueryHelper\:\:dateExpression\(\) should return Illuminate\\Database\\Query\\Expression but returns Illuminate\\Contracts\\Database\\Query\\Expression\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Helpers/QueryHelper.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Admin/AdminAuditLogController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/AdminAuditLogController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,App\\Models\\AuditLog\>\:\:through\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/AdminAuditLogController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Admin/AdminAuditLogController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AdminBillingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AdminBillingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AdminBillingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$stripe_price\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Admin/AdminBillingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$stripe_product\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AdminBillingController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\AuditLog\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/AdminBillingController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/AdminBillingController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Admin/AdminBillingController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Admin/AdminBillingController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AdminDashboardController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AdminDashboardController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\AuditLog\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/AdminDashboardController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\User\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/AdminDashboardController.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 4
+			path: app/Http/Controllers/Admin/AdminUsersController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Pagination\\AbstractPaginator\<int,App\\Models\\User\>\:\:through\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/AdminUsersController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$active\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/WebhookEndpointController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/WebhookEndpointController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$deliveries_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Api/WebhookEndpointController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/WebhookEndpointController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$events\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/WebhookEndpointController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Api/WebhookEndpointController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$secret\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/WebhookEndpointController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$url\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Api/WebhookEndpointController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:deliveries\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Api/WebhookEndpointController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Api/WebhookEndpointController.php
+
+		-
+			message: '#^Parameter \#1 \$endpoint of method App\\Services\\WebhookService\:\:dispatchToEndpoint\(\) expects App\\Models\\WebhookEndpoint, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/Api/WebhookEndpointController.php
+
+		-
+			message: '#^Call to function method_exists\(\) with App\\Models\\User and ''updateLastLogin'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Http/Controllers/Auth/SocialAuthController.php
+
+		-
+			message: '#^Call to static method driver\(\) on an unknown class Laravel\\Socialite\\Facades\\Socialite\.$#'
+			identifier: class.notFound
+			count: 2
+			path: app/Http/Controllers/Auth/SocialAuthController.php
+
+		-
+			message: '#^Access to an undefined property Laravel\\Cashier\\Invoice\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Billing/BillingController.php
+
+		-
+			message: '#^Access to an undefined property Laravel\\Cashier\\Invoice\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Billing/BillingController.php
+
+		-
+			message: '#^Access to an undefined property Laravel\\Cashier\\Payment\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Billing/BillingController.php
+
+		-
+			message: '#^Call to an undefined method Laravel\\Cashier\\Invoice\:\:invoicePdf\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/Billing/BillingController.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Billing/BillingController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,Laravel\\Cashier\\Invoice\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Billing/BillingController.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Billing/PricingController.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Middleware/HandleInertiaRequests.php
+
+		-
+			message: '#^Call to method setTag\(\) on an unknown class Sentry\\State\\Scope\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Middleware/RequestIdMiddleware.php
+
+		-
+			message: '#^Function Sentry\\configureScope not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: app/Http/Middleware/RequestIdMiddleware.php
+
+		-
+			message: '#^Parameter \$scope of anonymous function has invalid type Sentry\\State\\Scope\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Http/Middleware/RequestIdMiddleware.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Jobs/DispatchWebhookJob.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$secret\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Jobs/DispatchWebhookJob.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$url\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Jobs/DispatchWebhookJob.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/SocialAccount.php
+
+		-
+			message: '#^Method App\\Models\\UserSetting\:\:setValue\(\) should return static\(App\\Models\\UserSetting\) but returns App\\Models\\UserSetting\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Models/UserSetting.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Symfony\\Component\\HttpFoundation\\ParameterBag\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/AuditService.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type Illuminate\\Http\\Request\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/AuditService.php
+
+		-
+			message: '#^Cannot call method isFuture\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/BillingService.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/BillingService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\FeatureFlagOverride\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/FeatureFlagService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between float and 0 will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/HealthCheckService.php
+
+		-
+			message: '#^Cannot call method isFuture\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/PlanLimitService.php
+
+		-
+			message: '#^Access to property \$expiresIn on an unknown class Laravel\\Socialite\\Contracts\\User\.$#'
+			identifier: class.notFound
+			count: 2
+			path: app/Services/SocialAuthService.php
+
+		-
+			message: '#^Access to property \$refreshToken on an unknown class Laravel\\Socialite\\Contracts\\User\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/SocialAuthService.php
+
+		-
+			message: '#^Access to property \$token on an unknown class Laravel\\Socialite\\Contracts\\User\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/SocialAuthService.php
+
+		-
+			message: '#^Call to method getEmail\(\) on an unknown class Laravel\\Socialite\\Contracts\\User\.$#'
+			identifier: class.notFound
+			count: 2
+			path: app/Services/SocialAuthService.php
+
+		-
+			message: '#^Call to method getId\(\) on an unknown class Laravel\\Socialite\\Contracts\\User\.$#'
+			identifier: class.notFound
+			count: 2
+			path: app/Services/SocialAuthService.php
+
+		-
+			message: '#^Call to method getName\(\) on an unknown class Laravel\\Socialite\\Contracts\\User\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/SocialAuthService.php
+
+		-
+			message: '#^Call to method getNickname\(\) on an unknown class Laravel\\Socialite\\Contracts\\User\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/SocialAuthService.php
+
+		-
+			message: '#^Method App\\Services\\SocialAuthService\:\:findOrCreateUser\(\) should return App\\Models\\User but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/SocialAuthService.php
+
+		-
+			message: '#^Parameter \$socialUser of method App\\Services\\SocialAuthService\:\:findOrCreateUser\(\) has invalid type Laravel\\Socialite\\Contracts\\User\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/SocialAuthService.php
+
+		-
+			message: '#^Parameter \$socialUser of method App\\Services\\SocialAuthService\:\:linkSocialAccount\(\) has invalid type Laravel\\Socialite\\Contracts\\User\.$#'
+			identifier: class.notFound
+			count: 1
+			path: app/Services/SocialAuthService.php
+
+		-
+			message: '#^Parameter \#2 \$haystack of function in_array expects array, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/WebhookService.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: routes/api.php
