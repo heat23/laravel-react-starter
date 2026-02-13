@@ -216,7 +216,7 @@ function EnabledState() {
       setRecoveryCodes(data.recovery_codes);
       setShowRecoveryCodes(true);
     } catch {
-      toast.error("Failed to load recovery codes.");
+      toast.error("Could not load recovery codes. Please try again or contact support.");
     } finally {
       setLoadingCodes(false);
     }

@@ -24,17 +24,25 @@ class VerifyWebhookSignature
         }
 
         $payload = $request->getContent();
-        $expectedSignature = hash_hmac($config['algorithm'], $payload, $config['secret']);
 
         // Handle different signature formats
         $actualSignature = $this->extractSignature($signatureHeader, $provider);
+
+        // Stripe signs "timestamp.payload"; other providers sign payload only
+        $signedContent = $payload;
+        $timestamp = $this->extractTimestamp($request, $provider);
+
+        if ($provider === 'stripe' && $timestamp !== null) {
+            $signedContent = $timestamp . '.' . $payload;
+        }
+
+        $expectedSignature = hash_hmac($config['algorithm'], $signedContent, $config['secret']);
 
         if (! hash_equals($expectedSignature, $actualSignature)) {
             abort(403, 'Invalid webhook signature.');
         }
 
         // Replay protection
-        $timestamp = $this->extractTimestamp($request, $provider);
         if ($timestamp) {
             $tolerance = config('webhooks.incoming.replay_tolerance', 300);
             if (abs(time() - $timestamp) > $tolerance) {

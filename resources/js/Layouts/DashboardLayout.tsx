@@ -1,9 +1,10 @@
-import { FileText, LogOut, Menu, Radio, Settings, Shield, User } from "lucide-react";
+import { FileText, Key, LogOut, Menu, Radio, Shield as ShieldIcon, User } from "lucide-react";
 
 import { PropsWithChildren } from "react";
 
 import { Link, usePage } from "@inertiajs/react";
 
+import { ImpersonationBanner } from "@/Components/admin/ImpersonationBanner";
 import { Logo, TextLogo } from "@/Components/branding/Logo";
 import { CommandPalette, useCommandPalette } from "@/Components/command-palette";
 import { NotificationDropdown } from "@/Components/notifications/NotificationDropdown";
@@ -34,6 +35,7 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
 
   return (
     <div className="min-h-screen bg-background">
+      <ImpersonationBanner />
       <a
         href="#main-content"
         className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:z-100 focus-visible:bg-background focus-visible:px-4 focus-visible:py-2 focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -100,16 +102,18 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                     Profile
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/settings/tokens" className="cursor-pointer">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
+                {features.apiTokens && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings/tokens" className="cursor-pointer">
+                      <Key className="mr-2 h-4 w-4" />
+                      API Tokens
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {features.twoFactor && (
                   <DropdownMenuItem asChild>
                     <Link href="/settings/security" className="cursor-pointer">
-                      <Shield className="mr-2 h-4 w-4" />
+                      <ShieldIcon className="mr-2 h-4 w-4" />
                       Security
                     </Link>
                   </DropdownMenuItem>
@@ -130,6 +134,17 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                     </a>
                   </DropdownMenuItem>
                 )}
+                {auth.user?.is_admin && features.admin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="cursor-pointer">
+                        <ShieldIcon className="mr-2 h-4 w-4" />
+                        Admin Panel
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link
@@ -148,9 +163,8 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
             {/* Mobile Menu */}
             <Sheet>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" aria-label="Toggle navigation menu">
                   <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
               <SheetContent side="left">

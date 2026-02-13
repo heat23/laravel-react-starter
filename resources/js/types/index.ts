@@ -11,12 +11,16 @@ export interface User {
   email: string;
   email_verified_at: string | null;
   has_password: boolean;
+  is_admin: boolean;
   two_factor_enabled?: boolean;
 }
 
 export interface Auth {
   user: User | null;
   theme?: 'light' | 'dark' | 'system';
+  impersonating?: {
+    admin_name: string;
+  } | null;
 }
 
 export interface Features {
@@ -30,6 +34,7 @@ export interface Features {
   apiDocs: boolean;
   twoFactor: boolean;
   webhooks: boolean;
+  admin: boolean;
 }
 
 export interface PageProps {
@@ -50,8 +55,8 @@ export interface PaginatedResponse<T> {
   last_page: number;
   per_page: number;
   total: number;
-  from: number;
-  to: number;
+  from: number | null;
+  to: number | null;
 }
 
 // Notifications

@@ -188,6 +188,209 @@ function registerBillingRoutes(): void
     $router->getRoutes()->refreshActionLookups();
 }
 
+/*
+|--------------------------------------------------------------------------
+| Admin Test Helpers
+|--------------------------------------------------------------------------
+|
+| Helper for registering admin routes in tests. Admin routes are behind
+| a feature flag check at boot time, so they need manual registration.
+|
+*/
+
+/**
+ * Register admin routes for tests.
+ *
+ * Routes behind `if (config('features.admin.enabled'))` in web.php are evaluated
+ * at boot time. Setting config in beforeEach() happens after routes are registered,
+ * so admin routes won't exist. This helper re-registers them for tests.
+ */
+function registerAdminRoutes(): void
+{
+    config(['features.admin.enabled' => true]);
+
+    $router = app('router');
+    $needsRefresh = false;
+
+    // Core admin routes (register once)
+    if (! Route::has('admin.dashboard')) {
+        $router->middleware(['web', 'auth', 'verified', 'admin'])
+            ->prefix('admin')
+            ->name('admin.')
+            ->group(function () use ($router) {
+                $router->get('/', [\App\Http\Controllers\Admin\AdminDashboardController::class, '__invoke'])->name('dashboard');
+
+                $router->get('/users', [\App\Http\Controllers\Admin\AdminUsersController::class, 'index'])->name('users.index');
+                $router->get('/users/{user}', [\App\Http\Controllers\Admin\AdminUsersController::class, 'show'])->withTrashed()->name('users.show');
+                $router->patch('/users/{user}/toggle-admin', [\App\Http\Controllers\Admin\AdminUsersController::class, 'toggleAdmin'])->name('users.toggle-admin');
+                $router->patch('/users/{user}/toggle-active', [\App\Http\Controllers\Admin\AdminUsersController::class, 'toggleActive'])->withTrashed()->name('users.toggle-active');
+                $router->post('/users/bulk-deactivate', [\App\Http\Controllers\Admin\AdminUsersController::class, 'bulkDeactivate'])->name('users.bulk-deactivate');
+
+                $router->post('/users/{user}/impersonate', [\App\Http\Controllers\Admin\AdminImpersonationController::class, 'start'])->withTrashed()->name('users.impersonate');
+
+                $router->get('/health', [\App\Http\Controllers\Admin\AdminHealthController::class, '__invoke'])->name('health');
+                $router->get('/config', [\App\Http\Controllers\Admin\AdminConfigController::class, '__invoke'])->name('config');
+
+                $router->get('/audit-logs', [\App\Http\Controllers\Admin\AdminAuditLogController::class, 'index'])->name('audit-logs.index');
+                $router->get('/audit-logs/export', [\App\Http\Controllers\Admin\AdminAuditLogController::class, 'export'])->name('audit-logs.export');
+                $router->get('/audit-logs/{auditLog}', [\App\Http\Controllers\Admin\AdminAuditLogController::class, 'show'])->name('audit-logs.show');
+
+                $router->get('/system', [\App\Http\Controllers\Admin\AdminSystemController::class, '__invoke'])->name('system');
+            });
+
+        // Stop impersonation — outside admin middleware
+        $router->middleware(['web', 'auth'])
+            ->post('/admin/impersonate/stop', [\App\Http\Controllers\Admin\AdminImpersonationController::class, 'stop'])
+            ->name('admin.impersonation.stop');
+
+        $needsRefresh = true;
+    }
+
+    // Feature-gated admin routes (each guarded independently so they can be
+    // registered later when a test sets the feature flag after boot)
+    if (config('features.billing.enabled') && ! Route::has('admin.billing.dashboard')) {
+        $router->middleware(['web', 'auth', 'verified', 'admin'])
+            ->prefix('admin')
+            ->name('admin.')
+            ->group(function () use ($router) {
+                $router->get('/billing', [\App\Http\Controllers\Admin\AdminBillingController::class, 'dashboard'])->name('billing.dashboard');
+                $router->get('/billing/subscriptions', [\App\Http\Controllers\Admin\AdminBillingController::class, 'subscriptions'])->name('billing.subscriptions');
+                $router->get('/billing/subscriptions/{subscription}', [\App\Http\Controllers\Admin\AdminBillingController::class, 'show'])->name('billing.show');
+            });
+        $needsRefresh = true;
+    }
+
+    if (config('features.webhooks.enabled') && ! Route::has('admin.webhooks')) {
+        $router->middleware(['web', 'auth', 'verified', 'admin'])
+            ->prefix('admin')
+            ->name('admin.')
+            ->group(function () use ($router) {
+                $router->get('/webhooks', [\App\Http\Controllers\Admin\AdminWebhooksController::class, '__invoke'])->name('webhooks');
+            });
+        $needsRefresh = true;
+    }
+
+    if (config('features.api_tokens.enabled') && ! Route::has('admin.tokens')) {
+        $router->middleware(['web', 'auth', 'verified', 'admin'])
+            ->prefix('admin')
+            ->name('admin.')
+            ->group(function () use ($router) {
+                $router->get('/tokens', [\App\Http\Controllers\Admin\AdminTokensController::class, '__invoke'])->name('tokens');
+            });
+        $needsRefresh = true;
+    }
+
+    if (config('features.social_auth.enabled') && ! Route::has('admin.social-auth')) {
+        $router->middleware(['web', 'auth', 'verified', 'admin'])
+            ->prefix('admin')
+            ->name('admin.')
+            ->group(function () use ($router) {
+                $router->get('/social-auth', [\App\Http\Controllers\Admin\AdminSocialAuthController::class, '__invoke'])->name('social-auth');
+            });
+        $needsRefresh = true;
+    }
+
+    if (config('features.notifications.enabled') && ! Route::has('admin.notifications')) {
+        $router->middleware(['web', 'auth', 'verified', 'admin'])
+            ->prefix('admin')
+            ->name('admin.')
+            ->group(function () use ($router) {
+                $router->get('/notifications', [\App\Http\Controllers\Admin\AdminNotificationsController::class, '__invoke'])->name('notifications');
+            });
+        $needsRefresh = true;
+    }
+
+    if (config('features.two_factor.enabled') && ! Route::has('admin.two-factor')) {
+        $router->middleware(['web', 'auth', 'verified', 'admin'])
+            ->prefix('admin')
+            ->name('admin.')
+            ->group(function () use ($router) {
+                $router->get('/two-factor', [\App\Http\Controllers\Admin\AdminTwoFactorController::class, '__invoke'])->name('two-factor');
+            });
+        $needsRefresh = true;
+    }
+
+    // Feature Flags (always available in admin)
+    if (! Route::has('admin.feature-flags.index')) {
+        $router->middleware(['web', 'auth', 'verified', 'admin'])
+            ->prefix('admin')
+            ->name('admin.')
+            ->group(function () use ($router) {
+                $router->get('/feature-flags', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'index'])->name('feature-flags.index');
+                $router->patch('/feature-flags/{flag}', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'updateGlobal'])->name('feature-flags.update-global');
+                $router->delete('/feature-flags/{flag}', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'removeGlobal'])->name('feature-flags.remove-global');
+                $router->get('/feature-flags/{flag}/users', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'getTargetedUsers'])->name('feature-flags.users');
+                $router->post('/feature-flags/{flag}/users', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'addUserOverride'])->name('feature-flags.add-user');
+                $router->delete('/feature-flags/{flag}/users/{user}', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'removeUserOverride'])->name('feature-flags.remove-user');
+                $router->delete('/feature-flags/{flag}/users', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'removeAllUserOverrides'])->name('feature-flags.remove-all-users');
+                $router->get('/feature-flags/search-users', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'searchUsers'])->name('feature-flags.search-users');
+            });
+        $needsRefresh = true;
+    }
+
+    if ($needsRefresh) {
+        $router->getRoutes()->refreshNameLookups();
+        $router->getRoutes()->refreshActionLookups();
+    }
+}
+
+/**
+ * Make a GET request as an admin user with admin routes registered.
+ */
+function adminGet(string $uri, array $params = [], ?\App\Models\User $admin = null): \Illuminate\Testing\TestResponse
+{
+    registerAdminRoutes();
+    $admin ??= \App\Models\User::factory()->admin()->create();
+
+    $query = $params ? '?'.http_build_query($params) : '';
+
+    return test()->actingAs($admin)->get($uri.$query);
+}
+
+/**
+ * Make a PATCH request as an admin user with admin routes registered.
+ */
+function adminPatch(string $uri, array $data = [], ?\App\Models\User $admin = null): \Illuminate\Testing\TestResponse
+{
+    registerAdminRoutes();
+    $admin ??= \App\Models\User::factory()->admin()->create();
+
+    return test()->actingAs($admin)->patch($uri, $data);
+}
+
+/**
+ * Make a POST request as an admin user with admin routes registered.
+ */
+function adminPost(string $uri, array $data = [], ?\App\Models\User $admin = null): \Illuminate\Testing\TestResponse
+{
+    registerAdminRoutes();
+    $admin ??= \App\Models\User::factory()->admin()->create();
+
+    return test()->actingAs($admin)->post($uri, $data);
+}
+
+/**
+ * Make a DELETE request as an admin user with admin routes registered.
+ */
+function adminDelete(string $uri, ?\App\Models\User $admin = null): \Illuminate\Testing\TestResponse
+{
+    registerAdminRoutes();
+    $admin ??= \App\Models\User::factory()->admin()->create();
+
+    return test()->actingAs($admin)->delete($uri);
+}
+
+/**
+ * Build an impersonation session array (encrypted admin ID).
+ */
+function impersonationSession(int $adminId, string $adminName = 'Admin'): array
+{
+    return [
+        'admin_impersonating_from' => \Illuminate\Support\Facades\Crypt::encryptString((string) $adminId),
+        'admin_impersonating_name' => $adminName,
+    ];
+}
+
 /**
  * Build a Stripe webhook event payload.
  */
@@ -203,4 +406,65 @@ function createStripeWebhookPayload(string $eventType, array $objectData = [], ?
         'created' => now()->timestamp,
         'api_version' => '2023-10-16',
     ];
+}
+
+/*
+|--------------------------------------------------------------------------
+| Feature Flag Test Helpers
+|--------------------------------------------------------------------------
+|
+| Helpers for testing feature flag overrides without hitting the database.
+|
+*/
+
+/**
+ * Ensure the feature_flag_overrides table exists for tests.
+ */
+function ensureFeatureFlagOverridesTableExists(): void
+{
+    if (! Schema::hasTable('feature_flag_overrides')) {
+        Schema::create('feature_flag_overrides', function ($table) {
+            $table->id();
+            $table->string('flag', 64);
+            $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->boolean('enabled');
+            $table->timestamps();
+            $table->unique(['flag', 'user_id']);
+            $table->index(['user_id', 'flag']);
+        });
+    }
+}
+
+/**
+ * Set a feature flag override for testing.
+ *
+ * @param  string  $flag  The feature flag key
+ * @param  bool  $enabled  Whether to enable or disable
+ * @param  int|null  $userId  User ID for per-user override (null for global)
+ */
+function setFeatureFlagOverride(string $flag, bool $enabled, ?int $userId = null): void
+{
+    ensureFeatureFlagOverridesTableExists();
+
+    \App\Models\FeatureFlagOverride::updateOrCreate(
+        ['flag' => $flag, 'user_id' => $userId],
+        ['enabled' => $enabled]
+    );
+
+    // Clear cache
+    Cache::forget(\App\Enums\AdminCacheKey::FEATURE_FLAGS_GLOBAL->value);
+    if ($userId !== null) {
+        Cache::forget(\App\Enums\AdminCacheKey::featureFlagsUser($userId));
+    }
+}
+
+/**
+ * Clear all feature flag overrides for testing.
+ */
+function clearFeatureFlagOverrides(): void
+{
+    if (Schema::hasTable('feature_flag_overrides')) {
+        \App\Models\FeatureFlagOverride::query()->delete();
+    }
+    Cache::forget(\App\Enums\AdminCacheKey::FEATURE_FLAGS_GLOBAL->value);
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Enums\AdminCacheKey;
 use App\Exceptions\ConcurrentOperationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Billing\CancelSubscriptionRequest;
@@ -14,6 +15,7 @@ use App\Services\BillingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Exceptions\IncompletePayment;
 use Stripe\Exception\ApiErrorException;
@@ -65,6 +67,8 @@ class SubscriptionController extends Controller
                 'quantity' => $quantity,
             ]);
 
+            $this->invalidateAdminCaches();
+
             return redirect()->route('billing.index')->with('success', 'Subscription created successfully.');
         } catch (ConcurrentOperationException) {
             return back()->with('error', 'A subscription request is already in progress. Please try again.');
@@ -102,6 +106,8 @@ class SubscriptionController extends Controller
                 'user_id' => $user->id,
                 'immediately' => $immediately,
             ]);
+
+            $this->invalidateAdminCaches();
 
             $message = $immediately
                 ? 'Subscription canceled immediately.'
@@ -153,6 +159,8 @@ class SubscriptionController extends Controller
                 'user_id' => $user->id,
             ]);
 
+            $this->invalidateAdminCaches();
+
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Subscription resumed successfully.']);
             }
@@ -200,6 +208,8 @@ class SubscriptionController extends Controller
                 'new_tier' => $newTier,
             ]);
 
+            $this->invalidateAdminCaches();
+
             return redirect()->route('billing.index')->with('success', 'Plan updated successfully.');
         } catch (ConcurrentOperationException) {
             return back()->with('error', 'A plan change is already in progress. Please try again.');
@@ -240,6 +250,8 @@ class SubscriptionController extends Controller
                 'user_id' => $user->id,
                 'quantity' => $quantity,
             ]);
+
+            $this->invalidateAdminCaches();
 
             return redirect()->route('billing.index')->with('success', 'Seat count updated successfully.');
         } catch (ConcurrentOperationException) {
@@ -306,5 +318,15 @@ class SubscriptionController extends Controller
 
             return back()->with('error', 'Unable to access billing portal. Please try again.');
         }
+    }
+
+    private function invalidateAdminCaches(): void
+    {
+        Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
+        Cache::forget(AdminCacheKey::BILLING_STATS->value);
+        Cache::forget(AdminCacheKey::BILLING_TIER_DIST->value);
+        Cache::forget(AdminCacheKey::BILLING_STATUS->value);
+        Cache::forget(AdminCacheKey::BILLING_GROWTH_CHART->value);
+        Cache::forget(AdminCacheKey::BILLING_TRIALS->value);
     }
 }

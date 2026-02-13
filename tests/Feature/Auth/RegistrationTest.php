@@ -28,4 +28,19 @@ class RegistrationTest extends TestCase
         $this->assertAuthenticated();
         $response->assertRedirect(route('dashboard', absolute: false));
     }
+
+    public function test_cannot_set_is_admin_via_registration(): void
+    {
+        $this->post('/register', [
+            'name' => 'Attacker',
+            'email' => 'attacker@test.com',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
+            'is_admin' => true,
+        ]);
+
+        $user = \App\Models\User::where('email', 'attacker@test.com')->first();
+        $this->assertNotNull($user);
+        $this->assertFalse($user->is_admin);
+    }
 }

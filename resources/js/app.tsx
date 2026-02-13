@@ -31,6 +31,11 @@ const LazyToaster = lazy(async () => {
     return { default: module.Toaster };
 });
 
+const LazyFlashToasts = lazy(async () => {
+    const { useFlashToasts } = await import('@/hooks/useFlashToasts');
+    return { default: function FlashToasts() { useFlashToasts(); return null; } };
+});
+
 createInertiaApp({
     title: (title) => title ? `${title} | ${appName}` : appName,
     resolve: (name) => {
@@ -80,6 +85,7 @@ createInertiaApp({
                                 <Suspense fallback={renderPageContent()}>
                                     <LazyTooltipProvider>
                                         {renderPageContent()}
+                                        <LazyFlashToasts />
                                         <LazyToaster richColors position="top-right" />
                                     </LazyTooltipProvider>
                                 </Suspense>

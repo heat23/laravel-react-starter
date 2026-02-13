@@ -337,7 +337,23 @@ describe("SidebarLayout", () => {
           <div>Content</div>
         </SidebarLayout>,
       );
-      expect(screen.getByRole("button", { name: /toggle menu/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /toggle navigation menu/i })).toBeInTheDocument();
+    });
+
+    it("has logout button in mobile sidebar", async () => {
+      render(
+        <SidebarLayout>
+          <div>Content</div>
+        </SidebarLayout>,
+      );
+
+      // Open the mobile sheet
+      const menuButton = screen.getByRole("button", { name: /toggle navigation menu/i });
+      await user.click(menuButton);
+
+      // Both desktop and mobile should now have logout buttons
+      const logoutButtons = screen.getAllByText("Log out");
+      expect(logoutButtons.length).toBeGreaterThanOrEqual(2);
     });
   });
 });

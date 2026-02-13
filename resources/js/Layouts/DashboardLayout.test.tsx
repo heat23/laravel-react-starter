@@ -227,7 +227,22 @@ describe('DashboardLayout', () => {
       expect(profileLinks.length).toBeGreaterThan(0);
     });
 
-    it('shows settings link in dropdown', async () => {
+    it('shows API Tokens link in dropdown when feature is enabled', async () => {
+      mockedUsePage.mockReturnValue({
+        props: {
+          auth: {
+            user: {
+              name: 'Test User',
+              email: 'test@example.com',
+            },
+          },
+          features: {
+            notifications: false,
+            apiTokens: true,
+          },
+        },
+      } as ReturnType<typeof usePage>);
+
       render(
         <DashboardLayout>
           <div>Content</div>
@@ -239,7 +254,38 @@ describe('DashboardLayout', () => {
         await user.click(avatarButton);
       }
 
-      expect(screen.getByText(/settings/i)).toBeInTheDocument();
+      const tokenLinks = screen.getAllByText(/api tokens/i);
+      expect(tokenLinks.length).toBeGreaterThan(0);
+    });
+
+    it('hides API Tokens link in dropdown when feature is disabled', async () => {
+      mockedUsePage.mockReturnValue({
+        props: {
+          auth: {
+            user: {
+              name: 'Test User',
+              email: 'test@example.com',
+            },
+          },
+          features: {
+            notifications: false,
+            apiTokens: false,
+          },
+        },
+      } as ReturnType<typeof usePage>);
+
+      render(
+        <DashboardLayout>
+          <div>Content</div>
+        </DashboardLayout>,
+      );
+
+      const avatarButton = screen.getByText('T').closest('button');
+      if (avatarButton) {
+        await user.click(avatarButton);
+      }
+
+      expect(screen.queryByText(/api tokens/i)).not.toBeInTheDocument();
     });
 
     it('shows logout option in dropdown', async () => {
@@ -270,7 +316,7 @@ describe('DashboardLayout', () => {
         </DashboardLayout>,
       );
 
-      expect(screen.getByRole('button', { name: /toggle menu/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /toggle navigation menu/i })).toBeInTheDocument();
     });
 
     it('mobile menu button is hidden on desktop (md:hidden)', () => {
@@ -291,7 +337,7 @@ describe('DashboardLayout', () => {
         </DashboardLayout>,
       );
 
-      const menuButton = screen.getByRole('button', { name: /toggle menu/i });
+      const menuButton = screen.getByRole('button', { name: /toggle navigation menu/i });
       await user.click(menuButton);
 
       // Sheet should open with navigation items
@@ -456,7 +502,7 @@ describe('DashboardLayout', () => {
         </DashboardLayout>,
       );
 
-      const menuButton = screen.getByRole('button', { name: /toggle menu/i });
+      const menuButton = screen.getByRole('button', { name: /toggle navigation menu/i });
       expect(menuButton).toBeInTheDocument();
     });
 

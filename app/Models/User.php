@@ -61,7 +61,13 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
             'last_login_at' => 'datetime',
             'trial_ends_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->is_admin === true;
     }
 
     /**

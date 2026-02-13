@@ -35,7 +35,7 @@ class SocialAuthController extends Controller
     public function redirect(string $provider): RedirectResponse
     {
         // Verify feature is enabled
-        if (! config('features.social_auth.enabled', false)) {
+        if (! feature_enabled('social_auth')) {
             abort(404, 'Social authentication is not enabled.');
         }
 
@@ -58,7 +58,7 @@ class SocialAuthController extends Controller
     public function callback(string $provider): RedirectResponse
     {
         // Verify feature is enabled
-        if (! config('features.social_auth.enabled', false)) {
+        if (! feature_enabled('social_auth')) {
             abort(404, 'Social authentication is not enabled.');
         }
 
@@ -96,7 +96,7 @@ class SocialAuthController extends Controller
     public function disconnect(Request $request, string $provider): RedirectResponse
     {
         // Verify feature is enabled
-        if (! config('features.social_auth.enabled', false)) {
+        if (! feature_enabled('social_auth', $request->user())) {
             abort(404, 'Social authentication is not enabled.');
         }
 

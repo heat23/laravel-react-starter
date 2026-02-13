@@ -289,9 +289,12 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Run npm audit
+      - name: Run npm audit (critical - blocking)
+        run: npm audit --audit-level=critical
+
+      - name: Run npm audit (high - advisory)
         run: npm audit --audit-level=high
-        continue-on-error: true  # Don't fail on high vulns, just report
+        continue-on-error: true
 
   # ============================================================================
   # E2E Tests (Playwright)

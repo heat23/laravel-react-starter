@@ -75,6 +75,8 @@ export default function Pricing() {
     return { label: tier.price === 0 ? "Free" : `$${tier.price}/mo`, sublabel: null, savings: null };
   };
 
+  const isSubscribed = !!currentPlan && currentPlan !== "free";
+
   const handleCheckout = (planKey: string) => {
     const tier = tiers[planKey];
     const priceId =
@@ -83,16 +85,23 @@ export default function Pricing() {
         : tier.stripe_price_id;
 
     setCheckoutLoading(planKey);
-    router.post(
-      route("billing.subscribe"),
-      {
-        price_id: priceId,
-        quantity: tier.per_seat && tier.min_seats ? tier.min_seats : 1,
-      },
-      {
-        onFinish: () => setCheckoutLoading(null),
-      },
-    );
+
+    if (isSubscribed) {
+      router.post(
+        route("billing.swap"),
+        { price_id: priceId },
+        { onFinish: () => setCheckoutLoading(null) },
+      );
+    } else {
+      router.post(
+        route("billing.subscribe"),
+        {
+          price_id: priceId,
+          quantity: tier.per_seat && tier.min_seats ? tier.min_seats : 1,
+        },
+        { onFinish: () => setCheckoutLoading(null) },
+      );
+    }
   };
 
   const content = (
@@ -232,7 +241,7 @@ export default function Pricing() {
                               loading={checkoutLoading === key}
                               loadingText="Processing..."
                             >
-                              Upgrade to {tier.name}
+                              {isSubscribed ? "Switch to" : "Upgrade to"} {tier.name}
                               {billingPeriod === "annual" && " (Annual)"}
                             </LoadingButton>
                           )}

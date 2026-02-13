@@ -50,13 +50,24 @@ export default function Onboarding() {
 
   const handleNext = useCallback(async () => {
     if (currentStep === 0) {
-      // Save name if changed
+      // Save name if changed — include email to satisfy ProfileUpdateRequest validation
       if (name !== auth.user?.name && name.trim()) {
         setSaving(true);
-        router.patch("/profile", { name }, {
-          preserveState: true,
-          preserveScroll: true,
-          onFinish: () => setSaving(false),
+        await new Promise<void>((resolve) => {
+          router.patch("/profile", { name, email: auth.user?.email }, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+              setSaving(false);
+              resolve();
+            },
+            onError: (errors) => {
+              setSaving(false);
+              const firstError = Object.values(errors)[0];
+              if (firstError) toast.error(firstError);
+              resolve();
+            },
+          });
         });
       }
       setCurrentStep(1);
@@ -67,7 +78,7 @@ export default function Onboarding() {
       // Final step — complete onboarding
       completeOnboarding();
     }
-  }, [currentStep, name, auth.user?.name, completeOnboarding]);
+  }, [currentStep, name, auth.user?.name, auth.user?.email, completeOnboarding]);
 
   const handleBack = useCallback(() => {
     setCurrentStep((prev) => Math.max(0, prev - 1));

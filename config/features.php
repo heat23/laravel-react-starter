@@ -148,4 +148,21 @@ return [
         'max_endpoints_free' => env('WEBHOOK_ENDPOINTS_MAX_FREE', 3),
         'max_endpoints_pro' => env('WEBHOOK_ENDPOINTS_MAX_PRO', 20),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Panel
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, adds an admin panel at /admin with user management,
+    | health monitoring, audit logs, config viewer, and system info.
+    |
+    */
+    'admin' => [
+        'enabled' => env('FEATURE_ADMIN', false),
+        'pagination' => [
+            'default' => 25,
+            'audit_logs' => 50,
+        ],
+    ],
 ];

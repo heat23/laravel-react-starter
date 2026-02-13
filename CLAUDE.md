@@ -107,6 +107,13 @@ Check `config/features.php` and `.env` before implementing. Features default off
 8. **Route:** Add to `routes/web.php` — wrap in feature flag if optional, always name routes. Add API route to `routes/api.php` if applicable.
 9. **Feature flag (if optional):** Add to `config/features.php` with env var default
 10. **Tests:** Write Pest tests in `tests/Feature/` and `tests/Unit/` — see `tests/` structure
+11. **Review checklist (run mentally before claiming done):**
+    - **Soft-delete sweep:** Does any code access `->user->`, `->owner->`, or other relationships without `?->` where the related model uses `SoftDeletes`? Add `withTrashed()` to admin-facing queries.
+    - **Middleware audit:** If a route is outside its normal middleware group, does it have the right (and ONLY the right) middleware? Especially: don't put `verified` on routes that unverified users need.
+    - **Cache invalidation:** If the feature mutates data that feeds an admin dashboard or cached stats, does it call `Cache::forget()` on the relevant `AdminCacheKey`?
+    - **Async contract:** If a function is passed as `onConfirm` to a dialog or awaited anywhere, does it return a `Promise` that resolves after the server responds (not after the fire-and-forget call)?
+    - **Nav/URL prefix collisions:** If adding a new nav item or route, does `startsWith` matching cause false positives with parent routes?
+    - **Local state vs URL params:** If a component uses both `useState` and URL-based filters, does `clearFilters` reset ALL local state?
 
 ## Commands
 
@@ -151,6 +158,12 @@ scripts/init.sh        # First-time setup (configure project name, features)
 - Database: SQLite in-memory for tests
 - All auth pages have `.test.tsx` counterparts
 - E2E: Playwright (`tests/e2e/`) — auth smoke tests
+- **Test quality rules (IMPORTANT):**
+  - Assert user-visible behavior, not implementation details — check redirect destinations, session flash content, and final DB state, not just that a mock was called
+  - Every test comment must be accurate — if a comment says "route doesn't have X", verify it. Wrong comments hide bugs.
+  - Inertia router calls (`router.patch`, `router.post`) are fire-and-forget — when testing hooks/components that wrap them, mock with `onSuccess` callback invocation to simulate real async behavior
+  - For every mutation test, verify both the success path AND the final state (e.g., `$user->fresh()->is_admin` after toggle)
+  - Edge case coverage required: soft-deleted users, unverified users, null/missing relationships, concurrent operations
 
 **Migrations:**
 - Always check before adding/dropping columns: `Schema::hasColumn()`
@@ -206,6 +219,21 @@ Already implemented — verify before duplicating:
 **Health Check Auth:**
 - `/health` endpoint supports 3 modes: token-based, IP allowlist, local-only
 - Configure in `config/health.php` — default is local-only in production
+
+**Admin Cache (`AdminCacheKey`):**
+- Dashboard stats are cached with 5-min TTL (`AdminCacheKey::DEFAULT_TTL`)
+- Any mutation that changes user count, subscription state, token count, or webhook stats MUST call `Cache::forget(AdminCacheKey::RELEVANT_KEY->value)` — stale admin dashboards are a known bug class
+- User mutations (toggle admin, deactivate, restore) invalidate `DASHBOARD_STATS`
+- Billing mutations (subscribe, cancel, resume, swap) must invalidate `BILLING_STATS` and `BILLING_TIER_DIST`
+- Token/webhook CRUD must invalidate their respective cache keys
+
+**Relationship Loading with SoftDeletes:**
+- When loading relationships where the related model uses `SoftDeletes`, use `->load(['relation' => fn ($q) => $q->withTrashed()])` if the display context needs to show deleted records (e.g., admin views)
+- Always use null-safe operator (`?->`) with fallback when accessing relationship properties that could be null: `$model->owner?->name ?? '[Deleted User]'`
+
+**Impersonation:**
+- Stop-impersonation route must NOT use `verified` middleware — the impersonated user may be unverified
+- The route is intentionally outside the admin middleware group because the impersonated user is not an admin
 
 ## CI/CD
 

@@ -19,17 +19,52 @@ class WebhookService
             ->get()
             ->filter(fn (WebhookEndpoint $endpoint) => in_array($eventType, $endpoint->events));
 
-        foreach ($endpoints as $endpoint) {
-            $delivery = WebhookDelivery::create([
-                'webhook_endpoint_id' => $endpoint->id,
-                'uuid' => Str::uuid()->toString(),
-                'event_type' => $eventType,
-                'payload' => $payload,
-                'status' => 'pending',
-            ]);
-
-            DispatchWebhookJob::dispatch($delivery->id);
+        if ($endpoints->isEmpty()) {
+            return;
         }
+
+        $now = now();
+        $rows = $endpoints->map(fn (WebhookEndpoint $endpoint) => [
+            'webhook_endpoint_id' => $endpoint->id,
+            'uuid' => Str::uuid()->toString(),
+            'event_type' => $eventType,
+            'payload' => json_encode($payload),
+            'status' => 'pending',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ])->all();
+
+        WebhookDelivery::insert($rows);
+
+        $uuids = array_column($rows, 'uuid');
+        $deliveryIds = WebhookDelivery::whereIn('uuid', $uuids)->pluck('id');
+
+        foreach ($deliveryIds as $deliveryId) {
+            DispatchWebhookJob::dispatch($deliveryId);
+        }
+    }
+
+    /**
+     * Dispatch a webhook event directly to a specific endpoint, bypassing event subscription filter.
+     * Used for test deliveries.
+     */
+    public function dispatchToEndpoint(WebhookEndpoint $endpoint, string $eventType, array $payload): void
+    {
+        $now = now();
+        $uuid = Str::uuid()->toString();
+
+        WebhookDelivery::insert([
+            'webhook_endpoint_id' => $endpoint->id,
+            'uuid' => $uuid,
+            'event_type' => $eventType,
+            'payload' => json_encode($payload),
+            'status' => 'pending',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $deliveryId = WebhookDelivery::where('uuid', $uuid)->value('id');
+        DispatchWebhookJob::dispatch($deliveryId);
     }
 
     /**

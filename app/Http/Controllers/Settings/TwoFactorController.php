@@ -16,7 +16,7 @@ class TwoFactorController extends Controller
     public function __construct(
         private AuditService $auditService
     ) {
-        abort_unless(config('features.two_factor.enabled', false), 404);
+        abort_unless(feature_enabled('two_factor', auth()->user()), 404);
     }
 
     public function index(Request $request): Response

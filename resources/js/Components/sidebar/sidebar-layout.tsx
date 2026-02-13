@@ -1,9 +1,10 @@
 import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
 
 import { Link, usePage } from "@inertiajs/react";
 
+import { ImpersonationBanner } from "@/Components/admin/ImpersonationBanner";
 import { Logo, TextLogo } from "@/Components/branding/Logo";
 import { CommandPalette, useCommandPalette } from "@/Components/command-palette";
 import { NotificationDropdown } from "@/Components/notifications/NotificationDropdown";
@@ -13,18 +14,35 @@ import { ScrollArea } from "@/Components/ui/scroll-area";
 import { Separator } from "@/Components/ui/separator";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/Components/ui/sheet";
 import { TooltipProvider } from "@/Components/ui/tooltip";
+import type { AdminNavGroup } from "@/config/admin-navigation";
 import { getVisibleGroups } from "@/config/navigation";
+import type { NavGroup } from "@/config/navigation";
 import type { PageProps } from "@/types";
 
 import { SidebarProvider, useSidebar } from "./sidebar-context";
 import { MobileSidebarNav, SidebarNavGroup } from "./sidebar-nav";
 
-function SidebarInner({ children }: PropsWithChildren) {
+interface SidebarLayoutProps extends PropsWithChildren {
+  navigationGroups?: NavGroup[] | AdminNavGroup[];
+  logoHref?: string;
+  headerExtra?: ReactNode;
+  footerExtra?: ReactNode;
+  banner?: ReactNode;
+}
+
+function SidebarInner({
+  children,
+  navigationGroups,
+  logoHref = "/dashboard",
+  headerExtra,
+  footerExtra,
+  banner,
+}: SidebarLayoutProps) {
   const { auth, features } = usePage<PageProps>().props;
   const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen } = useSidebar();
   const { open: commandPaletteOpen, setOpen: setCommandPaletteOpen } = useCommandPalette();
 
-  const visibleGroups = getVisibleGroups(features);
+  const visibleGroups = navigationGroups ?? getVisibleGroups(features);
 
   return (
     <div className="flex min-h-screen">
@@ -37,9 +55,10 @@ function SidebarInner({ children }: PropsWithChildren) {
       >
         {/* Sidebar Header */}
         <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-3">
-          <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden">
+          <Link href={logoHref} className="flex items-center gap-2 overflow-hidden">
             <Logo className="h-6 w-6 shrink-0" />
             {!collapsed && <TextLogo className="text-sm" />}
+            {!collapsed && headerExtra}
           </Link>
           <Button
             variant="ghost"
@@ -72,6 +91,7 @@ function SidebarInner({ children }: PropsWithChildren) {
         <div className="flex flex-col gap-2 p-3">
           {features.notifications && <NotificationDropdown />}
           <ThemeToggle />
+          {footerExtra}
           <div
             className={`flex items-center gap-2 overflow-hidden ${collapsed ? "justify-center" : ""}`}
           >
@@ -110,6 +130,7 @@ function SidebarInner({ children }: PropsWithChildren) {
             <SheetTitle className="flex items-center gap-2">
               <Logo className="h-6 w-6" />
               <TextLogo className="text-sm" />
+              {headerExtra}
             </SheetTitle>
           </SheetHeader>
           <ScrollArea className="flex-1">
@@ -118,8 +139,8 @@ function SidebarInner({ children }: PropsWithChildren) {
               onNavigate={() => setMobileOpen(false)}
             />
           </ScrollArea>
-          <div className="border-t border-sidebar-border p-3">
-            <div className="flex items-center gap-2 mb-2">
+          <div className="flex flex-col gap-2 border-t border-sidebar-border p-3">
+            <div className="flex items-center gap-2">
               <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sidebar-primary/10 text-sidebar-primary text-xs font-medium">
                 {auth.user?.name.charAt(0).toUpperCase()}
               </div>
@@ -129,7 +150,19 @@ function SidebarInner({ children }: PropsWithChildren) {
                 </p>
               </div>
             </div>
+            {footerExtra}
             <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-sidebar-foreground/60 hover:text-destructive"
+              asChild
+            >
+              <Link href={route("logout")} method="post" as="button" className="w-full">
+                <LogOut className="mr-2 h-4 w-4" />
+                Log out
+              </Link>
+            </Button>
           </div>
         </SheetContent>
       </Sheet>
@@ -140,17 +173,19 @@ function SidebarInner({ children }: PropsWithChildren) {
         <header className="flex h-14 items-center border-b bg-background px-4 md:hidden">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="mr-2">
+              <Button variant="ghost" size="icon" className="mr-2" aria-label="Toggle navigation menu">
                 <Menu className="h-5 w-5" />
-                <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
           </Sheet>
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href={logoHref} className="flex items-center gap-2">
             <Logo className="h-6 w-6" />
             <TextLogo className="text-sm" />
           </Link>
         </header>
+
+        <ImpersonationBanner />
+        {banner}
 
         <main id="main-content" className="flex-1">
           {children}
@@ -162,10 +197,25 @@ function SidebarInner({ children }: PropsWithChildren) {
   );
 }
 
-export default function SidebarLayout({ children }: PropsWithChildren) {
+export default function SidebarLayout({
+  children,
+  navigationGroups,
+  logoHref,
+  headerExtra,
+  footerExtra,
+  banner,
+}: SidebarLayoutProps) {
   return (
     <SidebarProvider>
-      <SidebarInner>{children}</SidebarInner>
+      <SidebarInner
+        navigationGroups={navigationGroups}
+        logoHref={logoHref}
+        headerExtra={headerExtra}
+        footerExtra={footerExtra}
+        banner={banner}
+      >
+        {children}
+      </SidebarInner>
     </SidebarProvider>
   );
 }

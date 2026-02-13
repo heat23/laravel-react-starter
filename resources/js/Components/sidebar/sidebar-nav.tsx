@@ -4,6 +4,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/Components/ui/tooltip
 import type { NavGroup, NavItem } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 
+function isNavActive(url: string, href: string): boolean {
+  const segments = href.split("/").filter(Boolean);
+  if (segments.length <= 1) {
+    return url === href || url === href + "/";
+  }
+  return url.startsWith(href);
+}
+
 interface SidebarNavGroupProps {
   group: NavGroup;
   collapsed?: boolean;
@@ -33,7 +41,7 @@ interface SidebarNavItemProps {
 
 export function SidebarNavItem({ item, collapsed = false }: SidebarNavItemProps) {
   const { url } = usePage();
-  const isActive = url.startsWith(item.href);
+  const isActive = isNavActive(url, item.href);
   const Icon = item.icon;
 
   const linkContent = (
@@ -83,7 +91,7 @@ export function MobileSidebarNav({ groups, onNavigate }: MobileSidebarNavProps) 
           </h3>
           {group.items.map((item) => {
             const Icon = item.icon;
-            const isActive = url.startsWith(item.href);
+            const isActive = isNavActive(url, item.href);
             return (
               <Link
                 key={item.href}

@@ -2,19 +2,23 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AdminCacheKey;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Webhook\CreateWebhookEndpointRequest;
 use App\Http\Requests\Webhook\UpdateWebhookEndpointRequest;
+use App\Services\PlanLimitService;
 use App\Services\WebhookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class WebhookEndpointController extends Controller
 {
     public function __construct(
-        private WebhookService $webhookService
+        private WebhookService $webhookService,
+        private PlanLimitService $planLimitService,
     ) {
-        abort_unless(config('features.webhooks.enabled', false), 404);
+        abort_unless(feature_enabled('webhooks', auth()->user()), 404);
     }
 
     public function index(Request $request): JsonResponse
@@ -41,8 +45,8 @@ class WebhookEndpointController extends Controller
     {
         $user = $request->user();
         $currentCount = $user->webhookEndpoints()->count();
-        $plan = $user->trial_ends_at?->isFuture() ? 'pro' : 'free';
-        $maxKey = $plan === 'pro' ? 'max_endpoints_pro' : 'max_endpoints_free';
+        $plan = $this->planLimitService->getUserPlan($user);
+        $maxKey = $plan === 'free' ? 'max_endpoints_free' : 'max_endpoints_pro';
         $limit = config("features.webhooks.{$maxKey}", 3);
 
         if ($currentCount >= $limit) {
@@ -55,6 +59,8 @@ class WebhookEndpointController extends Controller
             ...$request->validated(),
             'secret' => $this->webhookService->generateSecret(),
         ]);
+
+        $this->invalidateAdminCaches();
 
         return response()->json([
             'id' => $endpoint->id,
@@ -83,6 +89,8 @@ class WebhookEndpointController extends Controller
 
         $endpoint->update($request->validated());
 
+        $this->invalidateAdminCaches();
+
         return response()->json(['success' => true]);
     }
 
@@ -93,6 +101,8 @@ class WebhookEndpointController extends Controller
         if (! $deleted) {
             return response()->json(['message' => 'Endpoint not found.'], 404);
         }
+
+        $this->invalidateAdminCaches();
 
         return response()->json(['success' => true]);
     }
@@ -123,11 +133,18 @@ class WebhookEndpointController extends Controller
     {
         $endpoint = $request->user()->webhookEndpoints()->findOrFail($endpointId);
 
-        $this->webhookService->dispatch($request->user()->id, 'test.ping', [
+        $this->webhookService->dispatchToEndpoint($endpoint, 'test.ping', [
             'message' => 'This is a test webhook delivery.',
             'timestamp' => now()->toISOString(),
         ]);
 
         return response()->json(['success' => true, 'message' => 'Test webhook queued.']);
+    }
+
+    private function invalidateAdminCaches(): void
+    {
+        Cache::forget(AdminCacheKey::WEBHOOKS_STATS->value);
+        Cache::forget(AdminCacheKey::WEBHOOKS_DELIVERY_CHART->value);
+        Cache::forget(AdminCacheKey::WEBHOOKS_RECENT_FAILURES->value);
     }
 }

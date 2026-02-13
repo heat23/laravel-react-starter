@@ -53,7 +53,7 @@ export default function Webhooks({ available_events }: WebhooksProps) {
     });
     setDeleteTarget(null);
     if (!res.ok) {
-      toast.error("Failed to delete endpoint.");
+      toast.error("Could not delete the endpoint. Please try again or check your connection.");
       return;
     }
     fetchEndpoints();
@@ -68,7 +68,7 @@ export default function Webhooks({ available_events }: WebhooksProps) {
     if (res.ok) {
       toast.success("Test webhook queued.");
     } else {
-      toast.error("Failed to send test webhook.");
+      toast.error("Could not send the test webhook. Please verify the endpoint is active and try again.");
     }
   };
 
@@ -309,7 +309,7 @@ function CreateEndpointDialog({
       if (res.status === 422 && data.errors) {
         setErrors(data.errors);
       } else {
-        toast.error(data.message || "Failed to create endpoint.");
+        toast.error(data.message || "Could not create the endpoint. Please check your input and try again.");
       }
       return;
     }

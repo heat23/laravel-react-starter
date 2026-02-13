@@ -10,7 +10,7 @@ class EnsureOnboardingCompleted
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! config('features.onboarding.enabled', false)) {
+        if (! feature_enabled('onboarding', $request->user())) {
             return $next($request);
         }
 
@@ -19,6 +19,11 @@ class EnsureOnboardingCompleted
         }
 
         if ($request->routeIs('onboarding')) {
+            return $next($request);
+        }
+
+        // If user_settings is disabled, onboarding completion cannot be persisted — skip the check
+        if (! config('features.user_settings.enabled', true)) {
             return $next($request);
         }
 

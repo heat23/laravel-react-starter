@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AdminCacheKey;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CreateTokenRequest;
 use DateTimeImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * @group API Tokens
@@ -64,6 +66,10 @@ class TokenController extends Controller
             $expiresAt
         );
 
+        Cache::forget(AdminCacheKey::TOKENS_STATS->value);
+        Cache::forget(AdminCacheKey::TOKENS_MOST_ACTIVE->value);
+        Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
+
         return response()->json([
             'token' => $token->plainTextToken,
             'id' => $token->accessToken->id,
@@ -89,6 +95,10 @@ class TokenController extends Controller
         if (! $deleted) {
             return response()->json(['message' => 'Token not found.'], 404);
         }
+
+        Cache::forget(AdminCacheKey::TOKENS_STATS->value);
+        Cache::forget(AdminCacheKey::TOKENS_MOST_ACTIVE->value);
+        Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
 
         return response()->json(['success' => true]);
     }

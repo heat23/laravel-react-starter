@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Enums\AdminCacheKey;
 use App\Services\AuditService;
 use App\Services\PlanLimitService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Http\Controllers\WebhookController;
 use Laravel\Cashier\Subscription;
@@ -156,6 +158,13 @@ class StripeWebhookController extends WebhookController
                     app(PlanLimitService::class)->invalidateUserPlanCache($user);
                 }
             }
+
+            Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
+            Cache::forget(AdminCacheKey::BILLING_STATS->value);
+            Cache::forget(AdminCacheKey::BILLING_TIER_DIST->value);
+            Cache::forget(AdminCacheKey::BILLING_STATUS->value);
+            Cache::forget(AdminCacheKey::BILLING_GROWTH_CHART->value);
+            Cache::forget(AdminCacheKey::BILLING_TRIALS->value);
         } catch (\Throwable) {
             // Cache invalidation should never break webhook processing
         }

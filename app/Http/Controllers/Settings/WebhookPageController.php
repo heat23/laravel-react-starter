@@ -10,7 +10,7 @@ class WebhookPageController extends Controller
 {
     public function __construct()
     {
-        abort_unless(config('features.webhooks.enabled', false), 404);
+        abort_unless(feature_enabled('webhooks', auth()->user()), 404);
     }
 
     public function __invoke(): Response

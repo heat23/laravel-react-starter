@@ -16,7 +16,7 @@ class TwoFactorChallengeController extends Controller
     public function __construct(
         private AuditService $auditService
     ) {
-        abort_unless(config('features.two_factor.enabled', false), 404);
+        abort_unless(feature_enabled('two_factor'), 404);
     }
 
     public function create(): Response|RedirectResponse

@@ -249,37 +249,34 @@ class HandleInertiaRequestsTest extends TestCase
 
     public function test_features_email_verification_defaults_to_true(): void
     {
-        // Clear the config to test default value
-        config(['features.email_verification' => []]);
+        // Email verification defaults to true in config/features.php
+        config(['features.email_verification.enabled' => true]);
 
         $request = Request::create('/test');
         $shared = $this->middleware->share($request);
 
-        // Default is true based on middleware code
         $this->assertTrue($shared['features']['emailVerification']);
     }
 
     public function test_features_api_tokens_defaults_to_true(): void
     {
-        // Clear the config to test default value
-        config(['features.api_tokens' => []]);
+        // API tokens default to true in config/features.php
+        config(['features.api_tokens.enabled' => true]);
 
         $request = Request::create('/test');
         $shared = $this->middleware->share($request);
 
-        // Default is true based on middleware code
         $this->assertTrue($shared['features']['apiTokens']);
     }
 
     public function test_features_user_settings_defaults_to_true(): void
     {
-        // Clear the config to test default value
-        config(['features.user_settings' => []]);
+        // User settings defaults to true in config/features.php
+        config(['features.user_settings.enabled' => true]);
 
         $request = Request::create('/test');
         $shared = $this->middleware->share($request);
 
-        // Default is true based on middleware code
         $this->assertTrue($shared['features']['userSettings']);
     }
 }

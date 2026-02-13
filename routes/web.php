@@ -124,4 +124,9 @@ Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 // Health check (controller handles its own authorization)
 Route::get('/health', HealthCheckController::class)->name('health');
 
+// Admin panel (optional feature)
+if (config('features.admin.enabled', false)) {
+    require __DIR__.'/admin.php';
+}
+
 require __DIR__.'/auth.php';
