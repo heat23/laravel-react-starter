@@ -21,17 +21,16 @@ class FeatureFlagService
     /**
      * Flags that depend on routes being registered at boot time.
      * If env=false, DB overrides cannot enable them (routes won't exist).
+     *
+     * Only includes flags where routes are conditionally registered with if (config(...)).
+     * Flags with runtime-checked routes (always registered, controller-gated) are NOT included.
      */
     private const ROUTE_DEPENDENT_FLAGS = [
-        'billing',
-        'social_auth',
-        'webhooks',
-        'api_tokens',
-        'notifications',
-        'onboarding',
-        'api_docs',
-        'two_factor',
-        'admin',
+        'billing',      // web.php:68, admin.php:97
+        'social_auth',  // auth.php:81, admin.php:111
+        'api_tokens',   // web.php:61, api.php:57, admin.php:107
+        'api_docs',     // scribe.php:71 (package-level conditional)
+        'admin',        // web.php:128
     ];
 
     /**

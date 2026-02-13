@@ -18,7 +18,7 @@ import {
 import { Switch } from "@/Components/ui/switch";
 import AdminLayout from "@/Layouts/AdminLayout";
 import { capitalize } from "@/lib/format";
-import type { AdminHealthProps, HealthCheck } from "@/types/admin";
+import type { AdminHealthProps } from "@/types/admin";
 
 function StatusIcon({ status }: { status: string }) {
   switch (status) {

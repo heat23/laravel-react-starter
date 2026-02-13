@@ -1,6 +1,6 @@
 import { MoreHorizontal, Shield, Users, X } from "lucide-react";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 
 import { Head, Link, router, usePage } from "@inertiajs/react";
 
@@ -58,8 +58,12 @@ export default function AdminUsersIndex({ users, filters }: AdminUsersIndexProps
   });
 
   // Only non-admin, active, non-self users are eligible for bulk deactivation
-  const selectableIds = new Set(
-    users.data.filter((u) => !u.is_admin && !u.deleted_at && u.id !== currentUserId).map((u) => u.id),
+  const selectableIds = useMemo(
+    () =>
+      new Set(
+        users.data.filter((u) => !u.is_admin && !u.deleted_at && u.id !== currentUserId).map((u) => u.id),
+      ),
+    [users.data, currentUserId],
   );
   const allSelectableSelected = selectableIds.size > 0 && [...selectableIds].every((id) => selectedIds.has(id));
 

@@ -1,0 +1,37 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# 1. Run Pint (code style)
+echo "📝 Checking PHP code style..."
+./vendor/bin/pint --test || {
+  echo "❌ Pint failed. Run './vendor/bin/pint' to fix."
+  exit 1
+}
+
+# 2. Run PHPStan (static analysis)
+if [ -f "vendor/bin/phpstan" ]; then
+  echo "🔬 Running PHPStan..."
+  ./vendor/bin/phpstan analyse --memory-limit=1G || {
+    echo "❌ PHPStan failed. Fix type errors before committing."
+    exit 1
+  }
+fi
+
+
+# 4. Run frontend lint
+echo "🎨 Running ESLint..."
+npm run lint || {
+  echo "❌ ESLint failed. Run 'npm run lint -- --fix' to fix."
+  exit 1
+}
+
+# 5. Run TypeScript check
+echo "📘 Running TypeScript check..."
+npx tsc --noEmit || {
+  echo "❌ TypeScript errors found. Fix before committing."
+  exit 1
+}
+
+echo "✅ All pre-commit checks passed!"

@@ -1,7 +1,13 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import axios from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import axios from "axios";
+import { toast } from "sonner";
+
+import { usePage } from "@inertiajs/react";
+
+import { NotificationDropdown } from "./NotificationDropdown";
 
 vi.mock("@inertiajs/react", () => ({
   usePage: vi.fn(),
@@ -16,12 +22,6 @@ vi.mock("sonner", () => ({
 }));
 
 vi.mock("axios");
-
-import { toast } from "sonner";
-
-import { usePage } from "@inertiajs/react";
-
-import { NotificationDropdown } from "./NotificationDropdown";
 
 function mockPageProps(overrides: Record<string, unknown> = {}) {
   (usePage as ReturnType<typeof vi.fn>).mockReturnValue({

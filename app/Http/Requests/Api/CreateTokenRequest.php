@@ -21,7 +21,7 @@ class CreateTokenRequest extends FormRequest
             'name' => 'required|string|max:255',
             'abilities' => 'array|max:10',
             'abilities.*' => ['string', Rule::in(['read', 'write', 'delete'])],
-            'expires_at' => 'nullable|date|after:now',
+            'expires_at' => 'nullable|date|after:now|before:' . now()->addYear()->format('Y-m-d'),
         ];
     }
 
@@ -35,6 +35,7 @@ class CreateTokenRequest extends FormRequest
             'abilities.max' => 'You can assign up to 10 permissions per token.',
             'name.required' => 'Please provide a name for this token.',
             'expires_at.after' => 'Expiration date must be in the future.',
+            'expires_at.before' => 'Expiration date cannot exceed 1 year from now.',
         ];
     }
 }

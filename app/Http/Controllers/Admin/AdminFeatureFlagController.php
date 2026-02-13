@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\AdminFeatureFlagUserRequest;
 use App\Services\AuditService;
 use App\Services\FeatureFlagService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -34,7 +35,7 @@ class AdminFeatureFlagController extends Controller
     /**
      * Update a global feature flag override.
      */
-    public function updateGlobal(AdminFeatureFlagRequest $request, string $flag): JsonResponse
+    public function updateGlobal(AdminFeatureFlagRequest $request, string $flag): RedirectResponse
     {
         try {
             $enabled = $request->boolean('enabled');
@@ -48,27 +49,21 @@ class AdminFeatureFlagController extends Controller
                 'reason' => $reason,
             ]);
 
-            return response()->json([
-                'success' => true,
+            return back()->with('flash', [
+                'type' => 'success',
                 'message' => 'Feature flag updated successfully.',
             ]);
-        } catch (InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
-        } catch (RuntimeException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            return back()->withErrors([
+                'flag' => $e->getMessage(),
+            ]);
         }
     }
 
     /**
      * Remove a global feature flag override.
      */
-    public function removeGlobal(string $flag): JsonResponse
+    public function removeGlobal(string $flag): RedirectResponse
     {
         try {
             $this->featureFlagService->removeGlobalOverride($flag);
@@ -77,15 +72,14 @@ class AdminFeatureFlagController extends Controller
                 'flag' => $flag,
             ]);
 
-            return response()->json([
-                'success' => true,
+            return back()->with('flash', [
+                'type' => 'success',
                 'message' => 'Feature flag override removed.',
             ]);
         } catch (InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return back()->withErrors([
+                'flag' => $e->getMessage(),
+            ]);
         }
     }
 
@@ -109,7 +103,7 @@ class AdminFeatureFlagController extends Controller
     /**
      * Add a user-specific override.
      */
-    public function addUserOverride(AdminFeatureFlagUserRequest $request, string $flag): JsonResponse
+    public function addUserOverride(AdminFeatureFlagUserRequest $request, string $flag): RedirectResponse
     {
         try {
             $userId = $request->integer('user_id');
@@ -125,27 +119,21 @@ class AdminFeatureFlagController extends Controller
                 'reason' => $reason,
             ]);
 
-            return response()->json([
-                'success' => true,
+            return back()->with('flash', [
+                'type' => 'success',
                 'message' => 'User override added successfully.',
             ]);
-        } catch (InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
-        } catch (RuntimeException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+        } catch (InvalidArgumentException|RuntimeException $e) {
+            return back()->withErrors([
+                'user_override' => $e->getMessage(),
+            ]);
         }
     }
 
     /**
      * Remove a user-specific override.
      */
-    public function removeUserOverride(string $flag, int $user): JsonResponse
+    public function removeUserOverride(string $flag, int $user): RedirectResponse
     {
         try {
             $this->featureFlagService->removeUserOverride($flag, $user);
@@ -155,22 +143,21 @@ class AdminFeatureFlagController extends Controller
                 'user_id' => $user,
             ]);
 
-            return response()->json([
-                'success' => true,
+            return back()->with('flash', [
+                'type' => 'success',
                 'message' => 'User override removed.',
             ]);
         } catch (InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return back()->withErrors([
+                'user_override' => $e->getMessage(),
+            ]);
         }
     }
 
     /**
      * Remove all user overrides for a flag.
      */
-    public function removeAllUserOverrides(string $flag): JsonResponse
+    public function removeAllUserOverrides(string $flag): RedirectResponse
     {
         try {
             $this->featureFlagService->removeAllUserOverrides($flag);
@@ -179,15 +166,14 @@ class AdminFeatureFlagController extends Controller
                 'flag' => $flag,
             ]);
 
-            return response()->json([
-                'success' => true,
+            return back()->with('flash', [
+                'type' => 'success',
                 'message' => 'All user overrides removed.',
             ]);
         } catch (InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return back()->withErrors([
+                'user_overrides' => $e->getMessage(),
+            ]);
         }
     }
 

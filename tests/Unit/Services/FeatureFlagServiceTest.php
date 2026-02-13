@@ -191,8 +191,8 @@ it('resolveAll returns correct values with mixed overrides', function () {
 
     // billing: false (config default, route-dependent so override can't help)
     expect($result['billing'])->toBeFalse();
-    // notifications: false (config false, route-dependent so override can't help)
-    expect($result['notifications'])->toBeFalse();
+    // notifications: true (global override enabled it, not route-dependent so works)
+    expect($result['notifications'])->toBeTrue();
     // email_verification: false (user override overrides config default of true)
     expect($result['email_verification'])->toBeFalse();
 });
@@ -375,4 +375,56 @@ it('getAdminSummary includes reason and updated_at from global override', functi
 
     expect($flag['reason'])->toBe('Production rollout');
     expect($flag['updated_at'])->not->toBeNull();
+});
+
+it('runtime-checked flags can be enabled via DB override when env is false', function () {
+    $service = app(FeatureFlagService::class);
+    $user = User::factory()->create();
+
+    // These flags have routes always registered, controllers gate via feature_enabled()
+    // So DB overrides SHOULD work even when env is false
+    $runtimeCheckedFlags = ['notifications', 'onboarding', 'two_factor', 'webhooks'];
+
+    foreach ($runtimeCheckedFlags as $flag) {
+        config(["features.{$flag}.enabled" => false]);
+
+        // Set DB override
+        $service->setGlobalOverride($flag, true);
+
+        // Should return true because routes are always registered
+        expect($service->resolve($flag))->toBeTrue(
+            "Expected {$flag} to be enabled via DB override (runtime-checked flag)"
+        );
+
+        // Clean up
+        $service->removeGlobalOverride($flag);
+    }
+});
+
+it('route-dependent flags cannot be enabled via DB override when env is false', function () {
+    $service = app(FeatureFlagService::class);
+
+    // These flags have routes conditionally registered via if (config(...))
+    // So DB overrides CANNOT work when env is false (routes don't exist)
+    $routeDependentFlags = ['billing', 'social_auth', 'api_tokens', 'admin'];
+
+    foreach ($routeDependentFlags as $flag) {
+        config(["features.{$flag}.enabled" => false]);
+
+        // Set DB override (simulating edge case)
+        FeatureFlagOverride::create([
+            'flag' => $flag,
+            'user_id' => null,
+            'enabled' => true,
+        ]);
+
+        // Should still return false because routes aren't registered
+        expect($service->resolve($flag))->toBeFalse(
+            "Expected {$flag} to remain disabled (route-dependent flag, env=false)"
+        );
+
+        // Clean up
+        FeatureFlagOverride::where('flag', $flag)->delete();
+        Cache::flush();
+    }
 });

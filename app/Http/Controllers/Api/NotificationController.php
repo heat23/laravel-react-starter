@@ -16,7 +16,7 @@ class NotificationController extends Controller
 {
     public function __construct()
     {
-        abort_unless(config('features.notifications.enabled', false), 404);
+        abort_unless(feature_enabled('notifications', auth()->user()), 404);
     }
 
     /**

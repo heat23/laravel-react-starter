@@ -36,6 +36,8 @@ class HealthCheckController extends Controller
         $allowedIps = config('health.allowed_ips');
 
         if ($token !== null && $token !== '') {
+            // Prefer Bearer header to avoid token exposure in server logs.
+            // Query param supported for legacy clients but should be avoided.
             $provided = $request->bearerToken() ?? $request->query('token');
 
             return hash_equals($token, $provided ?? '');

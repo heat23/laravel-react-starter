@@ -44,8 +44,9 @@ it('enables a global override', function () {
         'enabled' => true,
     ]);
 
-    $response->assertStatus(200);
-    $response->assertJson(['success' => true]);
+    $response->assertRedirect();
+    $response->assertSessionHas('flash.type', 'success');
+    $response->assertSessionHas('flash.message');
 
     expect(FeatureFlagOverride::where('flag', 'billing')->whereNull('user_id')->first())
         ->not->toBeNull()
@@ -62,8 +63,8 @@ it('disables a global override', function () {
         'enabled' => false,
     ]);
 
-    $response->assertStatus(200);
-    $response->assertJson(['success' => true]);
+    $response->assertRedirect();
+    $response->assertSessionHas('flash.type', 'success');
 
     expect(FeatureFlagOverride::where('flag', 'billing')->whereNull('user_id')->first())
         ->not->toBeNull()
@@ -77,8 +78,8 @@ it('removes a global override', function () {
 
     $response = $this->actingAs($admin)->delete('/admin/feature-flags/billing');
 
-    $response->assertStatus(200);
-    $response->assertJson(['success' => true]);
+    $response->assertRedirect();
+    $response->assertSessionHas('flash.type', 'success');
 
     expect(FeatureFlagOverride::where('flag', 'billing')->whereNull('user_id')->first())
         ->toBeNull();
@@ -91,8 +92,8 @@ it('prevents any override on protected admin flag', function () {
         'enabled' => false,
     ]);
 
-    $response->assertStatus(422);
-    $response->assertJson(['success' => false]);
+    $response->assertRedirect();
+    $response->assertSessionHasErrors('flag');
 });
 
 it('prevents per-user override on protected admin flag', function () {
@@ -104,8 +105,8 @@ it('prevents per-user override on protected admin flag', function () {
         'enabled' => true,
     ]);
 
-    $response->assertStatus(422);
-    $response->assertJson(['success' => false]);
+    $response->assertRedirect();
+    $response->assertSessionHasErrors('user_override');
 });
 
 it('adds a user override', function () {
@@ -117,8 +118,8 @@ it('adds a user override', function () {
         'enabled' => true,
     ]);
 
-    $response->assertStatus(200);
-    $response->assertJson(['success' => true]);
+    $response->assertRedirect();
+    $response->assertSessionHas('flash.type', 'success');
 
     expect(FeatureFlagOverride::where('flag', 'billing')->where('user_id', $targetUser->id)->first())
         ->not->toBeNull()
@@ -133,8 +134,8 @@ it('removes a user override', function () {
 
     $response = $this->actingAs($admin)->delete("/admin/feature-flags/billing/users/{$targetUser->id}");
 
-    $response->assertStatus(200);
-    $response->assertJson(['success' => true]);
+    $response->assertRedirect();
+    $response->assertSessionHas('flash.type', 'success');
 
     expect(FeatureFlagOverride::where('flag', 'billing')->where('user_id', $targetUser->id)->first())
         ->toBeNull();
@@ -150,22 +151,22 @@ it('removes all user overrides for a flag', function () {
 
     $response = $this->actingAs($admin)->delete('/admin/feature-flags/billing/users');
 
-    $response->assertStatus(200);
-    $response->assertJson(['success' => true]);
+    $response->assertRedirect();
+    $response->assertSessionHas('flash.type', 'success');
 
     expect(FeatureFlagOverride::where('flag', 'billing')->whereNotNull('user_id')->count())
         ->toBe(0);
 });
 
-it('returns 422 for unknown flag name', function () {
+it('returns error for unknown flag name', function () {
     $admin = User::factory()->admin()->create();
 
     $response = $this->actingAs($admin)->patch('/admin/feature-flags/unknown_flag', [
         'enabled' => true,
     ]);
 
-    $response->assertStatus(422);
-    $response->assertJson(['success' => false]);
+    $response->assertRedirect();
+    $response->assertSessionHasErrors('flag');
 });
 
 it('returns validation error for non-existent user_id', function () {
@@ -187,7 +188,7 @@ it('audit logs global override changes', function () {
         'enabled' => true,
     ]);
 
-    $response->assertStatus(200);
+    $response->assertRedirect();
 
     $this->assertDatabaseHas('audit_logs', [
         'event' => 'admin.feature_flag.global_override',
@@ -204,7 +205,7 @@ it('audit logs user override changes', function () {
         'enabled' => true,
     ]);
 
-    $response->assertStatus(200);
+    $response->assertRedirect();
 
     $this->assertDatabaseHas('audit_logs', [
         'event' => 'admin.feature_flag.user_override',
@@ -263,7 +264,7 @@ it('stores reason when setting global override', function () {
         'reason' => 'Beta rollout',
     ]);
 
-    $response->assertStatus(200);
+    $response->assertRedirect();
 
     $override = FeatureFlagOverride::where('flag', 'billing')->whereNull('user_id')->first();
     expect($override->reason)->toBe('Beta rollout');
@@ -280,7 +281,7 @@ it('stores reason when setting user override', function () {
         'reason' => 'Early access',
     ]);
 
-    $response->assertStatus(200);
+    $response->assertRedirect();
 
     $override = FeatureFlagOverride::where('flag', 'billing')
         ->where('user_id', $targetUser->id)
@@ -297,7 +298,7 @@ it('accepts null reason when setting override', function () {
         'enabled' => true,
     ]);
 
-    $response->assertStatus(200);
+    $response->assertRedirect();
 
     $override = FeatureFlagOverride::where('flag', 'billing')->whereNull('user_id')->first();
     expect($override->reason)->toBeNull();

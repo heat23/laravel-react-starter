@@ -13,6 +13,8 @@ class DispatchWebhookJob implements ShouldQueue
 {
     use Queueable;
 
+    public int $timeout = 60;
+
     public int $tries = 3;
 
     public array $backoff = [30, 120, 600];
