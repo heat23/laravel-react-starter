@@ -92,7 +92,7 @@ it('filters by admin status', function () {
 });
 
 it('sorts by columns', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->admin()->create(['name' => 'ZZZ Admin']); // Sort last
     User::factory()->create(['name' => 'Alice']);
     User::factory()->create(['name' => 'Bob']);
 
