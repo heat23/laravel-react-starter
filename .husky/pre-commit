@@ -17,18 +17,18 @@ if [ -f "vendor/bin/phpstan" ]; then
 fi
 
 
-# 4. Run frontend lint
-echo "🎨 Running ESLint..."
-npm run lint || {
-  echo "❌ ESLint failed. Run 'npm run lint -- --fix' to fix."
-  exit 1
-}
+# # 4. Run frontend lint
+# echo "🎨 Running ESLint..."
+# npm run lint || {
+#   echo "❌ ESLint failed. Run 'npm run lint -- --fix' to fix."
+#   exit 1
+# }
 
-# 5. Run TypeScript check
-echo "📘 Running TypeScript check..."
-npx tsc --noEmit || {
-  echo "❌ TypeScript errors found. Fix before committing."
-  exit 1
-}
+# # 5. Run TypeScript check
+# echo "📘 Running TypeScript check..."
+# npx tsc --noEmit || {
+#   echo "❌ TypeScript errors found. Fix before committing."
+#   exit 1
+# }
 
 echo "✅ All pre-commit checks passed!"

@@ -1,7 +1,7 @@
 <?php declare(strict_types = 1);
 
 return [
-	'lastFullAnalysisTime' => 1770996267,
+	'lastFullAnalysisTime' => 1771004751,
 	'meta' => array (
   'cacheVersion' => 'v12-linesToIgnore',
   'phpstanVersion' => '2.1.39',
@@ -66,8 +66,8 @@ return [
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Auth/RememberMeTest.php' => '813a77d2d000fbefabbd35136ac453dbd4acadd00317ed89f007b8fc491bff07',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Auth/SocialAuthTest.php' => '670f20371f1af19fd7d563111ab3383f9b5a47171e47621462fa272eb7bd9a7f',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Billing/AccountDeletionBillingTest.php' => 'd0f1b3ea3015ba9ba866e86ec2af1c6d9f30d0dc6bc854972cd974f19d7c805b',
-    '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Billing/BillingFeatureFlagTest.php' => '9dbe489946a485ec06123ee0cab15719070118752f7a47f73187ca69e1e303eb',
-    '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Billing/BillingPageTest.php' => '16582c627a16ec9a9c85a55b39c203d1be8482eb77ba54aa9782b786a2328f66',
+    '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Billing/BillingFeatureFlagTest.php' => '8cd126d7cbc7bddac244f83621e2fef2503abfb1fe95bb5a1df543ff2cf507be',
+    '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Billing/BillingPageTest.php' => '8f57b2c99228b06932121bf7d7a128ece151c2c0a140a23ce7b40cf1ae043629',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Billing/BillingPortalTest.php' => '77afb032b82125ea8c491d965d841578a68bdcd3d99a728d059fa74e6fbd6446',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Billing/CacheInvalidationTest.php' => '8a4b251e0c8ae72507fdb8f2475c2944c1fa07ceb903fdf1843bfde4491b06c7',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Billing/ConcurrencyProtectionTest.php' => '1d6d3a7017b5c9d0d542347844c5eda78235af02ccd8433f4e8c4741681fee81',
@@ -86,15 +86,16 @@ return [
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Billing/UniqueSubscriptionConstraintTest.php' => '7371fb9c71c4433efeeb7be7387371d7b6e1da464b734106f5c7e68a4574fd9b',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/ChartsControllerTest.php' => 'd999cc5f6f6450b77467232fd706a8297aa61a5efb42e913958cc74415360664',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/DashboardControllerTest.php' => '0f5cd3d65a65835480fdf0c08954bbe518ab8538353be4a04b1265b4d3db6644',
+    '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Database/SubscriptionItemsIndexTest.php' => '5ece048b908ed3f51085d764d4a9496a762a029373c9680243e23518781caef8',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/ErrorPageTest.php' => 'cd7664482c12525df1e25a0e7ac862be6abc192d49b6c1a3bb502f55ec86984d',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/ExampleTest.php' => '27f8ad6ccb9af5d464cab917925722621f7418352b862c8577c55e90085b5c67',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/ExceptionHandlerTest.php' => 'f249b7ac35b8f8b487d2e9c4a46f3f67724b146cfa48fcb269d4626f743b3018',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/ExportTest.php' => 'f8c94c13a0edd732d23920ea7d660bf442b0e51479ce9027b1b27001352d4a6c',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/HealthCheckTest.php' => '4e532324d905e0b7f51b65436a4ad017627eeaf10193a51587e8bcd20f7bd012',
-    '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Middleware/EnsureOnboardingCompletedTest.php' => 'ee68ec54a2a40d432a0a12dd9f1e6bee8a11641d847599a10e5b366c5a43b473',
+    '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Middleware/EnsureOnboardingCompletedTest.php' => 'f371ce9fa49d72ea3e4116a6677e91a29d9e23af5af74fcecde26e89296c3a47',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Middleware/RequestIdMiddlewareTest.php' => '734f6730ebb1c1502b1af3766266cb2a529411159efe47a7d636282b172eb97d',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Middleware/SecurityHeadersTest.php' => '828a1bd551aa85e7e2afa3b67761802ab701bbff45402ac2c8ae431d23425b0e',
-    '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/OnboardingTest.php' => '481100825e536e609c1034bb662e091f0977e76c20747e35c994eb8d767bb3bf',
+    '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/OnboardingTest.php' => '0a0a6db3f9360b58ef0ea57cef0fb4b052a6c47797e8e9f74cf95f5e6d87e20b',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/ProfileTest.php' => 'c7cb3898fdec2fa93015bd3c2f2e067680d2b107edd07ee704519621ea567690',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/PruneAuditLogsTest.php' => '774566de6deceb05967583831d09e386eaa0872755739d42ebf52f08ee447506',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/SeoTest.php' => '61dd4b9615e5f490aa6a07a89bf504be2f6bb2769c488279c6085e57a95ccbfe',
@@ -110,12 +111,11 @@ return [
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Feature/Webhook/WebhookPageTest.php' => '7bf07fa7d9045362dab862dfb7926f76579412f8cc7872d08c8f4d2766e9482b',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Pest.php' => '1b7d4a98c1f502189c161cd285bd0bda6ab2a1cdfd8c85a349cc0ab65530003d',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/TestCase.php' => '63ea63571e11d24c98bec13f0e09d4951e039288fe255067eebfb42c214718c5',
-    '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/ExampleTest.php' => 'ffacae5c1a2a44c809420af5b3b404910da1b12167d58764dac6d10b8ba8cfaf',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Middleware/EnsureSubscribedTest.php' => 'f597c9c0986b1efb0141b7be91836966e84515fda9b2b2a269707d5b95e7f789',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Middleware/HandleInertiaRequestsTest.php' => '71c803fcf1be69be8471bbfee6e994f96e3d09f5890ff43bbcd8abcc0b592aec',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Models/SocialAccountTest.php' => '8beaf78290b8b8dbf9d489ef3d4ce02475f2897f087ca1db8ead376b9c474f0b',
-    '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Models/UserSettingTest.php' => 'b02e2594f5319d7fa7e0c371e51ef072e62dc86ffa5e4e3b1be75ad1646efeb9',
-    '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Models/UserTest.php' => 'd00ac8ba75fc1a01728ea16c776185611b100ca833680739e59692db29dd042d',
+    '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Models/UserSettingTest.php' => '9cb7e24e707937d0bdc7dd839ea2dad34d18ef1e247b98abdabb5b83339824c8',
+    '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Models/UserTest.php' => 'ad32100f439619bccbe2c53184b5ab4069c7c2def15a40a60ab5f99c5b594072',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Models/UserTwoFactorTest.php' => '7a568fc76091757e8679e4e6f7df7fde3745a89f6c761c8b454c65c9f290f179',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Policies/UserPolicyTest.php' => '8bc39b05a14c2af9f31650afd8709f0a32edbb7ee0ea7a1d70dc6cf586abe032',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Requests/Auth/LoginRequestTest.php' => '7dbf37afdad96a98df9f86a635531667874596b21161874f8bfc608e43b54e48',
@@ -123,6 +123,7 @@ return [
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Requests/ProfileUpdateRequestTest.php' => '5bb294263d086b90a0b3e50d8ee6dd2143aea497ff02a8c28fdedf8e30b156e2',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Services/AdminBillingStatsServiceTest.php' => 'ea2927eb562e6505383554d0396aa23fad6a39cd04db3bf000bdba0eaacee0fc',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Services/AuditServiceTest.php' => 'c4f13cb22ddea32c5a9d75cf4f4763570139ea721b0323d89966d9f2b04c31f9',
+    '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Services/BillingServiceIntegrationTest.php' => '83016645c253a54145cfd9a198a82d907df743d952fa5430dddede9b68d991d3',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Services/BillingServiceTest.php' => 'd9f584cad750886499c24a3bc47ba0fedc5554cf505755a82f2016bcfe4307ba',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Services/FeatureFlagServiceTest.php' => 'fd7709dd5318658782888d520ac7c3300bf9814ff646dded4370cb6cd1258aef',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Services/HealthCheckServiceTest.php' => '74ec174548fd85390bd44df38c3dcf28e6bacaf93a588cc60b42320c2fd99fff',
@@ -130,12 +131,12 @@ return [
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Services/PlanLimitServiceTest.php' => '6ff5c9d3f763d04dd7ae59457bc4e131aaeac8642e138191a7754812cafe2e79',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Services/SessionDataMigrationServiceTest.php' => '0e768921be8f8869f7e61f0281eade2741e070559f07a21a9889313efb13f3c8',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Services/SocialAuthServiceTest.php' => '21fc670577cfd90504432923a3cf75d7fbbebdc75bbe246edb5f1ccaa3ed5fa8',
-    '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Services/WebhookServiceTest.php' => '06144b0e176d22cf489cf6714b9de005ab9862444f1a9df3872d1e528b98f137',
+    '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Services/WebhookServiceTest.php' => '5164fd815dd3e1e2e649248c3df806eb9a6c9d75e0561e1ae4ead8243e901771',
     '/Users/sood/dev/heatware/laravel-react-starter/tests/Unit/Support/CsvExportTest.php' => '076f10b2039b9f2ba0f0f31344e60231e868b14837677e14e902469ab126c7c3',
   ),
   'composerLocks' => 
   array (
-    '/Users/sood/dev/heatware/laravel-react-starter/composer.lock' => '8ed8161947b096262412bae7fa389fe02ec806d20ad709200f81fc3f5586a0b5',
+    '/Users/sood/dev/heatware/laravel-react-starter/composer.lock' => '6b49d63314a6b03a40ee3198742fd73d462501349d4d6697d098df2cd5ed4ff6',
   ),
   'composerInstalled' => 
   array (
@@ -169,9 +170,9 @@ return [
         ),
         'brick/math' => 
         array (
-          'pretty_version' => '0.14.6',
-          'version' => '0.14.6.0',
-          'reference' => '32498d5e1897e7642c0b961ace2df6d7dc9a3bc3',
+          'pretty_version' => '0.14.8',
+          'version' => '0.14.8.0',
+          'reference' => '63422359a44b7f06cae63c3b429b59e8efcc0629',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../brick/math',
           'aliases' => 
@@ -269,9 +270,9 @@ return [
         ),
         'doctrine/deprecations' => 
         array (
-          'pretty_version' => '1.1.5',
-          'version' => '1.1.5.0',
-          'reference' => '459c2f5dd3d6a4633d3b5f46ee2b1c40f57d3f38',
+          'pretty_version' => '1.1.6',
+          'version' => '1.1.6.0',
+          'reference' => 'd4fe3e6fd9bb9e72557a19674f44d8ac7db4c6ca',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../doctrine/deprecations',
           'aliases' => 
@@ -464,7 +465,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/broadcasting' => 
@@ -472,7 +473,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/bus' => 
@@ -480,7 +481,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/cache' => 
@@ -488,7 +489,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/collections' => 
@@ -496,7 +497,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/concurrency' => 
@@ -504,7 +505,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/conditionable' => 
@@ -512,7 +513,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/config' => 
@@ -520,7 +521,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/console' => 
@@ -528,7 +529,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/container' => 
@@ -536,7 +537,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/contracts' => 
@@ -544,7 +545,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/cookie' => 
@@ -552,7 +553,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/database' => 
@@ -560,7 +561,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/encryption' => 
@@ -568,7 +569,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/events' => 
@@ -576,7 +577,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/filesystem' => 
@@ -584,7 +585,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/hashing' => 
@@ -592,7 +593,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/http' => 
@@ -600,7 +601,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/json-schema' => 
@@ -608,7 +609,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/log' => 
@@ -616,7 +617,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/macroable' => 
@@ -624,7 +625,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/mail' => 
@@ -632,7 +633,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/notifications' => 
@@ -640,7 +641,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/pagination' => 
@@ -648,7 +649,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/pipeline' => 
@@ -656,7 +657,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/process' => 
@@ -664,7 +665,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/queue' => 
@@ -672,7 +673,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/redis' => 
@@ -680,7 +681,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/reflection' => 
@@ -688,7 +689,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/routing' => 
@@ -696,7 +697,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/session' => 
@@ -704,7 +705,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/support' => 
@@ -712,7 +713,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/testing' => 
@@ -720,7 +721,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/translation' => 
@@ -728,7 +729,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/validation' => 
@@ -736,7 +737,7 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'illuminate/view' => 
@@ -744,14 +745,14 @@ return [
           'dev_requirement' => false,
           'replaced' => 
           array (
-            0 => 'v12.50.0',
+            0 => 'v12.51.0',
           ),
         ),
         'inertiajs/inertia-laravel' => 
         array (
-          'pretty_version' => 'v2.0.19',
-          'version' => '2.0.19.0',
-          'reference' => '732a991342a0f82653a935440e2f3b9be1eb6f6e',
+          'pretty_version' => 'v2.0.20',
+          'version' => '2.0.20.0',
+          'reference' => '02a719d1120378aed68053b5b2d35157140df50e',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../inertiajs/inertia-laravel',
           'aliases' => 
@@ -833,9 +834,9 @@ return [
         ),
         'justinrainbow/json-schema' => 
         array (
-          'pretty_version' => 'v6.7.0',
-          'version' => '6.7.0.0',
-          'reference' => 'f64d1a9b99a3f78089d4c22bf13734bb6c4ec483',
+          'pretty_version' => 'v6.7.1',
+          'version' => '6.7.1.0',
+          'reference' => 'cd3137ab4ad45033230f530ab7d5618d583c17be',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../justinrainbow/json-schema',
           'aliases' => 
@@ -937,9 +938,9 @@ return [
         ),
         'laravel/framework' => 
         array (
-          'pretty_version' => 'v12.50.0',
-          'version' => '12.50.0.0',
-          'reference' => '174ffed91d794a35a541a5eb7c3785a02a34aaba',
+          'pretty_version' => 'v12.51.0',
+          'version' => '12.51.0.0',
+          'reference' => 'ce4de3feb211e47c4f959d309ccf8a2733b1bc16',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../laravel/framework',
           'aliases' => 
@@ -949,9 +950,9 @@ return [
         ),
         'laravel/pail' => 
         array (
-          'pretty_version' => 'v1.2.5',
-          'version' => '1.2.5.0',
-          'reference' => 'fdb73f5eacf03db576c710d5a00101ba185f2254',
+          'pretty_version' => 'v1.2.6',
+          'version' => '1.2.6.0',
+          'reference' => 'aa71a01c309e7f66bc2ec4fb1a59291b82eb4abf',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../laravel/pail',
           'aliases' => 
@@ -961,9 +962,9 @@ return [
         ),
         'laravel/pint' => 
         array (
-          'pretty_version' => 'v1.27.0',
-          'version' => '1.27.0.0',
-          'reference' => 'c67b4195b75491e4dfc6b00b1c78b68d86f54c90',
+          'pretty_version' => 'v1.27.1',
+          'version' => '1.27.1.0',
+          'reference' => '54cca2de13790570c7b6f0f94f37896bee4abcb5',
           'type' => 'project',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../laravel/pint',
           'aliases' => 
@@ -973,9 +974,9 @@ return [
         ),
         'laravel/prompts' => 
         array (
-          'pretty_version' => 'v0.3.12',
-          'version' => '0.3.12.0',
-          'reference' => '4861ded9003b7f8a158176a0b7666f74ee761be8',
+          'pretty_version' => 'v0.3.13',
+          'version' => '0.3.13.0',
+          'reference' => 'ed8c466571b37e977532fb2fd3c272c784d7050d',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../laravel/prompts',
           'aliases' => 
@@ -985,9 +986,9 @@ return [
         ),
         'laravel/sail' => 
         array (
-          'pretty_version' => 'v1.52.0',
-          'version' => '1.52.0.0',
-          'reference' => '64ac7d8abb2dbcf2b76e61289451bae79066b0b3',
+          'pretty_version' => 'v1.53.0',
+          'version' => '1.53.0.0',
+          'reference' => 'e340eaa2bea9b99192570c48ed837155dbf24fbb',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../laravel/sail',
           'aliases' => 
@@ -997,9 +998,9 @@ return [
         ),
         'laravel/sanctum' => 
         array (
-          'pretty_version' => 'v4.3.0',
-          'version' => '4.3.0.0',
-          'reference' => 'c978c82b2b8ab685468a7ca35224497d541b775a',
+          'pretty_version' => 'v4.3.1',
+          'version' => '4.3.1.0',
+          'reference' => 'e3b85d6e36ad00e5db2d1dcc27c81ffdf15cbf76',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../laravel/sanctum',
           'aliases' => 
@@ -1021,9 +1022,9 @@ return [
         ),
         'laravel/tinker' => 
         array (
-          'pretty_version' => 'v2.11.0',
-          'version' => '2.11.0.0',
-          'reference' => '3d34b97c9a1747a81a3fde90482c092bd8b66468',
+          'pretty_version' => 'v2.11.1',
+          'version' => '2.11.1.0',
+          'reference' => 'c9f80cc835649b5c1842898fb043f8cc098dd741',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../laravel/tinker',
           'aliases' => 
@@ -1217,9 +1218,9 @@ return [
         ),
         'nette/schema' => 
         array (
-          'pretty_version' => 'v1.3.3',
-          'version' => '1.3.3.0',
-          'reference' => '2befc2f42d7c715fd9d95efc31b1081e5d765004',
+          'pretty_version' => 'v1.3.4',
+          'version' => '1.3.4.0',
+          'reference' => '086497a2f34b82fede9b5a41cc8e131d087cd8f7',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../nette/schema',
           'aliases' => 
@@ -1229,9 +1230,9 @@ return [
         ),
         'nette/utils' => 
         array (
-          'pretty_version' => 'v4.1.2',
-          'version' => '4.1.2.0',
-          'reference' => 'f76b5dc3d6c6d3043c8d937df2698515b99cbaf5',
+          'pretty_version' => 'v4.1.3',
+          'version' => '4.1.3.0',
+          'reference' => 'bb3ea637e3d131d72acc033cfc2746ee893349fe',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../nette/utils',
           'aliases' => 
@@ -1726,9 +1727,9 @@ return [
         ),
         'psy/psysh' => 
         array (
-          'pretty_version' => 'v0.12.19',
-          'version' => '0.12.19.0',
-          'reference' => 'a4f766e5c5b6773d8399711019bb7d90875a50ee',
+          'pretty_version' => 'v0.12.20',
+          'version' => '0.12.20.0',
+          'reference' => '19678eb6b952a03b8a1d96ecee9edba518bb0373',
           'type' => 'library',
           'install_path' => '/Users/sood/dev/heatware/laravel-react-starter/vendor/composer/../psy/psysh',
           'aliases' => 
@@ -3735,12 +3736,12 @@ return [
     \PHPStan\Analyser\Error::__set_state(array(
        'message' => 'Cannot call method toISOString() on string.',
        'file' => '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Billing/BillingController.php',
-       'line' => 75,
+       'line' => 78,
        'canBeIgnored' => true,
        'filePath' => '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Billing/BillingController.php',
        'traitFilePath' => NULL,
        'tip' => NULL,
-       'nodeLine' => 75,
+       'nodeLine' => 78,
        'nodeType' => 'PhpParser\\Node\\Expr\\MethodCall',
        'identifier' => 'method.nonObject',
        'metadata' => 
@@ -4390,854 +4391,8 @@ return [
 	'locallyIgnoredErrorsCallback' => static function (): array { return array (
 ); },
 	'linesToIgnore' => array (
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Console/Commands/CheckIncompletePayments.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Console/Commands/PruneAuditLogs.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Enums/AdminCacheKey.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Exceptions/ConcurrentOperationException.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Helpers/QueryHelper.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Helpers/features.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminAuditLogController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminBillingController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminConfigController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminDashboardController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminFeatureFlagController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminHealthController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminImpersonationController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminNotificationsController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminSocialAuthController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminSystemController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminTokensController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminTwoFactorController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminUsersController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminWebhooksController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Api/NotificationController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Api/TokenController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Api/UserSettingsController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Api/WebhookEndpointController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/AuthenticatedSessionController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/ConfirmablePasswordController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/EmailVerificationNotificationController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/EmailVerificationPromptController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/NewPasswordController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/PasswordController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/PasswordResetLinkController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/RegisteredUserController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/SocialAuthController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/TwoFactorChallengeController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/VerifyEmailController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Billing/BillingController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Billing/PricingController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Billing/StripeWebhookController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Billing/SubscriptionController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/ChartsController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Controller.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/DashboardController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/ExportController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/HealthCheckController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/OnboardingController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/ProfileController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/SeoController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Settings/ApiTokenPageController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Settings/TwoFactorController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Settings/WebhookPageController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Webhook/IncomingWebhookController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/WelcomeController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/EnsureIsAdmin.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/EnsureOnboardingCompleted.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/EnsureSubscribed.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/HandleInertiaRequests.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/RateLimitHeaders.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/RequestIdMiddleware.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/SecurityHeaders.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/VerifyWebhookSignature.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Admin/AdminAuditLogIndexRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Admin/AdminExportRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Admin/AdminFeatureFlagRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Admin/AdminFeatureFlagUserRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Admin/AdminSubscriptionIndexRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Admin/AdminUserIndexRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Api/CreateTokenRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Api/UpdateSettingRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Auth/LoginRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Auth/PasswordUpdateRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Auth/RegisterRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Billing/CancelSubscriptionRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Billing/Concerns/HasPriceValidation.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Billing/SubscribeRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Billing/SwapPlanRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Billing/UpdatePaymentMethodRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Billing/UpdateQuantityRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/DeleteAccountRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/ExportRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/FileUploadRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/ProfileUpdateRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/TwoFactor/ConfirmTwoFactorRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/TwoFactor/DisableTwoFactorRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/TwoFactor/TwoFactorChallengeRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Webhook/CreateWebhookEndpointRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Webhook/UpdateWebhookEndpointRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Jobs/CancelOrphanedStripeSubscription.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Jobs/DispatchWebhookJob.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Jobs/PersistAuditLog.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Listeners/SendEmailVerificationNotification.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/AuditLog.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/FeatureFlagOverride.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/IncomingWebhook.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/SocialAccount.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/User.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/UserSetting.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/WebhookDelivery.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/WebhookEndpoint.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Notifications/IncompletePaymentReminder.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Notifications/PaymentFailedNotification.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Notifications/RefundProcessedNotification.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Policies/UserPolicy.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Providers/AppServiceProvider.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Providers/EventServiceProvider.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/AdminBillingStatsService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/AuditService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/BillingService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/FeatureFlagService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/HealthCheckService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/IncomingWebhookService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/PlanLimitService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/SessionDataMigrationService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/SocialAuthService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/WebhookService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Support/CsvExport.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/app.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/auth.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/cache.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/cashier.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/cors.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/database.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/features.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/filesystems.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/health.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/logging.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/mail.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/plans.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/queue.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/sanctum.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/scribe.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/security.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/sentry.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/services.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/session.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/two-factor.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/webhooks.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/routes/admin.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/routes/api.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/routes/auth.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/routes/console.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/routes/web.php' => 
-  array (
-  ),
 ),
 	'unmatchedLineIgnores' => array (
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Console/Commands/CheckIncompletePayments.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Console/Commands/PruneAuditLogs.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Enums/AdminCacheKey.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Exceptions/ConcurrentOperationException.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Helpers/QueryHelper.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Helpers/features.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminAuditLogController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminBillingController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminConfigController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminDashboardController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminFeatureFlagController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminHealthController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminImpersonationController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminNotificationsController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminSocialAuthController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminSystemController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminTokensController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminTwoFactorController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminUsersController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Admin/AdminWebhooksController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Api/NotificationController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Api/TokenController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Api/UserSettingsController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Api/WebhookEndpointController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/AuthenticatedSessionController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/ConfirmablePasswordController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/EmailVerificationNotificationController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/EmailVerificationPromptController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/NewPasswordController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/PasswordController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/PasswordResetLinkController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/RegisteredUserController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/SocialAuthController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/TwoFactorChallengeController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Auth/VerifyEmailController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Billing/BillingController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Billing/PricingController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Billing/StripeWebhookController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Billing/SubscriptionController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/ChartsController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Controller.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/DashboardController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/ExportController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/HealthCheckController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/OnboardingController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/ProfileController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/SeoController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Settings/ApiTokenPageController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Settings/TwoFactorController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Settings/WebhookPageController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Webhook/IncomingWebhookController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/WelcomeController.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/EnsureIsAdmin.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/EnsureOnboardingCompleted.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/EnsureSubscribed.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/HandleInertiaRequests.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/RateLimitHeaders.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/RequestIdMiddleware.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/SecurityHeaders.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Middleware/VerifyWebhookSignature.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Admin/AdminAuditLogIndexRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Admin/AdminExportRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Admin/AdminFeatureFlagRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Admin/AdminFeatureFlagUserRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Admin/AdminSubscriptionIndexRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Admin/AdminUserIndexRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Api/CreateTokenRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Api/UpdateSettingRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Auth/LoginRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Auth/PasswordUpdateRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Auth/RegisterRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Billing/CancelSubscriptionRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Billing/Concerns/HasPriceValidation.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Billing/SubscribeRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Billing/SwapPlanRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Billing/UpdatePaymentMethodRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Billing/UpdateQuantityRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/DeleteAccountRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/ExportRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/FileUploadRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/ProfileUpdateRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/TwoFactor/ConfirmTwoFactorRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/TwoFactor/DisableTwoFactorRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/TwoFactor/TwoFactorChallengeRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Webhook/CreateWebhookEndpointRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Requests/Webhook/UpdateWebhookEndpointRequest.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Jobs/CancelOrphanedStripeSubscription.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Jobs/DispatchWebhookJob.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Jobs/PersistAuditLog.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Listeners/SendEmailVerificationNotification.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/AuditLog.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/FeatureFlagOverride.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/IncomingWebhook.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/SocialAccount.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/User.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/UserSetting.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/WebhookDelivery.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Models/WebhookEndpoint.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Notifications/IncompletePaymentReminder.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Notifications/PaymentFailedNotification.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Notifications/RefundProcessedNotification.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Policies/UserPolicy.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Providers/AppServiceProvider.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Providers/EventServiceProvider.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/AdminBillingStatsService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/AuditService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/BillingService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/FeatureFlagService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/HealthCheckService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/IncomingWebhookService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/PlanLimitService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/SessionDataMigrationService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/SocialAuthService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Services/WebhookService.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/app/Support/CsvExport.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/app.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/auth.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/cache.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/cashier.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/cors.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/database.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/features.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/filesystems.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/health.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/logging.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/mail.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/plans.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/queue.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/sanctum.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/scribe.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/security.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/sentry.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/services.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/session.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/two-factor.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/config/webhooks.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/routes/admin.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/routes/api.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/routes/auth.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/routes/console.php' => 
-  array (
-  ),
-  '/Users/sood/dev/heatware/laravel-react-starter/routes/web.php' => 
-  array (
-  ),
 ),
 	'collectedDataCallback' => static function (): array { return array (
   '/Users/sood/dev/heatware/laravel-react-starter/app/Enums/AdminCacheKey.php' => 
@@ -6990,7 +6145,7 @@ return [
   ),
   '/Users/sood/dev/heatware/laravel-react-starter/app/Http/Controllers/Billing/BillingController.php' => 
   array (
-    'fileHash' => 'd90abca01cb21b0ea78e4e7e8c86fc3abab45441b7876a0b7a8c3473b9005c19',
+    'fileHash' => '70eb46f08421db854bc5cc9c414823bf0c8e247c73ff6c46826c82d37e4f7242',
     'dependentFiles' => 
     array (
       0 => '/Users/sood/dev/heatware/laravel-react-starter/routes/web.php',
@@ -7940,7 +7095,7 @@ return [
   ),
   '/Users/sood/dev/heatware/laravel-react-starter/routes/web.php' => 
   array (
-    'fileHash' => 'b37df107ec3c0c7b3e3bea5bedbfd84f1127094c36487768d5bd6186ef8d6996',
+    'fileHash' => 'abadd11229482e3ce2dbc2b38a3b7263e7b1ce0414ef70c134ac5d3d30fff841',
     'dependentFiles' => 
     array (
     ),

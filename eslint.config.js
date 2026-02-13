@@ -14,6 +14,7 @@ export default [
             "bootstrap/ssr/**",
             "storage/**",
             "coverage/**",
+            "coverage-report/**",
             "*.config.js",
             "*.config.ts",
             "resources/js/ziggy.js",

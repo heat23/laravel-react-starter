@@ -42,6 +42,38 @@ A production-ready starter template for building SaaS applications with Laravel,
 
 ## Quick Start
 
+### With Laravel Herd (Recommended)
+
+1. **Clone and initialize:**
+   ```bash
+   git clone https://github.com/your-org/laravel-react-starter.git my-app
+   cd my-app
+   herd init  # Auto-detects herd.yml and configures PHP 8.4
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   composer install
+   npm install
+   ```
+
+3. **Configure environment:**
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   touch database/database.sqlite
+   php artisan migrate
+   ```
+
+4. **Start development:**
+   ```bash
+   npm run dev
+   ```
+
+5. **Visit:** `http://laravel-react-starter.test`
+
+### Without Herd
+
 ```bash
 git clone https://github.com/your-org/laravel-react-starter.git
 cd laravel-react-starter
@@ -49,11 +81,12 @@ composer install
 npm install
 cp .env.example .env
 php artisan key:generate
+touch database/database.sqlite
 php artisan migrate
-composer dev
+composer dev  # Starts Laravel + Vite + Queue worker
 ```
 
-Visit `http://localhost:8000` to see the app.
+Visit `http://localhost:8000`
 
 ## Feature Flags
 

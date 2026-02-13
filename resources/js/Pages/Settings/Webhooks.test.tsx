@@ -93,4 +93,70 @@ describe('Webhooks Page', () => {
 
     expect(screen.getByText(/loading endpoints/i)).toBeInTheDocument();
   });
+
+  it('renders endpoint list when endpoints exist', async () => {
+    const mockEndpoints = [
+      {
+        id: 1,
+        url: 'https://example.com/webhook',
+        events: ['user.created'],
+        active: true,
+        secret: 'whsec_test123',
+      },
+    ];
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockEndpoints,
+    }) as typeof fetch;
+
+    render(<Webhooks available_events={['user.created']} />);
+
+    expect(await screen.findByText('https://example.com/webhook')).toBeInTheDocument();
+  });
+
+  it('displays active status badge for active endpoints', async () => {
+    const mockEndpoints = [
+      {
+        id: 1,
+        url: 'https://example.com/webhook',
+        events: ['user.created'],
+        active: true,
+        secret: 'whsec_test123',
+      },
+    ];
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockEndpoints,
+    }) as typeof fetch;
+
+    render(<Webhooks available_events={['user.created']} />);
+
+    expect(await screen.findByText('Active')).toBeInTheDocument();
+  });
+
+  it('displays event subscriptions for each endpoint', async () => {
+    const mockEndpoints = [
+      {
+        id: 1,
+        url: 'https://example.com/webhook',
+        events: ['user.created', 'user.updated'],
+        active: true,
+        secret: 'whsec_test123',
+      },
+    ];
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => mockEndpoints,
+    }) as typeof fetch;
+
+    render(<Webhooks available_events={['user.created', 'user.updated']} />);
+
+    await screen.findByText('https://example.com/webhook');
+
+    expect(screen.getByText('user.created')).toBeInTheDocument();
+    expect(screen.getByText('user.updated')).toBeInTheDocument();
+  });
 });

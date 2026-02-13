@@ -2,12 +2,11 @@ import { z } from 'zod';
 
 import { useState, useCallback, useMemo } from 'react';
 
-type SchemaWithShape = z.ZodObject<z.ZodRawShape> | z.ZodEffects<z.ZodObject<z.ZodRawShape>>;
+type SchemaWithShape = z.ZodObject<z.ZodRawShape>;
 
 function getShape(schema: SchemaWithShape): z.ZodRawShape {
-    if (schema instanceof z.ZodEffects) {
-        return (schema._def.schema as z.ZodObject<z.ZodRawShape>).shape;
-    }
+    // In Zod v4, refine() no longer wraps schemas in ZodEffects
+    // The shape property is directly accessible on refined schemas
     return schema.shape;
 }
 
@@ -22,7 +21,8 @@ export function useFormValidation<T extends SchemaWithShape>(schema: T) {
         const result = (fieldSchema as z.ZodTypeAny).safeParse(value);
         setErrors(prev => ({
             ...prev,
-            [field]: result.success ? undefined : result.error.errors[0]?.message,
+            // Zod v4: error.issues instead of error.errors
+            [field]: result.success ? undefined : result.error.issues[0]?.message,
         }));
     }, [shape]);
 
@@ -30,7 +30,8 @@ export function useFormValidation<T extends SchemaWithShape>(schema: T) {
         const result = schema.safeParse(data);
         if (!result.success) {
             const fieldErrors: Partial<Record<keyof z.infer<T>, string>> = {};
-            result.error.errors.forEach((err) => {
+            // Zod v4: error.issues instead of error.errors
+            result.error.issues.forEach((err) => {
                 const field = err.path[0] as keyof z.infer<T>;
                 fieldErrors[field] = err.message;
             });

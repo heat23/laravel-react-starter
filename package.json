@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=20.11.0",
+    "npm": ">=10.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build && vite build --ssr",
@@ -45,12 +49,12 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
-    "date-fns": "^3.6.0",
+    "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "input-otp": "^1.4.2",
-    "lucide-react": "^0.563.0",
+    "lucide-react": "^0.564.0",
     "react": "^18.3.1",
-    "react-day-picker": "^8.10.1",
+    "react-day-picker": "^9.13.2",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.61.1",
     "recharts": "^3.7.0",
@@ -59,7 +63,7 @@
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
     "ziggy-js": "^2.6.0",
-    "zod": "^3.25.76"
+    "zod": "^4.3.6"
   },
   "lint-staged": {
     "*.{ts,tsx,js}": "eslint --fix --no-warn-ignored",

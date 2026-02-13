@@ -1,0 +1,4 @@
+name: laravel-react-starter
+php: '8.4'
+secured: false
+aliases: []
