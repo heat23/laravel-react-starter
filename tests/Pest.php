@@ -95,14 +95,19 @@ function ensureCashierTablesExist(): void
                 WHERE ends_at IS NULL
             ');
         } elseif ($driver === 'mysql') {
-            // MySQL doesn't support partial indexes, use a generated column approach
+            // MySQL doesn't support partial indexes or COALESCE in indexes
+            // Use generated columns for both the user identifier and active flag
+            DB::statement('
+                ALTER TABLE subscriptions
+                ADD COLUMN user_identifier BIGINT UNSIGNED GENERATED ALWAYS AS (IF(billable_id IS NOT NULL, billable_id, user_id)) STORED
+            ');
             DB::statement('
                 ALTER TABLE subscriptions
                 ADD COLUMN active_flag TINYINT(1) GENERATED ALWAYS AS (IF(ends_at IS NULL, 1, NULL)) STORED
             ');
             DB::statement('
                 CREATE UNIQUE INDEX subscriptions_unique_active
-                ON subscriptions (COALESCE(billable_id, user_id), type, active_flag)
+                ON subscriptions (user_identifier, type, active_flag)
             ');
         }
     }

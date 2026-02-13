@@ -80,3 +80,4 @@ stats.html
 REVIEW_REPORT_*
 storage/phpstan/cache/*
 .phpunit.cache/*
+storage/phpstan/resultCache.php
