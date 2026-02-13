@@ -50,6 +50,17 @@ function ensureCashierTablesExist(): void
     if (Schema::hasTable('subscriptions')) {
         // Check if it has the new columns - if not, drop and recreate
         if (! Schema::hasColumn('subscriptions', 'billable_type')) {
+            // Drop foreign key from subscription_items first (MySQL requires this)
+            if (Schema::hasTable('subscription_items')) {
+                try {
+                    Schema::table('subscription_items', function ($table) {
+                        $table->dropForeign(['subscription_id']);
+                    });
+                } catch (\Illuminate\Database\QueryException $e) {
+                    // Foreign key may not exist — safe to ignore
+                }
+                Schema::dropIfExists('subscription_items');
+            }
             Schema::dropIfExists('subscriptions');
         }
     }

@@ -38,8 +38,15 @@ return new class extends Migration
             return;
         }
 
-        Schema::table('subscription_items', function (Blueprint $table) {
-            $table->dropForeign(['subscription_id']);
-        });
+        try {
+            Schema::table('subscription_items', function (Blueprint $table) {
+                $table->dropForeign(['subscription_id']);
+            });
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Foreign key may not exist (SQLite or already dropped) — safe to ignore
+            if (! str_contains($e->getMessage(), 'foreign key')) {
+                throw $e;
+            }
+        }
     }
 };
