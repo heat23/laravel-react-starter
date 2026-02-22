@@ -99,7 +99,7 @@ For structured requests, use templates in [docs/AI_PROMPT_TEMPLATES.md](docs/AI_
 
 ## Customization via Feature Flags
 
-Configure your app by toggling features in `config/features.php` (or `.env`). 10 feature flags control major subsystems:
+Configure your app by toggling features in `config/features.php` (or `.env`). 11 feature flags control major subsystems:
 
 **Common configurations:**
 - **SaaS with billing:** Enable `billing`, `webhooks`, `two_factor`, `api_tokens`
@@ -126,6 +126,7 @@ Check `config/features.php` and `.env` before implementing. Features default off
 | `api_docs.enabled` | `FEATURE_API_DOCS` | Scribe interactive API docs |
 | `two_factor.enabled` | `FEATURE_TWO_FACTOR` | TOTP 2FA authentication |
 | `webhooks.enabled` | `FEATURE_WEBHOOKS` | Incoming/outgoing webhooks |
+| `admin.enabled` | `FEATURE_ADMIN` | Admin panel: user management, health monitoring, audit logs, config viewer, system info |
 
 **What each flag controls:**
 - `billing`: BillingService, SubscriptionController, PricingController, pricing page, billing portal, Stripe webhooks, CheckIncompletePayments command
@@ -138,6 +139,7 @@ Check `config/features.php` and `.env` before implementing. Features default off
 - `api_docs`: Scribe-generated API documentation
 - `two_factor`: TwoFactorController, TOTP setup/verification, recovery codes
 - `webhooks`: WebhookService, WebhookEndpoint/Delivery/Incoming models, signature verification
+- `admin`: AdminDashboardController, AdminUsersController, AdminAuditLogController, AdminHealthController, AdminConfigController, admin panel UI, impersonation, feature flag management
 
 **Disabling features:** Set env var to `false`. Feature-gated routes won't register, middleware won't apply, UI elements won't render. Database tables remain (safe to leave empty).
 
@@ -148,6 +150,7 @@ Check `config/features.php` and `.env` before implementing. Features default off
 - `billing` → requires `webhooks` for Stripe webhooks (auto-enabled in routes/api.php)
 - `two_factor` → requires `user_settings` for enrollment preference (optional fallback exists)
 - `api_docs` → requires `api_tokens` (documents token endpoints)
+- `admin` → protected flag: cannot be overridden via DB (FeatureFlagService enforces hard floor when env=false)
 
 **Soft Dependencies (graceful degradation):**
 - `notifications` + `webhooks` = webhook delivery notifications (webhook failures still logged to database)
@@ -178,7 +181,7 @@ When adding a new feature-gated feature, test these scenarios:
 
 ## Architecture
 
-**Models:** User, UserSetting (key-value), SocialAccount (OAuth), AuditLog, WebhookEndpoint, WebhookDelivery, IncomingWebhook, TwoFactorAuthentication (via Laragear)
+**Models:** User, UserSetting (key-value), SocialAccount (OAuth), AuditLog, FeatureFlagOverride (flag overrides with reason/changed_by), WebhookEndpoint, WebhookDelivery, IncomingWebhook, TwoFactorAuthentication (via Laragear)
 
 **Services:**
 - `AuditService` — activity logging
@@ -188,6 +191,9 @@ When adding a new feature-gated feature, test these scenarios:
 - `SocialAuthService` — OAuth provider abstraction
 - `WebhookService` — outgoing webhook dispatch with HMAC signing
 - `IncomingWebhookService` — process/validate incoming webhooks
+- `AdminBillingStatsService` — admin billing dashboard stats/charts
+- `FeatureFlagService` — flag resolution with DB overrides (per-user > global > config)
+- `HealthCheckService` — health checks (DB/cache/queue/disk)
 
 **Billing (Production-Grade):**
 - `BillingService` — Redis-locked subscription mutations (create, cancel, resume, swap)
@@ -211,6 +217,7 @@ When adding a new feature-gated feature, test these scenarios:
 
 **Routes:**
 - `routes/web.php` — pages (feature-gated with `if (config('features.*.enabled'))`)
+- `routes/admin.php` — admin panel (loaded from web.php when `admin.enabled`), middleware: `['auth', 'verified', 'admin', 'throttle:60,1']`
 - `routes/auth.php` — auth (Breeze + social auth + email verification)
 - `routes/api.php` — Sanctum-protected API (user, settings, tokens)
 - Health check: `/up` (configured in `bootstrap/app.php`)
@@ -279,7 +286,7 @@ Execute synchronously when:
 - Operation is fast (<1 second)
 - Failure requires user action (payment declined)
 
-**Note:** No Jobs directory currently exists. Create `app/Jobs/{Domain}/` when first needed.
+**Existing Jobs** (flat in `app/Jobs/`): `PersistAuditLog`, `CancelOrphanedStripeSubscription`, `DispatchWebhookJob`
 
 ### When to Create a FormRequest vs Inline Validation
 
@@ -670,7 +677,7 @@ scripts/init.sh        # First-time setup (configure project name, features)
 **Backend:**
 - Form Requests for validation (never inline `$request->validate()`)
 - Services for business logic, controllers stay thin
-- External API calls in Jobs only (create `app/Jobs/` when needed — not yet created)
+- External API calls in Jobs only (`app/Jobs/` — 3 jobs exist)
 - Constructor injection for dependencies
 - Custom exceptions in `app/Exceptions/` when needed (currently uses Laravel defaults)
 
@@ -680,7 +687,7 @@ scripts/init.sh        # First-time setup (configure project name, features)
 - Forms: Inertia `useForm()` hook
 - Icons: Lucide React only
 - Shared props via `usePage()`, feature-gated UI via `features` prop
-- Custom hooks in `hooks/`: `useMobile`, `useFormValidation`, `useTimezone`, `useUnsavedChanges`
+- Custom hooks in `hooks/`: `useMobile`, `useFormValidation`, `useTimezone`, `useUnsavedChanges`, `useAdminAction`, `useAdminFilters`, `useAdminKeyboardShortcuts`, `useFlashToasts`, `useNavigationState`
 - Shared Inertia props must stay minimal (auth summary + feature flags + flash). Never send whole Eloquent models — use explicit arrays.
 
 **Frontend State Management:**
@@ -827,7 +834,7 @@ Before claiming a UI feature done:
 
 - **Enums:** `/app/Enums/{Name}.php` (use for fixed sets of values)
 
-- **Jobs:** `/app/Jobs/{Domain}/{Name}Job.php` (create when first needed)
+- **Jobs:** `/app/Jobs/{Name}.php` (flat structure)
 
 - **Commands:** `/app/Console/Commands/{Name}.php`
   - Signature: `{domain}:{action}` (e.g., `billing:check-incomplete-payments`)
@@ -853,6 +860,7 @@ Before claiming a UI feature done:
 - `incoming_webhooks` — received webhooks (GitHub/Stripe)
 - `two_factor_authentications` — TOTP secrets + recovery codes
 - Stripe tables: `customers`, `subscriptions`, `subscription_items` (Cashier)
+- `feature_flag_overrides` — global/per-user feature flag overrides with reason + changed_by
 
 ## Security Infrastructure
 
@@ -863,6 +871,10 @@ Already implemented — verify before duplicating:
 - Configurable remember-me duration (`REMEMBER_ME_DAYS` env)
 - Audit logging via `AuditService` (login, logout, registration with IP + user agent)
 - Custom queued `SendEmailVerificationNotification` listener (overrides framework default via `EventServiceProvider::configureEmailVerification()`)
+- Security headers via `SecurityHeaders` middleware — X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, HSTS (production), CSP (via `config/security.php`)
+- Request tracing via `RequestIdMiddleware` — generates/accepts X-Request-Id, shares with logging + Sentry
+- Rate limit headers via `RateLimitHeaders` middleware — adds X-RateLimit-Reset on throttled API responses
+- Plan tier definitions in `config/plans.php` — free, pro, team (3-50 seats), enterprise
 
 ### Security Patterns & Anti-Patterns
 
@@ -1048,4 +1060,4 @@ Note: Local tests use SQLite in-memory, CI uses MySQL 8.0.
 - `deploy/` — nginx gzip + static cache configs, supervisor config
 - `scripts/` — `vps-setup.sh`, `vps-verify.sh`, `setup-horizon.sh`, `init.sh`
 - No Docker/containerization (VPS-based deployment)
-- Trusted proxies not configured — add `TrustProxies` middleware if deploying behind load balancer/CDN
+- Trusted proxies configured via `TRUSTED_PROXIES` and `TRUSTED_PROXY_HEADERS` env vars in `bootstrap/app.php`
