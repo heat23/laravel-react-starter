@@ -1,3 +1,4 @@
+import DOMPurify from "dompurify";
 import { Copy, Eye, EyeOff, RefreshCw, Shield, ShieldCheck, ShieldOff } from "lucide-react";
 import { toast } from "sonner";
 
@@ -135,7 +136,7 @@ function SetupState({ qrCode, secret }: { qrCode: string; secret: string }) {
       <CardContent>
         <div className="space-y-6">
           <div className="flex justify-center rounded-lg border bg-white p-4">
-            <div dangerouslySetInnerHTML={{ __html: qrCode }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(qrCode, { USE_PROFILES: { svg: true, svgFilters: true } }) }} />
           </div>
 
           <div className="space-y-2">

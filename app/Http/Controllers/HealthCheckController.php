@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 
 class HealthCheckController extends Controller
 {
+    private bool $usedDeprecatedQueryToken = false;
+
     public function __construct(
         private HealthCheckService $healthCheckService,
     ) {}
@@ -21,7 +23,16 @@ class HealthCheckController extends Controller
         $result = $this->healthCheckService->runAllChecks();
         $httpCode = $result['status'] === 'unhealthy' ? 503 : 200;
 
-        return response()->json($result, $httpCode);
+        $response = response()->json($result, $httpCode);
+
+        if ($this->usedDeprecatedQueryToken) {
+            $response->header(
+                'X-Deprecation',
+                'Query parameter token authentication is deprecated. Use Authorization: Bearer <token> header instead.',
+            );
+        }
+
+        return $response;
     }
 
     /**
@@ -36,11 +47,18 @@ class HealthCheckController extends Controller
         $allowedIps = config('health.allowed_ips');
 
         if ($token !== null && $token !== '') {
-            // Prefer Bearer header to avoid token exposure in server logs.
-            // Query param supported for legacy clients but should be avoided.
-            $provided = $request->bearerToken() ?? $request->query('token');
+            if ($request->bearerToken()) {
+                return hash_equals($token, $request->bearerToken());
+            }
 
-            return hash_equals($token, $provided ?? '');
+            $queryToken = $request->query('token');
+            if ($queryToken !== null) {
+                $this->usedDeprecatedQueryToken = true;
+
+                return hash_equals($token, $queryToken);
+            }
+
+            return false;
         }
 
         if ($allowedIps) {

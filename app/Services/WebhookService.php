@@ -50,21 +50,15 @@ class WebhookService
      */
     public function dispatchToEndpoint(WebhookEndpoint $endpoint, string $eventType, array $payload): void
     {
-        $now = now();
-        $uuid = Str::uuid()->toString();
-
-        WebhookDelivery::insert([
+        $delivery = WebhookDelivery::create([
             'webhook_endpoint_id' => $endpoint->id,
-            'uuid' => $uuid,
+            'uuid' => Str::uuid()->toString(),
             'event_type' => $eventType,
-            'payload' => json_encode($payload),
+            'payload' => $payload,
             'status' => 'pending',
-            'created_at' => $now,
-            'updated_at' => $now,
         ]);
 
-        $deliveryId = WebhookDelivery::where('uuid', $uuid)->value('id');
-        DispatchWebhookJob::dispatch($deliveryId);
+        DispatchWebhookJob::dispatch($delivery->id);
     }
 
     /**

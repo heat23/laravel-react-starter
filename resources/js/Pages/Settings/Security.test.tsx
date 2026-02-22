@@ -208,6 +208,28 @@ describe('Security Page', () => {
 
       expect(screen.getByRole('button', { name: /copy secret key/i })).toBeInTheDocument();
     });
+
+    it('sanitizes QR code HTML to prevent XSS', async () => {
+      const DOMPurify = await import('dompurify');
+      const sanitizeSpy = vi.spyOn(DOMPurify.default, 'sanitize');
+
+      const maliciousQr = '<svg><rect width="100" height="100"/></svg><script>alert("xss")</script>';
+      render(
+        <Security
+          enabled={false}
+          qr_code={maliciousQr}
+          secret="ABCDEF123456"
+          recovery_codes={null}
+        />
+      );
+
+      expect(sanitizeSpy).toHaveBeenCalledWith(
+        maliciousQr,
+        { USE_PROFILES: { svg: true, svgFilters: true } },
+      );
+
+      sanitizeSpy.mockRestore();
+    });
   });
 
   describe('enabled state', () => {

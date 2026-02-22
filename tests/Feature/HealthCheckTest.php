@@ -30,17 +30,18 @@ test('returns 403 when unauthorized in production', function () {
     $response->assertStatus(403);
 });
 
-test('allows access with valid token', function () {
+test('allows access with valid query token but returns deprecation header', function () {
     app()->detectEnvironment(fn () => 'production');
     config(['health.token' => 'secret-token', 'health.allowed_ips' => null]);
 
     $response = $this->getJson('/health?token=secret-token');
 
     $response->assertOk()
-        ->assertJsonPath('status', 'healthy');
+        ->assertJsonPath('status', 'healthy')
+        ->assertHeader('X-Deprecation', 'Query parameter token authentication is deprecated. Use Authorization: Bearer <token> header instead.');
 });
 
-test('allows access with bearer token', function () {
+test('allows access with bearer token without deprecation header', function () {
     app()->detectEnvironment(fn () => 'production');
     config(['health.token' => 'secret-token', 'health.allowed_ips' => null]);
 
@@ -48,7 +49,8 @@ test('allows access with bearer token', function () {
         'Authorization' => 'Bearer secret-token',
     ]);
 
-    $response->assertOk();
+    $response->assertOk()
+        ->assertHeaderMissing('X-Deprecation');
 });
 
 test('allows access with valid ip', function () {

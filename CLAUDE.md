@@ -249,29 +249,12 @@ Keep logic in Controller when **ALL** of these are true:
 
 ### When to Create a Policy vs Manual Auth Checks
 
-**Rule:** Always use policies for resource authorization (user can view/update/delete specific resource).
-
-```php
-// ❌ Bad: Manual role checks in controller
-if (auth()->user()->is_admin || $project->user_id === auth()->id()) {
-    $project->delete();
-}
-
-// ✅ Good: Policy with clear rules
-// In ProjectPolicy:
-public function delete(User $user, Project $project): bool
-{
-    return $user->is_admin || $project->user_id === $user->id;
-}
-
-// In Controller:
-$this->authorize('delete', $project);
-```
+**Rule:** Always use policies for resource authorization (`$this->authorize('delete', $project)`).
 
 **When NOT to use policies:**
-- Feature flag checks (use `abort_unless(feature_enabled('X'))` in controller constructor)
-- Role-based route protection (use middleware: `->middleware('admin')`)
-- Global permissions not tied to a resource (use Gate::define in AuthServiceProvider)
+- Feature flag checks → `abort_unless(feature_enabled('X'))` in controller
+- Role-based route protection → middleware: `->middleware('admin')`
+- Global permissions not tied to a resource → `Gate::define` in AuthServiceProvider
 
 ### When to Create a Job vs Execute Synchronously
 
@@ -292,28 +275,6 @@ Execute synchronously when:
 
 **Rule:** ALWAYS use FormRequest. Never inline `$request->validate()` in controllers.
 
-**Reasons:**
-- Keeps controllers thin (single responsibility)
-- Centralizes authorization + validation logic
-- Reusable across multiple controller methods
-- Easier to test in isolation
-
-```php
-// ❌ Bad: Inline validation
-public function update(Request $request, User $user)
-{
-    $request->validate(['name' => 'required|max:255']);
-    // ...
-}
-
-// ✅ Good: FormRequest
-public function update(UpdateUserRequest $request, User $user)
-{
-    $user->update($request->validated());
-    // ...
-}
-```
-
 ## Performance Budgets
 
 ### Query Count Limits (enforce in tests)
@@ -324,50 +285,7 @@ public function update(UpdateUserRequest $request, User $user)
 - Detail pages with relationships: ≤8 queries (model + 3 relationships + cache checks)
 - API endpoints: ≤4 queries (auth + main query + optional related)
 
-**When to eager load:**
-- ✅ Always: accessing `$model->relationship->property` in Blade/Inertia props
-- ✅ Always: looping over collection and accessing relationships
-- ✅ Always: before calling Cashier methods (`->load('owner', 'items.subscription')`)
-- ✅ Conditionally: if feature flag might show data
-
-**How to verify in tests:**
-```php
-it('user index page has no N+1 queries', function () {
-    DB::enableQueryLog();
-
-    $admin = User::factory()->admin()->create();
-    User::factory()->count(20)->create(); // create 20 users
-
-    $this->actingAs($admin)->get('/admin/users');
-
-    $queries = DB::getQueryLog();
-    expect(count($queries))->toBeLessThanOrEqual(5); // allow user auth + main query + count
-});
-```
-
-**Common N+1 patterns to avoid:**
-```php
-// ❌ Bad: N+1 in loop
-foreach ($users as $user) {
-    $tier = $user->subscription->tier; // lazy loads for each user
-}
-
-// ✅ Good: eager load
-$users = User::with('subscription')->get();
-foreach ($users as $user) {
-    $tier = $user->subscription->tier;
-}
-
-// ❌ Bad: N+1 in Inertia props
-return Inertia::render('Users/Index', [
-    'users' => $users, // User model with subscription relationship not loaded
-]);
-
-// ✅ Good: eager load before Inertia
-return Inertia::render('Users/Index', [
-    'users' => $users->load('subscription'),
-]);
-```
+**Eager loading:** Always eager load before accessing relationships in loops, Inertia props, or Cashier methods (see Gotchas). Verify with `DB::enableQueryLog()` + query count assertions in tests.
 
 ### Cache Strategy
 
@@ -458,176 +376,7 @@ When a test fails after implementation, follow this checklist **in order:**
 - ✅ Use `assertSessionHas()` for flash messages, not Inertia assertions
 - ✅ Mock Notification facade BEFORE creating models that dispatch events
 
-### Migration Failure Recovery
-
-**If `php artisan migrate` fails in production:**
-
-1. **DO NOT run `migrate:rollback` blindly** — it might drop production data
-
-2. **Diagnose the failure:**
-   - Check error message for specific issue (duplicate key, missing column, data type mismatch)
-   - Check if migration was partially applied: `SELECT * FROM migrations ORDER BY id DESC LIMIT 5;`
-
-3. **Write a fix migration instead:**
-   ```bash
-   php artisan make:migration fix_failed_migration_issue
-   ```
-
-**Common failure modes and fixes:**
-
-*Duplicate column (column already exists):*
-```php
-// Fix migration:
-public function up(): void
-{
-    Schema::table('users', function (Blueprint $table) {
-        if (!Schema::hasColumn('users', 'phone')) {
-            $table->string('phone')->nullable();
-        }
-    });
-}
-```
-
-*Data type mismatch (existing data doesn't fit new type):*
-```php
-// Failed: $table->integer('quantity')->change(); (but existing data has decimals)
-// Fix migration: migrate data first, then change type
-public function up(): void
-{
-    DB::table('order_items')->update(['quantity' => DB::raw('ROUND(quantity)')]);
-
-    Schema::table('order_items', function (Blueprint $table) {
-        $table->integer('quantity')->change();
-    });
-}
-```
-
-*Foreign key constraint failure (orphaned records exist):*
-```php
-// Fix migration: clean up orphans first
-public function up(): void
-{
-    DB::table('projects')->whereNotIn('user_id', DB::table('users')->pluck('id'))->delete();
-
-    Schema::table('projects', function (Blueprint $table) {
-        $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
-    });
-}
-```
-
-**Two-Phase Deploys for Breaking Schema Changes**
-
-When dropping a column:
-```php
-// ❌ Bad: drop column in same deploy as code removal
-// Problem: Zero-downtime deploy will have old code running with missing column
-
-// ✅ Good: two-phase deploy
-// Deploy 1: Remove code that uses column (migration does nothing)
-// Wait for rollout to complete (15 minutes)
-// Deploy 2: Add migration that drops column
-
-public function up(): void
-{
-    Schema::table('users', function (Blueprint $table) {
-        if (Schema::hasColumn('users', 'old_field')) {
-            $table->dropColumn('old_field');
-        }
-    });
-}
-```
-
 ## Test Quality Standards
-
-### Anatomy of a High-Quality Test
-
-```php
-it('admin can toggle user admin status and change is logged', function () {
-    // 1. ARRANGE: Set up preconditions
-    $admin = User::factory()->admin()->create();
-    $targetUser = User::factory()->create(['is_admin' => false]);
-
-    // 2. ACT: Perform the action being tested
-    $response = $this->actingAs($admin)->patch("/admin/users/{$targetUser->id}/toggle-admin");
-
-    // 3. ASSERT: Verify user-visible outcomes
-    $response->assertRedirect();
-    $response->assertSessionHas('flash.type', 'success');
-
-    // 4. ASSERT: Verify database state changed correctly
-    expect($targetUser->fresh()->is_admin)->toBeTrue();
-
-    // 5. ASSERT: Verify side effects occurred
-    $this->assertDatabaseHas('audit_logs', [
-        'event' => 'admin.user.toggle_admin',
-        'user_id' => $admin->id,
-        'data->target_user_id' => $targetUser->id,
-    ]);
-});
-```
-
-### Test Smell Checklist
-
-**❌ Testing implementation details:**
-```php
-// Bad: verifying mock was called
-$service = Mockery::mock(BillingService::class);
-$service->shouldReceive('cancelSubscription')->once();
-// Problem: Refactoring breaks test even if behavior is correct
-```
-
-**✅ Testing user-visible behavior:**
-```php
-// Good: verifying outcome
-$user = User::factory()->withSubscription()->create();
-
-$this->actingAs($user)->delete('/billing/subscription');
-
-expect($user->fresh()->subscription('default'))
-    ->onGracePeriod()->toBeTrue()
-    ->ends_at->toBeInstanceOf(Carbon::class);
-```
-
-**❌ Incomplete assertions:**
-```php
-// Bad: only checks redirect
-$this->actingAs($user)->patch('/profile', ['name' => 'New Name']);
-$this->assertRedirect(); // But did the name actually change?
-```
-
-**✅ Complete assertions:**
-```php
-// Good: verifies redirect AND database state
-$response = $this->actingAs($user)->patch('/profile', ['name' => 'New Name']);
-
-$response->assertRedirect('/profile');
-$response->assertSessionHas('flash.type', 'success');
-expect($user->fresh()->name)->toBe('New Name');
-```
-
-**❌ Test comments that lie:**
-```php
-// Bad: comment doesn't match assertion
-it('route requires authentication', function () {
-    $response = $this->get('/admin/users');
-    $response->assertStatus(403); // Comment says "requires auth", but checks 403 not 401/redirect
-});
-```
-
-**✅ Accurate test comments:**
-```php
-// Good: comment matches assertion
-it('route requires admin role (authenticated non-admins get 403)', function () {
-    $user = User::factory()->create(['is_admin' => false]);
-    $response = $this->actingAs($user)->get('/admin/users');
-    $response->assertStatus(403);
-});
-
-it('route redirects guests to login', function () {
-    $response = $this->get('/admin/users');
-    $response->assertRedirect('/login');
-});
-```
 
 ### Edge Case Coverage Checklist
 
@@ -700,21 +449,7 @@ scripts/init.sh        # First-time setup (configure project name, features)
 - **localStorage** (UI preferences NOT in user_settings): Sidebar collapsed, table column widths, last visited tab
 - **user_settings table** (sync across devices): Theme (light/dark), timezone, notification preferences
 
-*Common Anti-Pattern:*
-```tsx
-// ❌ Bad: Mixing URL params and useState for filters
-const [status, setStatus] = useState('active'); // local state
-const tier = searchParams.get('tier'); // URL param
-// Problem: clearFilters only clears one source
-
-// ✅ Good: Single source of truth (URL params only)
-const searchParams = new URLSearchParams(window.location.search);
-const status = searchParams.get('status') || 'all';
-const tier = searchParams.get('tier') || 'all';
-function clearFilters() {
-    router.get('/users', {}, { preserveState: true }); // clears ALL
-}
-```
+*Rule:* Use a single source of truth for filters — all URL params or all useState, never mixed. `clearFilters` must reset ALL state.
 
 *Inertia Router Fire-and-Forget Behavior (CRITICAL):*
 `router.post()`, `router.patch()`, `router.delete()` return immediately, NOT a Promise.
@@ -743,45 +478,12 @@ function deleteUser(id: number) {
 ```
 
 **Accessibility (WCAG 2.1 Level AA Required):**
-
-All new UI components MUST meet these standards:
-
-*Keyboard Navigation:*
-- All interactive elements focusable via Tab
-- Focus visible (outline or ring-2 ring-offset-2)
-- Dialogs trap focus and restore on close
-- Esc key closes dialogs/dropdowns
-
-*Semantic HTML:*
-- Use `<button>` for actions, `<a>` for navigation
-- Use `<label>` for all inputs (not just placeholder)
-- Use semantic elements (`<nav>`, `<main>`, `<aside>`, `<article>`)
-- Heading hierarchy (single `<h1>`, sequential `<h2>`-`<h6>`)
-
-*ARIA Attributes:*
-- `aria-label` on icon-only buttons
-- `aria-describedby` for error messages linked to inputs
-- `aria-live="polite"` for toast notifications (implemented in `Toast.tsx`)
-- `role="alert"` for validation errors
-
-*Color Contrast:*
-- Text: ≥4.5:1 for normal text, ≥3:1 for large text (18px+)
-- Interactive elements: ≥3:1 against background
-- Never rely on color alone (use icons + text)
-
-*Forms:*
-- Associate labels with inputs (`htmlFor={id}`)
-- Show validation errors below field with `aria-describedby`
-- Disable submit button while processing (with loading state)
-
-*Testing Accessibility:*
-Before claiming a UI feature done:
-1. Can you complete the flow with keyboard only? (no mouse)
-2. Do all images have alt text (or `alt=""` for decorative)?
-3. Are loading states announced? (`aria-busy="true"`)
-
-*Existing Accessible Components:*
-- `Button`, `Dialog`, `Toast`, `LoadingButton` (Radix-based, accessibility built-in)
+- Keyboard-navigable: all interactive elements focusable via Tab, visible focus ring, dialogs trap focus, Esc to close
+- Semantic HTML: `<button>` for actions, `<a>` for navigation, `<label>` for inputs, heading hierarchy
+- ARIA: `aria-label` on icon-only buttons, `aria-describedby` for errors, `aria-live="polite"` for toasts
+- Contrast: ≥4.5:1 normal text, ≥3:1 large text/interactive elements, never color-alone
+- Verify: complete flow with keyboard only, all images have alt text, loading states announced
+- Existing accessible components: `Button`, `Dialog`, `Toast`, `LoadingButton` (Radix-based)
 
 **Testing:**
 - Framework: Pest (not PHPUnit) — use `it()` / `test()` syntax
@@ -875,125 +577,6 @@ Already implemented — verify before duplicating:
 - Request tracing via `RequestIdMiddleware` — generates/accepts X-Request-Id, shares with logging + Sentry
 - Rate limit headers via `RateLimitHeaders` middleware — adds X-RateLimit-Reset on throttled API responses
 - Plan tier definitions in `config/plans.php` — free, pro, team (3-50 seats), enterprise
-
-### Security Patterns & Anti-Patterns
-
-**Input Validation:**
-
-```php
-// ✅ Good: Form Request with authorization
-class UpdateUserRequest extends FormRequest
-{
-    public function authorize(): bool
-    {
-        return $this->user()->can('update', $this->route('user'));
-    }
-
-    public function rules(): array
-    {
-        return [
-            'email' => ['required', 'email', Rule::unique('users')->ignore($this->route('user'))],
-            'role' => ['required', Rule::in(['user', 'admin'])], // whitelist
-        ];
-    }
-}
-
-// ❌ Bad: Trusting client input
-$user->update($request->all()); // client can send is_admin=1
-
-// ✅ Good: Explicit field list
-$user->update($request->only(['name', 'email']));
-```
-
-**Authorization:**
-
-```php
-// ❌ Bad: Only hiding UI (API endpoint still accessible via curl)
-// In Controller: no auth check
-// In TSX: {user.is_admin && <DeleteButton />}
-
-// ✅ Good: Authorize in controller
-public function destroy(User $user): RedirectResponse
-{
-    $this->authorize('delete', $user); // throws 403 if unauthorized
-    $user->delete();
-    return redirect()->route('users.index');
-}
-```
-
-**SQL Injection Prevention:**
-
-```php
-// ❌ Bad: Raw SQL with interpolation
-DB::select("SELECT * FROM users WHERE email = '{$request->email}'");
-
-// ✅ Good: Parameter binding
-DB::select('SELECT * FROM users WHERE email = ?', [$request->email]);
-
-// ✅ Better: Query builder
-User::where('email', $request->email)->first();
-```
-
-**XSS Prevention:**
-
-```tsx
-// ❌ Bad: User content as HTML
-<div dangerouslySetInnerHTML={{__html: comment.body}} />
-
-// ✅ Good: Plain text rendering (React escapes by default)
-<div>{comment.body}</div>
-
-// ✅ If HTML needed: Sanitize with DOMPurify
-import DOMPurify from 'dompurify';
-<div dangerouslySetInnerHTML={{__html: DOMPurify.sanitize(comment.body)}} />
-```
-
-**Mass Assignment Protection:**
-
-```php
-// ❌ Bad: No protection
-class User extends Model {
-    // no $fillable or $guarded
-}
-User::create($request->all()); // client can set is_admin=1
-
-// ✅ Good: Explicit fillable fields
-class User extends Model {
-    protected $fillable = ['name', 'email', 'password'];
-}
-```
-
-**CSRF Protection:**
-
-CSRF enabled by default. Only bypass for webhooks with signature verification.
-
-```php
-// ❌ Bad: Disabling CSRF without signature verification
-protected $except = ['/webhooks/stripe']; // no signature check
-
-// ✅ Good: Signature verification replaces CSRF
-protected $except = ['/webhooks/stripe']; // VerifyWebhookSignature middleware validates HMAC
-```
-
-**Rate Limiting:**
-
-All auth endpoints already rate-limited. When adding new sensitive endpoints:
-
-```php
-Route::middleware(['auth:sanctum', 'throttle:10,1'])->group(function () {
-    Route::post('/admin/users/{user}/impersonate', [ImpersonationController::class, 'start']);
-});
-```
-
-**Secrets Management:**
-
-```php
-// ❌ In config/services.php (committed to git)
-'stripe' => ['secret' => 'sk_live_xxx'], // NEVER
-
-// ✅ In config/services.php (committed to git)
-'stripe' => ['secret' => env('STRIPE_SECRET')], // reads from .env
-```
 
 ## Critical Gotchas
 
