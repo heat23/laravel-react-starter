@@ -17,8 +17,6 @@ export default defineConfig({
       // Font rendering differs between macOS (local) and Linux (CI).
       // 6% ratio tolerates antialiasing, font rendering, and minor layout differences across platforms.
       maxDiffPixelRatio: 0.06,
-      // Allow small dimension differences due to platform-specific font rendering
-      maxDiffPixels: 100,
     },
   },
   use: {
