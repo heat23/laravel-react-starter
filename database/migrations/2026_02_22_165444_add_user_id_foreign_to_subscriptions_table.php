@@ -26,6 +26,7 @@ return new class extends Migration
         }
 
         Schema::table('subscriptions', function (Blueprint $table) {
+            $table->unsignedBigInteger('user_id')->nullable()->change();
             $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
         });
     }
