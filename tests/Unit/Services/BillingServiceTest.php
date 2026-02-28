@@ -83,7 +83,7 @@ it('resolves tier from price id correctly', function () {
     expect($service->resolveTierFromPrice('price_team_annual'))->toBe('team');
     expect($service->resolveTierFromPrice('price_enterprise_monthly'))->toBe('enterprise');
     expect($service->resolveTierFromPrice('price_enterprise_annual'))->toBe('enterprise');
-    expect($service->resolveTierFromPrice('price_unknown'))->toBe('free');
+    expect($service->resolveTierFromPrice('price_unknown'))->toBeNull();
 });
 
 it('returns comprehensive subscription status for subscribed user', function () {

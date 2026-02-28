@@ -26,7 +26,7 @@ class AdminBillingController extends Controller
         })
             ->with('user')
             ->latest()
-            ->limit(10)
+            ->limit(config('pagination.admin.recent_events', 10))
             ->get()
             ->map(fn (AuditLog $log) => [
                 'id' => $log->id,
@@ -52,7 +52,7 @@ class AdminBillingController extends Controller
             'subscriptions' => $this->statsService->getFilteredSubscriptions($request->validated()),
             'filters' => $request->only('search', 'status', 'tier', 'sort', 'dir'),
             'statuses' => ['active', 'trialing', 'past_due', 'canceled', 'incomplete', 'incomplete_expired'],
-            'tiers' => ['pro', 'team', 'enterprise'],
+            'tiers' => collect(config('plans.tier_hierarchy', []))->filter(fn ($t) => $t !== 'free')->values()->all(),
         ]);
     }
 
@@ -65,7 +65,7 @@ class AdminBillingController extends Controller
             'stripe_price' => $item->stripe_price,
             'stripe_product' => $item->stripe_product,
             'quantity' => $item->quantity,
-            'tier' => $this->billingService->resolveTierFromPrice($item->stripe_price),
+            'tier' => $this->billingService->resolveTierFromPrice($item->stripe_price) ?? 'unknown',
         ]);
 
         $auditLogs = AuditLog::where('user_id', $subscription->user_id)
@@ -74,7 +74,7 @@ class AdminBillingController extends Controller
                     ->orWhere('event', 'like', 'subscription.%');
             })
             ->latest()
-            ->limit(20)
+            ->limit(config('pagination.admin.subscription_logs', 20))
             ->get()
             ->map(fn (AuditLog $log) => [
                 'id' => $log->id,
@@ -92,7 +92,7 @@ class AdminBillingController extends Controller
                 'stripe_id' => $subscription->stripe_id,
                 'stripe_status' => $subscription->stripe_status,
                 'tier' => $items->isNotEmpty()
-                    ? $this->billingService->resolveTierFromPrice($items->first()['stripe_price'])
+                    ? ($this->billingService->resolveTierFromPrice($items->first()['stripe_price']) ?? 'unknown')
                     : 'free',
                 'quantity' => $subscription->quantity,
                 'trial_ends_at' => $subscription->trial_ends_at?->toISOString(),

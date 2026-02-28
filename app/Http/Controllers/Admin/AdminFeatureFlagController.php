@@ -49,10 +49,7 @@ class AdminFeatureFlagController extends Controller
                 'reason' => $reason,
             ]);
 
-            return back()->with('flash', [
-                'type' => 'success',
-                'message' => 'Feature flag updated successfully.',
-            ]);
+            return back()->with('success', 'Feature flag updated successfully.');
         } catch (InvalidArgumentException|RuntimeException $e) {
             return back()->withErrors([
                 'flag' => $e->getMessage(),
@@ -72,10 +69,7 @@ class AdminFeatureFlagController extends Controller
                 'flag' => $flag,
             ]);
 
-            return back()->with('flash', [
-                'type' => 'success',
-                'message' => 'Feature flag override removed.',
-            ]);
+            return back()->with('success', 'Feature flag override removed.');
         } catch (InvalidArgumentException $e) {
             return back()->withErrors([
                 'flag' => $e->getMessage(),
@@ -119,10 +113,7 @@ class AdminFeatureFlagController extends Controller
                 'reason' => $reason,
             ]);
 
-            return back()->with('flash', [
-                'type' => 'success',
-                'message' => 'User override added successfully.',
-            ]);
+            return back()->with('success', 'User override added successfully.');
         } catch (InvalidArgumentException|RuntimeException $e) {
             return back()->withErrors([
                 'user_override' => $e->getMessage(),
@@ -143,10 +134,7 @@ class AdminFeatureFlagController extends Controller
                 'user_id' => $user,
             ]);
 
-            return back()->with('flash', [
-                'type' => 'success',
-                'message' => 'User override removed.',
-            ]);
+            return back()->with('success', 'User override removed.');
         } catch (InvalidArgumentException $e) {
             return back()->withErrors([
                 'user_override' => $e->getMessage(),
@@ -166,10 +154,7 @@ class AdminFeatureFlagController extends Controller
                 'flag' => $flag,
             ]);
 
-            return back()->with('flash', [
-                'type' => 'success',
-                'message' => 'All user overrides removed.',
-            ]);
+            return back()->with('success', 'All user overrides removed.');
         } catch (InvalidArgumentException $e) {
             return back()->withErrors([
                 'user_overrides' => $e->getMessage(),

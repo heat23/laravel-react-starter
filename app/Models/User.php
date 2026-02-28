@@ -136,4 +136,23 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
 
         return UserSetting::setValue($this->id, $key, $value);
     }
+
+    /**
+     * Permanently delete the user and all associated personal data.
+     *
+     * FK-cascaded tables (user_settings, social_accounts, webhook_endpoints,
+     * feature_flag_overrides) are handled automatically. Morph/polymorphic
+     * relations (tokens, 2FA, notifications) require manual cleanup.
+     * Audit logs use nullOnDelete to preserve the trail without PII.
+     */
+    public function purgePersonalData(): void
+    {
+        // Morph relations without FK constraints
+        $this->tokens()->delete();
+        $this->twoFactorAuth()->delete();
+        $this->notifications()->delete();
+
+        // Force delete bypasses SoftDeletes and triggers FK cascades
+        $this->forceDelete();
+    }
 }

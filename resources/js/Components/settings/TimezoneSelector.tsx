@@ -113,7 +113,7 @@ export function TimezoneSelector({ value, onChange, disabled }: TimezoneSelector
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[350px] p-0" align="start">
+      <PopoverContent className="w-[350px] max-w-[calc(100vw-2rem)] p-0" align="start">
         <Command>
           <CommandInput placeholder="Search timezone..." className="focus:ring-0 focus-visible:ring-0" />
           <CommandList>

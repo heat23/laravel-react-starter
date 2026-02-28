@@ -52,9 +52,11 @@ export function SidebarNavItem({ item, collapsed = false }: SidebarNavItemProps)
         "flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors",
         "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         isActive
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-          : "text-sidebar-foreground/80",
-        collapsed && "justify-center px-0",
+          ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-primary font-semibold"
+          : "text-sidebar-foreground/80 border-l-2 border-transparent",
+        collapsed && "justify-center px-0 border-l-0",
+        collapsed && isActive && "border-b-2 border-primary border-l-0",
+        collapsed && !isActive && "border-b-2 border-transparent border-l-0",
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
@@ -102,8 +104,8 @@ export function MobileSidebarNav({ groups, onNavigate }: MobileSidebarNavProps) 
                   "flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors",
                   "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                   isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/80",
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-primary font-semibold"
+                    : "text-sidebar-foreground/80 border-l-2 border-transparent",
                 )}
               >
                 <Icon className="h-4 w-4 shrink-0" />

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuditService;
+use App\Services\CacheInvalidationManager;
 use App\Services\SocialAuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +28,9 @@ class SocialAuthController extends Controller
     protected array $providers = ['google', 'github'];
 
     public function __construct(
-        private SocialAuthService $socialAuthService
+        private SocialAuthService $socialAuthService,
+        private AuditService $auditService,
+        private CacheInvalidationManager $cacheManager,
     ) {}
 
     /**
@@ -79,8 +83,15 @@ class SocialAuthController extends Controller
         // Link social account
         $this->socialAuthService->linkSocialAccount($user, $socialUser, $provider);
 
+        $this->cacheManager->invalidateSocialAuth();
+
         // Log the user in
         Auth::login($user, remember: false);
+
+        $this->auditService->log('auth.social_login', [
+            'provider' => $provider,
+            'email' => $user->email,
+        ]);
 
         // Update last login timestamp
         if (method_exists($user, 'updateLastLogin')) {
@@ -116,6 +127,13 @@ class SocialAuthController extends Controller
                 // Delete the social account
                 $user->socialAccounts()->where('provider', $provider)->delete();
             });
+
+            $this->auditService->log('auth.social_disconnected', [
+                'provider' => $provider,
+                'email' => $user->email,
+            ]);
+
+            $this->cacheManager->invalidateSocialAuth();
 
             return back()->with('status', ucfirst($provider).' account disconnected.');
         } catch (\Exception $e) {

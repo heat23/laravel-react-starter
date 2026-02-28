@@ -135,7 +135,7 @@ function SetupState({ qrCode, secret }: { qrCode: string; secret: string }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="flex justify-center rounded-lg border bg-white p-4">
+          <div className="flex justify-center rounded-lg border bg-white dark:bg-zinc-100 p-4">
             <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(qrCode, { USE_PROFILES: { svg: true, svgFilters: true } }) }} />
           </div>
 
@@ -170,6 +170,8 @@ function SetupState({ qrCode, secret }: { qrCode: string; secret: string }) {
                   value={data.code}
                   onChange={(value) => setData("code", value)}
                   autoFocus
+                  aria-describedby={errors.code ? "confirm-code-error" : undefined}
+                  aria-invalid={!!errors.code}
                 >
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />
@@ -181,7 +183,7 @@ function SetupState({ qrCode, secret }: { qrCode: string; secret: string }) {
                   </InputOTPGroup>
                 </InputOTP>
               </div>
-              <InputError message={errors.code} className="text-xs" />
+              <InputError id="confirm-code-error" message={errors.code} className="text-xs" />
             </div>
 
             <LoadingButton
@@ -343,8 +345,10 @@ function EnabledState() {
                 value={disableForm.data.password}
                 onChange={(e) => disableForm.setData("password", e.target.value)}
                 autoComplete="current-password"
+                aria-describedby={disableForm.errors.password ? "disable-password-error" : undefined}
+                aria-invalid={!!disableForm.errors.password}
               />
-              <InputError message={disableForm.errors.password} className="text-xs" />
+              <InputError id="disable-password-error" message={disableForm.errors.password} className="text-xs" />
             </div>
           </div>
         }

@@ -70,6 +70,10 @@ Route::middleware(['auth:sanctum', 'throttle:30,1'])->prefix('webhooks')->group(
     Route::patch('/{endpointId}', [WebhookEndpointController::class, 'update']);
     Route::delete('/{endpointId}', [WebhookEndpointController::class, 'destroy']);
     Route::get('/{endpointId}/deliveries', [WebhookEndpointController::class, 'deliveries']);
+});
+
+// Webhook test dispatch — stricter rate limit (5/min) to prevent flooding
+Route::middleware(['auth:sanctum', 'throttle:webhook-test'])->prefix('webhooks')->group(function () {
     Route::post('/{endpointId}/test', [WebhookEndpointController::class, 'test']);
 });
 

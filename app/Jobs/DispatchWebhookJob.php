@@ -68,12 +68,17 @@ class DispatchWebhookJob implements ShouldQueue
                 'delivery_id' => $delivery->id,
                 'endpoint_url' => $endpoint->url,
                 'error' => $e->getMessage(),
+                'attempt' => $this->attempts(),
+                'max_tries' => $this->tries,
             ]);
 
-            $delivery->update([
-                'status' => 'failed',
-                'response_body' => substr($e->getMessage(), 0, 1000),
-            ]);
+            // Only mark as failed on final attempt; intermediate attempts will be retried
+            if ($this->attempts() >= $this->tries) {
+                $delivery->update([
+                    'status' => 'failed',
+                    'response_body' => substr($e->getMessage(), 0, 1000),
+                ]);
+            }
 
             throw $e;
         }

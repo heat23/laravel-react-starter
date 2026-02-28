@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, Download, HelpCircle, Info } from "lucide-react";
+import { AlertCircle, CheckCircle2, Download, HelpCircle, Info, Receipt } from "lucide-react";
 
 import { useEffect, useState } from "react";
 
@@ -419,9 +419,10 @@ export default function BillingIndex() {
               </CardHeader>
               <CardContent>
                 {invoices.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <Receipt className="h-8 w-8 text-muted-foreground/50 mb-3" />
                     <p className="font-medium">No invoices yet</p>
-                    <p className="text-sm mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       Your invoices will appear here after your first billing cycle.
                     </p>
                   </div>

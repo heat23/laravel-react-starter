@@ -346,6 +346,36 @@ describe('Textarea', () => {
   });
 
   // ============================================
+  // Error prop tests
+  // ============================================
+
+  describe('error prop', () => {
+    it('sets aria-invalid when error is true', () => {
+      render(<Textarea error />);
+
+      expect(screen.getByRole('textbox')).toHaveAttribute('aria-invalid', 'true');
+    });
+
+    it('does not set aria-invalid when error is false', () => {
+      render(<Textarea error={false} />);
+
+      expect(screen.getByRole('textbox')).not.toHaveAttribute('aria-invalid');
+    });
+
+    it('applies destructive border class when error is true', () => {
+      render(<Textarea error />);
+
+      expect(screen.getByRole('textbox')).toHaveClass('border-destructive');
+    });
+
+    it('does not apply destructive border when error is false', () => {
+      render(<Textarea error={false} />);
+
+      expect(screen.getByRole('textbox')).not.toHaveClass('border-destructive');
+    });
+  });
+
+  // ============================================
   // Min height tests
   // ============================================
 

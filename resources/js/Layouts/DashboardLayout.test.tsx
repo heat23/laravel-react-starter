@@ -11,6 +11,7 @@ vi.mock('@inertiajs/react', async () => {
   return {
     ...actual,
     usePage: vi.fn(() => ({
+      url: '/dashboard',
       props: {
         auth: {
           user: {
@@ -229,6 +230,7 @@ describe('DashboardLayout', () => {
 
     it('shows API Tokens link in dropdown when feature is enabled', async () => {
       mockedUsePage.mockReturnValue({
+        url: '/dashboard',
         props: {
           auth: {
             user: {

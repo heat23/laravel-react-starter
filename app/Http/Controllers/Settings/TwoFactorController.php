@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\TwoFactor\ConfirmTwoFactorRequest;
 use App\Http\Requests\TwoFactor\DisableTwoFactorRequest;
 use App\Services\AuditService;
+use App\Services\CacheInvalidationManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,7 +15,8 @@ use Inertia\Response;
 class TwoFactorController extends Controller
 {
     public function __construct(
-        private AuditService $auditService
+        private AuditService $auditService,
+        private CacheInvalidationManager $cacheManager,
     ) {
         abort_unless(feature_enabled('two_factor', auth()->user()), 404);
     }
@@ -61,6 +63,8 @@ class TwoFactorController extends Controller
             'email' => $user->email,
         ]);
 
+        $this->cacheManager->invalidateTwoFactor();
+
         return back()->with('success', 'Two-factor authentication has been enabled.');
     }
 
@@ -73,6 +77,8 @@ class TwoFactorController extends Controller
         $this->auditService->log('auth.2fa_disabled', [
             'email' => $user->email,
         ]);
+
+        $this->cacheManager->invalidateTwoFactor();
 
         return back()->with('success', 'Two-factor authentication has been disabled.');
     }

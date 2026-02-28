@@ -10,6 +10,7 @@ import { Badge } from "@/Components/ui/badge";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
 import { ConfirmDialog } from "@/Components/ui/confirm-dialog";
+import { EmptyState } from "@/Components/ui/empty-state";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { LoadingButton } from "@/Components/ui/loading-button";
@@ -84,16 +85,18 @@ export default function ApiTokens() {
             </Card>
           ) : tokens.length === 0 ? (
             <Card>
-              <CardContent className="py-12 text-center">
-                <Key className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-                <h3 className="text-lg font-medium">No API tokens</h3>
-                <p className="text-muted-foreground mt-1">
-                  Create a token to authenticate with the API.
-                </p>
-                <Button className="mt-4" onClick={() => setShowCreate(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create token
-                </Button>
+              <CardContent>
+                <EmptyState
+                  icon={Key}
+                  title="No API tokens"
+                  description="Create a token to authenticate with the API."
+                  action={
+                    <Button onClick={() => setShowCreate(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create token
+                    </Button>
+                  }
+                />
               </CardContent>
             </Card>
           ) : (

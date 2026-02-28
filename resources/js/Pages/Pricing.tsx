@@ -106,7 +106,9 @@ export default function Pricing() {
 
   const content = (
     <>
-      <Head title="Pricing" />
+      <Head title="Pricing">
+        <meta name="description" content="Choose the plan that fits your needs. Start free and upgrade as you grow with flexible pricing options." />
+      </Head>
       <PageHeader
         title="Pricing"
         subtitle="Simple, transparent pricing that grows with you"

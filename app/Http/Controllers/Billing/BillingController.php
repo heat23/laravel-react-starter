@@ -28,7 +28,7 @@ class BillingController extends Controller
         $invoices = [];
 
         if ($subscription) {
-            $tier = $this->billingService->resolveTierFromPrice($subscription->stripe_price ?? '');
+            $tier = $this->billingService->resolveTierFromPrice($subscription->stripe_price ?? '') ?? 'free';
             $tierConfig = config("plans.{$tier}");
 
             $subscriptionInfo = [
@@ -51,7 +51,7 @@ class BillingController extends Controller
 
             try {
                 $invoices = collect($user->invoices())
-                    ->take(12)
+                    ->take(config('pagination.billing.invoices', 12))
                     ->map(fn ($invoice) => [
                         'id' => $invoice->id,
                         'date' => $invoice->date()->toISOString(),

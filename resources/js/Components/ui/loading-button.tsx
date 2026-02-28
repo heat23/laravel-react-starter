@@ -18,7 +18,7 @@ export function LoadingButton({
   ...props
 }: LoadingButtonProps) {
   return (
-    <Button disabled={disabled || loading} {...props}>
+    <Button disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
       {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
       {loading ? (loadingText || "Loading...") : children}
     </Button>

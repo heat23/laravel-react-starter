@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle2, Shield, Users, Zap } from "lucide-react";
+import { ArrowRight, CheckCircle2, Layers3, Shield, Sparkles, Zap } from "lucide-react";
 
 import { Head, Link } from "@inertiajs/react";
 
@@ -13,20 +13,28 @@ interface WelcomeProps {
 const features = [
   {
     icon: Shield,
-    title: "Secure by Default",
+    title: "Secure foundation",
     description: "Built with security best practices including CSRF protection, XSS prevention, and secure authentication.",
   },
   {
-    icon: Zap,
-    title: "Lightning Fast",
-    description: "Optimized for performance with Laravel Octane support and efficient React rendering.",
+    icon: Layers3,
+    title: "Modular by default",
+    description: "Feature flags let you enable billing, API tokens, webhooks, and admin tools when your product is ready for them.",
   },
   {
-    icon: Users,
-    title: "User Management",
-    description: "Complete authentication system with registration, login, password reset, and email verification.",
+    icon: Zap,
+    title: "Production-minded",
+    description: "Typed React pages, reusable UI primitives, and tested auth flows keep you moving without rewriting the basics.",
   },
 ];
+
+const starterHighlights = [
+  "Auth, profile, and security flows included",
+  "Starter-friendly billing and admin scaffolding",
+  "Design tokens you can rebrand quickly",
+];
+
+const techStack = ["Laravel 12", "React 18", "TypeScript", "Tailwind CSS v4", "Inertia.js"];
 
 type WelcomeComponent = ((props: WelcomeProps) => JSX.Element) & {
   disableGlobalUi?: boolean;
@@ -38,18 +46,26 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
   return (
     <>
       <Head title="Welcome">
-        <meta name="description" content="A modern Laravel starter template with React, TypeScript, and Tailwind CSS. Everything you need to ship faster." />
-        <meta property="og:title" content={`${appName} - Build your next great application`} />
-        <meta property="og:description" content="A modern Laravel starter template with React, TypeScript, and Tailwind CSS. Everything you need to ship faster." />
+        <meta name="description" content="A flexible Laravel + React starter with auth, feature flags, billing scaffolding, and a UI foundation you can shape into your product." />
+        <meta property="og:title" content={`${appName} - Start with the parts every SaaS needs`} />
+        <meta property="og:description" content="A flexible Laravel + React starter with auth, feature flags, billing scaffolding, and a UI foundation you can shape into your product." />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary" />
-        <meta name="twitter:title" content={`${appName} - Build your next great application`} />
-        <meta name="twitter:description" content="A modern Laravel starter template with React, TypeScript, and Tailwind CSS. Everything you need to ship faster." />
+        <meta name="twitter:title" content={`${appName} - Start with the parts every SaaS needs`} />
+        <meta name="twitter:description" content="A flexible Laravel + React starter with auth, feature flags, billing scaffolding, and a UI foundation you can shape into your product." />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-background via-background to-muted/30">
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(circle_at_top_right,_hsl(var(--primary)/0.18),_transparent_34%),radial-gradient(circle_at_top_left,_hsl(var(--accent)/0.12),_transparent_28%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-6 top-28 mx-auto hidden h-64 max-w-5xl rounded-[2.5rem] border border-border/60 bg-card/50 blur-3xl lg:block"
+        />
         {/* Navigation */}
-        <nav className="container flex items-center justify-between py-6">
+        <nav className="container relative z-10 flex items-center justify-between py-6">
           <Link href="/" className="flex items-center gap-2">
             <Logo className="h-8 w-8" />
             <TextLogo className="text-xl font-bold" />
@@ -74,22 +90,28 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
 
         <main id="main-content">
           {/* Hero Section */}
-          <section className="container py-24 text-center">
-            <div className="mx-auto max-w-3xl space-y-6">
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                Build your next
-                <br />
-                <span className="text-primary">great application</span>
-              </h1>
-              <p className="text-lg text-muted-foreground md:text-xl">
-                A modern Laravel starter template with React, TypeScript, and Tailwind CSS.
-                Everything you need to ship faster.
-              </p>
+          <section className="container relative z-10 py-24">
+            <div className="mx-auto max-w-5xl">
+              <div className="mx-auto max-w-3xl text-center">
+                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
+                  <Sparkles className="h-4 w-4" />
+                  Starter-ready by default
+                </div>
+                <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
+                  Start with the parts
+                  <br />
+                  <span className="text-primary">every SaaS needs</span>
+                </h1>
+                <p className="mt-6 text-lg text-muted-foreground md:text-xl">
+                  A flexible Laravel + React starter with authentication, feature flags,
+                  billing scaffolding, and a UI foundation you can shape into your product.
+                </p>
+              </div>
               <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
                 {canRegister && (
                   <Button size="lg" asChild>
                     <Link href={route("register")}>
-                      Start Building
+                      Create Your First Account
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
@@ -104,6 +126,16 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
                   </a>
                 </Button>
               </div>
+              <div className="mt-12 grid gap-4 md:grid-cols-3">
+                {starterHighlights.map((highlight) => (
+                  <div
+                    key={highlight}
+                    className="rounded-2xl border border-border/70 bg-card/80 px-5 py-4 text-sm font-medium text-foreground shadow-sm backdrop-blur"
+                  >
+                    {highlight}
+                  </div>
+                ))}
+              </div>
             </div>
           </section>
 
@@ -111,18 +143,18 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
           <section className="container py-24">
             <div className="mx-auto max-w-5xl">
               <h2 className="mb-12 text-center text-3xl font-bold">
-                Everything you need to get started
+                Starter defaults you can actually ship with
               </h2>
               <div className="grid gap-8 md:grid-cols-3">
                 {features.map((feature) => (
                   <div
                     key={feature.title}
-                    className="rounded-lg border bg-card p-6 text-card-foreground shadow-sm"
+                    className="rounded-2xl border border-border/70 bg-card p-6 text-card-foreground shadow-sm"
                   >
-                    <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
                       <feature.icon className="h-5 w-5 text-primary" />
                     </div>
-                    <h3 className="mb-2 font-semibold">{feature.title}</h3>
+                    <h3 className="mb-2 text-lg font-semibold">{feature.title}</h3>
                     <p className="text-sm text-muted-foreground">{feature.description}</p>
                   </div>
                 ))}
@@ -132,29 +164,18 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
 
           {/* Tech Stack Section */}
           <section className="container border-t py-24">
-            <div className="mx-auto max-w-3xl text-center">
-              <h2 className="mb-8 text-2xl font-bold">Built with modern technologies</h2>
-              <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  <span>Laravel 12</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  <span>React 18</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  <span>TypeScript</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  <span>Tailwind CSS v4</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                  <span>Inertia.js</span>
-                </div>
+            <div className="mx-auto max-w-4xl text-center">
+              <h2 className="mb-8 text-2xl font-bold">Modern stack, ready to customize</h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                {techStack.map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-border/70 bg-card/70 px-4 py-3 text-sm font-medium text-foreground"
+                  >
+                    <CheckCircle2 className="h-4 w-4 text-success" />
+                    <span>{item}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </section>

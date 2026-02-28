@@ -44,15 +44,15 @@ describe('Welcome', () => {
     it('renders the welcome page', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText(/build your next/i)).toBeInTheDocument();
+      expect(screen.getByText(/start with the parts/i)).toBeInTheDocument();
     });
 
     it('renders the hero section', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText('great application')).toBeInTheDocument();
+      expect(screen.getByText('every SaaS needs')).toBeInTheDocument();
       expect(
-        screen.getByText(/a modern laravel starter template with react, typescript, and tailwind css/i),
+        screen.getByText(/a flexible laravel \+ react starter with authentication, feature flags/i),
       ).toBeInTheDocument();
     });
 
@@ -125,19 +125,19 @@ describe('Welcome', () => {
     it('shows Start Building button when canRegister is true', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByRole('link', { name: /start building/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /create your first account/i })).toBeInTheDocument();
     });
 
     it('hides Start Building button when canRegister is false', () => {
       render(<Welcome canLogin={true} canRegister={false} />);
 
-      expect(screen.queryByRole('link', { name: /start building/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: /create your first account/i })).not.toBeInTheDocument();
     });
 
     it('renders hero tagline', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText(/everything you need to ship faster/i)).toBeInTheDocument();
+      expect(screen.getByText(/starter-ready by default/i)).toBeInTheDocument();
     });
   });
 
@@ -149,37 +149,37 @@ describe('Welcome', () => {
     it('renders the features section header', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText(/everything you need to get started/i)).toBeInTheDocument();
+      expect(screen.getByText(/starter defaults you can actually ship with/i)).toBeInTheDocument();
     });
 
-    it('renders Secure by Default feature', () => {
+    it('renders Secure foundation feature', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText('Secure by Default')).toBeInTheDocument();
+      expect(screen.getByText('Secure foundation')).toBeInTheDocument();
       expect(screen.getByText(/csrf protection, xss prevention/i)).toBeInTheDocument();
     });
 
-    it('renders Lightning Fast feature', () => {
+    it('renders Modular by default feature', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText('Lightning Fast')).toBeInTheDocument();
-      expect(screen.getByText(/laravel octane support/i)).toBeInTheDocument();
+      expect(screen.getByText('Modular by default')).toBeInTheDocument();
+      expect(screen.getByText(/billing, api tokens, webhooks, and admin tools/i)).toBeInTheDocument();
     });
 
-    it('renders User Management feature', () => {
+    it('renders Production-minded feature', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText('User Management')).toBeInTheDocument();
-      expect(screen.getByText(/registration, login, password reset/i)).toBeInTheDocument();
+      expect(screen.getByText('Production-minded')).toBeInTheDocument();
+      expect(screen.getByText(/typed react pages, reusable ui primitives/i)).toBeInTheDocument();
     });
 
     it('renders all three feature cards', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
       const featureCards = [
-        'Secure by Default',
-        'Lightning Fast',
-        'User Management',
+        'Secure foundation',
+        'Modular by default',
+        'Production-minded',
       ];
 
       featureCards.forEach((title) => {
@@ -196,7 +196,7 @@ describe('Welcome', () => {
     it('renders tech stack header', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText(/built with modern technologies/i)).toBeInTheDocument();
+      expect(screen.getByText(/modern stack, ready to customize/i)).toBeInTheDocument();
     });
 
     it('renders Laravel 12', () => {
@@ -279,6 +279,13 @@ describe('Welcome', () => {
 
       // Check for navigation
       expect(screen.getByRole('navigation')).toBeInTheDocument();
+    });
+
+    it('renders starter highlight cards', () => {
+      render(<Welcome canLogin={true} canRegister={true} />);
+
+      expect(screen.getByText(/auth, profile, and security flows included/i)).toBeInTheDocument();
+      expect(screen.getByText(/starter-friendly billing and admin scaffolding/i)).toBeInTheDocument();
     });
   });
 });

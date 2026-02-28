@@ -54,7 +54,7 @@ class AdminBillingStatsService
                 ->groupBy('subscription_items.stripe_price')
                 ->get()
                 ->map(fn ($row) => [
-                    'tier' => $this->billingService->resolveTierFromPrice($row->stripe_price),
+                    'tier' => $this->billingService->resolveTierFromPrice($row->stripe_price) ?? 'unknown',
                     'count' => (int) $row->count,
                 ])
                 ->groupBy('tier')
@@ -183,13 +183,13 @@ class AdminBillingStatsService
 
         $billingService = $this->billingService;
 
-        return $query->paginate(config('features.admin.pagination.default', 25))->through(fn ($row) => [
+        return $query->paginate(config('pagination.admin.users', 25))->through(fn ($row) => [
             'id' => $row->id,
             'user_id' => $row->user_id,
             'user_name' => $row->user_name,
             'user_email' => $row->user_email,
             'stripe_status' => $row->stripe_status,
-            'tier' => $billingService->resolveTierFromPrice($row->item_price),
+            'tier' => $billingService->resolveTierFromPrice($row->item_price) ?? 'unknown',
             'quantity' => $row->quantity,
             'trial_ends_at' => $row->trial_ends_at,
             'ends_at' => $row->ends_at,
@@ -210,6 +210,12 @@ class AdminBillingStatsService
         $mrr = 0;
         foreach ($grouped as $row) {
             $tier = $this->billingService->resolveTierFromPrice($row->stripe_price);
+
+            if ($tier === null) {
+                // Skip unknown prices — they're already logged by resolveTierFromPrice
+                continue;
+            }
+
             $monthlyPrice = (float) config("plans.{$tier}.price_monthly", 0);
 
             $annualPriceId = config("plans.{$tier}.stripe_price_annual");

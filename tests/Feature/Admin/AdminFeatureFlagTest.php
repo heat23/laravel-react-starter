@@ -45,8 +45,7 @@ it('enables a global override', function () {
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHas('flash.type', 'success');
-    $response->assertSessionHas('flash.message');
+    $response->assertSessionHas('success');
 
     expect(FeatureFlagOverride::where('flag', 'billing')->whereNull('user_id')->first())
         ->not->toBeNull()
@@ -64,7 +63,7 @@ it('disables a global override', function () {
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHas('flash.type', 'success');
+    $response->assertSessionHas('success');
 
     expect(FeatureFlagOverride::where('flag', 'billing')->whereNull('user_id')->first())
         ->not->toBeNull()
@@ -79,7 +78,7 @@ it('removes a global override', function () {
     $response = $this->actingAs($admin)->delete('/admin/feature-flags/billing');
 
     $response->assertRedirect();
-    $response->assertSessionHas('flash.type', 'success');
+    $response->assertSessionHas('success');
 
     expect(FeatureFlagOverride::where('flag', 'billing')->whereNull('user_id')->first())
         ->toBeNull();
@@ -119,7 +118,7 @@ it('adds a user override', function () {
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHas('flash.type', 'success');
+    $response->assertSessionHas('success');
 
     expect(FeatureFlagOverride::where('flag', 'billing')->where('user_id', $targetUser->id)->first())
         ->not->toBeNull()
@@ -135,7 +134,7 @@ it('removes a user override', function () {
     $response = $this->actingAs($admin)->delete("/admin/feature-flags/billing/users/{$targetUser->id}");
 
     $response->assertRedirect();
-    $response->assertSessionHas('flash.type', 'success');
+    $response->assertSessionHas('success');
 
     expect(FeatureFlagOverride::where('flag', 'billing')->where('user_id', $targetUser->id)->first())
         ->toBeNull();
@@ -152,7 +151,7 @@ it('removes all user overrides for a flag', function () {
     $response = $this->actingAs($admin)->delete('/admin/feature-flags/billing/users');
 
     $response->assertRedirect();
-    $response->assertSessionHas('flash.type', 'success');
+    $response->assertSessionHas('success');
 
     expect(FeatureFlagOverride::where('flag', 'billing')->whereNotNull('user_id')->count())
         ->toBe(0);

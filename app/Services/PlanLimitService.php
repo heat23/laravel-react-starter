@@ -20,8 +20,7 @@ class PlanLimitService
      */
     public function isTrialEnabled(): bool
     {
-        return config('plans.trial.enabled', false)
-            || config('features.billing.trial_enabled', false);
+        return (bool) config('plans.trial.enabled', false);
     }
 
     /**
@@ -145,12 +144,12 @@ class PlanLimitService
                 }
 
                 // Within grace period — resolve tier from price directly
-                return $this->billingService->resolveTierFromPrice($subscription->stripe_price);
+                return $this->billingService->resolveTierFromPrice($subscription->stripe_price) ?? 'free';
             }
 
             // Active, trialing, or on grace period subscriptions
             if ($subscription->active()) {
-                return $this->billingService->resolveTierFromPrice($subscription->stripe_price);
+                return $this->billingService->resolveTierFromPrice($subscription->stripe_price) ?? 'free';
             }
         }
 

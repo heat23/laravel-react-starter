@@ -78,7 +78,9 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
 
   return (
     <AuthLayout footer={footer}>
-      <Head title="Log in" />
+      <Head title="Log in">
+        <meta name="description" content="Sign in to your account to access your dashboard, manage settings, and more." />
+      </Head>
       <div className="space-y-8">
         {/* Header */}
         <div className="text-center lg:text-left">

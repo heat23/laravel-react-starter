@@ -178,7 +178,9 @@ export default function Register({ error, rememberDays = 30, features }: Registe
 
   return (
     <AuthLayout leftContent={leftContent} leftFooter={leftFooter} footer={footer}>
-      <Head title="Create account" />
+      <Head title="Create account">
+        <meta name="description" content="Create your free account to get started. No credit card required." />
+      </Head>
       <div className="space-y-8">
         {/* Header */}
         <div className="text-center lg:text-left">

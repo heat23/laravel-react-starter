@@ -183,6 +183,32 @@ describe("DataTable", () => {
     expect(screen.getByText("Delete Selected")).toBeInTheDocument();
   });
 
+  it("renders skeleton rows when loading is true", () => {
+    render(<DataTable columns={columns} data={[]} loading />);
+
+    const skeletonRows = screen.getAllByTestId("skeleton-row");
+    expect(skeletonRows.length).toBeGreaterThan(0);
+    // Should not show empty state while loading
+    expect(screen.queryByText("No results.")).not.toBeInTheDocument();
+  });
+
+  it("does not render skeleton when loading is false", () => {
+    render(<DataTable columns={columns} data={testData} loading={false} />);
+
+    expect(screen.queryByTestId("skeleton-row")).not.toBeInTheDocument();
+    expect(screen.getByText("Alice")).toBeInTheDocument();
+  });
+
+  it("renders correct number of skeleton cells per row", () => {
+    render(<DataTable columns={columns} data={[]} loading />);
+
+    const skeletonRows = screen.getAllByTestId("skeleton-row");
+    // Each row should have same number of cells as columns
+    const firstRow = skeletonRows[0];
+    const cells = within(firstRow).getAllByTestId("skeleton-cell");
+    expect(cells.length).toBe(columns.length);
+  });
+
   describe("persistState", () => {
     let replaceStateSpy: ReturnType<typeof vi.spyOn>;
 

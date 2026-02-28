@@ -1,4 +1,4 @@
-import { Copy, Eye, EyeOff, Plus, Radio, RefreshCw, Trash2 } from "lucide-react";
+import { Copy, Eye, EyeOff, Plus, Radio, RefreshCw, Send, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useCallback, useEffect, useState } from "react";
@@ -10,6 +10,7 @@ import { Badge } from "@/Components/ui/badge";
 import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
 import { ConfirmDialog } from "@/Components/ui/confirm-dialog";
+import { EmptyState } from "@/Components/ui/empty-state";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { LoadingButton } from "@/Components/ui/loading-button";
@@ -104,16 +105,18 @@ export default function Webhooks({ available_events }: WebhooksProps) {
             </Card>
           ) : endpoints.length === 0 ? (
             <Card>
-              <CardContent className="py-12 text-center">
-                <Radio className="mx-auto h-12 w-12 text-muted-foreground/50 mb-4" />
-                <h3 className="text-lg font-medium">No webhook endpoints</h3>
-                <p className="text-muted-foreground mt-1">
-                  Create your first endpoint to start receiving event notifications.
-                </p>
-                <Button className="mt-4" onClick={() => setShowCreate(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add endpoint
-                </Button>
+              <CardContent>
+                <EmptyState
+                  icon={Radio}
+                  title="No webhook endpoints"
+                  description="Create your first endpoint to start receiving event notifications."
+                  action={
+                    <Button onClick={() => setShowCreate(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add endpoint
+                    </Button>
+                  }
+                />
               </CardContent>
             </Card>
           ) : (
@@ -196,7 +199,7 @@ export default function Webhooks({ available_events }: WebhooksProps) {
             ))
           )}
 
-          {selectedEndpoint && deliveries.length > 0 && (
+          {selectedEndpoint && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">
@@ -204,6 +207,14 @@ export default function Webhooks({ available_events }: WebhooksProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {deliveries.length === 0 ? (
+                  <EmptyState
+                    icon={Send}
+                    title="No deliveries yet"
+                    description="Deliveries will appear here when events are sent to this endpoint."
+                    size="sm"
+                  />
+                ) : (
                 <div className="space-y-2">
                   {deliveries.map((delivery) => (
                     <div
@@ -234,6 +245,7 @@ export default function Webhooks({ available_events }: WebhooksProps) {
                     </div>
                   ))}
                 </div>
+                )}
               </CardContent>
             </Card>
           )}

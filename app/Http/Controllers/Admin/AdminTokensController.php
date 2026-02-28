@@ -39,7 +39,7 @@ class AdminTokensController extends Controller
                 ->join('users', 'personal_access_tokens.tokenable_id', '=', 'users.id')
                 ->whereNotNull('personal_access_tokens.last_used_at')
                 ->orderByDesc('personal_access_tokens.last_used_at')
-                ->limit(15)
+                ->limit(config('pagination.admin.recent_activity', 15))
                 ->select(
                     'personal_access_tokens.name as token_name',
                     'personal_access_tokens.last_used_at',

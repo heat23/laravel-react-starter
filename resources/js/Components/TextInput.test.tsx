@@ -49,7 +49,7 @@ describe('TextInput', () => {
 
       const input = screen.getByRole('textbox');
       expect(input).toHaveClass('flex');
-      expect(input).toHaveClass('h-10');
+      expect(input).toHaveClass('h-11');
       expect(input).toHaveClass('w-full');
       expect(input).toHaveClass('rounded-md');
     });

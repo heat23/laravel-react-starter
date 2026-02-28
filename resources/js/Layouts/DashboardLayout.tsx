@@ -27,10 +27,22 @@ import {
   SheetTrigger,
 } from "@/Components/ui/sheet";
 import { getVisibleNavItems } from "@/config/navigation";
+import { cn } from "@/lib/utils";
 import type { PageProps } from "@/types";
 
+function isNavActive(url: string | undefined, href: string): boolean {
+  if (!url) return false;
+  const segments = href.split("/").filter(Boolean);
+  if (segments.length <= 1) {
+    return url === href || url === href + "/";
+  }
+  return url.startsWith(href);
+}
+
 export default function DashboardLayout({ children }: PropsWithChildren) {
-  const { auth, features } = usePage<PageProps>().props;
+  const page = usePage<PageProps>();
+  const { auth, features } = page.props;
+  const currentUrl = page.url;
   const navItems = getVisibleNavItems(features);
   const { open, setOpen } = useCommandPalette();
 
@@ -56,20 +68,28 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
 
             {/* Desktop Nav */}
             <nav className="hidden md:flex items-center gap-1">
-              {navItems.map((item) => (
-                <Button
-                  key={item.href}
-                  variant="ghost"
-                  size="sm"
-                  asChild
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <Link href={item.href}>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.label}
-                  </Link>
-                </Button>
-              ))}
+              {navItems.map((item) => {
+                const isActive = isNavActive(currentUrl, item.href);
+                return (
+                  <Button
+                    key={item.href}
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className={cn(
+                      "hover:text-foreground",
+                      isActive
+                        ? "text-foreground bg-accent font-semibold"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    <Link href={item.href} aria-current={isActive ? "page" : undefined}>
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {item.label}
+                    </Link>
+                  </Button>
+                );
+              })}
             </nav>
           </div>
 
@@ -81,7 +101,7 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                <Button variant="ghost" className="relative h-9 w-9 min-h-11 min-w-11 rounded-full" aria-label="User menu">
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
                     {auth.user!.name.charAt(0).toUpperCase()}
                   </div>
@@ -177,19 +197,27 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                   <SheetDescription className="sr-only">Navigation menu</SheetDescription>
                 </SheetHeader>
                 <nav className="mt-8 flex flex-col gap-2">
-                  {navItems.map((item) => (
+                  {navItems.map((item) => {
+                    const isActive = isNavActive(currentUrl, item.href);
+                    return (
                     <Button
                       key={item.href}
                       variant="ghost"
-                      className="justify-start"
+                      className={cn(
+                        "justify-start",
+                        isActive
+                          ? "bg-accent text-foreground font-semibold"
+                          : "text-muted-foreground",
+                      )}
                       asChild
                     >
-                      <Link href={item.href}>
+                      <Link href={item.href} aria-current={isActive ? "page" : undefined}>
                         <item.icon className="mr-2 h-4 w-4" />
                         {item.label}
                       </Link>
                     </Button>
-                  ))}
+                    );
+                  })}
                 </nav>
               </SheetContent>
             </Sheet>

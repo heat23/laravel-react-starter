@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class VerifyWebhookSignature
@@ -14,13 +15,14 @@ class VerifyWebhookSignature
         $config = config("webhooks.incoming.providers.{$provider}");
 
         if (! $config || ! $config['secret']) {
-            abort(500, 'Webhook provider not configured.');
+            Log::warning('Webhook received for unconfigured provider', ['provider' => $provider]);
+            abort(403);
         }
 
         $signatureHeader = $request->header($config['signature_header']);
 
         if (! $signatureHeader) {
-            abort(403, 'Missing webhook signature.');
+            abort(403);
         }
 
         $payload = $request->getContent();
@@ -39,14 +41,14 @@ class VerifyWebhookSignature
         $expectedSignature = hash_hmac($config['algorithm'], $signedContent, $config['secret']);
 
         if (! hash_equals($expectedSignature, $actualSignature)) {
-            abort(403, 'Invalid webhook signature.');
+            abort(403);
         }
 
         // Replay protection
         if ($timestamp) {
             $tolerance = config('webhooks.incoming.replay_tolerance', 300);
             if (abs(time() - $timestamp) > $tolerance) {
-                abort(403, 'Webhook timestamp expired.');
+                abort(403);
             }
         }
 

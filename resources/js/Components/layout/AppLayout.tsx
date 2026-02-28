@@ -2,58 +2,63 @@ import { Menu } from "lucide-react";
 
 import { ReactNode, useState } from "react";
 
-import { Link } from "@inertiajs/react";
+import { Link, usePage } from "@inertiajs/react";
 
 import { Logo } from "@/Components/branding/Logo";
 import { NavLink } from "@/Components/NavLink";
 import { Button } from "@/Components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/Components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/Components/ui/sheet";
+import type { PageProps } from "@/types";
 
 interface AppLayoutProps {
   children: ReactNode;
 }
 
-/**
- * Navigation links - customize these for your app
- */
-const navLinks = [
-  { href: "/features", label: "Features" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/docs", label: "Docs" },
-];
+interface MarketingLink {
+  href: string;
+  label: string;
+  external?: boolean;
+}
 
-/**
- * Footer link sections - customize for your app
- */
-const footerSections = [
-  {
-    title: "Product",
-    links: [
-      { href: "/features", label: "Features" },
-      { href: "/pricing", label: "Pricing" },
-      { href: "/docs", label: "Documentation" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { href: "/about", label: "About" },
-      { href: "/contact", label: "Contact" },
-      { href: "/blog", label: "Blog" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
-      { href: "/privacy", label: "Privacy Policy" },
-      { href: "/terms", label: "Terms of Service" },
-    ],
-  },
-];
+interface FooterSection {
+  title: string;
+  links: MarketingLink[];
+}
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const appName = import.meta.env.VITE_APP_NAME || "App";
+  const { features } = usePage<PageProps>().props;
+
+  // Keep starter defaults safe: show real routes only, then expand with product pages later.
+  const navLinks: MarketingLink[] = [
+    { href: "/", label: "Home" },
+    ...(features.billing ? [{ href: "/pricing", label: "Pricing" }] : []),
+  ];
+
+  const footerSections: FooterSection[] = [
+    {
+      title: "Starter",
+      links: [
+        { href: "/", label: "Overview" },
+        ...(features.billing ? [{ href: "/pricing", label: "Pricing" }] : []),
+      ],
+    },
+    {
+      title: "Resources",
+      links: [
+        { href: "https://laravel.com/docs", label: "Laravel Docs", external: true },
+        { href: "https://inertiajs.com", label: "Inertia Docs", external: true },
+      ],
+    },
+    {
+      title: "Account",
+      links: [
+        { href: "/login", label: "Sign in" },
+        { href: "/register", label: "Get started" },
+      ],
+    },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -110,6 +115,10 @@ export function AppLayout({ children }: AppLayoutProps) {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Navigation menu</SheetTitle>
+                <SheetDescription>Main navigation links</SheetDescription>
+              </SheetHeader>
               <div className="flex flex-col gap-6 pt-6">
                 <div className="flex items-center justify-between">
                   <Link
@@ -164,7 +173,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <span>{appName}</span>
               </Link>
               <p className="text-sm text-muted-foreground">
-                Your application description goes here.
+                A starter-ready SaaS foundation you can adapt with your own routes, copy, and brand.
               </p>
             </div>
 
@@ -174,13 +183,25 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <h3 className="font-semibold mb-3 text-base">{section.title}</h3>
                 <nav className="flex flex-col gap-2 text-sm text-muted-foreground">
                   {section.links.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="hover:text-foreground transition-colors"
-                    >
-                      {link.label}
-                    </Link>
+                    link.external ? (
+                      <a
+                        key={link.href}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-foreground transition-colors"
+                      >
+                        {link.label}
+                      </a>
+                    ) : (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="hover:text-foreground transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    )
                   ))}
                 </nav>
               </div>

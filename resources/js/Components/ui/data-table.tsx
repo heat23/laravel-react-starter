@@ -19,6 +19,7 @@ import { Checkbox } from "./checkbox";
 import { DataTablePagination } from "./data-table-pagination";
 import { DataTableToolbar } from "./data-table-toolbar";
 import { EmptyState } from "./empty-state";
+import { Skeleton } from "./skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
 
 /**
@@ -43,6 +44,8 @@ interface DataTableProps<TData, TValue> {
   bulkActions?: (selectedRows: TData[]) => ReactNode;
   pageSize?: number;
   enableSelection?: boolean;
+  loading?: boolean;
+  skeletonRows?: number;
   manualPagination?: boolean;
   pageCount?: number;
   onPaginationChange?: (pagination: PaginationState) => void;
@@ -60,6 +63,8 @@ export function DataTable<TData, TValue>({
   bulkActions,
   pageSize = 10,
   enableSelection = false,
+  loading = false,
+  skeletonRows = 5,
   manualPagination = false,
   pageCount,
   onPaginationChange,
@@ -236,7 +241,17 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {loading ? (
+              Array.from({ length: skeletonRows }).map((_, i) => (
+                <TableRow key={`skeleton-${i}`} data-testid="skeleton-row">
+                  {allColumns.map((_, j) => (
+                    <TableCell key={`skeleton-${i}-${j}`} data-testid="skeleton-cell">
+                      <Skeleton className="h-4 w-full" />
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                   {row.getVisibleCells().map((cell) => (

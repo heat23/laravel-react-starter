@@ -46,16 +46,9 @@ class AdminDashboardController extends Controller
 
         $recentActivity = AuditLog::with('user')
             ->latest()
-            ->limit(15)
+            ->limit(config('pagination.admin.recent_activity', 15))
             ->get()
-            ->map(fn (AuditLog $log) => [
-                'id' => $log->id,
-                'event' => $log->event,
-                'user_name' => $log->user?->name,
-                'user_email' => $log->user?->email,
-                'ip' => $log->ip,
-                'created_at' => $log->created_at?->toISOString(),
-            ]);
+            ->map(fn (AuditLog $log) => $log->toSummaryArray());
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,

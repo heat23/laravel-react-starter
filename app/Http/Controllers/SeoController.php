@@ -45,8 +45,6 @@ class SeoController extends Controller
     {
         $urls = [
             ['loc' => config('app.url'), 'priority' => '1.0'],
-            ['loc' => config('app.url').'/login', 'priority' => '0.5'],
-            ['loc' => config('app.url').'/register', 'priority' => '0.5'],
         ];
 
         if (config('features.billing.enabled', false)) {

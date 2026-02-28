@@ -29,7 +29,9 @@ class HealthCheckService
      */
     public function runAllChecks(): array
     {
-        return Cache::remember('health_checks', 5, function () {
+        $ttl = (int) config('health.cache_ttl', 5);
+
+        return Cache::remember('health_checks', $ttl, function () {
             $checks = [
                 'database' => $this->checkDatabase(),
                 'cache' => $this->checkCache(),

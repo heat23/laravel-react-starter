@@ -47,4 +47,31 @@ class AuditLog extends Model
     {
         return $query->where('created_at', '>=', now()->subDays($days));
     }
+
+    public function toDetailArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'event' => $this->event,
+            'user_name' => $this->user?->name,
+            'user_email' => $this->user?->email,
+            'user_id' => $this->user_id,
+            'ip' => $this->ip,
+            'user_agent' => $this->user_agent,
+            'metadata' => $this->metadata,
+            'created_at' => $this->created_at?->toISOString(),
+        ];
+    }
+
+    public function toSummaryArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'event' => $this->event,
+            'user_name' => $this->user?->name,
+            'user_email' => $this->user?->email,
+            'ip' => $this->ip,
+            'created_at' => $this->created_at?->toISOString(),
+        ];
+    }
 }

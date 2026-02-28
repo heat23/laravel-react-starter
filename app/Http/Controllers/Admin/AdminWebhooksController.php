@@ -75,7 +75,7 @@ class AdminWebhooksController extends Controller
                 ->join('webhook_endpoints', 'webhook_deliveries.webhook_endpoint_id', '=', 'webhook_endpoints.id')
                 ->where('webhook_deliveries.status', 'failed')
                 ->orderByDesc('webhook_deliveries.created_at')
-                ->limit(10)
+                ->limit(config('pagination.admin.recent_events', 10))
                 ->select(
                     'webhook_deliveries.id',
                     'webhook_deliveries.event_type',

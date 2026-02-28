@@ -15,7 +15,7 @@ class ExportController extends Controller
             ->select(['name', 'email', 'created_at'])
             ->where('id', $request->user()->id)
             ->orderBy('name')
-            ->limit(10000);
+            ->limit(config('pagination.export.max_rows', 10000));
 
         if ($search = $request->validated('search')) {
             $query->where(function ($q) use ($search) {

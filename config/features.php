@@ -19,9 +19,8 @@ return [
     */
     'billing' => [
         'enabled' => env('FEATURE_BILLING', false),
-        'trial_days' => env('TRIAL_DAYS', 14),
-        'trial_enabled' => env('TRIAL_ENABLED', false),
         'coming_soon' => env('PRO_TIER_COMING_SOON', true),
+        // Trial config is in config/plans.php (plans.trial.days, plans.trial.enabled)
     ],
 
     /*
@@ -160,9 +159,5 @@ return [
     */
     'admin' => [
         'enabled' => env('FEATURE_ADMIN', false),
-        'pagination' => [
-            'default' => 25,
-            'audit_logs' => 50,
-        ],
     ],
 ];

@@ -61,9 +61,9 @@ it('resolves tier from enterprise monthly price', function () {
     expect($tier)->toBe('enterprise');
 });
 
-it('resolves free tier for unknown price', function () {
+it('resolves null for unknown price', function () {
     $tier = $this->service->resolveTierFromPrice('price_unknown');
-    expect($tier)->toBe('free');
+    expect($tier)->toBeNull();
 });
 
 it('validates seat count for single-seat plan', function () {

@@ -130,3 +130,25 @@ it('rejects missing signature header', function () {
 
     $middleware->handle($request, fn ($req) => response('OK'));
 })->throws(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+
+it('does not leak configuration details for unconfigured provider', function () {
+    $middleware = new VerifyWebhookSignature;
+
+    $request = Request::create('/api/webhooks/incoming/unknown_provider', 'POST', [], [], [], [], '{}');
+    $request->setRouteResolver(function () {
+        $route = new \Illuminate\Routing\Route('POST', '/api/webhooks/incoming/{provider}', []);
+        $route->bind(Request::create('/api/webhooks/incoming/unknown_provider'));
+        $route->setParameter('provider', 'unknown_provider');
+
+        return $route;
+    });
+
+    try {
+        $middleware->handle($request, fn ($req) => response('OK'));
+        $this->fail('Expected HttpException was not thrown');
+    } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        expect($e->getStatusCode())->toBe(403);
+        expect($e->getMessage())->not->toContain('not configured');
+        expect($e->getMessage())->not->toContain('provider');
+    }
+});

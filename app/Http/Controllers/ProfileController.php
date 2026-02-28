@@ -42,13 +42,20 @@ class ProfileController extends Controller
     {
         $this->authorize('update', $request->user());
 
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        $emailChanged = $user->isDirty('email');
+        if ($emailChanged) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        $user->save();
+
+        $this->auditService->log('profile.updated', [
+            'email' => $user->email,
+            'email_changed' => $emailChanged,
+        ]);
 
         return Redirect::route('profile.edit');
     }
@@ -89,7 +96,7 @@ class ProfileController extends Controller
 
         Auth::logout();
 
-        $user->delete();
+        $user->purgePersonalData();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

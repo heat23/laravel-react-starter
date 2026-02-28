@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\AdminCacheKey;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminUserIndexRequest;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\CacheInvalidationManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -19,6 +18,7 @@ class AdminUsersController extends Controller
 {
     public function __construct(
         private AuditService $auditService,
+        private CacheInvalidationManager $cacheManager,
     ) {}
 
     public function index(AdminUserIndexRequest $request): Response
@@ -43,7 +43,7 @@ class AdminUsersController extends Controller
         $dir = ($validated['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sort, $dir);
 
-        $users = $query->paginate(config('features.admin.pagination.default', 25))->through(fn (User $user) => [
+        $users = $query->paginate(config('pagination.admin.users', 25))->through(fn (User $user) => [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
@@ -67,7 +67,7 @@ class AdminUsersController extends Controller
 
         $recentAuditLogs = AuditLog::byUser($user->id)
             ->latest()
-            ->limit(20)
+            ->limit(config('pagination.admin.subscription_logs', 20))
             ->get()
             ->map(fn (AuditLog $log) => [
                 'id' => $log->id,
@@ -120,7 +120,7 @@ class AdminUsersController extends Controller
         $user->is_admin = ! $user->is_admin;
         $user->save();
 
-        Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
+        $this->cacheManager->invalidateDashboard();
 
         $this->auditService->log('admin.toggle_admin', [
             'target_user_id' => $user->id,
@@ -160,7 +160,9 @@ class AdminUsersController extends Controller
             return $deactivated;
         });
 
-        Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
+        foreach ($users as $user) {
+            $this->invalidateUserCaches($user);
+        }
 
         return back()->with('success', "Deactivated {$count} user(s).");
     }
@@ -180,7 +182,7 @@ class AdminUsersController extends Controller
                 'target_email' => $user->email,
             ]);
 
-            Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
+            $this->invalidateUserCaches($user);
 
             return back()->with('success', "Restored {$name}.");
         }
@@ -191,8 +193,13 @@ class AdminUsersController extends Controller
             'target_email' => $user->email,
         ]);
 
-        Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
+        $this->invalidateUserCaches($user);
 
         return back()->with('success', "Deactivated {$name}.");
+    }
+
+    private function invalidateUserCaches(User $user): void
+    {
+        $this->cacheManager->invalidateUser($user->id);
     }
 }

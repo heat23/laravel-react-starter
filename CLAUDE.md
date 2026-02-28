@@ -4,98 +4,18 @@
 
 **This is a production-ready starter template, not scaffolding.** Every feature is a complete, tested implementation.
 
-## 🛡️ AI Development Safeguards
+## AI Development Safeguards
 
-**CRITICAL:** AI assistants MUST follow these workflows to prevent regressions. Human developers should use the same processes when working solo.
+**Workflow docs** (follow for all tasks):
+- [docs/PLANNING_CHECKLIST.md](docs/PLANNING_CHECKLIST.md) — before writing code
+- [docs/IMPLEMENTATION_GUARDRAILS.md](docs/IMPLEMENTATION_GUARDRAILS.md) — during implementation (TDD, run tests after each change, PHPStan after PHP changes)
+- [docs/TESTING_GUIDELINES.md](docs/TESTING_GUIDELINES.md) — test standards and verification
+- [docs/AI_PROMPT_TEMPLATES.md](docs/AI_PROMPT_TEMPLATES.md) — structured request templates
 
-### 📋 Workflow for AI Assistants
-
-**When receiving ANY task, use this structured approach:**
-
-#### 1. **Planning Phase** (BEFORE writing code)
-Follow: [docs/PLANNING_CHECKLIST.md](docs/PLANNING_CHECKLIST.md)
-
-**Required steps:**
-- Search for similar implementations (reuse, don't recreate)
-- Check for contract tests in affected area
-- Read relevant ADRs
-- List edge cases
-- Design architecture
-- Plan testing strategy
-- Assess breaking changes
-- Get user approval BEFORE implementation
-
-#### 2. **Implementation Phase** (WHILE writing code)
-Follow: [docs/IMPLEMENTATION_GUARDRAILS.md](docs/IMPLEMENTATION_GUARDRAILS.md)
-
-**Required steps:**
-- Write tests FIRST (TDD for business logic)
-- Run tests after EACH file change
-- Run PHPStan after each PHP file change
-- Commit every 15-30 minutes
-- Self-verify before moving to next step
-- Stop immediately if any check fails
-
-#### 3. **Verification Phase** (AFTER implementation)
-Follow: [docs/TESTING_GUIDELINES.md](docs/TESTING_GUIDELINES.md)
-
-**Required steps:**
-```bash
-# Full quality gate check
-bash scripts/test-quality-check.sh
-
-# Or run manually:
-php artisan test --parallel
-npm test
-vendor/bin/phpstan analyse
-vendor/bin/pint --test
-npm run lint
-npm run build
-php artisan test tests/Contracts/  # If contract tests exist
-```
-
-### 📝 Prompt Templates
-
-For structured requests, use templates in [docs/AI_PROMPT_TEMPLATES.md](docs/AI_PROMPT_TEMPLATES.md):
-
-- **Template 1:** Feature Implementation (new features)
-- **Template 2:** Bug Fix (fixing regressions)
-- **Template 3:** Refactoring (improving code structure)
-- **Template 4:** Database Migration (schema changes)
-- **Template 5:** API Endpoint Addition (new API routes)
-
-### 🔒 Defense Layers
-
-**Reactive (Catch after commit):**
-- ✅ Pre-commit hooks (`.husky/pre-commit`) - Block bad commits
-- ✅ CI/CD quality gates (`.github/workflows/ci.yml`) - Block bad merges
-- ✅ Test quality monitoring (`scripts/test-quality-check.sh`) - Detect weak tests
-- ✅ Mutation testing (`infection`) - Verify tests catch bugs
-
-**Proactive (Catch during development):**
-- ✅ Planning checklist - Prevent bad designs
-- ✅ Implementation guardrails - Real-time verification
-- ✅ Contract tests (`tests/Contracts/`) - Protect critical behavior
-- ✅ Architectural Decision Records (`docs/adr/`) - Document assumptions
-- ✅ Prompt templates - Enforce structured thinking
-
-### ⚠️ Critical Rules for AI
-
-**DO NOT:**
-- ❌ Write code before completing planning checklist
-- ❌ Skip tests (TDD is mandatory for business logic)
-- ❌ Accumulate failures (fix immediately, don't continue)
-- ❌ Modify contract tests without user approval
-- ❌ Skip verification steps to "save time"
-- ❌ Claim work complete without running quality gates
-
-**DO:**
-- ✅ Search for existing patterns before creating new ones
-- ✅ Write tests FIRST for business logic
-- ✅ Run checks after EACH file change
-- ✅ Commit frequently (every 15-30 min)
-- ✅ Report verification results before continuing
-- ✅ Stop and ask if anything is unclear
+**Project-specific rules (beyond global CLAUDE.md):**
+- Contract tests in `tests/Contracts/` — do NOT modify without user approval
+- Full quality gate: `bash scripts/test-quality-check.sh` (or manually: `php artisan test --parallel && npm test && vendor/bin/phpstan analyse && vendor/bin/pint --test && npm run lint && npm run build`)
+- Defense layers: pre-commit hooks (`.husky/pre-commit`), CI gates (`.github/workflows/ci.yml`), mutation testing (`infection`), ADRs (`docs/adr/`)
 
 ## Customization via Feature Flags
 
@@ -128,19 +48,6 @@ Check `config/features.php` and `.env` before implementing. Features default off
 | `webhooks.enabled` | `FEATURE_WEBHOOKS` | Incoming/outgoing webhooks |
 | `admin.enabled` | `FEATURE_ADMIN` | Admin panel: user management, health monitoring, audit logs, config viewer, system info |
 
-**What each flag controls:**
-- `billing`: BillingService, SubscriptionController, PricingController, pricing page, billing portal, Stripe webhooks, CheckIncompletePayments command
-- `social_auth`: SocialAuthController, SocialAccount model, Google/GitHub OAuth flows
-- `email_verification`: Email verification routes, SendEmailVerificationNotification listener, middleware
-- `api_tokens`: TokenController, API token CRUD UI in settings
-- `user_settings`: UserSettingsController, theme/timezone persistence
-- `notifications`: NotificationController, in-app notification UI
-- `onboarding`: OnboardingController, welcome wizard flow
-- `api_docs`: Scribe-generated API documentation
-- `two_factor`: TwoFactorController, TOTP setup/verification, recovery codes
-- `webhooks`: WebhookService, WebhookEndpoint/Delivery/Incoming models, signature verification
-- `admin`: AdminDashboardController, AdminUsersController, AdminAuditLogController, AdminHealthController, AdminConfigController, admin panel UI, impersonation, feature flag management
-
 **Disabling features:** Set env var to `false`. Feature-gated routes won't register, middleware won't apply, UI elements won't render. Database tables remain (safe to leave empty).
 
 ### Feature Flag Dependency Graph
@@ -167,9 +74,18 @@ When adding a new feature-gated feature, test these scenarios:
 1. Add to `config/features.php` with env var and `enabled` key
 2. Document in this section "What each flag controls"
 3. Add dependency to this graph if applicable
-4. Gate routes with `if (config('features.X.enabled'))` in routes files
+4. Gate routes with `if (config('features.X.enabled'))` in routes files (boot-time) OR `abort_unless(feature_enabled('X', $user), 404)` in controller constructor (runtime) — see pattern guide below
 5. Gate nav links with `{features.X && ...}` in TSX
 6. Add test: `it('route returns 404 when feature disabled')`
+
+**Feature Flag Gating Patterns (two approaches):**
+
+| Approach | When to use | Example features |
+|----------|-------------|------------------|
+| **Boot-time** (`if (config(...))` in routes) | Global on/off, no per-user overrides needed, or infrastructure-dependent (Stripe, admin panel) | `billing`, `admin`, `api_tokens`, `email_verification` |
+| **Runtime** (`feature_enabled()` in controller) | Per-user overrides via DB needed, or gradual rollout | `notifications`, `webhooks`, `two_factor`, `social_auth` |
+
+Boot-time gated routes are not registered when disabled — they return 404 at the router level. Runtime gated routes are always registered but controllers call `abort_unless(feature_enabled(...), 404)` which resolves per-user DB overrides via `FeatureFlagService`. Both approaches are valid; choose based on whether per-user granularity is needed.
 
 ## Environments
 
@@ -181,7 +97,9 @@ When adding a new feature-gated feature, test these scenarios:
 
 ## Architecture
 
-**Models:** User, UserSetting (key-value), SocialAccount (OAuth), AuditLog, FeatureFlagOverride (flag overrides with reason/changed_by), WebhookEndpoint, WebhookDelivery, IncomingWebhook, TwoFactorAuthentication (via Laragear)
+**Models:** User, UserSetting (key-value), SocialAccount (OAuth), AuditLog, FeatureFlagOverride (flag overrides with reason/changed_by), WebhookEndpoint, WebhookDelivery, IncomingWebhook
+
+**Vendor Models (not in `app/Models/`):** TwoFactorAuthentication (`Laragear\TwoFactor\Models\TwoFactorAuthentication` — referenced via User trait, do not create a local model)
 
 **Services:**
 - `AuditService` — activity logging
@@ -194,11 +112,12 @@ When adding a new feature-gated feature, test these scenarios:
 - `AdminBillingStatsService` — admin billing dashboard stats/charts
 - `FeatureFlagService` — flag resolution with DB overrides (per-user > global > config)
 - `HealthCheckService` — health checks (DB/cache/queue/disk)
+- `CacheInvalidationManager` — centralized admin cache invalidation (billing, tokens, webhooks, 2FA, social auth, per-user)
 
 **Billing (Production-Grade):**
 - `BillingService` — Redis-locked subscription mutations (create, cancel, resume, swap)
   - **CRITICAL:** Uses Redis locks (35s timeout) to prevent concurrent Stripe API calls
-  - **CRITICAL:** Must eager load `owner` + `items.subscription` before Cashier methods
+  - **CRITICAL:** Requires eager loading before Cashier methods (see Critical Gotchas > Billing)
   - All operations wrapped in DB transactions for atomicity
 - Plan tiers: free, pro, team (3-50 seats), enterprise (custom)
 - Incomplete payment tracking: `CheckIncompletePayments` command sends reminders at 1h/12h
@@ -220,7 +139,15 @@ When adding a new feature-gated feature, test these scenarios:
 - `routes/admin.php` — admin panel (loaded from web.php when `admin.enabled`), middleware: `['auth', 'verified', 'admin', 'throttle:60,1']`
 - `routes/auth.php` — auth (Breeze + social auth + email verification)
 - `routes/api.php` — Sanctum-protected API (user, settings, tokens)
-- Health check: `/up` (configured in `bootstrap/app.php`)
+- Health check: `/up` (Laravel built-in, configured in `bootstrap/app.php`) + `/health` (custom `HealthCheckController` with token/IP/local auth)
+
+**Config files of note:**
+- `config/features.php` — feature flags with env var defaults
+- `config/plans.php` — plan tier definitions (free, pro, team, enterprise)
+- `config/pagination.php` — centralized pagination sizes (admin, API, billing, export — never hardcode page sizes)
+- `config/security.php` — CSP and security header configuration
+- `config/webhooks.php` — webhook provider secrets
+- `config/health.php` — health check auth modes (token, IP allowlist, local-only)
 
 ## Decision-Making Frameworks
 
@@ -271,10 +198,6 @@ Execute synchronously when:
 
 **Existing Jobs** (flat in `app/Jobs/`): `PersistAuditLog`, `CancelOrphanedStripeSubscription`, `DispatchWebhookJob`
 
-### When to Create a FormRequest vs Inline Validation
-
-**Rule:** ALWAYS use FormRequest. Never inline `$request->validate()` in controllers.
-
 ## Performance Budgets
 
 ### Query Count Limits (enforce in tests)
@@ -285,7 +208,7 @@ Execute synchronously when:
 - Detail pages with relationships: ≤8 queries (model + 3 relationships + cache checks)
 - API endpoints: ≤4 queries (auth + main query + optional related)
 
-**Eager loading:** Always eager load before accessing relationships in loops, Inertia props, or Cashier methods (see Gotchas). Verify with `DB::enableQueryLog()` + query count assertions in tests.
+**Eager loading:** Always eager load before accessing relationships in loops or Inertia props. Verify with `DB::enableQueryLog()` + query count assertions in tests. For Cashier-specific rules, see Critical Gotchas > Billing.
 
 ### Cache Strategy
 
@@ -418,6 +341,7 @@ composer audit         # Security audit (fails on vulnerabilities)
 npm audit              # JS vulnerabilities (reports but doesn't block)
 php artisan CheckIncompletePayments  # Find failed payments, send reminders
 php artisan PruneAuditLogs           # Delete old audit logs
+php artisan webhooks:prune-stale     # Mark orphaned webhook deliveries as abandoned
 scripts/init.sh        # First-time setup (configure project name, features)
 ```
 
@@ -428,7 +352,7 @@ scripts/init.sh        # First-time setup (configure project name, features)
 - Services for business logic, controllers stay thin
 - External API calls in Jobs only (`app/Jobs/` — 3 jobs exist)
 - Constructor injection for dependencies
-- Custom exceptions in `app/Exceptions/` when needed (currently uses Laravel defaults)
+- Custom exceptions in `app/Exceptions/`: `ConcurrentOperationException` (billing lock failures), `SubscriptionException` (billing error responses)
 
 **Frontend:**
 - UI primitives in `Components/ui/` (Radix + CVA + `cn()` from `lib/utils`)
@@ -509,46 +433,28 @@ function deleteUser(id: number) {
 - Always check before adding/dropping columns: `Schema::hasColumn()`
 - New columns on existing tables: nullable or with default (never bare NOT NULL)
 - Foreign keys: `->constrained()->cascadeOnDelete()` (auto-indexed)
+- Two-phase deploys for destructive schema changes: stop using column in first deploy, drop column in second deploy
 - Feature-conditional migrations: only for whole-table creation (`Schema::hasTable` check). Never gate column additions/removals on feature flags — causes schema drift.
 
 **Code Organization (File Placement):**
 
-- **Controllers:** `/app/Http/Controllers/{Domain}/{Name}Controller.php`
-  - Subdirectories: `Admin/`, `Api/`, `Auth/`, `Billing/`, `Settings/`, `Webhook/`
-  - Single-action: `{Verb}{Noun}Controller` (e.g., `ExportUsersController`)
-  - CRUD: `{Resource}Controller` (e.g., `WebhookEndpointController`)
+| Type | Location | Naming |
+|------|----------|--------|
+| Controllers | `app/Http/Controllers/{Domain}/` | CRUD: `{Resource}Controller`, Single-action: `{Verb}{Noun}Controller` |
+| Models | `app/Models/` (flat) | `{Name}.php` |
+| Services | `app/Services/` (flat) | `{Domain}Service.php` (never `UserService` — keep model logic in model) |
+| Form Requests | `app/Http/Requests/{Domain}/` | `{Action}Request.php` (e.g., `AdminFeatureFlagRequest`) |
+| Exceptions | `app/Exceptions/` | Domain-specific: `ConcurrentOperationException`, `SubscriptionException` |
+| Middleware | `app/Http/Middleware/` | Descriptive: `EnsureOnboardingCompleted` not `CheckOnboarding` |
+| Enums | `app/Enums/` | `{Name}.php` (e.g., `AdminCacheKey`) |
+| Jobs | `app/Jobs/` (flat) | `{Name}.php` |
+| Commands | `app/Console/Commands/` | Signature: `{domain}:{action}` |
+| Policies | `app/Policies/` | `{Resource}Policy.php` (register in `AppServiceProvider`) |
+| Pages | `resources/js/Pages/{Domain}/` | `{Name}.tsx` |
+| Components | `resources/js/Components/` | Shared: `{name}.tsx`, UI primitives: `ui/{name}.tsx` |
+| Tests | Mirror app structure | `tests/Feature/{Domain}/`, `tests/Unit/{Domain}/` |
 
-- **Models:** `/app/Models/{Name}.php` (flat structure, no subdirectories)
-
-- **Services:** `/app/Services/{Name}Service.php` (flat structure)
-  - Naming: `{Domain}Service` (e.g., `BillingService`, `WebhookService`)
-  - Never `UserService` or `ProjectService` — keep model logic in model
-
-- **Form Requests:** `/app/Http/Requests/{Domain}/{Action}Request.php`
-  - Example: `/app/Http/Requests/Auth/LoginRequest.php`
-  - Example: `/app/Http/Requests/Admin/UpdateFeatureFlagRequest.php`
-
-- **Policies:** `/app/Policies/{Resource}Policy.php`
-  - Register in `AppServiceProvider` if not auto-discovered
-
-- **Middleware:** `/app/Http/Middleware/{Name}Middleware.php`
-  - Prefer descriptive names: `EnsureOnboardingCompleted` not `CheckOnboarding`
-
-- **Enums:** `/app/Enums/{Name}.php` (use for fixed sets of values)
-
-- **Jobs:** `/app/Jobs/{Name}.php` (flat structure)
-
-- **Commands:** `/app/Console/Commands/{Name}.php`
-  - Signature: `{domain}:{action}` (e.g., `billing:check-incomplete-payments`)
-
-- **React Components:**
-  - Pages: `/resources/js/Pages/{Domain}/{Name}.tsx`
-  - Shared: `/resources/js/Components/{name}.tsx` (kebab-case)
-  - UI primitives: `/resources/js/Components/ui/{name}.tsx`
-
-- **Tests:** Mirror application structure
-  - Feature: `/tests/Feature/{Domain}/{Name}Test.php`
-  - Unit: `/tests/Unit/{Domain}/{Name}Test.php`
+Controller subdirectories: `Admin/`, `Api/`, `Auth/`, `Billing/`, `Settings/`, `Webhook/`
 
 ## Key Tables
 
@@ -576,6 +482,10 @@ Already implemented — verify before duplicating:
 - Security headers via `SecurityHeaders` middleware — X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, HSTS (production), CSP (via `config/security.php`)
 - Request tracing via `RequestIdMiddleware` — generates/accepts X-Request-Id, shares with logging + Sentry
 - Rate limit headers via `RateLimitHeaders` middleware — adds X-RateLimit-Reset on throttled API responses
+- Subscription enforcement via `EnsureSubscribed` middleware — gates billing-required routes
+- Admin access via `EnsureIsAdmin` middleware — gates admin panel routes (aliased as `admin`)
+- Onboarding flow via `EnsureOnboardingCompleted` middleware — redirects incomplete onboarding
+- Inertia shared data via `HandleInertiaRequests` middleware — shares auth, features, flash props
 - Plan tier definitions in `config/plans.php` — free, pro, team (3-50 seats), enterprise
 
 ## Critical Gotchas
@@ -595,18 +505,15 @@ Already implemented — verify before duplicating:
 - **Seat constraints:** Team/Enterprise tiers have min 1, max 50 seats for team tier — validate before subscription creation.
 
 **Webhook Signature Verification:**
-- Incoming webhooks use HMAC-SHA256 with provider-specific secrets (`config/webhooks.php`)
-- Stripe webhook route excluded from CSRF (signature verification replaces it)
-- Outgoing webhooks use same HMAC scheme for user endpoints
+- **Incoming:** `VerifyWebhookSignature` middleware validates `X-Webhook-Signature` header using HMAC-SHA256 with provider-specific secrets from `config/webhooks.php)`. Signature format: `sha256=<hex-digest>` where digest = `hash_hmac('sha256', $rawPayload, $secret)`. Each provider (GitHub, Stripe, custom) has its own secret key.
+- **Outgoing:** `DispatchWebhookJob` signs payloads with the endpoint's stored secret using same HMAC-SHA256 scheme, sent in `X-Webhook-Signature` header. Recipients verify: `hash_equals(hash_hmac('sha256', $body, $secret), $receivedSignature)`.
+- **Stripe:** Uses its own signature scheme via Cashier (not our middleware). Stripe webhook route excluded from CSRF since Cashier verifies the Stripe signature internally.
+- **Adding a new provider:** Add secret to `config/webhooks.php`, create handler in `IncomingWebhookService`, register route in `routes/api.php` with `verify-webhook` middleware.
 
 **Feature Flag Dependencies:**
 - Email verification is default-ON (middleware checks `config('features.email_verification.enabled', true)`)
 - Social auth auto-detects providers by env var presence (GOOGLE_CLIENT_ID/GITHUB_CLIENT_ID)
 - Two-factor setup only shows in settings if `two_factor.enabled`
-
-**Migration Patterns:**
-- Never gate column additions/removals on feature flags (causes schema drift)
-- Feature-conditional migrations only for whole-table creation (`Schema::hasTable` check)
 
 **Health Check Auth:**
 - `/health` endpoint supports 3 modes: token-based, IP allowlist, local-only

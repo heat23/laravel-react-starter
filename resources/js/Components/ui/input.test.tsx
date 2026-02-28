@@ -328,4 +328,40 @@ describe('Input', () => {
       expect(screen.getByRole('textbox')).toHaveAttribute('aria-required', 'true');
     });
   });
+
+  // ============================================
+  // Error prop tests
+  // ============================================
+
+  describe('error prop', () => {
+    it('sets aria-invalid when error is true', () => {
+      render(<Input error data-testid="input" />);
+
+      expect(screen.getByTestId('input')).toHaveAttribute('aria-invalid', 'true');
+    });
+
+    it('does not set aria-invalid when error is false', () => {
+      render(<Input error={false} data-testid="input" />);
+
+      expect(screen.getByTestId('input')).not.toHaveAttribute('aria-invalid');
+    });
+
+    it('applies destructive border class when error is true', () => {
+      render(<Input error data-testid="input" />);
+
+      expect(screen.getByTestId('input')).toHaveClass('border-destructive');
+    });
+
+    it('does not apply destructive border when error is false', () => {
+      render(<Input error={false} data-testid="input" />);
+
+      expect(screen.getByTestId('input')).not.toHaveClass('border-destructive');
+    });
+
+    it('allows explicit aria-invalid to override error prop', () => {
+      render(<Input error aria-invalid="false" data-testid="input" />);
+
+      expect(screen.getByTestId('input')).toHaveAttribute('aria-invalid', 'false');
+    });
+  });
 });

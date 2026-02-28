@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\AdminCacheKey;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CreateTokenRequest;
+use App\Services\AuditService;
+use App\Services\CacheInvalidationManager;
 use DateTimeImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 /**
  * @group API Tokens
@@ -17,6 +17,11 @@ use Illuminate\Support\Facades\Cache;
  */
 class TokenController extends Controller
 {
+    public function __construct(
+        private AuditService $auditService,
+        private CacheInvalidationManager $cacheManager,
+    ) {}
+
     /**
      * List tokens
      *
@@ -31,7 +36,7 @@ class TokenController extends Controller
         $tokens = $request->user()->tokens()
             ->select(['id', 'tokenable_id', 'tokenable_type', 'name', 'abilities', 'last_used_at', 'expires_at', 'created_at'])
             ->orderByDesc('created_at')
-            ->take(50)
+            ->take(config('pagination.api.tokens', 50))
             ->get()
             ->map(fn ($token) => [
                 'id' => $token->id,
@@ -66,9 +71,11 @@ class TokenController extends Controller
             $expiresAt
         );
 
-        Cache::forget(AdminCacheKey::TOKENS_STATS->value);
-        Cache::forget(AdminCacheKey::TOKENS_MOST_ACTIVE->value);
-        Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
+        $this->auditService->log('api_token.created', [
+            'token_name' => $request->validated('name'),
+        ]);
+
+        $this->cacheManager->invalidateTokens();
 
         return response()->json([
             'token' => $token->plainTextToken,
@@ -96,9 +103,11 @@ class TokenController extends Controller
             return response()->json(['message' => 'Token not found.'], 404);
         }
 
-        Cache::forget(AdminCacheKey::TOKENS_STATS->value);
-        Cache::forget(AdminCacheKey::TOKENS_MOST_ACTIVE->value);
-        Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
+        $this->auditService->log('api_token.deleted', [
+            'token_id' => $tokenId,
+        ]);
+
+        $this->cacheManager->invalidateTokens();
 
         return response()->json(['success' => true]);
     }

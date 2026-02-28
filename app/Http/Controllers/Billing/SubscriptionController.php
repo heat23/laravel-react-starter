@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Billing;
 
-use App\Enums\AdminCacheKey;
 use App\Exceptions\ConcurrentOperationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Billing\CancelSubscriptionRequest;
@@ -12,10 +11,10 @@ use App\Http\Requests\Billing\UpdatePaymentMethodRequest;
 use App\Http\Requests\Billing\UpdateQuantityRequest;
 use App\Services\AuditService;
 use App\Services\BillingService;
+use App\Services\CacheInvalidationManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Exceptions\IncompletePayment;
 use Stripe\Exception\ApiErrorException;
@@ -25,6 +24,7 @@ class SubscriptionController extends Controller
     public function __construct(
         private BillingService $billingService,
         private AuditService $auditService,
+        private CacheInvalidationManager $cacheManager,
     ) {}
 
     public function subscribe(SubscribeRequest $request): RedirectResponse
@@ -40,6 +40,10 @@ class SubscriptionController extends Controller
         $quantity = $request->validated('quantity', 1);
 
         $tier = $this->billingService->resolveTierFromPrice($priceId);
+
+        if ($tier === null) {
+            return back()->with('error', 'Invalid plan selected.');
+        }
 
         $tierConfig = config("plans.{$tier}");
         if (! empty($tierConfig['coming_soon'] ?? false) || config('features.billing.coming_soon', false)) {
@@ -200,7 +204,7 @@ class SubscriptionController extends Controller
         try {
             $this->billingService->swapPlan($user, $newPriceId);
 
-            $newTier = $this->billingService->resolveTierFromPrice($newPriceId);
+            $newTier = $this->billingService->resolveTierFromPrice($newPriceId) ?? 'unknown';
 
             $this->auditService->log('subscription.swapped', [
                 'user_id' => $user->id,
@@ -322,11 +326,6 @@ class SubscriptionController extends Controller
 
     private function invalidateAdminCaches(): void
     {
-        Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
-        Cache::forget(AdminCacheKey::BILLING_STATS->value);
-        Cache::forget(AdminCacheKey::BILLING_TIER_DIST->value);
-        Cache::forget(AdminCacheKey::BILLING_STATUS->value);
-        Cache::forget(AdminCacheKey::BILLING_GROWTH_CHART->value);
-        Cache::forget(AdminCacheKey::BILLING_TRIALS->value);
+        $this->cacheManager->invalidateBilling();
     }
 }

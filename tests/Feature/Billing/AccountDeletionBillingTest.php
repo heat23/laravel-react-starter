@@ -23,7 +23,7 @@ it('cancels active subscription when user deletes account', function () {
     ]);
 
     $response->assertRedirect('/');
-    expect(User::withTrashed()->find($user->id)->trashed())->toBeTrue();
+    expect(User::withTrashed()->find($user->id))->toBeNull();
 });
 
 it('allows account deletion for non-subscribed user', function () {
@@ -34,7 +34,7 @@ it('allows account deletion for non-subscribed user', function () {
     ]);
 
     $response->assertRedirect('/');
-    expect(User::withTrashed()->find($user->id)->trashed())->toBeTrue();
+    expect(User::withTrashed()->find($user->id))->toBeNull();
 });
 
 it('handles grace period subscription on account deletion', function () {
@@ -55,7 +55,7 @@ it('handles grace period subscription on account deletion', function () {
     ]);
 
     $response->assertRedirect('/');
-    expect(User::withTrashed()->find($user->id)->trashed())->toBeTrue();
+    expect(User::withTrashed()->find($user->id))->toBeNull();
 });
 
 it('still deletes account when subscription cancellation fails and dispatches cleanup job', function () {
@@ -78,7 +78,7 @@ it('still deletes account when subscription cancellation fails and dispatches cl
     ]);
 
     $response->assertRedirect('/');
-    expect(User::withTrashed()->find($user->id)->trashed())->toBeTrue();
+    expect(User::withTrashed()->find($user->id))->toBeNull();
 
     Illuminate\Support\Facades\Queue::assertPushed(
         \App\Jobs\CancelOrphanedStripeSubscription::class,
@@ -101,7 +101,7 @@ it('skips subscription cancellation for ended subscription', function () {
     ]);
 
     $response->assertRedirect('/');
-    expect(User::withTrashed()->find($user->id)->trashed())->toBeTrue();
+    expect(User::withTrashed()->find($user->id))->toBeNull();
 });
 
 it('allows account deletion when billing feature is disabled', function () {
@@ -113,5 +113,5 @@ it('allows account deletion when billing feature is disabled', function () {
     ]);
 
     $response->assertRedirect('/');
-    expect(User::withTrashed()->find($user->id)->trashed())->toBeTrue();
+    expect(User::withTrashed()->find($user->id))->toBeNull();
 });

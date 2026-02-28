@@ -29,7 +29,7 @@ class NotificationController extends Controller
         $notifications = $request->user()
             ->notifications()
             ->latest()
-            ->paginate(20);
+            ->paginate(config('pagination.api.notifications', 20));
 
         return response()->json($notifications);
     }

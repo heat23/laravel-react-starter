@@ -27,7 +27,7 @@ class BillingService
             return 'free';
         }
 
-        return $this->resolveTierFromPrice($subscription->stripe_price);
+        return $this->resolveTierFromPrice($subscription->stripe_price) ?? 'free';
     }
 
     /**
@@ -212,9 +212,11 @@ class BillingService
     /**
      * Resolve the tier for a given Stripe price ID.
      */
-    public function resolveTierFromPrice(string $priceId): string
+    public function resolveTierFromPrice(string $priceId): ?string
     {
-        foreach (['enterprise', 'team', 'pro'] as $tier) {
+        $paidTiers = array_reverse(array_filter(config('plans.tier_hierarchy', []), fn ($t) => $t !== 'free'));
+
+        foreach ($paidTiers as $tier) {
             $monthlyPrice = config("plans.{$tier}.stripe_price_monthly");
             $annualPrice = config("plans.{$tier}.stripe_price_annual");
 
@@ -227,7 +229,7 @@ class BillingService
             'price_id' => $priceId,
         ]);
 
-        return 'free';
+        return null;
     }
 
     /**

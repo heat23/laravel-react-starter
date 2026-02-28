@@ -19,30 +19,14 @@ it('returns true when plans.trial.enabled is true', function () {
     expect($this->service->isTrialEnabled())->toBeTrue();
 });
 
-it('returns true when features.billing.trial_enabled is true', function () {
+it('returns false when plans.trial.enabled is false', function () {
     config(['plans.trial.enabled' => false]);
-    config(['features.billing.trial_enabled' => true]);
-
-    expect($this->service->isTrialEnabled())->toBeTrue();
-});
-
-it('returns true when both trial configs are true', function () {
-    config(['plans.trial.enabled' => true]);
-    config(['features.billing.trial_enabled' => true]);
-
-    expect($this->service->isTrialEnabled())->toBeTrue();
-});
-
-it('returns false when both trial configs are false', function () {
-    config(['plans.trial.enabled' => false]);
-    config(['features.billing.trial_enabled' => false]);
 
     expect($this->service->isTrialEnabled())->toBeFalse();
 });
 
-it('returns false when trial configs are not set', function () {
+it('returns false when plans.trial.enabled is null', function () {
     config(['plans.trial.enabled' => null]);
-    config(['features.billing.trial_enabled' => null]);
 
     expect($this->service->isTrialEnabled())->toBeFalse();
 });

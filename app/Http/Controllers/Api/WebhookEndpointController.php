@@ -2,21 +2,22 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\AdminCacheKey;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Webhook\CreateWebhookEndpointRequest;
 use App\Http\Requests\Webhook\UpdateWebhookEndpointRequest;
+use App\Services\CacheInvalidationManager;
 use App\Services\PlanLimitService;
 use App\Services\WebhookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class WebhookEndpointController extends Controller
 {
     public function __construct(
         private WebhookService $webhookService,
         private PlanLimitService $planLimitService,
+        private CacheInvalidationManager $cacheManager,
     ) {
         abort_unless(feature_enabled('webhooks', auth()->user()), 404);
     }
@@ -26,7 +27,7 @@ class WebhookEndpointController extends Controller
         $endpoints = $request->user()->webhookEndpoints()
             ->withCount('deliveries')
             ->orderByDesc('created_at')
-            ->take(50)
+            ->take(config('pagination.api.webhook_endpoints', 50))
             ->get()
             ->map(fn ($endpoint) => [
                 'id' => $endpoint->id,
@@ -55,10 +56,10 @@ class WebhookEndpointController extends Controller
             ], 422);
         }
 
-        $endpoint = $user->webhookEndpoints()->create([
+        $endpoint = DB::transaction(fn () => $user->webhookEndpoints()->create([
             ...$request->validated(),
             'secret' => $this->webhookService->generateSecret(),
-        ]);
+        ]));
 
         $this->invalidateAdminCaches();
 
@@ -87,7 +88,7 @@ class WebhookEndpointController extends Controller
     {
         $endpoint = $request->user()->webhookEndpoints()->findOrFail($endpointId);
 
-        $endpoint->update($request->validated());
+        DB::transaction(fn () => $endpoint->update($request->validated()));
 
         $this->invalidateAdminCaches();
 
@@ -96,7 +97,7 @@ class WebhookEndpointController extends Controller
 
     public function destroy(Request $request, int $endpointId): JsonResponse
     {
-        $deleted = $request->user()->webhookEndpoints()->where('id', $endpointId)->delete();
+        $deleted = DB::transaction(fn () => $request->user()->webhookEndpoints()->where('id', $endpointId)->delete());
 
         if (! $deleted) {
             return response()->json(['message' => 'Endpoint not found.'], 404);
@@ -112,8 +113,9 @@ class WebhookEndpointController extends Controller
         $endpoint = $request->user()->webhookEndpoints()->findOrFail($endpointId);
 
         $deliveries = $endpoint->deliveries()
+            ->select(['id', 'webhook_endpoint_id', 'uuid', 'event_type', 'status', 'response_code', 'attempts', 'delivered_at', 'created_at'])
             ->orderByDesc('created_at')
-            ->take(50)
+            ->take(config('pagination.api.webhook_deliveries', 50))
             ->get()
             ->map(fn ($delivery) => [
                 'id' => $delivery->id,
@@ -143,8 +145,6 @@ class WebhookEndpointController extends Controller
 
     private function invalidateAdminCaches(): void
     {
-        Cache::forget(AdminCacheKey::WEBHOOKS_STATS->value);
-        Cache::forget(AdminCacheKey::WEBHOOKS_DELIVERY_CHART->value);
-        Cache::forget(AdminCacheKey::WEBHOOKS_RECENT_FAILURES->value);
+        $this->cacheManager->invalidateWebhooks();
     }
 }

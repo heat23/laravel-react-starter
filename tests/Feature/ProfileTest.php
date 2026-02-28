@@ -54,6 +54,7 @@ class ProfileTest extends TestCase
     public function test_user_can_delete_their_account(): void
     {
         $user = User::factory()->create();
+        $userId = $user->id;
 
         $response = $this->actingAs($user)->delete('/profile', [
             'password' => 'password',
@@ -62,7 +63,7 @@ class ProfileTest extends TestCase
         $response->assertSessionHasNoErrors()->assertRedirect('/');
 
         $this->assertGuest();
-        $this->assertSoftDeleted($user);
+        $this->assertNull(User::withTrashed()->find($userId));
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void

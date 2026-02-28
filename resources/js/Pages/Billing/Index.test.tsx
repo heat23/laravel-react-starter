@@ -12,6 +12,7 @@ vi.mock("@inertiajs/react", async () => {
   return {
     ...actual,
     usePage: vi.fn(() => ({
+      url: "/billing",
       props: {
         subscription: null,
         platformTrial: null,
@@ -58,7 +59,7 @@ vi.mock("@/Components/theme/use-theme", () => ({
 }));
 
 // Shared mock props factory
-const createMockProps = (overrides: any = {}) => ({
+const createMockProps = (overrides: Record<string, unknown> = {}) => ({
   auth: {
     user: { id: 1, name: "Test User", email: "test@example.com", is_admin: false },
   },
@@ -86,7 +87,7 @@ const createMockProps = (overrides: any = {}) => ({
 describe("Billing Index Page", () => {
   it("renders billing page for user without subscription", async () => {
     const { usePage } = await import("@inertiajs/react");
-    vi.mocked(usePage).mockReturnValue({ props: createMockProps() } as any);
+    vi.mocked(usePage).mockReturnValue({ props: createMockProps() } as ReturnType<typeof usePage>);
 
     render(<BillingIndex />);
 
@@ -105,7 +106,7 @@ describe("Billing Index Page", () => {
           daysRemaining: 7,
         },
       }),
-    } as any);
+    } as ReturnType<typeof usePage>);
 
     render(<BillingIndex />);
 
@@ -129,7 +130,7 @@ describe("Billing Index Page", () => {
           active: true,
         },
       }),
-    } as any);
+    } as ReturnType<typeof usePage>);
 
     render(<BillingIndex />);
 
@@ -155,7 +156,7 @@ describe("Billing Index Page", () => {
           active: false,
         },
       }),
-    } as any);
+    } as ReturnType<typeof usePage>);
 
     render(<BillingIndex />);
 
@@ -182,7 +183,7 @@ describe("Billing Index Page", () => {
           confirmUrl: "/billing?confirm=true",
         },
       }),
-    } as any);
+    } as ReturnType<typeof usePage>);
 
     render(<BillingIndex />);
 
@@ -205,7 +206,7 @@ describe("Billing Index Page", () => {
           active: true,
         },
       }),
-    } as any);
+    } as ReturnType<typeof usePage>);
 
     render(<BillingIndex />);
 
@@ -244,7 +245,7 @@ describe("Billing Index Page", () => {
           },
         ],
       }),
-    } as any);
+    } as ReturnType<typeof usePage>);
 
     render(<BillingIndex />);
 
@@ -268,7 +269,7 @@ describe("Billing Index Page", () => {
           active: true,
         },
       }),
-    } as any);
+    } as ReturnType<typeof usePage>);
 
     render(<BillingIndex />);
 
@@ -293,7 +294,7 @@ describe("Billing Index Page", () => {
           active: true,
         },
       }),
-    } as any);
+    } as ReturnType<typeof usePage>);
 
     const user = userEvent.setup();
     render(<BillingIndex />);
@@ -319,7 +320,7 @@ describe("Billing Index Page", () => {
           active: true,
         },
       }),
-    } as any);
+    } as ReturnType<typeof usePage>);
 
     const user = userEvent.setup();
     render(<BillingIndex />);
@@ -334,11 +335,11 @@ describe("Billing Index Page", () => {
 
   it("displays checkout success alert when query param present", async () => {
     const { usePage } = await import("@inertiajs/react");
-    vi.mocked(usePage).mockReturnValue({ props: createMockProps() } as any);
+    vi.mocked(usePage).mockReturnValue({ props: createMockProps() } as ReturnType<typeof usePage>);
 
     // Mock window.location.search
-    delete (window as any).location;
-    (window as any).location = { search: "?checkout=success", pathname: "/billing" };
+    delete (window as unknown as Record<string, unknown>).location;
+    (window as unknown as Record<string, unknown>).location = { search: "?checkout=success", pathname: "/billing" };
     const replaceStateSpy = vi.spyOn(window.history, "replaceState");
 
     render(<BillingIndex />);
@@ -374,7 +375,7 @@ describe("Billing Index Page", () => {
         },
         invoices,
       }),
-    } as any);
+    } as ReturnType<typeof usePage>);
 
     render(<BillingIndex />);
 
@@ -383,7 +384,7 @@ describe("Billing Index Page", () => {
 
   it("does not show billing history card when no subscription", async () => {
     const { usePage } = await import("@inertiajs/react");
-    vi.mocked(usePage).mockReturnValue({ props: createMockProps() } as any);
+    vi.mocked(usePage).mockReturnValue({ props: createMockProps() } as ReturnType<typeof usePage>);
 
     render(<BillingIndex />);
 

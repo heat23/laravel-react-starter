@@ -4,9 +4,11 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Policies\UserPolicy;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Cashier\Cashier;
@@ -28,6 +30,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(User::class, UserPolicy::class);
+
+        RateLimiter::for('webhook-test', function ($request) {
+            return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+        });
 
         Model::preventLazyLoading();
 

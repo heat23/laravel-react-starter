@@ -43,8 +43,14 @@ it('returns valid XML sitemap with expected URLs', function () {
     $content = $response->getContent();
     expect($content)->toContain('<urlset');
     expect($content)->toContain('<loc>'.config('app.url').'</loc>');
-    expect($content)->toContain('<loc>'.config('app.url').'/login</loc>');
-    expect($content)->toContain('<loc>'.config('app.url').'/register</loc>');
+});
+
+it('excludes auth routes from sitemap to match robots.txt disallow', function () {
+    $response = $this->get('/sitemap.xml');
+
+    $content = $response->getContent();
+    expect($content)->not->toContain('/login</loc>');
+    expect($content)->not->toContain('/register</loc>');
 });
 
 it('includes pricing URL in sitemap when billing enabled', function () {
