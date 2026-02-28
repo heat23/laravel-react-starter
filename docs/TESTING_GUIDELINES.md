@@ -299,3 +299,28 @@ All these checks run automatically in CI (`.github/workflows/ci.yml`):
 ---
 
 **Remember:** Tests are the safety net. If tests are weak, regressions WILL happen.
+
+## Edge Case Coverage Checklist
+
+Every feature test MUST include these scenarios (if applicable):
+
+- [ ] **Soft-deleted relationships:** Does code handle `$user->owner` when owner is soft-deleted?
+- [ ] **Null relationships:** Does code handle `$subscription->user` being null after user deletion?
+- [ ] **Unverified users:** Does route allow unverified users when `email_verification.enabled=false`?
+- [ ] **Feature disabled:** Does route return 404 when feature flag is off?
+- [ ] **Concurrent operations:** Does code prevent race conditions (use BillingService pattern)?
+- [ ] **Empty collections:** Does page render correctly with 0 results?
+- [ ] **Pagination edge cases:** Does page 1 show when page 999 requested?
+- [ ] **Authorization edge cases:** Does user B's valid ID give 403 to user A?
+
+**Example: Comprehensive Edge Case Coverage**
+
+See `tests/Feature/Admin/AdminFeatureFlagTest.php` for reference — tests include:
+- Active operation (enable global override)
+- State transitions (disable after enabled)
+- Removal operations (remove override)
+- Protected resource handling (cannot override admin flag)
+- Authorization (non-admin gets 403)
+- Validation (unknown flag name returns error)
+- Side effects (audit logging)
+- Reason/metadata storage

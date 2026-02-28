@@ -83,3 +83,4 @@ storage/phpstan/cache/*
 storage/phpstan/resultCache.php
 audit-findings.json
 audit-implementation-plan.md
+tests/e2e/__screenshots__/pages/register.spec.ts/chromium-desktop/register-dark.png

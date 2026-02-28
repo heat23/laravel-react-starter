@@ -9,8 +9,11 @@
 **Workflow docs** (follow for all tasks):
 - [docs/PLANNING_CHECKLIST.md](docs/PLANNING_CHECKLIST.md) — before writing code
 - [docs/IMPLEMENTATION_GUARDRAILS.md](docs/IMPLEMENTATION_GUARDRAILS.md) — during implementation (TDD, run tests after each change, PHPStan after PHP changes)
-- [docs/TESTING_GUIDELINES.md](docs/TESTING_GUIDELINES.md) — test standards and verification
+- [docs/TESTING_GUIDELINES.md](docs/TESTING_GUIDELINES.md) — test standards, verification, and edge case checklist
+- [docs/DEBUGGING_GUIDE.md](docs/DEBUGGING_GUIDE.md) — test failure diagnosis protocol
 - [docs/AI_PROMPT_TEMPLATES.md](docs/AI_PROMPT_TEMPLATES.md) — structured request templates
+
+**Reference docs:** [docs/FEATURE_FLAGS.md](docs/FEATURE_FLAGS.md) (dependency graph, gating patterns)
 
 **Project-specific rules (beyond global CLAUDE.md):**
 - Contract tests in `tests/Contracts/` — do NOT modify without user approval
@@ -27,8 +30,6 @@ Configure your app by toggling features in `config/features.php` (or `.env`). 11
 - **Simple MVP:** Enable only `email_verification`, `user_settings`; disable premium features
 
 **Safe to toggle:** Feature-gated routes don't register when disabled. Database tables remain but stay empty. UI elements conditionally render.
-
-See "Feature Flags" section below for what each flag controls.
 
 ## Feature Flags
 
@@ -50,42 +51,7 @@ Check `config/features.php` and `.env` before implementing. Features default off
 
 **Disabling features:** Set env var to `false`. Feature-gated routes won't register, middleware won't apply, UI elements won't render. Database tables remain (safe to leave empty).
 
-### Feature Flag Dependency Graph
-
-**Hard Dependencies (will break if dependency disabled):**
-- `onboarding` → requires `user_settings` (stores completion timestamp in user_settings table)
-- `billing` → requires `webhooks` for Stripe webhooks (auto-enabled in routes/api.php)
-- `two_factor` → requires `user_settings` for enrollment preference (optional fallback exists)
-- `api_docs` → requires `api_tokens` (documents token endpoints)
-- `admin` → protected flag: cannot be overridden via DB (FeatureFlagService enforces hard floor when env=false)
-
-**Soft Dependencies (graceful degradation):**
-- `notifications` + `webhooks` = webhook delivery notifications (webhook failures still logged to database)
-- `billing` + `email_verification` = prevents subscriptions from unverified users (check in SubscriptionController)
-- `social_auth` + `email_verification` = OAuth accounts start pre-verified (handled in SocialAuthService)
-
-**Testing Feature Flag Combinations:**
-When adding a new feature-gated feature, test these scenarios:
-1. Feature ON, dependency OFF → should fail gracefully or show "requires X feature" message
-2. Feature ON, dependency ON → full functionality
-3. Feature OFF → routes don't register, nav links hidden, API returns 404
-
-**Adding a New Feature Flag:**
-1. Add to `config/features.php` with env var and `enabled` key
-2. Document in this section "What each flag controls"
-3. Add dependency to this graph if applicable
-4. Gate routes with `if (config('features.X.enabled'))` in routes files (boot-time) OR `abort_unless(feature_enabled('X', $user), 404)` in controller constructor (runtime) — see pattern guide below
-5. Gate nav links with `{features.X && ...}` in TSX
-6. Add test: `it('route returns 404 when feature disabled')`
-
-**Feature Flag Gating Patterns (two approaches):**
-
-| Approach | When to use | Example features |
-|----------|-------------|------------------|
-| **Boot-time** (`if (config(...))` in routes) | Global on/off, no per-user overrides needed, or infrastructure-dependent (Stripe, admin panel) | `billing`, `admin`, `api_tokens`, `email_verification` |
-| **Runtime** (`feature_enabled()` in controller) | Per-user overrides via DB needed, or gradual rollout | `notifications`, `webhooks`, `two_factor`, `social_auth` |
-
-Boot-time gated routes are not registered when disabled — they return 404 at the router level. Runtime gated routes are always registered but controllers call `abort_unless(feature_enabled(...), 404)` which resolves per-user DB overrides via `FeatureFlagService`. Both approaches are valid; choose based on whether per-user granularity is needed.
+See [docs/FEATURE_FLAGS.md](docs/FEATURE_FLAGS.md) for dependency graph, testing patterns, gating approaches, and adding new flags.
 
 ## Environments
 
@@ -114,13 +80,23 @@ Boot-time gated routes are not registered when disabled — they return 404 at t
 - `HealthCheckService` — health checks (DB/cache/queue/disk)
 - `CacheInvalidationManager` — centralized admin cache invalidation (billing, tokens, webhooks, 2FA, social auth, per-user)
 
+**Notifications:** `PaymentFailedNotification`, `IncompletePaymentReminder`, `RefundProcessedNotification`
+
+**Listeners:** `SendEmailVerificationNotification` (queued, overrides framework default)
+
+**Helpers:** `features.php` (`feature_enabled()` helper), `QueryHelper` (query scoping utilities)
+
+**Support:** `CsvExport` (CSV generation for admin data export)
+
+**Providers:** `AppServiceProvider` (rate limits, model config, policy registration), `EventServiceProvider` (email verification listener binding)
+
 **Billing (Production-Grade):**
 - `BillingService` — Redis-locked subscription mutations (create, cancel, resume, swap)
   - **CRITICAL:** Uses Redis locks (35s timeout) to prevent concurrent Stripe API calls
   - **CRITICAL:** Requires eager loading before Cashier methods (see Critical Gotchas > Billing)
   - All operations wrapped in DB transactions for atomicity
 - Plan tiers: free, pro, team (3-50 seats), enterprise (custom)
-- Incomplete payment tracking: `CheckIncompletePayments` command sends reminders at 1h/12h
+- Incomplete payment tracking: `subscriptions:check-incomplete` command sends reminders at 1h/12h
 
 **Webhooks:**
 - `WebhookService` — Outgoing webhooks with HMAC-SHA256 signing, async dispatch via `DispatchWebhookJob`
@@ -253,78 +229,11 @@ Execute synchronously when:
     - **Nav/URL prefix collisions:** If adding a new nav item or route, does `startsWith` matching cause false positives with parent routes?
     - **Local state vs URL params:** If a component uses both `useState` and URL-based filters, does `clearFilters` reset ALL local state?
 
-## Error Recovery Playbooks
+## Error Recovery & Test Quality
 
-### Test Failure Diagnosis Protocol
+Test failures? Follow the diagnosis protocol in [docs/DEBUGGING_GUIDE.md](docs/DEBUGGING_GUIDE.md).
 
-When a test fails after implementation, follow this checklist **in order:**
-
-**Step 1: Classify the Failure**
-- **Type mismatch** (expected array, got object): Check Inertia prop structure
-- **Database state** (expected record not found): Check factory relationships, soft deletes
-- **Timing** (Promise resolved too early): Check async contract (Inertia router is fire-and-forget)
-- **Cache** (stale data): Did you invalidate AdminCacheKey after mutation?
-- **Feature flag** (route 404): Is the feature enabled in phpunit.xml or TestCase?
-
-**Step 2: Common Root Causes by Test Type**
-
-*Feature test redirects to unexpected route:*
-1. Check middleware stack (especially `verified`, `onboarding.completed`)
-2. Check authorization in controller (policy, manual auth checks)
-3. Check feature flag state in test
-4. Check if user is soft-deleted (use `withTrashed()` if needed)
-
-*Unit test returns wrong value:*
-1. Check if dependent methods are mocked correctly
-2. Check if relationships are loaded (call `->load()` before accessing)
-3. Check if cache is returning stale value (call `Cache::flush()` in beforeEach)
-4. Check if config values match expectations
-
-*Integration test with external service:*
-1. Verify mock/fake is called BEFORE model creation
-2. Verify job is dispatched (Queue::fake()) not executed synchronously
-3. Verify webhook signature format matches real provider format
-
-**Step 3: Fixes to NEVER Make**
-- ❌ Remove assertion to make test pass
-- ❌ Change assertion operator to weaker version (`toBe` → `not->toBeNull`)
-- ❌ Add `sleep()` or `usleep()` to fix timing
-- ❌ Disable middleware in test without understanding why it's failing
-- ❌ Use `$this->withoutExceptionHandling()` to pass 500 errors
-
-**Step 4: Fixes That Are Usually Correct**
-- ✅ Eager load relationships before accessing them
-- ✅ Invalidate cache keys after mutations
-- ✅ Add `withTrashed()` to queries that need soft-deleted records
-- ✅ Use `assertSessionHas()` for flash messages, not Inertia assertions
-- ✅ Mock Notification facade BEFORE creating models that dispatch events
-
-## Test Quality Standards
-
-### Edge Case Coverage Checklist
-
-Every feature test MUST include these scenarios (if applicable):
-
-- [ ] **Soft-deleted relationships:** Does code handle `$user->owner` when owner is soft-deleted?
-- [ ] **Null relationships:** Does code handle `$subscription->user` being null after user deletion?
-- [ ] **Unverified users:** Does route allow unverified users when `email_verification.enabled=false`?
-- [ ] **Feature disabled:** Does route return 404 when feature flag is off?
-- [ ] **Concurrent operations:** Does code prevent race conditions (use BillingService pattern)?
-- [ ] **Empty collections:** Does page render correctly with 0 results?
-- [ ] **Pagination edge cases:** Does page 1 show when page 999 requested?
-- [ ] **Authorization edge cases:** Does user B's valid ID give 403 to user A?
-
-**Example: Comprehensive Edge Case Coverage**
-
-See `tests/Feature/Admin/AdminFeatureFlagTest.php` for reference — tests include:
-- Active operation (enable global override)
-- State transitions (disable after enabled)
-- Removal operations (remove override)
-- Protected resource handling (cannot override admin flag)
-- Authorization (non-admin gets 403)
-- Validation (unknown flag name returns error)
-- Side effects (audit logging)
-- Reason/metadata storage
+Edge case coverage checklist (soft-deleted relationships, null relationships, unverified users, feature disabled, concurrent operations, empty collections, pagination, authorization): see [docs/TESTING_GUIDELINES.md](docs/TESTING_GUIDELINES.md).
 
 ## Commands
 
@@ -339,9 +248,9 @@ npm run build          # Production build
 npm run lint           # ESLint
 composer audit         # Security audit (fails on vulnerabilities)
 npm audit              # JS vulnerabilities (reports but doesn't block)
-php artisan CheckIncompletePayments  # Find failed payments, send reminders
-php artisan PruneAuditLogs           # Delete old audit logs
-php artisan webhooks:prune-stale     # Mark orphaned webhook deliveries as abandoned
+php artisan subscriptions:check-incomplete  # Find failed payments, send reminders
+php artisan audit:prune                     # Delete old audit logs (--days=N)
+php artisan webhooks:prune-stale            # Mark orphaned webhook deliveries as abandoned (--hours=N)
 scripts/init.sh        # First-time setup (configure project name, features)
 ```
 
@@ -429,11 +338,7 @@ function deleteUser(id: number) {
   - Example: BillingFeatureFlagTest is skipped because billing routes are enabled in phpunit.xml
   - Workaround: Test route-specific logic (controllers, middleware) in unit tests; only test route registration in integration tests matching the phpunit.xml config
 
-**Migrations:**
-- Always check before adding/dropping columns: `Schema::hasColumn()`
-- New columns on existing tables: nullable or with default (never bare NOT NULL)
-- Foreign keys: `->constrained()->cascadeOnDelete()` (auto-indexed)
-- Two-phase deploys for destructive schema changes: stop using column in first deploy, drop column in second deploy
+**Migrations:** Follow global CLAUDE.md > Database Safety rules (nullable columns, constrained FKs, two-phase deploys, `Schema::hasColumn()` checks). Additionally:
 - Feature-conditional migrations: only for whole-table creation (`Schema::hasTable` check). Never gate column additions/removals on feature flags — causes schema drift.
 
 **Code Organization (File Placement):**
@@ -452,6 +357,11 @@ function deleteUser(id: number) {
 | Policies | `app/Policies/` | `{Resource}Policy.php` (register in `AppServiceProvider`) |
 | Pages | `resources/js/Pages/{Domain}/` | `{Name}.tsx` |
 | Components | `resources/js/Components/` | Shared: `{name}.tsx`, UI primitives: `ui/{name}.tsx` |
+| Notifications | `app/Notifications/` | `{Event}Notification.php` |
+| Listeners | `app/Listeners/` | `{Action}.php` |
+| Helpers | `app/Helpers/` | `{name}.php` (autoloaded via composer) |
+| Support | `app/Support/` | `{Name}.php` (e.g., `CsvExport`) |
+| Providers | `app/Providers/` | `{Name}ServiceProvider.php` |
 | Tests | Mirror app structure | `tests/Feature/{Domain}/`, `tests/Unit/{Domain}/` |
 
 Controller subdirectories: `Admin/`, `Api/`, `Auth/`, `Billing/`, `Settings/`, `Webhook/`
@@ -473,7 +383,7 @@ Controller subdirectories: `Admin/`, `Api/`, `Auth/`, `Billing/`, `Settings/`, `
 ## Security Infrastructure
 
 Already implemented — verify before duplicating:
-- Rate limiting: registration (5/min), login (5 attempts, IP+email), password reset (3/min), email verification (6/min), API settings (30/min), tokens (20/min), webhooks (30/min), export (10/min), Stripe webhook (120/min)
+- Rate limiting: registration (5/min), login (10/min, IP+email), password reset (3/min), email verification (6/min), API read (60/min), API settings write (30/min), tokens (20/min), webhooks (30/min), export (10/min), Stripe webhook (120/min), admin mutations (10/min)
 - CSRF via Sanctum middleware
 - Session regeneration on login
 - Configurable remember-me duration (`REMEMBER_ME_DAYS` env)
@@ -482,6 +392,7 @@ Already implemented — verify before duplicating:
 - Security headers via `SecurityHeaders` middleware — X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy, HSTS (production), CSP (via `config/security.php`)
 - Request tracing via `RequestIdMiddleware` — generates/accepts X-Request-Id, shares with logging + Sentry
 - Rate limit headers via `RateLimitHeaders` middleware — adds X-RateLimit-Reset on throttled API responses
+- Webhook signature verification via `VerifyWebhookSignature` middleware — HMAC-SHA256 validation on incoming webhooks
 - Subscription enforcement via `EnsureSubscribed` middleware — gates billing-required routes
 - Admin access via `EnsureIsAdmin` middleware — gates admin panel routes (aliased as `admin`)
 - Onboarding flow via `EnsureOnboardingCompleted` middleware — redirects incomplete onboarding

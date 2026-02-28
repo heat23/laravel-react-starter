@@ -54,28 +54,28 @@ it('loads index with user list', function () {
 });
 
 it('searches users by name', function () {
-    $admin = User::factory()->admin()->create();
-    User::factory()->create(['name' => 'John Doe']);
+    $admin = User::factory()->admin()->create(['name' => 'Test Admin']);
+    $john = User::factory()->create(['name' => 'John Doe']);
     User::factory()->create(['name' => 'Jane Smith']);
 
-    $response = $this->actingAs($admin)->get('/admin/users?search=John');
+    $response = $this->actingAs($admin)->get('/admin/users?search=Doe');
 
     $response->assertInertia(fn ($page) => $page
         ->has('users.data', 1)
-        ->where('users.data.0.name', 'John Doe')
+        ->where('users.data.0.id', $john->id)
     );
 });
 
 it('searches users by email', function () {
-    $admin = User::factory()->admin()->create();
-    User::factory()->create(['email' => 'findme@test.com']);
+    $admin = User::factory()->admin()->create(['email' => 'admin@test.com']);
+    $findme = User::factory()->create(['email' => 'findme@test.com']);
     User::factory()->create(['email' => 'other@test.com']);
 
     $response = $this->actingAs($admin)->get('/admin/users?search=findme');
 
     $response->assertInertia(fn ($page) => $page
         ->has('users.data', 1)
-        ->where('users.data.0.email', 'findme@test.com')
+        ->where('users.data.0.id', $findme->id)
     );
 });
 

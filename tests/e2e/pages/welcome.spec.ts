@@ -24,13 +24,13 @@ test.describe('Welcome Page', () => {
     await expect(page.getByRole('link', { name: /get started/i })).toBeVisible();
 
     // Hero
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Build your next');
-    await expect(page.getByText('great application')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Start with the parts');
+    await expect(page.getByText('every SaaS needs')).toBeVisible();
 
     // Feature cards
-    await expect(page.getByText('Secure by Default')).toBeVisible();
-    await expect(page.getByText('Lightning Fast')).toBeVisible();
-    await expect(page.getByText('User Management')).toBeVisible();
+    await expect(page.getByText('Secure foundation')).toBeVisible();
+    await expect(page.getByText('Modular by default')).toBeVisible();
+    await expect(page.getByText('Production-minded')).toBeVisible();
 
     // Tech stack
     await expect(page.getByText('Laravel 12')).toBeVisible();
@@ -49,7 +49,7 @@ test.describe('Welcome Page', () => {
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: /log in/i })).toBeVisible();
-    await expect(page.getByText('Secure by Default')).toBeVisible();
+    await expect(page.getByText('Secure foundation')).toBeVisible();
   });
 
   test('renders correctly on tablet', async ({ page }, testInfo) => {
@@ -58,7 +58,7 @@ test.describe('Welcome Page', () => {
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: /log in/i })).toBeVisible();
-    await expect(page.getByText('Secure by Default')).toBeVisible();
+    await expect(page.getByText('Secure foundation')).toBeVisible();
   });
 
   test('dark mode renders without errors', async ({ page }, testInfo) => {
@@ -87,10 +87,10 @@ test.describe('Welcome Page', () => {
       .getAttribute('href');
     expect(getStartedHref).toContain('/register');
 
-    const startBuildingHref = await page
-      .getByRole('link', { name: /start building/i })
+    const createAccountHref = await page
+      .getByRole('link', { name: /create your first account/i })
       .getAttribute('href');
-    expect(startBuildingHref).toContain('/register');
+    expect(createAccountHref).toContain('/register');
   });
 
   // Visual regression --------------------------------------------------------
