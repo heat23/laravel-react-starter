@@ -97,6 +97,10 @@ class AdminFailedJobsController extends Controller
     {
         $data = json_decode($payload, true);
 
+        if (! is_array($data)) {
+            return 'Unknown';
+        }
+
         return class_basename($data['displayName'] ?? $data['job'] ?? 'Unknown');
     }
 }

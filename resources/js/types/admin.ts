@@ -1,4 +1,4 @@
-import type { PaginatedResponse } from "@/types";
+import type { PaginatedResponse } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Shared / Reusable
@@ -280,7 +280,7 @@ export interface HealthCheck {
 }
 
 export interface HealthStatus {
-  status: "healthy" | "degraded" | "unhealthy";
+  status: 'healthy' | 'degraded' | 'unhealthy';
   checks: Record<string, HealthCheck>;
   timestamp: string;
 }
@@ -310,6 +310,45 @@ export interface SystemInfo {
 }
 
 // ---------------------------------------------------------------------------
+// Failed Jobs
+// ---------------------------------------------------------------------------
+
+/** Failed job summary for list page */
+export interface FailedJobSummary {
+  id: number;
+  uuid: string;
+  connection: string;
+  queue: string;
+  payload_summary: string;
+  failed_at: string;
+  exception_summary: string;
+}
+
+/** Failed job detail for show page */
+export interface FailedJobDetail {
+  id: number;
+  uuid: string;
+  connection: string;
+  queue: string;
+  payload_summary: string;
+  payload: string;
+  exception: string;
+  failed_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Data Health
+// ---------------------------------------------------------------------------
+
+export interface DataHealthCheck {
+  status: 'ok' | 'warning' | 'error';
+  count: number;
+  description: string;
+}
+
+export type DataHealthResults = Record<string, DataHealthCheck>;
+
+// ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
 
@@ -320,7 +359,7 @@ export interface FeatureFlag {
 }
 
 export interface ConfigWarning {
-  level: "critical" | "warning";
+  level: 'critical' | 'warning';
   message: string;
 }
 
@@ -465,6 +504,18 @@ export interface FeatureFlagUserSearch {
   id: number;
   name: string;
   email: string;
+}
+
+export interface AdminFailedJobsIndexProps {
+  jobs: PaginatedResponse<FailedJobSummary>;
+}
+
+export interface AdminFailedJobShowProps {
+  job: FailedJobDetail;
+}
+
+export interface AdminDataHealthProps {
+  checks: DataHealthResults;
 }
 
 export interface AdminFeatureFlagsIndexProps {

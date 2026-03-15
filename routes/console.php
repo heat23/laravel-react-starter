@@ -14,3 +14,7 @@ Schedule::command('sanctum:prune-expired')->daily();
 if (config('features.billing.enabled', false)) {
     Schedule::command('subscriptions:check-incomplete')->everyFifteenMinutes();
 }
+
+if (config('features.admin.enabled', false)) {
+    Schedule::command('admin:health-alert')->everyFifteenMinutes();
+}

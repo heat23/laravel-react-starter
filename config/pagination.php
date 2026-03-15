@@ -19,6 +19,7 @@ return [
         'recent_activity' => 15,
         'recent_events' => 10,
         'subscription_logs' => 20,
+        'failed_jobs' => 25,
     ],
 
     'api' => [

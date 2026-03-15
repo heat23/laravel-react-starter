@@ -264,6 +264,13 @@ function registerAdminRoutes(): void
                 $router->get('/audit-logs/{auditLog}', [\App\Http\Controllers\Admin\AdminAuditLogController::class, 'show'])->name('audit-logs.show');
 
                 $router->get('/system', [\App\Http\Controllers\Admin\AdminSystemController::class, '__invoke'])->name('system');
+
+                $router->get('/failed-jobs', [\App\Http\Controllers\Admin\AdminFailedJobsController::class, 'index'])->name('failed-jobs.index');
+                $router->get('/failed-jobs/{id}', [\App\Http\Controllers\Admin\AdminFailedJobsController::class, 'show'])->name('failed-jobs.show');
+                $router->post('/failed-jobs/{id}/retry', [\App\Http\Controllers\Admin\AdminFailedJobsController::class, 'retry'])->name('failed-jobs.retry');
+                $router->delete('/failed-jobs/{id}', [\App\Http\Controllers\Admin\AdminFailedJobsController::class, 'destroy'])->name('failed-jobs.destroy');
+
+                $router->get('/data-health', [\App\Http\Controllers\Admin\AdminDataHealthController::class, 'index'])->name('data-health.index');
             });
 
         // Stop impersonation — outside admin middleware
