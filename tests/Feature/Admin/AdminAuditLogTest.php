@@ -222,6 +222,23 @@ it('shows system event without user', function () {
     );
 });
 
+it('resolves user name from soft-deleted user via withTrashed', function () {
+    $admin = User::factory()->admin()->create();
+    $user = User::factory()->create(['name' => 'Deleted Person']);
+    $log = AuditLog::create([
+        'event' => 'auth.login',
+        'user_id' => $user->id,
+        'ip' => '127.0.0.1',
+        'metadata' => [],
+    ]);
+    $user->delete();
+
+    $freshLog = AuditLog::with('user')->find($log->id);
+
+    expect($freshLog->user)->not->toBeNull();
+    expect($freshLog->user->name)->toBe('Deleted Person');
+});
+
 it('returns 404 for non-existent audit log', function () {
     $admin = User::factory()->admin()->create();
 
@@ -294,4 +311,16 @@ it('audit log index query count does not scale with log count', function () {
 
     // Should be constant: auth + paginated logs with eager-loaded user + event types cache
     expect($queryCount)->toBeLessThan(15);
+});
+
+// Fix 2: Audit log for admin data exports
+it('logs audit entry when exporting audit logs', function () {
+    $admin = User::factory()->admin()->create();
+    AuditLog::create(['event' => 'auth.login', 'user_id' => $admin->id, 'ip' => '127.0.0.1', 'metadata' => []]);
+
+    $this->actingAs($admin)->get('/admin/audit-logs/export');
+
+    $log = AuditLog::where('event', 'admin.audit_logs_exported')->latest('id')->first();
+    expect($log)->not->toBeNull();
+    expect($log->metadata)->toHaveKey('filters');
 });

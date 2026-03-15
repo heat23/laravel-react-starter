@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminBulkDeactivateRequest;
+use App\Http\Requests\Admin\AdminUserExportRequest;
 use App\Http\Requests\Admin\AdminUserIndexRequest;
 use App\Models\AuditLog;
 use App\Models\User;
@@ -27,10 +30,9 @@ class AdminUsersController extends Controller
         $query = User::withTrashed()->withCount('tokens');
 
         if (! empty($validated['search'])) {
-            $search = $validated['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
+            $query->where(function ($q) use ($validated) {
+                QueryHelper::whereLike($q, 'name', $validated['search']);
+                QueryHelper::whereLike($q, 'email', $validated['search'], 'or');
             });
         }
 
@@ -64,6 +66,11 @@ class AdminUsersController extends Controller
     public function show(User $user): Response
     {
         $user->loadCount('tokens');
+
+        $this->auditService->log('admin.user_viewed', [
+            'target_user_id' => $user->id,
+            'target_email' => $user->email,
+        ]);
 
         $recentAuditLogs = AuditLog::byUser($user->id)
             ->latest()
@@ -117,6 +124,11 @@ class AdminUsersController extends Controller
             return back()->with('error', 'Cannot change own admin status.');
         }
 
+        if ($user->is_admin && User::where('is_admin', true)->whereNull('deleted_at')->count() <= 2) {
+            return back()->with('error', 'Cannot remove admin status. At least two admin accounts must exist.');
+        }
+
+        $wasAdmin = $user->is_admin;
         $user->is_admin = ! $user->is_admin;
         $user->save();
 
@@ -125,7 +137,7 @@ class AdminUsersController extends Controller
         $this->auditService->log('admin.toggle_admin', [
             'target_user_id' => $user->id,
             'target_email' => $user->email,
-            'is_admin' => $user->is_admin,
+            'changes' => ['is_admin' => ['from' => $wasAdmin, 'to' => $user->is_admin]],
         ]);
 
         $name = e($user->name);
@@ -133,13 +145,8 @@ class AdminUsersController extends Controller
         return back()->with('success', $user->is_admin ? "Made {$name} an admin." : "Removed admin from {$name}.");
     }
 
-    public function bulkDeactivate(Request $request): RedirectResponse
+    public function bulkDeactivate(AdminBulkDeactivateRequest $request): RedirectResponse
     {
-        $request->validate([
-            'ids' => ['required', 'array', 'min:1', 'max:100'],
-            'ids.*' => ['integer', 'exists:users,id'],
-        ]);
-
         $adminId = $request->user()->id;
         $ids = collect($request->input('ids'))->reject(fn ($id) => (int) $id === $adminId);
 
@@ -153,6 +160,7 @@ class AdminUsersController extends Controller
                     'target_user_id' => $user->id,
                     'target_email' => $user->email,
                     'bulk' => true,
+                    'changes' => ['active' => ['from' => true, 'to' => false]],
                 ]);
                 $deactivated++;
             }
@@ -174,12 +182,14 @@ class AdminUsersController extends Controller
         }
 
         $name = e($user->name);
+        $wasActive = ! $user->trashed();
 
         if ($user->trashed()) {
             $user->restore();
             $this->auditService->log('admin.user_restored', [
                 'target_user_id' => $user->id,
                 'target_email' => $user->email,
+                'changes' => ['active' => ['from' => false, 'to' => true]],
             ]);
 
             $this->invalidateUserCaches($user);
@@ -191,11 +201,94 @@ class AdminUsersController extends Controller
         $this->auditService->log('admin.user_deactivated', [
             'target_user_id' => $user->id,
             'target_email' => $user->email,
+            'changes' => ['active' => ['from' => true, 'to' => false]],
         ]);
 
         $this->invalidateUserCaches($user);
 
         return back()->with('success', "Deactivated {$name}.");
+    }
+
+    public function export(AdminUserExportRequest $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $this->auditService->log('admin.users_exported', [
+            'filters' => $request->validated(),
+        ]);
+
+        $query = $this->buildUserQuery($request->validated());
+        $maxRows = config('pagination.export.max_rows', 10000);
+
+        return response()->streamDownload(function () use ($query, $maxRows) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['ID', 'Name', 'Email', 'Admin', 'Verified', 'Last Login', 'Created', 'Status']);
+
+            $exported = 0;
+            foreach ($query->lazyById(500) as $user) {
+                if ($exported >= $maxRows) {
+                    break;
+                }
+                fputcsv($handle, array_map(
+                    fn ($v) => is_string($v) && isset($v[0]) && in_array($v[0], ['=', '+', '-', '@', "\t", "\r"])
+                        ? "'".$v
+                        : $v,
+                    [
+                        $user->id,
+                        $user->name,
+                        $user->email,
+                        $user->is_admin ? 'Yes' : 'No',
+                        $user->email_verified_at ? 'Yes' : 'No',
+                        $user->last_login_at?->toISOString(),
+                        $user->created_at?->toISOString(),
+                        $user->deleted_at ? 'Deactivated' : 'Active',
+                    ]
+                ));
+                $exported++;
+            }
+
+            fclose($handle);
+        }, 'users-'.now()->format('Y-m-d').'.csv', [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    public function sendPasswordReset(Request $request, User $user): RedirectResponse
+    {
+        if (! $user->hasPassword()) {
+            return back()->with('error', 'User has no password (OAuth-only account).');
+        }
+
+        $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
+        $user->sendPasswordResetNotification($token);
+
+        $this->auditService->log('admin.password_reset_sent', [
+            'target_user_id' => $user->id,
+            'target_email' => $user->email,
+        ]);
+
+        return back()->with('success', 'Password reset email sent.');
+    }
+
+    private function buildUserQuery(array $validated)
+    {
+        $query = User::withTrashed();
+
+        if (! empty($validated['search'])) {
+            $query->where(function ($q) use ($validated) {
+                QueryHelper::whereLike($q, 'name', $validated['search']);
+                QueryHelper::whereLike($q, 'email', $validated['search'], 'or');
+            });
+        }
+
+        if (isset($validated['admin']) && $validated['admin'] !== '') {
+            $query->where('is_admin', (bool) $validated['admin']);
+        }
+
+        $allowedSorts = ['name', 'email', 'created_at', 'last_login_at', 'is_admin'];
+        $sort = in_array($validated['sort'] ?? null, $allowedSorts, true) ? $validated['sort'] : 'created_at';
+        $dir = ($validated['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sort, $dir);
+
+        return $query;
     }
 
     private function invalidateUserCaches(User $user): void

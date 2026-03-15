@@ -43,6 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/Components/ui/table';
+import { useNavigationState } from '@/hooks/useNavigationState';
 import AdminLayout from '@/Layouts/AdminLayout';
 import type {
   AdminFeatureFlagsIndexProps,
@@ -54,6 +55,7 @@ import type {
 export default function FeatureFlagsIndex({
   flags,
 }: AdminFeatureFlagsIndexProps) {
+  const isNavigating = useNavigationState();
   const [expandedFlag, setExpandedFlag] = useState<string | null>(null);
   const [userOverrides, setUserOverrides] = useState<
     Record<string, FeatureFlagUserOverride[]>
@@ -120,6 +122,9 @@ export default function FeatureFlagsIndex({
     setLoadingUsers(flag);
     try {
       const response = await fetch(`/admin/feature-flags/${flag}/users`);
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status}`);
+      }
       const data = await response.json();
       setUserOverrides((prev) => ({ ...prev, [flag]: data }));
     } catch {
@@ -152,6 +157,9 @@ export default function FeatureFlagsIndex({
       const response = await fetch(
         `/admin/feature-flags/search-users?q=${encodeURIComponent(searchQuery)}`
       );
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status}`);
+      }
       const data = await response.json();
       setSearchResults(Array.isArray(data) ? data : []);
     } catch {
@@ -235,7 +243,13 @@ export default function FeatureFlagsIndex({
       />
 
       <div className="container py-8">
-        <Card>
+        <Card
+          className={
+            isNavigating
+              ? 'opacity-50 pointer-events-none transition-opacity'
+              : 'transition-opacity'
+          }
+        >
           <CardHeader>
             <CardTitle>Feature Flags</CardTitle>
             <CardDescription>

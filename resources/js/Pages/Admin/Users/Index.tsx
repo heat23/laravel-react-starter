@@ -1,59 +1,83 @@
-import { MoreHorizontal, Shield, Users, X } from "lucide-react";
+import { MoreHorizontal, Shield, Users, X } from 'lucide-react';
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
 
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, router, usePage } from '@inertiajs/react';
 
-import { AdminDataTable } from "@/Components/admin/AdminDataTable";
-import { SortHeader } from "@/Components/admin/SortHeader";
-import PageHeader from "@/Components/layout/PageHeader";
-import { Badge } from "@/Components/ui/badge";
-import { Button } from "@/Components/ui/button";
-import { Checkbox } from "@/Components/ui/checkbox";
-import { ConfirmDialog } from "@/Components/ui/confirm-dialog";
+import { AdminDataTable } from '@/Components/admin/AdminDataTable';
+import { SortHeader } from '@/Components/admin/SortHeader';
+import PageHeader from '@/Components/layout/PageHeader';
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import { Checkbox } from '@/Components/ui/checkbox';
+import { ConfirmDialog } from '@/Components/ui/confirm-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/Components/ui/dropdown-menu";
-import { Input } from "@/Components/ui/input";
+} from '@/Components/ui/dropdown-menu';
+import { ExportButton } from '@/Components/ui/export-button';
+import { Input } from '@/Components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/Components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/Components/ui/table";
-import { useAdminAction } from "@/hooks/useAdminAction";
-import { useAdminFilters } from "@/hooks/useAdminFilters";
-import { useAdminKeyboardShortcuts } from "@/hooks/useAdminKeyboardShortcuts";
-import { useNavigationState } from "@/hooks/useNavigationState";
-import AdminLayout from "@/Layouts/AdminLayout";
-import { formatRelativeTime } from "@/lib/format";
-import type { PageProps } from "@/types";
-import type { AdminUsersIndexProps } from "@/types/admin";
+} from '@/Components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/Components/ui/table';
+import { useAdminAction } from '@/hooks/useAdminAction';
+import { useAdminFilters } from '@/hooks/useAdminFilters';
+import { useAdminKeyboardShortcuts } from '@/hooks/useAdminKeyboardShortcuts';
+import { useNavigationState } from '@/hooks/useNavigationState';
+import AdminLayout from '@/Layouts/AdminLayout';
+import { formatRelativeTime } from '@/lib/format';
+import type { PageProps } from '@/types';
+import type { AdminUsersIndexProps } from '@/types/admin';
 
-export default function AdminUsersIndex({ users, filters }: AdminUsersIndexProps) {
-  const { search, setSearch, updateFilter, handleSort, handlePage, clearFilters } = useAdminFilters({
-    route: "/admin/users",
+export default function AdminUsersIndex({
+  users,
+  filters,
+}: AdminUsersIndexProps) {
+  const {
+    search,
+    setSearch,
+    updateFilter,
+    handleSort,
+    handlePage,
+    clearFilters,
+  } = useAdminFilters({
+    route: '/admin/users',
     filters,
   });
   const isNavigating = useNavigationState();
-  const { confirmAction, setConfirmAction, executeAction, getDialogProps } = useAdminAction();
+  const { confirmAction, setConfirmAction, executeAction, getDialogProps } =
+    useAdminAction();
   const currentUserId = usePage<PageProps>().props.auth.user?.id;
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [users.current_page]);
+
   const currentPage = users.current_page;
   const lastPage = users.last_page;
   useAdminKeyboardShortcuts({
     onSearch: () => searchInputRef.current?.focus(),
-    onNextPage: currentPage < lastPage ? () => handlePage(currentPage + 1) : undefined,
+    onNextPage:
+      currentPage < lastPage ? () => handlePage(currentPage + 1) : undefined,
     onPrevPage: currentPage > 1 ? () => handlePage(currentPage - 1) : undefined,
   });
 
@@ -61,11 +85,15 @@ export default function AdminUsersIndex({ users, filters }: AdminUsersIndexProps
   const selectableIds = useMemo(
     () =>
       new Set(
-        users.data.filter((u) => !u.is_admin && !u.deleted_at && u.id !== currentUserId).map((u) => u.id),
+        users.data
+          .filter((u) => !u.is_admin && !u.deleted_at && u.id !== currentUserId)
+          .map((u) => u.id)
       ),
-    [users.data, currentUserId],
+    [users.data, currentUserId]
   );
-  const allSelectableSelected = selectableIds.size > 0 && [...selectableIds].every((id) => selectedIds.has(id));
+  const allSelectableSelected =
+    selectableIds.size > 0 &&
+    [...selectableIds].every((id) => selectedIds.has(id));
 
   const toggleUser = useCallback((id: number) => {
     setSelectedIds((prev) => {
@@ -91,22 +119,41 @@ export default function AdminUsersIndex({ users, filters }: AdminUsersIndexProps
         resolve();
         return;
       }
-      router.post("/admin/users/bulk-deactivate", { ids }, {
-        preserveState: true,
-        onSuccess: () => {
-          setSelectedIds(new Set());
-          setBulkConfirmOpen(false);
-          resolve();
-        },
-        onError: () => reject(),
-      });
+      router.post(
+        '/admin/users/bulk-deactivate',
+        { ids },
+        {
+          preserveState: true,
+          onSuccess: () => {
+            setSelectedIds(new Set());
+            setBulkConfirmOpen(false);
+            requestAnimationFrame(() => searchInputRef.current?.focus());
+            resolve();
+          },
+          onError: () => reject(),
+        }
+      );
     });
   }, [selectedIds]);
 
   return (
     <AdminLayout>
       <Head title="Admin - Users" />
-      <PageHeader title="Users" subtitle="Manage user accounts" />
+      <PageHeader
+        title="Users"
+        subtitle="Manage user accounts"
+        actions={
+          <ExportButton
+            href="/admin/users/export"
+            params={Object.fromEntries(
+              Object.entries(filters).filter(([, v]) => v != null) as [
+                string,
+                string,
+              ][]
+            )}
+          />
+        }
+      />
 
       <div className="container py-8 space-y-4">
         {/* Filters */}
@@ -120,8 +167,16 @@ export default function AdminUsersIndex({ users, filters }: AdminUsersIndexProps
             className="max-w-sm"
             aria-label="Search users by name or email"
           />
-          <Select value={filters.admin ?? "all"} onValueChange={(value) => updateFilter({ admin: value === "all" ? undefined : value })}>
-            <SelectTrigger className="w-[180px]" aria-label="Filter by admin status">
+          <Select
+            value={filters.admin ?? 'all'}
+            onValueChange={(value) =>
+              updateFilter({ admin: value === 'all' ? undefined : value })
+            }
+          >
+            <SelectTrigger
+              className="w-[180px]"
+              aria-label="Filter by admin status"
+            >
               <SelectValue placeholder="All users" />
             </SelectTrigger>
             <SelectContent>
@@ -134,8 +189,14 @@ export default function AdminUsersIndex({ users, filters }: AdminUsersIndexProps
 
         {/* Bulk Action Bar */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 rounded-lg border bg-muted/50 px-4 py-2" role="status" aria-live="polite">
-            <span className="text-sm font-medium">{selectedIds.size} user(s) selected</span>
+          <div
+            className="flex items-center gap-3 rounded-lg border bg-muted/50 px-4 py-2"
+            role="status"
+            aria-live="polite"
+          >
+            <span className="text-sm font-medium">
+              {selectedIds.size} user(s) selected
+            </span>
             <Button
               variant="destructive"
               size="sm"
@@ -165,119 +226,192 @@ export default function AdminUsersIndex({ users, filters }: AdminUsersIndexProps
           emptyTitle="No users found"
           emptyDescription={
             filters.search || filters.admin
-              ? "No users match your current filters. Try adjusting your search or filter."
-              : "No users in the system yet."
+              ? 'No users match your current filters. Try adjusting your search or filter.'
+              : 'No users in the system yet.'
           }
           emptyAction={
-            (filters.search || filters.admin) ? (
+            filters.search || filters.admin ? (
               <Button variant="outline" size="sm" onClick={clearFilters}>
                 Clear filters
               </Button>
             ) : undefined
           }
         >
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[40px]">
-                      <Checkbox
-                        checked={allSelectableSelected && selectableIds.size > 0}
-                        onCheckedChange={toggleAll}
-                        aria-label="Select all users"
-                        disabled={selectableIds.size === 0}
-                      />
-                    </TableHead>
-                    <SortHeader column="name" label="Name" currentSort={filters.sort} currentDir={filters.dir} onSort={handleSort} />
-                    <SortHeader column="email" label="Email" currentSort={filters.sort} currentDir={filters.dir} onSort={handleSort} />
-                    <TableHead>Admin</TableHead>
-                    <TableHead>Verified</TableHead>
-                    <SortHeader column="last_login_at" label="Last Login" currentSort={filters.sort} currentDir={filters.dir} onSort={handleSort} />
-                    <SortHeader column="created_at" label="Created" currentSort={filters.sort} currentDir={filters.dir} onSort={handleSort} />
-                    <TableHead>Status</TableHead>
-                    <TableHead className="w-[50px]" />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.data.map((user) => {
-                    const isSelectable = selectableIds.has(user.id);
-                    return (
-                    <TableRow key={user.id} data-selected={selectedIds.has(user.id) || undefined}>
-                      <TableCell>
-                        {isSelectable ? (
-                          <Checkbox
-                            checked={selectedIds.has(user.id)}
-                            onCheckedChange={() => toggleUser(user.id)}
-                            aria-label={`Select ${user.name}`}
-                          />
-                        ) : (
-                          <Checkbox disabled aria-label={`Cannot select ${user.name}`} />
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Link href={`/admin/users/${user.id}`} className="font-medium hover:underline">
-                          {user.name}
-                        </Link>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-50 truncate" title={user.email}>{user.email}</TableCell>
-                      <TableCell>
-                        {user.is_admin ? (
-                          <Badge variant="success">Admin</Badge>
-                        ) : (
-                          <Badge variant="secondary">User</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {user.email_verified_at ? (
-                          <Badge variant="secondary">Verified</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-muted-foreground">Unverified</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatRelativeTime(user.last_login_at)}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {formatRelativeTime(user.created_at)}
-                      </TableCell>
-                      <TableCell>
-                        {user.deleted_at ? (
-                          <Badge variant="destructive">Deactivated</Badge>
-                        ) : (
-                          <Badge variant="success">Active</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="User actions">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link href={`/admin/users/${user.id}`}>View Details</Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setConfirmAction({ type: "toggleAdmin", user })}>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={allSelectableSelected && selectableIds.size > 0}
+                    onCheckedChange={toggleAll}
+                    aria-label="Select all users"
+                    disabled={selectableIds.size === 0}
+                  />
+                </TableHead>
+                <SortHeader
+                  column="name"
+                  label="Name"
+                  currentSort={filters.sort}
+                  currentDir={filters.dir}
+                  onSort={handleSort}
+                />
+                <SortHeader
+                  column="email"
+                  label="Email"
+                  currentSort={filters.sort}
+                  currentDir={filters.dir}
+                  onSort={handleSort}
+                />
+                <TableHead>Admin</TableHead>
+                <TableHead>Verified</TableHead>
+                <SortHeader
+                  column="last_login_at"
+                  label="Last Login"
+                  currentSort={filters.sort}
+                  currentDir={filters.dir}
+                  onSort={handleSort}
+                />
+                <SortHeader
+                  column="created_at"
+                  label="Created"
+                  currentSort={filters.sort}
+                  currentDir={filters.dir}
+                  onSort={handleSort}
+                />
+                <TableHead>Status</TableHead>
+                <TableHead className="w-[50px]" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.data.map((user) => {
+                const isSelectable = selectableIds.has(user.id);
+                return (
+                  <TableRow
+                    key={user.id}
+                    data-selected={selectedIds.has(user.id) || undefined}
+                  >
+                    <TableCell>
+                      {isSelectable ? (
+                        <Checkbox
+                          checked={selectedIds.has(user.id)}
+                          onCheckedChange={() => toggleUser(user.id)}
+                          aria-label={`Select ${user.name}`}
+                        />
+                      ) : (
+                        <Checkbox
+                          disabled
+                          aria-label={`Cannot select ${user.name}`}
+                        />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        href={`/admin/users/${user.id}`}
+                        className="font-medium hover:underline"
+                      >
+                        {user.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell
+                      className="text-sm text-muted-foreground max-w-50 truncate"
+                      title={user.email}
+                    >
+                      {user.email}
+                    </TableCell>
+                    <TableCell>
+                      {user.is_admin ? (
+                        <Badge variant="success">Admin</Badge>
+                      ) : (
+                        <Badge variant="secondary">User</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {user.email_verified_at ? (
+                        <Badge variant="secondary">Verified</Badge>
+                      ) : (
+                        <Badge
+                          variant="outline"
+                          className="text-muted-foreground"
+                        >
+                          Unverified
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatRelativeTime(user.last_login_at)}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatRelativeTime(user.created_at)}
+                    </TableCell>
+                    <TableCell>
+                      {user.deleted_at ? (
+                        <Badge variant="destructive">Deactivated</Badge>
+                      ) : (
+                        <Badge variant="success">Active</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            aria-label="User actions"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link href={`/admin/users/${user.id}`}>
+                              View Details
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          {!user.deleted_at && user.id !== currentUserId && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setConfirmAction({ type: 'toggleAdmin', user })
+                              }
+                            >
                               <Shield className="mr-2 h-4 w-4" />
-                              {user.is_admin ? "Remove Admin" : "Make Admin"}
+                              {user.is_admin ? 'Remove Admin' : 'Make Admin'}
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setConfirmAction({ type: "toggleActive", user })}>
-                              {user.deleted_at ? "Restore User" : "Deactivate User"}
+                          )}
+                          {user.id !== currentUserId && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setConfirmAction({ type: 'toggleActive', user })
+                              }
+                            >
+                              {user.deleted_at
+                                ? 'Restore User'
+                                : 'Deactivate User'}
                             </DropdownMenuItem>
-                            {!user.is_admin && !user.deleted_at && user.id !== currentUserId && (
-                              <DropdownMenuItem onClick={() => setConfirmAction({ type: "impersonate", user })}>
+                          )}
+                          {!user.is_admin &&
+                            !user.deleted_at &&
+                            user.id !== currentUserId && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  setConfirmAction({
+                                    type: 'impersonate',
+                                    user,
+                                  })
+                                }
+                              >
                                 Impersonate
                               </DropdownMenuItem>
                             )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </AdminDataTable>
       </div>
 
