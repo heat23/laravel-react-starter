@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\User;
+use App\Services\AuditService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -94,6 +95,7 @@ class PlanLimitService
 
     /**
      * Check if user can perform an action based on limits.
+     * Emits PQL threshold events at 50%, 80%, and 100% usage.
      *
      * @param  int  $currentCount  Current usage count
      * @return bool True if under limit, false if at/over limit
@@ -107,7 +109,36 @@ class PlanLimitService
             return true;
         }
 
+        $this->checkThresholds($user, $limitKey, $currentCount, $limit);
+
         return $currentCount < $limit;
+    }
+
+    /**
+     * Emit PQL (Product Qualified Lead) threshold events when usage approaches limits.
+     */
+    private function checkThresholds(User $user, string $limitKey, int $currentCount, int $limit): void
+    {
+        if ($limit <= 0) {
+            return;
+        }
+
+        $percentage = ($currentCount / $limit) * 100;
+
+        $thresholds = [100, 80, 50];
+
+        foreach ($thresholds as $threshold) {
+            if ($percentage >= $threshold) {
+                $auditService = app(AuditService::class);
+                $auditService->logProductEvent("limit.threshold_{$threshold}", $user, [
+                    'limit_key' => $limitKey,
+                    'current' => $currentCount,
+                    'max' => $limit,
+                ]);
+
+                break;
+            }
+        }
     }
 
     /**

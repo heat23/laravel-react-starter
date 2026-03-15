@@ -160,6 +160,59 @@ it('returns dashboard stats with all metrics', function () {
     expect($stats['total_ever'])->toBe(1);
 });
 
+it('computes activation_rate correctly', function () {
+    $service = app(AdminBillingStatsService::class);
+
+    // Create 4 users, 2 with onboarding completed
+    \App\Models\User::factory()->count(2)->create();
+
+    $activatedUser1 = \App\Models\User::factory()->create();
+    \Illuminate\Support\Facades\DB::table('user_settings')->insert([
+        'user_id' => $activatedUser1->id,
+        'key' => 'onboarding_completed',
+        'value' => now()->toISOString(),
+    ]);
+
+    $activatedUser2 = \App\Models\User::factory()->create();
+    \Illuminate\Support\Facades\DB::table('user_settings')->insert([
+        'user_id' => $activatedUser2->id,
+        'key' => 'onboarding_completed',
+        'value' => now()->toISOString(),
+    ]);
+
+    $stats = $service->getDashboardStats();
+
+    // 2 activated out of 4 total = 50%
+    expect($stats['activation_rate'])->toBe(50.0);
+});
+
+it('computes signup_to_paid_conversion correctly', function () {
+    $service = app(AdminBillingStatsService::class);
+
+    // Create 4 users, 1 with active subscription
+    \App\Models\User::factory()->count(3)->create();
+
+    $paidUser = \App\Models\User::factory()->create();
+    createSubscription($paidUser);
+
+    $stats = $service->getDashboardStats();
+
+    // 1 paid out of 4 total = 25%
+    expect($stats['signup_to_paid_conversion'])->toBe(25.0);
+});
+
+it('returns zero activation rate with no users', function () {
+    // Delete all users first
+    \App\Models\User::query()->forceDelete();
+
+    $service = app(AdminBillingStatsService::class);
+
+    $stats = $service->getDashboardStats();
+
+    expect($stats['activation_rate'])->toBe(0.0);
+    expect($stats['signup_to_paid_conversion'])->toBe(0.0);
+});
+
 it('caches dashboard stats', function () {
     $service = app(AdminBillingStatsService::class);
 

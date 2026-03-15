@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Services\PlanLimitService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
     $this->service = app(PlanLimitService::class);
@@ -353,6 +354,68 @@ it('gives trial precedence over subscription check', function () {
     $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
 
     expect($this->service->getUserPlan($user))->toBe('pro');
+});
+
+// ============================================
+// PQL threshold tests
+// ============================================
+
+it('emits approaching_limit event at 80% usage', function () {
+    config(['plans.free.limits.api_tokens' => 10]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
+
+    Queue::fake();
+    $this->service->canPerform($user, 'api_tokens', 8);
+
+    Queue::assertPushed(\App\Jobs\PersistAuditLog::class, function ($job) {
+        $reflection = new \ReflectionClass($job);
+        $eventProp = $reflection->getProperty('event');
+        $eventProp->setAccessible(true);
+
+        return $eventProp->getValue($job) === 'limit.threshold_80';
+    });
+});
+
+it('emits threshold_100 event at 100% usage', function () {
+    config(['plans.free.limits.api_tokens' => 5]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
+
+    Queue::fake();
+    $this->service->canPerform($user, 'api_tokens', 5);
+
+    Queue::assertPushed(\App\Jobs\PersistAuditLog::class, function ($job) {
+        $reflection = new \ReflectionClass($job);
+        $eventProp = $reflection->getProperty('event');
+        $eventProp->setAccessible(true);
+
+        return $eventProp->getValue($job) === 'limit.threshold_100';
+    });
+});
+
+it('emits threshold_50 event at 50% usage', function () {
+    config(['plans.free.limits.api_tokens' => 10]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
+
+    Queue::fake();
+    $this->service->canPerform($user, 'api_tokens', 5);
+
+    Queue::assertPushed(\App\Jobs\PersistAuditLog::class, function ($job) {
+        $reflection = new \ReflectionClass($job);
+        $eventProp = $reflection->getProperty('event');
+        $eventProp->setAccessible(true);
+
+        return $eventProp->getValue($job) === 'limit.threshold_50';
+    });
+});
+
+it('does not emit threshold events when under 50%', function () {
+    config(['plans.free.limits.api_tokens' => 10]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
+
+    Queue::fake();
+    $this->service->canPerform($user, 'api_tokens', 4);
+
+    Queue::assertNotPushed(\App\Jobs\PersistAuditLog::class);
 });
 
 it('gives team subscription user team tier limits', function () {
