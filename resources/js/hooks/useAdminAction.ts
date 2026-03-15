@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useState } from 'react';
 
-import { router } from "@inertiajs/react";
+import { router } from '@inertiajs/react';
 
-export type AdminActionType = "toggleAdmin" | "toggleActive" | "impersonate";
+export type AdminActionType =
+  | 'toggleAdmin'
+  | 'toggleActive'
+  | 'impersonate'
+  | 'sendPasswordReset';
 
 export interface AdminActionTarget {
   id: number;
@@ -19,7 +23,7 @@ interface ConfirmState {
 interface DialogProps {
   title: string;
   description: string;
-  variant: "destructive" | "default";
+  variant: 'destructive' | 'default';
   confirmLabel: string;
 }
 
@@ -33,14 +37,24 @@ export function useAdminAction() {
         return;
       }
       const { type, user } = confirmAction;
-      const options = { preserveState: true, onSuccess: () => resolve(), onError: () => reject() };
+      const options = {
+        preserveState: true,
+        onSuccess: () => resolve(),
+        onError: () => reject(),
+      };
 
-      if (type === "toggleAdmin") {
+      if (type === 'toggleAdmin') {
         router.patch(`/admin/users/${user.id}/toggle-admin`, {}, options);
-      } else if (type === "toggleActive") {
+      } else if (type === 'toggleActive') {
         router.patch(`/admin/users/${user.id}/toggle-active`, {}, options);
-      } else if (type === "impersonate") {
-        router.post(`/admin/users/${user.id}/impersonate`, {}, { onSuccess: () => resolve(), onError: () => reject() });
+      } else if (type === 'impersonate') {
+        router.post(
+          `/admin/users/${user.id}/impersonate`,
+          {},
+          { onSuccess: () => resolve(), onError: () => reject() }
+        );
+      } else if (type === 'sendPasswordReset') {
+        router.post(`/admin/users/${user.id}/send-password-reset`, {}, options);
       } else {
         resolve();
       }
@@ -49,36 +63,50 @@ export function useAdminAction() {
 
   function getDialogProps(): DialogProps {
     if (!confirmAction) {
-      return { title: "", description: "", variant: "default", confirmLabel: "Confirm" };
+      return {
+        title: '',
+        description: '',
+        variant: 'default',
+        confirmLabel: 'Confirm',
+      };
     }
 
     const { type, user } = confirmAction;
 
-    if (type === "toggleAdmin") {
+    if (type === 'toggleAdmin') {
       return {
-        title: user.is_admin ? "Remove Admin Access" : "Grant Admin Access",
-        description: `Are you sure you want to ${user.is_admin ? "remove admin access from" : "grant admin access to"} ${user.name}?`,
-        variant: user.is_admin ? "destructive" : "default",
-        confirmLabel: "Confirm",
+        title: user.is_admin ? 'Remove Admin Access' : 'Grant Admin Access',
+        description: `Are you sure you want to ${user.is_admin ? 'remove admin access from' : 'grant admin access to'} ${user.name}?`,
+        variant: user.is_admin ? 'destructive' : 'default',
+        confirmLabel: 'Confirm',
       };
     }
 
-    if (type === "toggleActive") {
+    if (type === 'toggleActive') {
       return {
-        title: user.deleted_at ? "Restore User" : "Deactivate User",
+        title: user.deleted_at ? 'Restore User' : 'Deactivate User',
         description: user.deleted_at
           ? `Restore ${user.name}? They will be able to log in again.`
           : `Deactivate ${user.name}? They will not be able to log in.`,
-        variant: user.deleted_at ? "default" : "destructive",
-        confirmLabel: "Confirm",
+        variant: user.deleted_at ? 'default' : 'destructive',
+        confirmLabel: 'Confirm',
+      };
+    }
+
+    if (type === 'impersonate') {
+      return {
+        title: 'Impersonate User',
+        description: `You will be logged in as ${user.name}. You can end impersonation from the top banner.`,
+        variant: 'default',
+        confirmLabel: 'Confirm',
       };
     }
 
     return {
-      title: "Impersonate User",
-      description: `You will be logged in as ${user.name}. You can end impersonation from the top banner.`,
-      variant: "default",
-      confirmLabel: "Confirm",
+      title: 'Send Password Reset',
+      description: `Send a password reset email to ${user.name}?`,
+      variant: 'default',
+      confirmLabel: 'Send',
     };
   }
 

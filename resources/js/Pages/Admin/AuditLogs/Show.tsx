@@ -1,8 +1,8 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft } from 'lucide-react';
 
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link } from '@inertiajs/react';
 
-import { Badge } from "@/Components/ui/badge";
+import { Badge } from '@/Components/ui/badge';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,13 +10,15 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/Components/ui/breadcrumb";
-import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/Components/ui/card";
-import AdminLayout from "@/Layouts/AdminLayout";
-import type { AdminAuditLogShowProps } from "@/types/admin";
+} from '@/Components/ui/breadcrumb';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import AdminLayout from '@/Layouts/AdminLayout';
+import type { AdminAuditLogShowProps } from '@/types/admin';
 
-export default function AdminAuditLogShow({ auditLog }: AdminAuditLogShowProps) {
+export default function AdminAuditLogShow({
+  auditLog,
+}: AdminAuditLogShowProps) {
   return (
     <AdminLayout>
       <Head title={`Admin - Audit Log #${auditLog.id}`} />
@@ -46,8 +48,12 @@ export default function AdminAuditLogShow({ auditLog }: AdminAuditLogShowProps) 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
-              <Badge variant="secondary" className="text-sm">{auditLog.event}</Badge>
-              <span className="text-muted-foreground text-sm font-normal">#{auditLog.id}</span>
+              <Badge variant="secondary" className="text-sm">
+                {auditLog.event}
+              </Badge>
+              <span className="text-muted-foreground text-sm font-normal">
+                #{auditLog.id}
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -56,7 +62,10 @@ export default function AdminAuditLogShow({ auditLog }: AdminAuditLogShowProps) 
                 <p className="text-sm text-muted-foreground mb-1">User</p>
                 <p className="text-sm">
                   {auditLog.user_name ? (
-                    <Link href={`/admin/users/${auditLog.user_id}`} className="hover:underline">
+                    <Link
+                      href={`/admin/users/${auditLog.user_id}`}
+                      className="hover:underline"
+                    >
                       {auditLog.user_name} ({auditLog.user_email})
                     </Link>
                   ) : (
@@ -66,21 +75,55 @@ export default function AdminAuditLogShow({ auditLog }: AdminAuditLogShowProps) 
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">IP Address</p>
-                <p className="text-sm font-mono">{auditLog.ip ?? "N/A"}</p>
+                <p className="text-sm font-mono">{auditLog.ip ?? 'N/A'}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Date</p>
-                <p className="text-sm">{new Date(auditLog.created_at).toLocaleString()}</p>
+                <p className="text-sm">
+                  {new Date(auditLog.created_at).toLocaleString()}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">User Agent</p>
-                <p className="text-sm text-muted-foreground truncate">{auditLog.user_agent ?? "N/A"}</p>
+                <p className="text-sm text-muted-foreground truncate">
+                  {auditLog.user_agent ?? 'N/A'}
+                </p>
               </div>
             </div>
 
             {auditLog.metadata && Object.keys(auditLog.metadata).length > 0 && (
               <div>
                 <p className="text-sm text-muted-foreground mb-2">Metadata</p>
+
+                {auditLog.metadata.changes &&
+                  typeof auditLog.metadata.changes === 'object' && (
+                    <div className="mb-3 space-y-1">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Changes
+                      </p>
+                      {Object.entries(
+                        auditLog.metadata.changes as Record<
+                          string,
+                          { from: unknown; to: unknown }
+                        >
+                      ).map(([field, change]) => (
+                        <div
+                          key={field}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <span className="font-medium">{field}:</span>
+                          <span className="text-destructive">
+                            {String(change.from)}
+                          </span>
+                          <span className="text-muted-foreground">&rarr;</span>
+                          <span className="text-green-600 dark:text-green-400">
+                            {String(change.to)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                 <pre className="bg-muted p-4 rounded-lg overflow-auto text-sm">
                   {JSON.stringify(auditLog.metadata, null, 2)}
                 </pre>

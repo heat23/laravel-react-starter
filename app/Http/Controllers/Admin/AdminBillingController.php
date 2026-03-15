@@ -16,6 +16,7 @@ class AdminBillingController extends Controller
     public function __construct(
         private BillingService $billingService,
         private AdminBillingStatsService $statsService,
+        private \App\Services\AuditService $auditService,
     ) {}
 
     public function dashboard(): Response
@@ -101,6 +102,50 @@ class AdminBillingController extends Controller
             ],
             'items' => $items,
             'audit_logs' => $auditLogs,
+        ]);
+    }
+
+    public function export(AdminSubscriptionIndexRequest $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $this->auditService->log('admin.subscriptions_exported', [
+            'filters' => $request->validated(),
+        ]);
+
+        $query = $this->statsService->buildSubscriptionQuery($request->validated());
+        $maxRows = config('pagination.export.max_rows', 10000);
+        $billingService = $this->billingService;
+
+        return response()->streamDownload(function () use ($query, $maxRows, $billingService) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['User Name', 'User Email', 'Tier', 'Status', 'Quantity', 'Trial Ends', 'Ends At', 'Created At', 'Stripe ID']);
+
+            $exported = 0;
+            foreach ($query->lazyById(500) as $row) {
+                if ($exported >= $maxRows) {
+                    break;
+                }
+                fputcsv($handle, array_map(
+                    fn ($v) => is_string($v) && isset($v[0]) && in_array($v[0], ['=', '+', '-', '@', "\t", "\r"])
+                        ? "'".$v
+                        : $v,
+                    [
+                        $row->user_name,
+                        $row->user_email,
+                        $billingService->resolveTierFromPrice($row->item_price) ?? 'unknown',
+                        $row->stripe_status,
+                        $row->quantity,
+                        $row->trial_ends_at,
+                        $row->ends_at,
+                        $row->created_at,
+                        $row->stripe_id,
+                    ]
+                ));
+                $exported++;
+            }
+
+            fclose($handle);
+        }, 'subscriptions-'.now()->format('Y-m-d').'.csv', [
+            'Content-Type' => 'text/csv',
         ]);
     }
 }

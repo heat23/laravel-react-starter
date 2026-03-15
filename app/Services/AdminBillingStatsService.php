@@ -122,6 +122,28 @@ class AdminBillingStatsService
      */
     public function getFilteredSubscriptions(array $validated): LengthAwarePaginator
     {
+        $query = $this->buildSubscriptionQuery($validated);
+        $billingService = $this->billingService;
+
+        return $query->paginate(config('pagination.admin.users', 25))->through(fn ($row) => [
+            'id' => $row->id,
+            'user_id' => $row->user_id,
+            'user_name' => $row->user_name,
+            'user_email' => $row->user_email,
+            'stripe_status' => $row->stripe_status,
+            'tier' => $billingService->resolveTierFromPrice($row->item_price) ?? 'unknown',
+            'quantity' => $row->quantity,
+            'trial_ends_at' => $row->trial_ends_at,
+            'ends_at' => $row->ends_at,
+            'created_at' => $row->created_at,
+        ]);
+    }
+
+    /**
+     * @param  array{search?: string, status?: string, tier?: string, sort?: string, dir?: string}  $validated
+     */
+    public function buildSubscriptionQuery(array $validated): \Illuminate\Database\Query\Builder
+    {
         $firstItem = DB::table('subscription_items as si')
             ->select('si.subscription_id', 'si.stripe_price')
             ->whereRaw('si.id = (SELECT MIN(si2.id) FROM subscription_items AS si2 WHERE si2.subscription_id = si.subscription_id)');
@@ -147,11 +169,10 @@ class AdminBillingStatsService
             );
 
         if (! empty($validated['search'])) {
-            $search = $validated['search'];
-            $query->where(function ($q) use ($search) {
-                $q->where('users.name', 'like', "%{$search}%")
-                    ->orWhere('users.email', 'like', "%{$search}%")
-                    ->orWhere('subscriptions.stripe_id', 'like', "%{$search}%");
+            $query->where(function ($q) use ($validated) {
+                QueryHelper::whereLike($q, 'users.name', $validated['search']);
+                QueryHelper::whereLike($q, 'users.email', $validated['search'], 'or');
+                QueryHelper::whereLike($q, 'subscriptions.stripe_id', $validated['search'], 'or');
             });
         }
 
@@ -181,20 +202,7 @@ class AdminBillingStatsService
         $dir = $validated['dir'] ?? 'desc';
         $query->orderBy($sort, $dir);
 
-        $billingService = $this->billingService;
-
-        return $query->paginate(config('pagination.admin.users', 25))->through(fn ($row) => [
-            'id' => $row->id,
-            'user_id' => $row->user_id,
-            'user_name' => $row->user_name,
-            'user_email' => $row->user_email,
-            'stripe_status' => $row->stripe_status,
-            'tier' => $billingService->resolveTierFromPrice($row->item_price) ?? 'unknown',
-            'quantity' => $row->quantity,
-            'trial_ends_at' => $row->trial_ends_at,
-            'ends_at' => $row->ends_at,
-            'created_at' => $row->created_at,
-        ]);
+        return $query;
     }
 
     private function calculateMrr(): float

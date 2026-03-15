@@ -4,6 +4,8 @@ use App\Http\Controllers\Admin\AdminAuditLogController;
 use App\Http\Controllers\Admin\AdminBillingController;
 use App\Http\Controllers\Admin\AdminConfigController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminDataHealthController;
+use App\Http\Controllers\Admin\AdminFailedJobsController;
 use App\Http\Controllers\Admin\AdminFeatureFlagController;
 use App\Http\Controllers\Admin\AdminHealthController;
 use App\Http\Controllers\Admin\AdminImpersonationController;
@@ -24,6 +26,9 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         Route::get('/', AdminDashboardController::class)->name('dashboard');
 
         // Users Management
+        Route::get('/users/export', [AdminUsersController::class, 'export'])
+            ->middleware('throttle:10,1')
+            ->name('users.export');
         Route::get('/users', [AdminUsersController::class, 'index'])
             ->name('users.index');
         Route::get('/users/{user}', [AdminUsersController::class, 'show'])
@@ -37,6 +42,9 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
             ->withTrashed()
             ->middleware('throttle:10,1')
             ->name('users.toggle-active');
+        Route::post('/users/{user}/send-password-reset', [AdminUsersController::class, 'sendPasswordReset'])
+            ->middleware('throttle:5,1')
+            ->name('users.send-password-reset');
 
         // Bulk Actions
         Route::post('/users/bulk-deactivate', [AdminUsersController::class, 'bulkDeactivate'])
@@ -64,6 +72,19 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
 
         // System Info
         Route::get('/system', AdminSystemController::class)->name('system');
+
+        // Failed Jobs Management
+        Route::get('/failed-jobs', [AdminFailedJobsController::class, 'index'])->name('failed-jobs.index');
+        Route::get('/failed-jobs/{id}', [AdminFailedJobsController::class, 'show'])->name('failed-jobs.show');
+        Route::post('/failed-jobs/{id}/retry', [AdminFailedJobsController::class, 'retry'])
+            ->middleware('throttle:10,1')
+            ->name('failed-jobs.retry');
+        Route::delete('/failed-jobs/{id}', [AdminFailedJobsController::class, 'destroy'])
+            ->middleware('throttle:10,1')
+            ->name('failed-jobs.destroy');
+
+        // Data Health Checks
+        Route::get('/data-health', [AdminDataHealthController::class, 'index'])->name('data-health.index');
 
         // Feature Flags Management
         Route::get('/feature-flags', [AdminFeatureFlagController::class, 'index'])->name('feature-flags.index');
@@ -93,9 +114,12 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         Route::get('/feature-flags/search-users', [AdminFeatureFlagController::class, 'searchUsers'])
             ->name('feature-flags.search-users');
 
-        // Feature-gated admin sections
+        // Feature-gated admin sections (auth via group middleware on line 21)
         if (config('features.billing.enabled')) {
             Route::get('/billing', [AdminBillingController::class, 'dashboard'])->name('billing.dashboard');
+            Route::get('/billing/subscriptions/export', [AdminBillingController::class, 'export'])
+                ->middleware('throttle:10,1')
+                ->name('billing.subscriptions.export');
             Route::get('/billing/subscriptions', [AdminBillingController::class, 'subscriptions'])->name('billing.subscriptions');
             Route::get('/billing/subscriptions/{subscription}', [AdminBillingController::class, 'show'])->name('billing.show');
         }

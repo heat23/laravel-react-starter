@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminAuditLogIndexRequest;
 use App\Http\Requests\Admin\AdminExportRequest;
 use App\Models\AuditLog;
+use App\Services\AuditService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -15,6 +16,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminAuditLogController extends Controller
 {
+    public function __construct(
+        private AuditService $auditService,
+    ) {}
+
     public function index(AdminAuditLogIndexRequest $request): Response
     {
         $query = $this->applyFilters(AuditLog::with('user'), $request->validated());
@@ -43,6 +48,10 @@ class AdminAuditLogController extends Controller
 
     public function export(AdminExportRequest $request): StreamedResponse
     {
+        $this->auditService->log('admin.audit_logs_exported', [
+            'filters' => $request->validated(),
+        ]);
+
         $query = $this->applyFilters(AuditLog::with('user'), $request->validated());
 
         $maxRows = config('pagination.export.max_rows', 10000);
