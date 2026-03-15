@@ -1,7 +1,9 @@
 <?php
 
+use App\Jobs\PersistAuditLog;
 use App\Models\User;
 use App\Services\BillingService;
+use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -283,6 +285,84 @@ it('handles Stripe API error during resume', function () {
 
     $response->assertRedirect();
     $response->assertSessionHas('error', 'Unable to process your request. Please try again.');
+});
+
+// ============================================
+// Cancellation reason logging
+// ============================================
+
+it('stores cancellation reason and feedback in audit log', function () {
+    Queue::fake();
+
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user);
+
+    $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('cancelSubscription')->once()->andReturn($user->subscription('default'));
+    app()->instance(BillingService::class, $mock);
+
+    $response = $this->actingAs($user)->post('/billing/cancel', [
+        'reason' => 'too_expensive',
+        'feedback' => 'Price doubled last month',
+    ]);
+
+    $response->assertRedirect(route('billing.index'));
+
+    Queue::assertPushed(PersistAuditLog::class, function ($job) {
+        $reflect = new ReflectionClass($job);
+        $event = $reflect->getProperty('event')->getValue($job);
+        $metadata = $reflect->getProperty('metadata')->getValue($job);
+
+        return $event === 'subscription.canceled'
+            && ($metadata['reason'] ?? null) === 'too_expensive'
+            && ($metadata['feedback'] ?? null) === 'Price doubled last month';
+    });
+});
+
+it('validates cancellation reason is from allowed list', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user);
+
+    $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('cancelSubscription')->never();
+    app()->instance(BillingService::class, $mock);
+
+    $response = $this->actingAs($user)->post('/billing/cancel', [
+        'reason' => 'invalid_reason',
+    ]);
+
+    $response->assertSessionHasErrors('reason');
+});
+
+it('validates feedback max length', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user);
+
+    $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('cancelSubscription')->never();
+    app()->instance(BillingService::class, $mock);
+
+    $response = $this->actingAs($user)->post('/billing/cancel', [
+        'feedback' => str_repeat('a', 501),
+    ]);
+
+    $response->assertSessionHasErrors('feedback');
+});
+
+it('accepts cancel without reason or feedback', function () {
+    Queue::fake();
+
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user);
+
+    $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('cancelSubscription')->once()->andReturn($user->subscription('default'));
+    app()->instance(BillingService::class, $mock);
+
+    $response = $this->actingAs($user)->post('/billing/cancel');
+
+    $response->assertRedirect(route('billing.index'));
+    $response->assertSessionHas('success');
 });
 
 // ============================================

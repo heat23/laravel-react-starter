@@ -106,10 +106,12 @@ class SubscriptionController extends Controller
         try {
             $this->billingService->cancelSubscription($user, $immediately);
 
-            $this->auditService->log('subscription.canceled', [
+            $this->auditService->log('subscription.canceled', array_filter([
                 'user_id' => $user->id,
                 'immediately' => $immediately,
-            ]);
+                'reason' => $request->validated('reason'),
+                'feedback' => $request->validated('feedback'),
+            ], fn ($v) => $v !== null));
 
             $this->invalidateAdminCaches();
 

@@ -19,7 +19,9 @@ describe('LegalContentModal', () => {
 
   describe('rendering', () => {
     it('renders nothing when type is null', () => {
-      const { container } = render(<LegalContentModal type={null} onClose={mockOnClose} />);
+      const { container } = render(
+        <LegalContentModal type={null} onClose={mockOnClose} />
+      );
 
       expect(container.firstChild).toBeNull();
     });
@@ -85,13 +87,15 @@ describe('LegalContentModal', () => {
     it('displays limitation of liability section', () => {
       render(<LegalContentModal type="terms" onClose={mockOnClose} />);
 
-      expect(screen.getByText('5. Limitation of Liability')).toBeInTheDocument();
+      expect(
+        screen.getByText('5. Limitation of Liability')
+      ).toBeInTheDocument();
     });
 
     it('displays template disclaimer', () => {
       render(<LegalContentModal type="terms" onClose={mockOnClose} />);
 
-      expect(screen.getByText(/these terms are a template/i)).toBeInTheDocument();
+      expect(screen.getByText(/template content/i)).toBeInTheDocument();
     });
   });
 
@@ -103,7 +107,9 @@ describe('LegalContentModal', () => {
     it('displays privacy introduction', () => {
       render(<LegalContentModal type="privacy" onClose={mockOnClose} />);
 
-      expect(screen.getByText(/this privacy policy describes/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/this privacy policy describes/i)
+      ).toBeInTheDocument();
     });
 
     it('displays information we collect section', () => {
@@ -139,7 +145,7 @@ describe('LegalContentModal', () => {
     it('displays privacy template disclaimer', () => {
       render(<LegalContentModal type="privacy" onClose={mockOnClose} />);
 
-      expect(screen.getByText(/this privacy policy is a template/i)).toBeInTheDocument();
+      expect(screen.getByText(/template content/i)).toBeInTheDocument();
     });
   });
 
@@ -154,7 +160,7 @@ describe('LegalContentModal', () => {
       // Find the visible Close button (not the sr-only one)
       const closeButtons = screen.getAllByText('Close');
       const visibleCloseButton = closeButtons.find(
-        (btn) => !btn.classList.contains('sr-only'),
+        (btn) => !btn.classList.contains('sr-only')
       );
       expect(visibleCloseButton).toBeInTheDocument();
 
@@ -169,7 +175,7 @@ describe('LegalContentModal', () => {
       // Find and click the close button in dialog header (X button)
       const closeButtons = screen.getAllByRole('button');
       const dialogCloseButton = closeButtons.find(
-        (btn) => btn.querySelector('svg[class*="lucide-x"]') !== null,
+        (btn) => btn.querySelector('svg[class*="lucide-x"]') !== null
       );
 
       if (dialogCloseButton) {
@@ -204,7 +210,9 @@ describe('LegalContentModal', () => {
       render(<LegalContentModal type="terms" onClose={mockOnClose} />);
 
       // Should use "Our Application" as fallback
-      expect(screen.getByText(/welcome to our application/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/welcome to our application/i)
+      ).toBeInTheDocument();
     });
   });
 
@@ -242,13 +250,17 @@ describe('LegalContentModal', () => {
     it('dialog has accessible title for terms', () => {
       render(<LegalContentModal type="terms" onClose={mockOnClose} />);
 
-      expect(screen.getByRole('dialog', { name: /terms of service/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('dialog', { name: /terms of service/i })
+      ).toBeInTheDocument();
     });
 
     it('dialog has accessible title for privacy', () => {
       render(<LegalContentModal type="privacy" onClose={mockOnClose} />);
 
-      expect(screen.getByRole('dialog', { name: /privacy policy/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('dialog', { name: /privacy policy/i })
+      ).toBeInTheDocument();
     });
 
     it('close button is accessible', () => {
@@ -257,7 +269,7 @@ describe('LegalContentModal', () => {
       // Find the visible Close button
       const closeButtons = screen.getAllByText('Close');
       const visibleCloseButton = closeButtons.find(
-        (btn) => !btn.classList.contains('sr-only'),
+        (btn) => !btn.classList.contains('sr-only')
       );
       expect(visibleCloseButton).toBeInTheDocument();
     });
@@ -269,7 +281,9 @@ describe('LegalContentModal', () => {
 
   describe('type switching', () => {
     it('switches from terms to privacy', () => {
-      const { rerender } = render(<LegalContentModal type="terms" onClose={mockOnClose} />);
+      const { rerender } = render(
+        <LegalContentModal type="terms" onClose={mockOnClose} />
+      );
 
       expect(screen.getByText('Terms of Service')).toBeInTheDocument();
 
@@ -280,7 +294,7 @@ describe('LegalContentModal', () => {
 
     it('switches from privacy to null', () => {
       const { rerender, container } = render(
-        <LegalContentModal type="privacy" onClose={mockOnClose} />,
+        <LegalContentModal type="privacy" onClose={mockOnClose} />
       );
 
       expect(screen.getByRole('dialog')).toBeInTheDocument();

@@ -18,6 +18,8 @@ class CancelSubscriptionRequest extends FormRequest
     {
         return [
             'immediately' => ['sometimes', 'boolean'],
+            'reason' => ['sometimes', 'nullable', 'string', 'in:too_expensive,switching_tools,no_longer_needed,missing_features,other'],
+            'feedback' => ['sometimes', 'nullable', 'string', 'max:500'],
         ];
     }
 }

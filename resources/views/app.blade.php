@@ -18,15 +18,25 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
 
-        {{-- Google Analytics 4 - Production Only --}}
+        {{-- Google Analytics 4 - Production Only (gated on cookie consent) --}}
         @production
             @if(config('services.google.analytics_id'))
-                <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}" nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}"></script>
                 <script nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">
-                    window.dataLayer = window.dataLayer || [];
-                    function gtag(){dataLayer.push(arguments);}
-                    gtag('js', new Date());
-                    gtag('config', '{{ config('services.google.analytics_id') }}');
+                    (function() {
+                        try {
+                            if (localStorage.getItem('cookie_consent') === 'accepted') {
+                                var id = '{{ config('services.google.analytics_id') }}';
+                                var s = document.createElement('script');
+                                s.async = true;
+                                s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+                                document.head.appendChild(s);
+                                window.dataLayer = window.dataLayer || [];
+                                function gtag(){dataLayer.push(arguments);}
+                                gtag('js', new Date());
+                                gtag('config', id);
+                            }
+                        } catch(e) {}
+                    })();
                 </script>
             @endif
         @endproduction

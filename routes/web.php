@@ -8,7 +8,9 @@ use App\Http\Controllers\ChartsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\LegalController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\PersonalDataExportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\Settings\ApiTokenPageController;
@@ -29,6 +31,8 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::get('/', WelcomeController::class)->name('welcome');
+Route::get('/terms', [LegalController::class, 'terms'])->name('legal.terms');
+Route::get('/privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
 
 // Onboarding (route always registered; middleware checks feature flag)
 Route::middleware('auth')->group(function () {
@@ -48,6 +52,11 @@ Route::middleware(array_filter([
 // Export routes
 Route::middleware(['auth', 'throttle:10,1'])->group(function () {
     Route::get('/export/users', [ExportController::class, 'users'])->name('export.users');
+});
+
+// Personal data export (GDPR Article 15/20 — stricter rate limit)
+Route::middleware(['auth', 'verified', 'throttle:3,60'])->group(function () {
+    Route::get('/export/personal-data', PersonalDataExportController::class)->name('export.personal-data');
 });
 
 // Profile routes
