@@ -32,7 +32,6 @@ vi.mock('@/Components/theme/use-theme', () => ({
 describe('Welcome', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset VITE_APP_NAME mock
     vi.stubEnv('VITE_APP_NAME', 'TestApp');
   });
 
@@ -44,15 +43,15 @@ describe('Welcome', () => {
     it('renders the welcome page', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText(/start with the parts/i)).toBeInTheDocument();
+      expect(screen.getByText(/ship your saas/i)).toBeInTheDocument();
     });
 
     it('renders the hero section', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText('every SaaS needs')).toBeInTheDocument();
+      expect(screen.getByText(/in days, not months/i)).toBeInTheDocument();
       expect(
-        screen.getByText(/a flexible laravel \+ react starter with authentication, feature flags/i),
+        screen.getByText(/a production-ready laravel \+ react starter with/i)
       ).toBeInTheDocument();
     });
 
@@ -77,41 +76,56 @@ describe('Welcome', () => {
     it('hides login link when canLogin is false', () => {
       render(<Welcome canLogin={false} canRegister={true} />);
 
-      expect(screen.queryByRole('link', { name: /log in/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('link', { name: /log in/i })
+      ).not.toBeInTheDocument();
     });
 
     it('shows register link when canRegister is true', () => {
       render(<Welcome canLogin={false} canRegister={true} />);
 
-      expect(screen.getByRole('link', { name: /get started/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('link', { name: /get started/i })
+      ).toBeInTheDocument();
     });
 
     it('hides register link when canRegister is false', () => {
       render(<Welcome canLogin={true} canRegister={false} />);
 
-      expect(screen.queryByRole('link', { name: /get started/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('link', { name: /get started/i })
+      ).not.toBeInTheDocument();
     });
 
     it('shows both login and register links when both are true', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
       expect(screen.getByRole('link', { name: /log in/i })).toBeInTheDocument();
-      expect(screen.getByRole('link', { name: /get started/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('link', { name: /get started/i })
+      ).toBeInTheDocument();
     });
 
     it('hides both login and register links when both are false', () => {
       render(<Welcome canLogin={false} canRegister={false} />);
 
-      expect(screen.queryByRole('link', { name: /log in/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('link', { name: /get started/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('link', { name: /log in/i })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('link', { name: /get started/i })
+      ).not.toBeInTheDocument();
     });
 
-    it('renders documentation link', () => {
+    it('renders documentation link pointing to GitHub README', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
       const docLink = screen.getByRole('link', { name: /documentation/i });
       expect(docLink).toBeInTheDocument();
-      expect(docLink).toHaveAttribute('href', 'https://laravel.com/docs');
+      expect(docLink).toHaveAttribute(
+        'href',
+        'https://github.com/your-org/laravel-react-starter#readme'
+      );
       expect(docLink).toHaveAttribute('target', '_blank');
       expect(docLink).toHaveAttribute('rel', 'noopener noreferrer');
     });
@@ -122,22 +136,28 @@ describe('Welcome', () => {
   // ============================================
 
   describe('hero section', () => {
-    it('shows Start Building button when canRegister is true', () => {
+    it('shows Create Your First Account button when canRegister is true', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByRole('link', { name: /create your first account/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('link', { name: /create your first account/i })
+      ).toBeInTheDocument();
     });
 
-    it('hides Start Building button when canRegister is false', () => {
+    it('hides Create Your First Account button when canRegister is false', () => {
       render(<Welcome canLogin={true} canRegister={false} />);
 
-      expect(screen.queryByRole('link', { name: /create your first account/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('link', { name: /create your first account/i })
+      ).not.toBeInTheDocument();
     });
 
-    it('renders hero tagline', () => {
+    it('renders hero badge with feature and test counts', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText(/starter-ready by default/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/11 features, 90\+ tests, ready to ship/i)
+      ).toBeInTheDocument();
     });
   });
 
@@ -149,42 +169,56 @@ describe('Welcome', () => {
     it('renders the features section header', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText(/starter defaults you can actually ship with/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/everything you need to launch/i)
+      ).toBeInTheDocument();
     });
 
-    it('renders Secure foundation feature', () => {
+    it('renders Secure by default feature', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText('Secure foundation')).toBeInTheDocument();
-      expect(screen.getByText(/csrf protection, xss prevention/i)).toBeInTheDocument();
+      expect(screen.getByText('Secure by default')).toBeInTheDocument();
     });
 
-    it('renders Modular by default feature', () => {
+    it('renders 11 feature flags feature', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText('Modular by default')).toBeInTheDocument();
-      expect(screen.getByText(/billing, api tokens, webhooks, and admin tools/i)).toBeInTheDocument();
+      expect(screen.getByText('11 feature flags')).toBeInTheDocument();
     });
 
-    it('renders Production-minded feature', () => {
+    it('renders Production-grade billing feature', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText('Production-minded')).toBeInTheDocument();
-      expect(screen.getByText(/typed react pages, reusable ui primitives/i)).toBeInTheDocument();
+      expect(screen.getByText('Production-grade billing')).toBeInTheDocument();
     });
+  });
 
-    it('renders all three feature cards', () => {
+  // ============================================
+  // Before vs After section tests
+  // ============================================
+
+  describe('before vs after section', () => {
+    it('renders before vs after section', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      const featureCards = [
-        'Secure foundation',
-        'Modular by default',
-        'Production-minded',
-      ];
+      expect(screen.getByText(/skip the boilerplate/i)).toBeInTheDocument();
+      expect(screen.getByText(/without this starter/i)).toBeInTheDocument();
+      expect(screen.getByText(/with this starter/i)).toBeInTheDocument();
+    });
+  });
 
-      featureCards.forEach((title) => {
-        expect(screen.getByText(title)).toBeInTheDocument();
-      });
+  // ============================================
+  // Personas section tests
+  // ============================================
+
+  describe('personas section', () => {
+    it('renders personas section', () => {
+      render(<Welcome canLogin={true} canRegister={true} />);
+
+      expect(screen.getByText(/built for builders/i)).toBeInTheDocument();
+      expect(screen.getByText('Solo founders')).toBeInTheDocument();
+      expect(screen.getByText('Small teams')).toBeInTheDocument();
+      expect(screen.getByText('Agencies')).toBeInTheDocument();
     });
   });
 
@@ -196,7 +230,9 @@ describe('Welcome', () => {
     it('renders tech stack header', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText(/modern stack, ready to customize/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/modern stack, ready to customize/i)
+      ).toBeInTheDocument();
     });
 
     it('renders Laravel 12', () => {
@@ -257,8 +293,9 @@ describe('Welcome', () => {
     it('renders logo in navigation', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      // Logo should be in the nav area - check for link to home
-      const homeLink = screen.getAllByRole('link').find((link) => link.getAttribute('href') === '/');
+      const homeLink = screen
+        .getAllByRole('link')
+        .find((link) => link.getAttribute('href') === '/');
       expect(homeLink).toBeInTheDocument();
     });
   });
@@ -269,7 +306,9 @@ describe('Welcome', () => {
 
   describe('layout', () => {
     it('has gradient background', () => {
-      const { container } = render(<Welcome canLogin={true} canRegister={true} />);
+      const { container } = render(
+        <Welcome canLogin={true} canRegister={true} />
+      );
 
       expect(container.querySelector('.bg-gradient-to-b')).toBeInTheDocument();
     });
@@ -277,15 +316,16 @@ describe('Welcome', () => {
     it('has proper section structure', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      // Check for navigation
       expect(screen.getByRole('navigation')).toBeInTheDocument();
     });
 
-    it('renders starter highlight cards', () => {
+    it('renders stat highlight cards', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText(/auth, profile, and security flows included/i)).toBeInTheDocument();
-      expect(screen.getByText(/starter-friendly billing and admin scaffolding/i)).toBeInTheDocument();
+      expect(
+        screen.getAllByText(/11 toggleable feature flags/i).length
+      ).toBeGreaterThan(0);
+      expect(screen.getAllByText(/4 billing tiers/i).length).toBeGreaterThan(0);
     });
   });
 });

@@ -40,6 +40,16 @@ vi.mock('@/Components/theme/use-theme', () => ({
 
 const mockedUsePage = vi.mocked(usePage);
 
+const defaultStats = {
+  days_since_signup: 5,
+  health_score: 60,
+  email_verified: true,
+  has_subscription: false,
+  plan_name: 'Free',
+  settings_count: 2,
+  tokens_count: 1,
+};
+
 describe('Dashboard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -64,17 +74,18 @@ describe('Dashboard', () => {
 
   describe('rendering', () => {
     it('renders the dashboard page', () => {
-      render(<Dashboard />);
+      render(<Dashboard stats={defaultStats} />);
 
-      // Dashboard text appears multiple times (nav link, page title, etc.)
       const dashboardTexts = screen.getAllByText('Dashboard');
       expect(dashboardTexts.length).toBeGreaterThan(0);
     });
 
     it('renders the welcome subtitle', () => {
-      render(<Dashboard />);
+      render(<Dashboard stats={defaultStats} />);
 
-      expect(screen.getByText(/welcome to your application dashboard/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/welcome to your application dashboard/i)
+      ).toBeInTheDocument();
     });
   });
 
@@ -83,79 +94,98 @@ describe('Dashboard', () => {
   // ============================================
 
   describe('stats cards', () => {
-    it('renders Total Users card', () => {
-      render(<Dashboard />);
+    it('renders Account Health card', () => {
+      render(<Dashboard stats={defaultStats} />);
 
-      expect(screen.getByText('Total Users')).toBeInTheDocument();
-      expect(screen.getByText('Active accounts')).toBeInTheDocument();
+      expect(screen.getByText('Account Health')).toBeInTheDocument();
+      expect(screen.getByText('60/100')).toBeInTheDocument();
+      expect(screen.getByText('Moderate')).toBeInTheDocument();
     });
 
-    it('renders Revenue card', () => {
-      render(<Dashboard />);
+    it('renders Plan card', () => {
+      render(<Dashboard stats={defaultStats} />);
 
-      expect(screen.getByText('Revenue')).toBeInTheDocument();
-      expect(screen.getByText('This month')).toBeInTheDocument();
+      expect(screen.getByText('Plan')).toBeInTheDocument();
+      expect(screen.getByText('Free')).toBeInTheDocument();
     });
 
-    it('renders Active Sessions card', () => {
-      render(<Dashboard />);
+    it('renders Settings card', () => {
+      render(<Dashboard stats={defaultStats} />);
 
-      expect(screen.getByText('Active Sessions')).toBeInTheDocument();
-      expect(screen.getByText('Currently online')).toBeInTheDocument();
+      expect(screen.getByText('Settings')).toBeInTheDocument();
+      expect(screen.getByText('Preferences configured')).toBeInTheDocument();
     });
 
-    it('renders Growth card', () => {
-      render(<Dashboard />);
+    it('renders API Tokens card', () => {
+      render(<Dashboard stats={defaultStats} />);
 
-      expect(screen.getByText('Growth')).toBeInTheDocument();
-      expect(screen.getByText('vs last month')).toBeInTheDocument();
+      expect(screen.getByText('API Tokens')).toBeInTheDocument();
+      expect(screen.getByText('Active tokens')).toBeInTheDocument();
     });
 
     it('renders all four stat cards', () => {
-      render(<Dashboard />);
+      render(<Dashboard stats={defaultStats} />);
 
-      // All stats should have default "0" values
-      expect(screen.getAllByText('0')).toHaveLength(2); // Total Users and Active Sessions
-      expect(screen.getByText('$0')).toBeInTheDocument();
-      expect(screen.getByText('0%')).toBeInTheDocument();
+      expect(screen.getByText('Account Health')).toBeInTheDocument();
+      expect(screen.getByText('Plan')).toBeInTheDocument();
+      expect(screen.getByText('Settings')).toBeInTheDocument();
+      expect(screen.getByText('API Tokens')).toBeInTheDocument();
+    });
+
+    it('shows healthy label for high scores', () => {
+      render(<Dashboard stats={{ ...defaultStats, health_score: 85 }} />);
+
+      expect(screen.getByText('Healthy')).toBeInTheDocument();
+    });
+
+    it('shows getting started label for low scores', () => {
+      render(<Dashboard stats={{ ...defaultStats, health_score: 10 }} />);
+
+      expect(screen.getByText('Getting Started')).toBeInTheDocument();
     });
   });
 
   // ============================================
-  // Main content area tests
+  // Account setup tests
   // ============================================
 
-  describe('main content area', () => {
-    it('renders Overview section', () => {
-      render(<Dashboard />);
+  describe('account setup', () => {
+    it('renders Account Setup section', () => {
+      render(<Dashboard stats={defaultStats} />);
 
-      expect(screen.getByText('Overview')).toBeInTheDocument();
-      expect(screen.getByText(/your activity overview for this period/i)).toBeInTheDocument();
-    });
-
-    it('renders analytics coming soon empty state', () => {
-      render(<Dashboard />);
-
-      expect(screen.getByText('Analytics Coming Soon')).toBeInTheDocument();
-      expect(
-        screen.getByText(/charts and insights will appear here once you have activity data/i),
-      ).toBeInTheDocument();
+      expect(screen.getByText('Account Setup')).toBeInTheDocument();
     });
 
     it('renders Recent Activity section', () => {
-      render(<Dashboard />);
+      render(<Dashboard stats={defaultStats} />);
 
       expect(screen.getByText('Recent Activity')).toBeInTheDocument();
-      expect(screen.getByText(/latest actions in your account/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/latest actions in your account/i)
+      ).toBeInTheDocument();
     });
 
-    it('renders no recent activity empty state', () => {
-      render(<Dashboard />);
+    it('shows setup items with completion status', () => {
+      render(<Dashboard stats={defaultStats} />);
+
+      expect(screen.getByText('Verify your email address')).toBeInTheDocument();
+      expect(
+        screen.getByText('Configure your preferences')
+      ).toBeInTheDocument();
+      expect(screen.getByText('Create an API token')).toBeInTheDocument();
+      expect(screen.getByText('Choose a plan')).toBeInTheDocument();
+    });
+
+    it('shows welcome message for new users', () => {
+      render(<Dashboard stats={{ ...defaultStats, days_since_signup: 0 }} />);
+
+      expect(screen.getByText(/account created today/i)).toBeInTheDocument();
+    });
+
+    it('shows empty state for non-new users', () => {
+      render(<Dashboard stats={defaultStats} />);
 
       expect(screen.getByText('No Recent Activity')).toBeInTheDocument();
-      expect(
-        screen.getByText(/your recent actions will appear here as you use the app/i),
-      ).toBeInTheDocument();
     });
   });
 
@@ -165,14 +195,13 @@ describe('Dashboard', () => {
 
   describe('layout integration', () => {
     it('uses DashboardLayout', () => {
-      const { container } = render(<Dashboard />);
+      const { container } = render(<Dashboard stats={defaultStats} />);
 
-      // Dashboard should render within a layout container
       expect(container.querySelector('.min-h-screen')).toBeInTheDocument();
     });
 
     it('renders within container with proper spacing', () => {
-      const { container } = render(<Dashboard />);
+      const { container } = render(<Dashboard stats={defaultStats} />);
 
       expect(container.querySelector('.container')).toBeInTheDocument();
     });
@@ -184,17 +213,17 @@ describe('Dashboard', () => {
 
   describe('accessibility', () => {
     it('sets the page title', () => {
-      render(<Dashboard />);
+      render(<Dashboard stats={defaultStats} />);
 
-      // The Head component is mocked to render a title element
       expect(document.querySelector('title')).toHaveTextContent('Dashboard');
     });
 
     it('has proper card structure', () => {
-      render(<Dashboard />);
+      render(<Dashboard stats={defaultStats} />);
 
-      // Cards should have headers with titles
-      const cardTitles = screen.getAllByText(/Total Users|Revenue|Active Sessions|Growth/);
+      const cardTitles = screen.getAllByText(
+        /Account Health|Plan|Settings|API Tokens/
+      );
       expect(cardTitles.length).toBe(4);
     });
   });
