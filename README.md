@@ -1,11 +1,21 @@
 # Laravel React Starter
 
-A production-ready starter template for building SaaS applications with Laravel, React, and TypeScript.
+A production-ready Laravel + React starter with 11 toggleable feature flags, Redis-locked billing, a full admin panel, and 90+ tests. Ship your SaaS in days, not months.
 
 ![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white)
+![Tests](https://img.shields.io/badge/Tests-90%2B-brightgreen)
+![License](https://img.shields.io/badge/License-MIT-blue)
+
+## Screenshots
+
+<!-- Add screenshots of key features here -->
+<!-- ![Auth Flow](docs/screenshots/auth-flow.png) -->
+<!-- ![Admin Panel](docs/screenshots/admin-panel.png) -->
+<!-- ![Billing](docs/screenshots/billing.png) -->
+<!-- ![Onboarding](docs/screenshots/onboarding.png) -->
 
 ## Features
 
@@ -31,14 +41,36 @@ A production-ready starter template for building SaaS applications with Laravel,
 - [x] Notification dropdown with unread count badge (feature-flagged)
 - [x] Radix UI primitives (Dialog, Popover, Dropdown, etc.)
 
+### Admin Panel
+- [x] User management with search, filters, and bulk actions
+- [x] User impersonation (login as any user)
+- [x] Health monitoring (database, cache, queue, disk)
+- [x] Audit logs with IP and user agent tracking
+- [x] Billing dashboard (MRR, churn, trial conversion, tier distribution)
+- [x] Feature flag management with per-user overrides
+- [x] Failed job management and data export (CSV)
+
+### Webhooks
+- [x] Outgoing webhooks with HMAC-SHA256 signing (feature-flagged)
+- [x] Incoming webhook processing (GitHub, Stripe, custom)
+- [x] Webhook delivery tracking and retry
+
+### Email Lifecycle
+- [x] Welcome sequence (3 emails over first 3 days)
+- [x] Trial nudge sequence (day 7, 12, 14)
+- [x] Re-engagement sequence (7, 14, 30 day inactivity)
+- [x] Dunning reminders for past-due subscriptions
+- [x] Onboarding reminder sequence
+
 ### Developer Experience
+- [x] 11 toggleable feature flags via environment variables
 - [x] Sanctum API token management (feature-flagged)
 - [x] Request ID tracking across logs, responses, and Sentry
 - [x] JSON error envelope for API routes
 - [x] Audit logging (login, logout, registration)
-- [x] Feature flags via environment variables
 - [x] User settings (theme, timezone persistence)
-- [x] Security headers middleware
+- [x] Security headers middleware (CSP, HSTS, X-Frame-Options)
+- [x] 5 testing tools: Pest, Vitest, Playwright, PHPStan, Infection
 
 ## Quick Start
 
@@ -46,7 +78,7 @@ A production-ready starter template for building SaaS applications with Laravel,
 
 1. **Clone and initialize:**
    ```bash
-   git clone https://github.com/your-org/laravel-react-starter.git my-app
+   git clone https://github.com/heatware/laravel-react-starter.git my-app
    cd my-app
    herd init  # Auto-detects herd.yml and configures PHP 8.4
    ```
@@ -75,7 +107,7 @@ A production-ready starter template for building SaaS applications with Laravel,
 ### Without Herd
 
 ```bash
-git clone https://github.com/your-org/laravel-react-starter.git
+git clone https://github.com/heatware/laravel-react-starter.git
 cd laravel-react-starter
 composer install
 npm install

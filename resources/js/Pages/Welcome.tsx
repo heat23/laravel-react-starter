@@ -1,9 +1,13 @@
 import {
   ArrowRight,
   CheckCircle2,
+  Clock,
+  Code2,
   Layers3,
+  Rocket,
   Shield,
   Sparkles,
+  Users,
   Zap,
 } from 'lucide-react';
 
@@ -15,33 +19,51 @@ import { Button } from '@/Components/ui/button';
 interface WelcomeProps {
   canLogin: boolean;
   canRegister: boolean;
+  featureCount?: number;
+  testCount?: number;
+  planCount?: number;
 }
 
 const features = [
   {
     icon: Shield,
-    title: 'Secure foundation',
+    title: 'Secure by default',
     description:
-      'Built with security best practices including CSRF protection, XSS prevention, and secure authentication.',
+      '12 rate limits, CSRF protection, security headers, 2FA, audit logging, and session management — all configured out of the box.',
   },
   {
     icon: Layers3,
-    title: 'Modular by default',
+    title: '11 feature flags',
     description:
-      'Feature flags let you enable billing, API tokens, webhooks, and admin tools when your product is ready for them.',
+      'Toggle billing, webhooks, admin panel, social auth, and more. Ship only what your product needs — disable the rest with one env var.',
   },
   {
     icon: Zap,
-    title: 'Production-minded',
+    title: 'Production-grade billing',
     description:
-      'Typed React pages, reusable UI primitives, and tested auth flows keep you moving without rewriting the basics.',
+      'Redis-locked Stripe mutations prevent race conditions. 4 plan tiers, team seats, dunning emails, and incomplete payment recovery.',
   },
 ];
 
-const starterHighlights = [
-  'Auth, profile, and security flows included',
-  'Starter-friendly billing and admin scaffolding',
-  'Design tokens you can rebrand quickly',
+const personas = [
+  {
+    icon: Rocket,
+    title: 'Solo founders',
+    description:
+      'Skip 2-3 months of boilerplate. Auth, billing, admin panel, and email sequences ready on day one.',
+  },
+  {
+    icon: Users,
+    title: 'Small teams',
+    description:
+      'Onboard your team with TypeScript, Pest tests, and CI/CD already configured. Focus on your product, not infrastructure.',
+  },
+  {
+    icon: Code2,
+    title: 'Agencies',
+    description:
+      'Start every client project from a tested, documented base. Feature flags let you customize scope per engagement.',
+  },
 ];
 
 const techStack = [
@@ -56,33 +78,39 @@ type WelcomeComponent = ((props: WelcomeProps) => JSX.Element) & {
   disableGlobalUi?: boolean;
 };
 
-const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
-  const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const Welcome: WelcomeComponent = ({
+  canLogin,
+  canRegister,
+  featureCount = 11,
+  testCount = 90,
+  planCount = 4,
+}) => {
+  const appName = import.meta.env.VITE_APP_NAME || 'Laravel React Starter';
 
   return (
     <>
       <Head title="Welcome">
         <meta
           name="description"
-          content="A flexible Laravel + React starter with auth, feature flags, billing scaffolding, and a UI foundation you can shape into your product."
+          content={`A production-ready Laravel + React starter with ${featureCount} feature flags, ${planCount} billing tiers, and ${testCount}+ tests. Auth, admin panel, Stripe billing, and email sequences — ready to ship.`}
         />
         <meta
           property="og:title"
-          content={`${appName} - Start with the parts every SaaS needs`}
+          content={`${appName} — Ship your SaaS in days, not months`}
         />
         <meta
           property="og:description"
-          content="A flexible Laravel + React starter with auth, feature flags, billing scaffolding, and a UI foundation you can shape into your product."
+          content={`${featureCount} toggleable features, Redis-locked billing, production admin panel. Laravel 12 + React 18 + TypeScript.`}
         />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary" />
         <meta
           name="twitter:title"
-          content={`${appName} - Start with the parts every SaaS needs`}
+          content={`${appName} — Ship your SaaS in days, not months`}
         />
         <meta
           name="twitter:description"
-          content="A flexible Laravel + React starter with auth, feature flags, billing scaffolding, and a UI foundation you can shape into your product."
+          content={`${featureCount} toggleable features, Redis-locked billing, production admin panel. Laravel 12 + React 18 + TypeScript.`}
         />
       </Head>
 
@@ -102,6 +130,7 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
           aria-hidden="true"
           className="absolute inset-x-6 top-28 mx-auto hidden h-64 max-w-5xl rounded-[2.5rem] border border-border/60 bg-card/50 blur-3xl lg:block"
         />
+
         {/* Navigation */}
         <nav className="container relative z-10 flex items-center justify-between py-6">
           <Link href="/" className="flex items-center gap-2">
@@ -133,19 +162,21 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
               <div className="mx-auto max-w-3xl text-center">
                 <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
                   <Sparkles className="h-4 w-4" />
-                  Starter-ready by default
+                  {featureCount} features, {testCount}+ tests, ready to ship
                 </div>
                 <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                  Start with the parts
+                  Ship your SaaS
                   <br />
-                  <span className="text-primary">every SaaS needs</span>
+                  <span className="text-primary">in days, not months</span>
                 </h1>
                 <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-                  A flexible Laravel + React starter with authentication,
-                  feature flags, billing scaffolding, and a UI foundation you
-                  can shape into your product.
+                  A production-ready Laravel + React starter with
+                  authentication, {featureCount} toggleable feature flags,
+                  Redis-locked billing, and a full admin panel. Stop rebuilding
+                  the same infrastructure.
                 </p>
               </div>
+
               <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
                 {canRegister && (
                   <Button size="lg" asChild>
@@ -157,7 +188,7 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
                 )}
                 <Button variant="outline" size="lg" asChild>
                   <a
-                    href="https://laravel.com/docs"
+                    href="https://github.com/your-org/laravel-react-starter#readme"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -165,8 +196,14 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
                   </a>
                 </Button>
               </div>
+
+              {/* Key stats */}
               <div className="mt-12 grid gap-4 md:grid-cols-3">
-                {starterHighlights.map((highlight) => (
+                {[
+                  `${featureCount} toggleable feature flags`,
+                  `${planCount} billing tiers with Redis-locked mutations`,
+                  `${testCount}+ tests across Pest, Vitest & Playwright`,
+                ].map((highlight) => (
                   <div
                     key={highlight}
                     className="rounded-2xl border border-border/70 bg-card/80 px-5 py-4 text-sm font-medium text-foreground shadow-sm backdrop-blur"
@@ -182,7 +219,7 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
           <section className="container py-24">
             <div className="mx-auto max-w-5xl">
               <h2 className="mb-12 text-center text-3xl font-bold">
-                Starter defaults you can actually ship with
+                Everything you need to launch
               </h2>
               <div className="grid gap-8 md:grid-cols-3">
                 {features.map((feature) => (
@@ -201,6 +238,78 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       {feature.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Before vs After Section */}
+          <section className="container py-24">
+            <div className="mx-auto max-w-4xl">
+              <h2 className="mb-12 text-center text-3xl font-bold">
+                Skip the boilerplate
+              </h2>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-8">
+                  <div className="mb-4 flex items-center gap-2 text-lg font-semibold text-destructive">
+                    <Clock className="h-5 w-5" />
+                    Without this starter
+                  </div>
+                  <ul className="space-y-3 text-sm text-muted-foreground">
+                    <li>2-3 months building auth, billing, admin</li>
+                    <li>Rolling your own rate limiting and security headers</li>
+                    <li>No tests until &ldquo;later&rdquo; (never)</li>
+                    <li>Race conditions in billing on day one of launch</li>
+                    <li>
+                      Rebuilding the same infrastructure for every project
+                    </li>
+                  </ul>
+                </div>
+                <div className="rounded-2xl border border-success/30 bg-success/5 p-8">
+                  <div className="mb-4 flex items-center gap-2 text-lg font-semibold text-success">
+                    <Rocket className="h-5 w-5" />
+                    With this starter
+                  </div>
+                  <ul className="space-y-3 text-sm text-muted-foreground">
+                    <li>
+                      2-3 days to your first deploy with real features enabled
+                    </li>
+                    <li>
+                      12 rate limits and security headers already configured
+                    </li>
+                    <li>
+                      {testCount}+ tests from day one — Pest, Vitest, Playwright
+                    </li>
+                    <li>Redis-locked billing prevents double charges</li>
+                    <li>Toggle features off with one env var</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Who is this for? */}
+          <section className="container py-24">
+            <div className="mx-auto max-w-5xl">
+              <h2 className="mb-12 text-center text-3xl font-bold">
+                Built for builders
+              </h2>
+              <div className="grid gap-8 md:grid-cols-3">
+                {personas.map((persona) => (
+                  <div
+                    key={persona.title}
+                    className="rounded-2xl border border-border/70 bg-card p-6 text-card-foreground shadow-sm"
+                  >
+                    <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                      <persona.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <h3 className="mb-2 text-lg font-semibold">
+                      {persona.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {persona.description}
                     </p>
                   </div>
                 ))}
