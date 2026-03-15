@@ -1,18 +1,26 @@
-import { CheckCircle2, Sparkles } from "lucide-react";
+import { CheckCircle2, Sparkles } from 'lucide-react';
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
 
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, router, usePage } from '@inertiajs/react';
 
-import PageHeader from "@/Components/layout/PageHeader";
-import { Alert, AlertDescription } from "@/Components/ui/alert";
-import { Badge } from "@/Components/ui/badge";
-import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
-import { LoadingButton } from "@/Components/ui/loading-button";
-import { ToggleGroup, ToggleGroupItem } from "@/Components/ui/toggle-group";
-import DashboardLayout from "@/Layouts/DashboardLayout";
-import type { PageProps } from "@/types";
+import PageHeader from '@/Components/layout/PageHeader';
+import { Alert, AlertDescription } from '@/Components/ui/alert';
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/Components/ui/card';
+import { LoadingButton } from '@/Components/ui/loading-button';
+import { ToggleGroup, ToggleGroupItem } from '@/Components/ui/toggle-group';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import DashboardLayout from '@/Layouts/DashboardLayout';
+import { AnalyticsEvents } from '@/lib/events';
+import type { PageProps } from '@/types';
 
 interface TierConfig {
   name: string;
@@ -43,26 +51,41 @@ interface PricingPageProps extends PageProps {
 export default function Pricing() {
   const { tiers, currentPlan, trial, trialEnabled, trialDays, auth } =
     usePage<PricingPageProps>().props;
+  const { track } = useAnalytics();
   const tierEntries = useMemo(() => Object.entries(tiers), [tiers]);
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "annual">("monthly");
+
+  useEffect(() => {
+    track(AnalyticsEvents.BILLING_PRICING_VIEWED);
+  }, [track]);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>(
+    'monthly'
+  );
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
   const hasAnnualPricing = useMemo(() => {
-    return tierEntries.some(([, tier]) => tier.price_annual && tier.price_annual > 0);
+    return tierEntries.some(
+      ([, tier]) => tier.price_annual && tier.price_annual > 0
+    );
   }, [tierEntries]);
 
   const annualSavingsPercent = useMemo(() => {
     const proTier = tiers.pro;
-    if (proTier?.price == null || proTier?.price_annual == null || proTier.price <= 0) return 0;
+    if (
+      proTier?.price == null ||
+      proTier?.price_annual == null ||
+      proTier.price <= 0
+    )
+      return 0;
     const monthlyTotal = proTier.price * 12;
     const savings = monthlyTotal - proTier.price_annual;
     return Math.round((savings / monthlyTotal) * 100);
   }, [tiers.pro]);
 
   const getPrice = (tier: TierConfig) => {
-    if (tier.price === null) return { label: "Custom", sublabel: null, savings: null };
+    if (tier.price === null)
+      return { label: 'Custom', sublabel: null, savings: null };
 
-    if (billingPeriod === "annual" && tier.price_annual) {
+    if (billingPeriod === 'annual' && tier.price_annual) {
       const monthlyEquivalent = (tier.price_annual / 12).toFixed(2);
       const yearlySavings = tier.price * 12 - tier.price_annual;
       return {
@@ -72,34 +95,52 @@ export default function Pricing() {
       };
     }
 
-    return { label: tier.price === 0 ? "Free" : `$${tier.price}/mo`, sublabel: null, savings: null };
+    return {
+      label: tier.price === 0 ? 'Free' : `$${tier.price}/mo`,
+      sublabel: null,
+      savings: null,
+    };
   };
 
-  const isSubscribed = !!currentPlan && currentPlan !== "free";
+  const isSubscribed = !!currentPlan && currentPlan !== 'free';
+
+  const handlePlanSelect = (planKey: string) => {
+    track(AnalyticsEvents.BILLING_PLAN_SELECTED, {
+      plan: planKey,
+      billing_period: billingPeriod,
+    });
+  };
 
   const handleCheckout = (planKey: string) => {
     const tier = tiers[planKey];
     const priceId =
-      billingPeriod === "annual" && tier.stripe_price_id_annual
+      billingPeriod === 'annual' && tier.stripe_price_id_annual
         ? tier.stripe_price_id_annual
         : tier.stripe_price_id;
+
+    handlePlanSelect(planKey);
+    track(AnalyticsEvents.BILLING_CHECKOUT_STARTED, {
+      plan: planKey,
+      price_id: priceId ?? '',
+      billing_period: billingPeriod,
+    });
 
     setCheckoutLoading(planKey);
 
     if (isSubscribed) {
       router.post(
-        route("billing.swap"),
+        route('billing.swap'),
         { price_id: priceId },
-        { onFinish: () => setCheckoutLoading(null) },
+        { onFinish: () => setCheckoutLoading(null) }
       );
     } else {
       router.post(
-        route("billing.subscribe"),
+        route('billing.subscribe'),
         {
           price_id: priceId,
           quantity: tier.per_seat && tier.min_seats ? tier.min_seats : 1,
         },
-        { onFinish: () => setCheckoutLoading(null) },
+        { onFinish: () => setCheckoutLoading(null) }
       );
     }
   };
@@ -107,7 +148,10 @@ export default function Pricing() {
   const content = (
     <>
       <Head title="Pricing">
-        <meta name="description" content="Choose the plan that fits your needs. Start free and upgrade as you grow with flexible pricing options." />
+        <meta
+          name="description"
+          content="Choose the plan that fits your needs. Start free and upgrade as you grow with flexible pricing options."
+        />
       </Head>
       <PageHeader
         title="Pricing"
@@ -122,7 +166,7 @@ export default function Pricing() {
                   type="single"
                   value={billingPeriod}
                   onValueChange={(value) =>
-                    value && setBillingPeriod(value as "monthly" | "annual")
+                    value && setBillingPeriod(value as 'monthly' | 'annual')
                   }
                 >
                   <ToggleGroupItem value="monthly" className="px-4">
@@ -131,10 +175,7 @@ export default function Pricing() {
                   <ToggleGroupItem value="annual" className="px-4">
                     Annual
                     {annualSavingsPercent > 0 && (
-                      <Badge
-                        variant="success"
-                        className="ml-2"
-                      >
+                      <Badge variant="success" className="ml-2">
                         Save {annualSavingsPercent}%
                       </Badge>
                     )}
@@ -148,10 +189,10 @@ export default function Pricing() {
             <Alert className="border-primary/30 bg-primary/10">
               <Sparkles className="h-4 w-4 text-primary" />
               <AlertDescription className="text-center">
-                <strong className="text-primary">Pro Trial Active</strong> - You have{" "}
-                <strong>{trial.daysRemaining}</strong> day
-                {trial.daysRemaining !== 1 ? "s" : ""} remaining. Upgrade now to keep your Pro
-                features!
+                <strong className="text-primary">Pro Trial Active</strong> - You
+                have <strong>{trial.daysRemaining}</strong> day
+                {trial.daysRemaining !== 1 ? 's' : ''} remaining. Upgrade now to
+                keep your Pro features!
               </AlertDescription>
             </Alert>
           )}
@@ -162,7 +203,7 @@ export default function Pricing() {
               <AlertDescription className="text-center">
                 <strong className="text-success">
                   Start with a {trialDays}-day free Pro trial!
-                </strong>{" "}
+                </strong>{' '}
                 Sign up today and experience all Pro features free.
               </AlertDescription>
             </Alert>
@@ -175,7 +216,10 @@ export default function Pricing() {
               const pricing = getPrice(tier);
 
               return (
-                <Card key={key} className={isCurrent ? "border-primary shadow-md" : ""}>
+                <Card
+                  key={key}
+                  className={isCurrent ? 'border-primary shadow-md' : ''}
+                >
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{tier.name}</CardTitle>
@@ -183,10 +227,16 @@ export default function Pricing() {
                         {tier.coming_soon && (
                           <Badge variant="outline">Coming Soon</Badge>
                         )}
-                        {pricing.savings && billingPeriod === "annual" && !tier.coming_soon && (
-                          <Badge variant="success">Save ${pricing.savings}</Badge>
+                        {pricing.savings &&
+                          billingPeriod === 'annual' &&
+                          !tier.coming_soon && (
+                            <Badge variant="success">
+                              Save ${pricing.savings}
+                            </Badge>
+                          )}
+                        {isCurrent && (
+                          <Badge variant="secondary">Current</Badge>
                         )}
-                        {isCurrent && <Badge variant="secondary">Current</Badge>}
                       </div>
                     </div>
                     <div className="space-y-1">
@@ -207,12 +257,17 @@ export default function Pricing() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {tier.description && (
-                      <p className="text-sm text-muted-foreground">{tier.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {tier.description}
+                      </p>
                     )}
 
                     <ul className="space-y-2 text-sm">
                       {(tier.features ?? []).map((feature) => (
-                        <li key={feature} className="flex items-center gap-2 text-muted-foreground">
+                        <li
+                          key={feature}
+                          className="flex items-center gap-2 text-muted-foreground"
+                        >
                           <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
                           {feature}
                         </li>
@@ -223,38 +278,49 @@ export default function Pricing() {
                       {!auth.user && (
                         <Button asChild className="w-full">
                           <Link href="/register">
-                            {key === "pro" && trialEnabled
+                            {key === 'pro' && trialEnabled
                               ? `Start ${trialDays}-Day Free Trial`
-                              : "Get Started"}
+                              : 'Get Started'}
                           </Link>
                         </Button>
                       )}
 
-                      {auth.user && !isEnterprise && !isCurrent && key !== "free" && (
-                        <>
-                          {tier.coming_soon ? (
-                            <Button className="w-full" variant="secondary" disabled>
-                              Coming Soon
-                            </Button>
-                          ) : (
-                            <LoadingButton
-                              className="w-full"
-                              onClick={() => handleCheckout(key)}
-                              loading={checkoutLoading === key}
-                              loadingText="Processing..."
-                            >
-                              {isSubscribed ? "Switch to" : "Upgrade to"} {tier.name}
-                              {billingPeriod === "annual" && " (Annual)"}
-                            </LoadingButton>
-                          )}
-                        </>
-                      )}
+                      {auth.user &&
+                        !isEnterprise &&
+                        !isCurrent &&
+                        key !== 'free' && (
+                          <>
+                            {tier.coming_soon ? (
+                              <Button
+                                className="w-full"
+                                variant="secondary"
+                                disabled
+                              >
+                                Coming Soon
+                              </Button>
+                            ) : (
+                              <LoadingButton
+                                className="w-full"
+                                onClick={() => handleCheckout(key)}
+                                loading={checkoutLoading === key}
+                                loadingText="Processing..."
+                              >
+                                {isSubscribed ? 'Switch to' : 'Upgrade to'}{' '}
+                                {tier.name}
+                                {billingPeriod === 'annual' && ' (Annual)'}
+                              </LoadingButton>
+                            )}
+                          </>
+                        )}
 
-                      {auth.user && !isEnterprise && !isCurrent && key === "free" && (
-                        <Button asChild className="w-full" variant="outline">
-                          <Link href="/dashboard">Go to Dashboard</Link>
-                        </Button>
-                      )}
+                      {auth.user &&
+                        !isEnterprise &&
+                        !isCurrent &&
+                        key === 'free' && (
+                          <Button asChild className="w-full" variant="outline">
+                            <Link href="/dashboard">Go to Dashboard</Link>
+                          </Button>
+                        )}
 
                       {auth.user && isEnterprise && !isCurrent && (
                         <Button asChild className="w-full" variant="outline">
@@ -264,7 +330,9 @@ export default function Pricing() {
 
                       {auth.user && isCurrent && (
                         <Button asChild className="w-full" variant="outline">
-                          <Link href={route("billing.index")}>Manage Billing</Link>
+                          <Link href={route('billing.index')}>
+                            Manage Billing
+                          </Link>
                         </Button>
                       )}
                     </div>

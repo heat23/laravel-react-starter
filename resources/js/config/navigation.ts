@@ -1,6 +1,6 @@
 import {
   CreditCard,
-  ExternalLink,
+  ExternalLink as ExternalLinkIcon,
   Home,
   Key,
   Radio,

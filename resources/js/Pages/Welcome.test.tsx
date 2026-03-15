@@ -277,8 +277,9 @@ describe('Welcome', () => {
     it('has proper section structure', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      // Check for navigation
-      expect(screen.getByRole('navigation')).toBeInTheDocument();
+      // Check for navigation (header and footer)
+      const navElements = screen.getAllByRole('navigation');
+      expect(navElements.length).toBeGreaterThanOrEqual(1);
     });
 
     it('renders starter highlight cards', () => {

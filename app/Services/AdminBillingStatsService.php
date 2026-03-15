@@ -15,7 +15,7 @@ class AdminBillingStatsService
     ) {}
 
     /**
-     * @return array{active_subscriptions: int, trialing: int, past_due: int, canceled: int, total_ever: int, mrr: float, churn_rate: float, trial_conversion_rate: float}
+     * @return array{active_subscriptions: int, trialing: int, past_due: int, canceled: int, total_ever: int, mrr: float, churn_rate: float, trial_conversion_rate: float, activation_rate: float, signup_to_paid_conversion: float}
      */
     public function getDashboardStats(): array
     {
@@ -38,6 +38,8 @@ class AdminBillingStatsService
                 'mrr' => $this->calculateMrr(),
                 'churn_rate' => $this->calculateChurnRate(),
                 'trial_conversion_rate' => $this->calculateTrialConversion(),
+                'activation_rate' => $this->calculateActivationRate(),
+                'signup_to_paid_conversion' => $this->calculateSignupToPaidConversion(),
             ];
         });
     }
@@ -259,6 +261,99 @@ class AdminBillingStatsService
         }
 
         return round(($canceledInPeriod / $activeAtStart) * 100, 1);
+    }
+
+    /**
+     * Activation rate: users who completed onboarding / total signups.
+     */
+    private function calculateActivationRate(): float
+    {
+        $totalUsers = DB::table('users')->whereNull('deleted_at')->count();
+
+        if ($totalUsers === 0) {
+            return 0;
+        }
+
+        $activatedUsers = DB::table('user_settings')
+            ->where('key', 'onboarding_completed')
+            ->distinct('user_id')
+            ->count('user_id');
+
+        return round(($activatedUsers / $totalUsers) * 100, 1);
+    }
+
+    /**
+     * Signup-to-paid conversion: users with active subscriptions / total signups.
+     */
+    private function calculateSignupToPaidConversion(): float
+    {
+        $totalUsers = DB::table('users')->whereNull('deleted_at')->count();
+
+        if ($totalUsers === 0) {
+            return 0;
+        }
+
+        $paidUsers = DB::table('subscriptions')
+            ->where('stripe_status', 'active')
+            ->whereNull('ends_at')
+            ->distinct('user_id')
+            ->count('user_id');
+
+        return round(($paidUsers / $totalUsers) * 100, 1);
+    }
+
+    /**
+     * Cohort retention: group users by signup week, show % active at week 1, 2, 4, 8.
+     *
+     * @return array<int, array{cohort: string, total: int, week_1: float, week_2: float, week_4: float, week_8: float}>
+     */
+    public function getCohortRetention(): array
+    {
+        return Cache::remember('admin:billing:cohort_retention', AdminCacheKey::CHART_TTL, function () {
+            $cohorts = [];
+            $now = now();
+
+            // Last 8 weeks of cohorts
+            for ($i = 8; $i >= 0; $i--) {
+                $weekStart = $now->copy()->subWeeks($i)->startOfWeek();
+                $weekEnd = $weekStart->copy()->endOfWeek();
+
+                $usersInCohort = DB::table('users')
+                    ->whereNull('deleted_at')
+                    ->whereBetween('created_at', [$weekStart, $weekEnd])
+                    ->pluck('id');
+
+                $total = $usersInCohort->count();
+
+                if ($total === 0) {
+                    continue;
+                }
+
+                $retention = [
+                    'cohort' => $weekStart->format('M d'),
+                    'total' => $total,
+                ];
+
+                foreach ([1, 2, 4, 8] as $week) {
+                    $checkDate = $weekStart->copy()->addWeeks($week);
+
+                    if ($checkDate->isAfter($now)) {
+                        $retention["week_{$week}"] = null;
+                    } else {
+                        $activeCount = DB::table('users')
+                            ->whereIn('id', $usersInCohort)
+                            ->where('last_login_at', '>=', $checkDate)
+                            ->count();
+
+                        $retention["week_{$week}"] = round(($activeCount / $total) * 100, 1);
+                    }
+                }
+
+                $cohorts[] = $retention;
+            }
+
+            return $cohorts;
+        });
     }
 
     private function calculateTrialConversion(): float

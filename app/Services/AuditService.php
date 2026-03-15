@@ -44,6 +44,41 @@ class AuditService
         $this->persist($event, Auth::id(), $context);
     }
 
+    /**
+     * Log a product analytics event with enriched user context.
+     * Adds plan tier, signup cohort, and activation status automatically.
+     */
+    public function logProductEvent(string $event, ?User $user = null, array $context = []): void
+    {
+        $user = $user ?? Auth::user();
+
+        $enriched = array_merge($context, $this->getProductContext($user));
+
+        $this->persist($event, $user?->id, $enriched);
+    }
+
+    /**
+     * Build product context for analytics enrichment.
+     */
+    private function getProductContext(?User $user): array
+    {
+        if (! $user) {
+            return [];
+        }
+
+        $planTier = 'free';
+        if (config('features.billing.enabled')) {
+            $planLimitService = app(PlanLimitService::class);
+            $planTier = $planLimitService->getUserPlan($user);
+        }
+
+        return [
+            'plan_tier' => $planTier,
+            'signup_cohort' => $user->created_at?->format('Y-m'),
+            'is_activated' => $user->getSetting('onboarding_completed') !== null,
+        ];
+    }
+
     private function persist(string $event, ?int $userId, array $metadata = []): void
     {
         $ip = request()->ip();

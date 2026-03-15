@@ -44,6 +44,7 @@ class AdminBillingController extends Controller
             'growth_chart' => $this->statsService->getGrowthChart(),
             'trial_stats' => $this->statsService->getTrialStats(),
             'recent_events' => $recentEvents,
+            'cohort_retention' => $this->statsService->getCohortRetention(),
         ]);
     }
 

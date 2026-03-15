@@ -422,3 +422,86 @@ test('log uses single channel', function () {
 
     $this->service->log('test.channel');
 });
+
+// ============================================
+// logProductEvent() tests
+// ============================================
+
+test('logProductEvent includes user tier and signup cohort in event metadata', function () {
+    expectLogChannel();
+
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function ($message, $context) {
+            return $message === 'product.test_event'
+                && isset($context['metadata']['plan_tier'])
+                && isset($context['metadata']['signup_cohort'])
+                && array_key_exists('is_activated', $context['metadata']);
+        });
+
+    Carbon::setTestNow('2024-06-15 12:00:00');
+    $user = User::factory()->create(['created_at' => Carbon::parse('2024-03-01')]);
+
+    $this->service->logProductEvent('product.test_event', $user, ['custom' => 'value']);
+
+    Carbon::setTestNow();
+});
+
+test('logProductEvent defaults to free plan tier when billing disabled', function () {
+    config(['features.billing.enabled' => false]);
+
+    expectLogChannel();
+
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function ($message, $context) {
+            return $context['metadata']['plan_tier'] === 'free';
+        });
+
+    $user = User::factory()->create();
+    $this->service->logProductEvent('product.test', $user);
+});
+
+test('logProductEvent includes signup cohort as YYYY-MM', function () {
+    Carbon::setTestNow('2024-06-15 12:00:00');
+
+    expectLogChannel();
+
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function ($message, $context) {
+            return $context['metadata']['signup_cohort'] === '2024-03';
+        });
+
+    $user = User::factory()->create(['created_at' => Carbon::parse('2024-03-15')]);
+    $this->service->logProductEvent('product.cohort_test', $user);
+
+    Carbon::setTestNow();
+});
+
+test('logProductEvent merges custom context with product context', function () {
+    expectLogChannel();
+
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function ($message, $context) {
+            return $context['metadata']['custom_field'] === 'custom_value'
+                && isset($context['metadata']['plan_tier']);
+        });
+
+    $user = User::factory()->create();
+    $this->service->logProductEvent('product.merge_test', $user, ['custom_field' => 'custom_value']);
+});
+
+test('logProductEvent handles null user gracefully', function () {
+    expectLogChannel();
+
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function ($message, $context) {
+            return $context['user_id'] === null
+                && empty(array_filter($context['metadata'], fn ($v) => $v !== null));
+        });
+
+    $this->service->logProductEvent('product.null_user');
+});
