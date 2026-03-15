@@ -203,6 +203,7 @@ export default function BillingSubscriptions({
                   currentDir={filters.dir}
                   onSort={handleSort}
                 />
+                <TableHead className="w-[60px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -241,6 +242,13 @@ export default function BillingSubscriptions({
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {formatDate(sub.created_at, '\u2014')}
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link href={`/admin/billing/subscriptions/${sub.id}`}>
+                        View
+                      </Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}

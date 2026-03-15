@@ -1,17 +1,20 @@
-import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { LogOut, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 
-import type { PropsWithChildren, ReactNode } from "react";
+import type { PropsWithChildren, ReactNode } from 'react';
 
-import { Link, usePage } from "@inertiajs/react";
+import { Link, usePage } from '@inertiajs/react';
 
-import { ImpersonationBanner } from "@/Components/admin/ImpersonationBanner";
-import { Logo, TextLogo } from "@/Components/branding/Logo";
-import { CommandPalette, useCommandPalette } from "@/Components/command-palette";
-import { NotificationDropdown } from "@/Components/notifications/NotificationDropdown";
-import { ThemeToggle } from "@/Components/theme";
-import { Button } from "@/Components/ui/button";
-import { ScrollArea } from "@/Components/ui/scroll-area";
-import { Separator } from "@/Components/ui/separator";
+import { ImpersonationBanner } from '@/Components/admin/ImpersonationBanner';
+import { Logo, TextLogo } from '@/Components/branding/Logo';
+import {
+  CommandPalette,
+  useCommandPalette,
+} from '@/Components/command-palette';
+import { NotificationDropdown } from '@/Components/notifications/NotificationDropdown';
+import { ThemeToggle } from '@/Components/theme';
+import { Button } from '@/Components/ui/button';
+import { ScrollArea } from '@/Components/ui/scroll-area';
+import { Separator } from '@/Components/ui/separator';
 import {
   Sheet,
   SheetContent,
@@ -19,15 +22,15 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/Components/ui/sheet";
-import { TooltipProvider } from "@/Components/ui/tooltip";
-import type { AdminNavGroup } from "@/config/admin-navigation";
-import { getVisibleGroups } from "@/config/navigation";
-import type { NavGroup } from "@/config/navigation";
-import type { PageProps } from "@/types";
+} from '@/Components/ui/sheet';
+import { TooltipProvider } from '@/Components/ui/tooltip';
+import type { AdminNavGroup } from '@/config/admin-navigation';
+import { getVisibleGroups } from '@/config/navigation';
+import type { NavGroup } from '@/config/navigation';
+import type { PageProps } from '@/types';
 
-import { SidebarProvider, useSidebar } from "./sidebar-context";
-import { MobileSidebarNav, SidebarNavGroup } from "./sidebar-nav";
+import { SidebarProvider, useSidebar } from './sidebar-context';
+import { MobileSidebarNav, SidebarNavGroup } from './sidebar-nav';
 
 interface SidebarLayoutProps extends PropsWithChildren {
   navigationGroups?: NavGroup[] | AdminNavGroup[];
@@ -40,29 +43,41 @@ interface SidebarLayoutProps extends PropsWithChildren {
 function SidebarInner({
   children,
   navigationGroups,
-  logoHref = "/dashboard",
+  logoHref = '/dashboard',
   headerExtra,
   footerExtra,
   banner,
 }: SidebarLayoutProps) {
   const { auth, features } = usePage<PageProps>().props;
-  const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen } = useSidebar();
-  const { open: commandPaletteOpen, setOpen: setCommandPaletteOpen } = useCommandPalette();
+  const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen } =
+    useSidebar();
+  const { open: commandPaletteOpen, setOpen: setCommandPaletteOpen } =
+    useCommandPalette();
 
   const visibleGroups = navigationGroups ?? getVisibleGroups(features);
 
   return (
     <div className="flex min-h-screen">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-background focus:text-foreground focus:border focus:border-border focus:rounded-md"
+      >
+        Skip to content
+      </a>
+
       {/* Desktop Sidebar */}
       <aside
         aria-label="Main navigation"
         className={`hidden md:flex flex-col border-r border-sidebar-border bg-sidebar transition-[width] duration-200 ${
-          collapsed ? "w-12" : "w-60"
+          collapsed ? 'w-12' : 'w-60'
         }`}
       >
         {/* Sidebar Header */}
         <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-3">
-          <Link href={logoHref} className="flex items-center gap-2 overflow-hidden">
+          <Link
+            href={logoHref}
+            className="flex items-center gap-2 overflow-hidden"
+          >
             <Logo className="h-6 w-6 shrink-0" />
             {!collapsed && <TextLogo className="text-sm" />}
             {!collapsed && headerExtra}
@@ -73,7 +88,7 @@ function SidebarInner({
             className="h-7 w-7 shrink-0 text-sidebar-foreground/60 hover:text-sidebar-foreground"
             onClick={toggleCollapsed}
             aria-expanded={!collapsed}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {collapsed ? (
               <PanelLeftOpen className="h-4 w-4" />
@@ -87,7 +102,11 @@ function SidebarInner({
         <ScrollArea className="flex-1 py-2">
           <TooltipProvider delayDuration={0}>
             {visibleGroups.map((group) => (
-              <SidebarNavGroup key={group.label} group={group} collapsed={collapsed} />
+              <SidebarNavGroup
+                key={group.label}
+                group={group}
+                collapsed={collapsed}
+              />
             ))}
           </TooltipProvider>
         </ScrollArea>
@@ -100,7 +119,7 @@ function SidebarInner({
           <ThemeToggle />
           {footerExtra}
           <div
-            className={`flex items-center gap-2 overflow-hidden ${collapsed ? "justify-center" : ""}`}
+            className={`flex items-center gap-2 overflow-hidden ${collapsed ? 'justify-center' : ''}`}
           >
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sidebar-primary/10 text-sidebar-primary text-xs font-medium">
               {auth.user?.name.charAt(0).toUpperCase()}
@@ -122,9 +141,14 @@ function SidebarInner({
             className="w-full justify-start text-sidebar-foreground/60 hover:text-destructive"
             asChild
           >
-            <Link href={route("logout")} method="post" as="button" className="w-full">
+            <Link
+              href={route('logout')}
+              method="post"
+              as="button"
+              className="w-full"
+            >
               <LogOut className="mr-2 h-4 w-4" />
-              {!collapsed && "Log out"}
+              {!collapsed && 'Log out'}
             </Link>
           </Button>
         </div>
@@ -168,7 +192,12 @@ function SidebarInner({
               className="w-full justify-start text-sidebar-foreground/60 hover:text-destructive"
               asChild
             >
-              <Link href={route("logout")} method="post" as="button" className="w-full">
+              <Link
+                href={route('logout')}
+                method="post"
+                as="button"
+                className="w-full"
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
               </Link>
@@ -183,7 +212,12 @@ function SidebarInner({
         <header className="flex h-14 items-center border-b bg-background px-4 md:hidden">
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="mr-2" aria-label="Toggle navigation menu">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="mr-2"
+                aria-label="Toggle navigation menu"
+              >
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
@@ -202,7 +236,10 @@ function SidebarInner({
         </main>
       </div>
 
-      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+      />
     </div>
   );
 }

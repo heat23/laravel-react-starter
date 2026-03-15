@@ -185,6 +185,24 @@ export default function AdminUsersIndex({
               <SelectItem value="0">Non-Admins</SelectItem>
             </SelectContent>
           </Select>
+          <Select
+            value={filters.verified ?? 'all'}
+            onValueChange={(value) =>
+              updateFilter({ verified: value === 'all' ? undefined : value })
+            }
+          >
+            <SelectTrigger
+              className="w-[180px]"
+              aria-label="Filter by verification status"
+            >
+              <SelectValue placeholder="All Verification" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Verification</SelectItem>
+              <SelectItem value="1">Verified</SelectItem>
+              <SelectItem value="0">Unverified</SelectItem>
+            </SelectContent>
+          </Select>
         </fieldset>
 
         {/* Bulk Action Bar */}
@@ -225,12 +243,12 @@ export default function AdminUsersIndex({
           emptyIcon={Users}
           emptyTitle="No users found"
           emptyDescription={
-            filters.search || filters.admin
+            filters.search || filters.admin || filters.verified
               ? 'No users match your current filters. Try adjusting your search or filter.'
               : 'No users in the system yet.'
           }
           emptyAction={
-            filters.search || filters.admin ? (
+            filters.search || filters.admin || filters.verified ? (
               <Button variant="outline" size="sm" onClick={clearFilters}>
                 Clear filters
               </Button>

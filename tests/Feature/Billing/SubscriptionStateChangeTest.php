@@ -268,7 +268,7 @@ it('handles Stripe API error during cancellation', function () {
     $response = $this->actingAs($user)->post('/billing/cancel');
 
     $response->assertRedirect();
-    $response->assertSessionHas('error', 'Unable to process your request. Please try again.');
+    $response->assertSessionHas('error', 'Unable to process your request. Please try again or contact support.');
 });
 
 it('handles Stripe API error during resume', function () {
@@ -284,7 +284,7 @@ it('handles Stripe API error during resume', function () {
     $response = $this->actingAs($user)->post('/billing/resume');
 
     $response->assertRedirect();
-    $response->assertSessionHas('error', 'Unable to process your request. Please try again.');
+    $response->assertSessionHas('error', 'Unable to process your request. Please try again or contact support.');
 });
 
 // ============================================

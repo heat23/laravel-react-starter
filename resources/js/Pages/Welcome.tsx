@@ -86,6 +86,13 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
         />
       </Head>
 
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-background focus:text-foreground focus:border focus:border-border focus:rounded-md"
+      >
+        Skip to content
+      </a>
+
       <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-background via-background to-muted/30">
         <div
           aria-hidden="true"
@@ -184,7 +191,10 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
                     className="rounded-2xl border border-border/70 bg-card p-6 text-card-foreground shadow-sm"
                   >
                     <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                      <feature.icon className="h-5 w-5 text-primary" />
+                      <feature.icon
+                        className="h-5 w-5 text-primary"
+                        aria-hidden="true"
+                      />
                     </div>
                     <h3 className="mb-2 text-lg font-semibold">
                       {feature.title}

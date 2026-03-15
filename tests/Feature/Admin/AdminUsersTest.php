@@ -106,6 +106,24 @@ it('filters by admin status', function () {
     );
 });
 
+it('filters by verified status', function () {
+    $admin = User::factory()->admin()->create();
+    User::factory()->create(['email_verified_at' => now()]);
+    User::factory()->create(['email_verified_at' => null]);
+
+    $verifiedResponse = $this->actingAs($admin)->get('/admin/users?verified=1');
+    $verifiedResponse->assertInertia(fn ($page) => $page
+        ->has('users.data', 2) // admin + verified user
+        ->where('users.data.0.email_verified_at', fn ($val) => $val !== null)
+    );
+
+    $unverifiedResponse = $this->actingAs($admin)->get('/admin/users?verified=0');
+    $unverifiedResponse->assertInertia(fn ($page) => $page
+        ->has('users.data', 1)
+        ->where('users.data.0.email_verified_at', null)
+    );
+});
+
 it('sorts by columns', function () {
     $admin = User::factory()->admin()->create(['name' => 'ZZZ Admin']); // Sort last
     User::factory()->create(['name' => 'Alice']);

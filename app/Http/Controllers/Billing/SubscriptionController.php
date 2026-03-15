@@ -85,7 +85,7 @@ class SubscriptionController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->with('error', 'Unable to process your request. Please try again.');
+            return back()->with('error', $this->friendlyStripeError($e));
         }
     }
 
@@ -137,10 +137,10 @@ class SubscriptionController extends Controller
             ]);
 
             if ($request->expectsJson()) {
-                return response()->json(['message' => 'Unable to process your request. Please try again.'], 500);
+                return response()->json(['message' => $this->friendlyStripeError($e)], 500);
             }
 
-            return back()->with('error', 'Unable to process your request. Please try again.');
+            return back()->with('error', $this->friendlyStripeError($e));
         }
     }
 
@@ -185,10 +185,10 @@ class SubscriptionController extends Controller
             ]);
 
             if ($request->expectsJson()) {
-                return response()->json(['message' => 'Unable to process your request. Please try again.'], 500);
+                return response()->json(['message' => $this->friendlyStripeError($e)], 500);
             }
 
-            return back()->with('error', 'Unable to process your request. Please try again.');
+            return back()->with('error', $this->friendlyStripeError($e));
         }
     }
 
@@ -228,7 +228,7 @@ class SubscriptionController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->with('error', 'Unable to process your request. Please try again.');
+            return back()->with('error', $this->friendlyStripeError($e));
         }
     }
 
@@ -271,7 +271,7 @@ class SubscriptionController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->with('error', 'Unable to process your request. Please try again.');
+            return back()->with('error', $this->friendlyStripeError($e));
         }
     }
 
@@ -296,7 +296,7 @@ class SubscriptionController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->with('error', 'Unable to process your request. Please try again.');
+            return back()->with('error', $this->friendlyStripeError($e));
         }
     }
 
@@ -322,12 +322,26 @@ class SubscriptionController extends Controller
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->with('error', 'Unable to access billing portal. Please try again.');
+            return back()->with('error', 'Unable to access the billing portal. Please try again later.');
         }
     }
 
     private function invalidateAdminCaches(): void
     {
         $this->cacheManager->invalidateBilling();
+    }
+
+    private function friendlyStripeError(ApiErrorException $e): string
+    {
+        $code = $e->getStripeCode();
+
+        return match ($code) {
+            'card_declined' => 'Your card was declined. Please try a different payment method.',
+            'expired_card' => 'Your card has expired. Please update your payment method.',
+            'processing_error' => 'There was an error processing your card. Please try again in a few minutes.',
+            'incorrect_cvc' => 'The CVC number is incorrect. Please check and try again.',
+            'insufficient_funds' => 'Insufficient funds. Please try a different payment method.',
+            default => 'Unable to process your request. Please try again or contact support.',
+        };
     }
 }
