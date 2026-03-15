@@ -51,11 +51,13 @@ class HealthCheckController extends Controller
                 return hash_equals($token, $request->bearerToken());
             }
 
-            $queryToken = $request->query('token');
-            if ($queryToken !== null) {
-                $this->usedDeprecatedQueryToken = true;
+            if (config('health.allow_query_token')) {
+                $queryToken = $request->query('token');
+                if ($queryToken !== null) {
+                    $this->usedDeprecatedQueryToken = true;
 
-                return hash_equals($token, $queryToken);
+                    return hash_equals($token, $queryToken);
+                }
             }
 
             return false;

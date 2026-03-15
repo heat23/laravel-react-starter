@@ -46,6 +46,7 @@ class AdminImpersonationController extends Controller
         Auth::login($user);
         $request->session()->put('admin_impersonating_from', Crypt::encryptString((string) $adminId));
         $request->session()->put('admin_impersonating_name', $adminName);
+        $request->session()->regenerate();
 
         return redirect()->route('dashboard');
     }
@@ -84,6 +85,7 @@ class AdminImpersonationController extends Controller
 
         $request->session()->forget(['admin_impersonating_from', 'admin_impersonating_name']);
         Auth::login($admin);
+        $request->session()->regenerate();
 
         return redirect()->route('admin.users.index');
     }

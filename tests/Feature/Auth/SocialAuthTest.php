@@ -83,6 +83,44 @@ class SocialAuthTest extends TestCase
     }
 
     // ============================================
+    // callback() tests - require routes to be registered
+    // ============================================
+
+    public function test_regenerates_session_after_social_auth_login(): void
+    {
+        $this->skipIfRoutesNotRegistered();
+
+        if (! class_exists(\Laravel\Socialite\Facades\Socialite::class)) {
+            $this->markTestSkipped('Socialite package not installed.');
+        }
+
+        $user = User::factory()->create();
+
+        $socialUser = Mockery::mock(\Laravel\Socialite\Contracts\User::class);
+        $socialUser->shouldReceive('getId')->andReturn('google-123');
+        $socialUser->shouldReceive('getEmail')->andReturn($user->email);
+        $socialUser->shouldReceive('getName')->andReturn($user->name);
+        $socialUser->shouldReceive('getAvatar')->andReturn(null);
+
+        $driver = Mockery::mock(\Laravel\Socialite\Contracts\Provider::class);
+        $driver->shouldReceive('user')->andReturn($socialUser);
+
+        \Laravel\Socialite\Facades\Socialite::shouldReceive('driver')
+            ->with('google')
+            ->andReturn($driver);
+
+        // Capture session ID before callback
+        $sessionIdBefore = session()->getId();
+
+        $response = $this->get(route('social.callback', 'google'));
+
+        // Session should have been regenerated (new ID)
+        $sessionIdAfter = session()->getId();
+        $this->assertNotEquals($sessionIdBefore, $sessionIdAfter);
+        $this->assertAuthenticatedAs($user);
+    }
+
+    // ============================================
     // disconnect() tests - require routes to be registered
     // ============================================
 

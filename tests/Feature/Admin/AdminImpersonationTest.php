@@ -86,6 +86,34 @@ it('stops impersonation and returns to admin user', function () {
     $this->assertAuthenticatedAs($admin);
 });
 
+it('regenerates session on impersonation start', function () {
+    $admin = User::factory()->admin()->create();
+    $user = User::factory()->create();
+
+    $sessionIdBefore = session()->getId();
+
+    $this->actingAs($admin)->post("/admin/users/{$user->id}/impersonate");
+
+    $sessionIdAfter = session()->getId();
+    expect($sessionIdAfter)->not->toBe($sessionIdBefore);
+    $this->assertAuthenticatedAs($user);
+});
+
+it('regenerates session on impersonation stop', function () {
+    $admin = User::factory()->admin()->create();
+    $user = User::factory()->create();
+
+    $sessionIdBefore = session()->getId();
+
+    $this->actingAs($user)
+        ->withSession(impersonationSession($admin->id, $admin->name))
+        ->post('/admin/impersonate/stop');
+
+    $sessionIdAfter = session()->getId();
+    expect($sessionIdAfter)->not->toBe($sessionIdBefore);
+    $this->assertAuthenticatedAs($admin);
+});
+
 it('creates audit log on impersonation start', function () {
     $admin = User::factory()->admin()->create();
     $user = User::factory()->create();

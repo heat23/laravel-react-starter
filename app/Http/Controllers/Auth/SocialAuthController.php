@@ -59,7 +59,7 @@ class SocialAuthController extends Controller
     /**
      * Handle the OAuth callback from the provider.
      */
-    public function callback(string $provider): RedirectResponse
+    public function callback(Request $request, string $provider): RedirectResponse
     {
         // Verify feature is enabled
         if (! feature_enabled('social_auth')) {
@@ -87,6 +87,7 @@ class SocialAuthController extends Controller
 
         // Log the user in
         Auth::login($user, remember: false);
+        $request->session()->regenerate();
 
         $this->auditService->log('auth.social_login', [
             'provider' => $provider,
