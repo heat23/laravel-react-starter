@@ -10,9 +10,6 @@ import { useEffect } from 'react';
 
 import { Head } from '@inertiajs/react';
 
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { AnalyticsEvents } from '@/lib/events';
-
 import PageHeader from '@/Components/layout/PageHeader';
 import {
   Card,
@@ -22,7 +19,9 @@ import {
   CardTitle,
 } from '@/Components/ui/card';
 import { EmptyState } from '@/Components/ui/empty-state';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { AnalyticsEvents } from '@/lib/events';
 
 // Placeholder stats - replace with real data
 const stats = [

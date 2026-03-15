@@ -235,7 +235,7 @@ export default function BillingDashboard({
         )}
 
         {/* Cohort Retention */}
-        {cohort_retention.length > 0 && (
+        {cohort_retention?.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle>Cohort Retention</CardTitle>

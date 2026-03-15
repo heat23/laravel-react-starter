@@ -4,9 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { Head, Link, router, usePage } from '@inertiajs/react';
 
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { AnalyticsEvents } from '@/lib/events';
-
 import PageHeader from '@/Components/layout/PageHeader';
 import { Alert, AlertDescription } from '@/Components/ui/alert';
 import { Badge } from '@/Components/ui/badge';
@@ -20,7 +17,9 @@ import {
 } from '@/Components/ui/card';
 import { LoadingButton } from '@/Components/ui/loading-button';
 import { ToggleGroup, ToggleGroupItem } from '@/Components/ui/toggle-group';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { AnalyticsEvents } from '@/lib/events';
 import type { PageProps } from '@/types';
 
 interface TierConfig {
