@@ -1,45 +1,68 @@
-import { Activity, Users, CreditCard, TrendingUp, BarChart3 } from "lucide-react";
+import {
+  Activity,
+  Users,
+  CreditCard,
+  TrendingUp,
+  BarChart3,
+} from 'lucide-react';
 
-import { Head } from "@inertiajs/react";
+import { useEffect } from 'react';
 
-import PageHeader from "@/Components/layout/PageHeader";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
-import { EmptyState } from "@/Components/ui/empty-state";
-import DashboardLayout from "@/Layouts/DashboardLayout";
+import { Head } from '@inertiajs/react';
+
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
+
+import PageHeader from '@/Components/layout/PageHeader';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/Components/ui/card';
+import { EmptyState } from '@/Components/ui/empty-state';
+import DashboardLayout from '@/Layouts/DashboardLayout';
 
 // Placeholder stats - replace with real data
 const stats = [
   {
-    title: "Total Users",
-    value: "0",
-    description: "Active accounts",
+    title: 'Total Users',
+    value: '0',
+    description: 'Active accounts',
     icon: Users,
     trend: null,
   },
   {
-    title: "Revenue",
-    value: "$0",
-    description: "This month",
+    title: 'Revenue',
+    value: '$0',
+    description: 'This month',
     icon: CreditCard,
     trend: null,
   },
   {
-    title: "Active Sessions",
-    value: "0",
-    description: "Currently online",
+    title: 'Active Sessions',
+    value: '0',
+    description: 'Currently online',
     icon: Activity,
     trend: null,
   },
   {
-    title: "Growth",
-    value: "0%",
-    description: "vs last month",
+    title: 'Growth',
+    value: '0%',
+    description: 'vs last month',
     icon: TrendingUp,
     trend: null,
   },
 ];
 
 export default function Dashboard() {
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_DASHBOARD_VIEWED);
+  }, [track]);
+
   return (
     <DashboardLayout>
       <Head title="Dashboard" />
@@ -55,12 +78,16 @@ export default function Dashboard() {
           {stats.map((stat) => (
             <Card key={stat.title}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  {stat.title}
+                </CardTitle>
                 <stat.icon className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground">{stat.description}</p>
+                <p className="text-xs text-muted-foreground">
+                  {stat.description}
+                </p>
               </CardContent>
             </Card>
           ))}
@@ -91,9 +118,7 @@ export default function Dashboard() {
           <Card className="col-span-3">
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
-                Latest actions in your account.
-              </CardDescription>
+              <CardDescription>Latest actions in your account.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
