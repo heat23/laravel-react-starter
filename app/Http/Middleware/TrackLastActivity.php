@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class TrackLastActivity
+{
+    /**
+     * Update the authenticated user's last_active_at timestamp.
+     *
+     * Throttled to once per 15 minutes to reduce write pressure.
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        $user = $request->user();
+
+        if ($user && $this->shouldUpdate($user)) {
+            $user->forceFill(['last_active_at' => now()])->saveQuietly();
+        }
+
+        return $next($request);
+    }
+
+    private function shouldUpdate(mixed $user): bool
+    {
+        if (! isset($user->last_active_at)) {
+            return true;
+        }
+
+        return $user->last_active_at === null
+            || $user->last_active_at->lt(now()->subMinutes(15));
+    }
+}

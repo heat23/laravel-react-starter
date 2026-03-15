@@ -34,6 +34,7 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
         'email',
         'password',
         'last_login_at',
+        'last_active_at',
         'signup_source',
         'trial_ends_at',
         'email_verified_at',
@@ -59,6 +60,7 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
         return [
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
+            'last_active_at' => 'datetime',
             'trial_ends_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
@@ -84,6 +86,16 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
     public function updateLastLogin(): void
     {
         $this->update(['last_login_at' => now()]);
+    }
+
+    /**
+     * Check if the user has been inactive for the given number of days.
+     */
+    public function isInactive(int $days): bool
+    {
+        $lastActivity = $this->last_active_at ?? $this->last_login_at ?? $this->created_at;
+
+        return $lastActivity->lt(now()->subDays($days));
     }
 
     /**
