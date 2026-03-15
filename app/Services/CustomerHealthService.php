@@ -142,32 +142,34 @@ class CustomerHealthService
 
     /**
      * Billing status score (0-25 points).
+     * Uses direct DB queries to avoid lazy loading violations.
      */
     private function billingStatusScore(User $user): int
     {
-        if (! method_exists($user, 'subscribed')) {
+        if (! DB::getSchemaBuilder()->hasTable('subscriptions')) {
             return 0;
         }
 
-        if ($user->subscribed('default')) {
-            return 25;
-        }
-
-        if ($user->onTrial()) {
-            return 20;
-        }
-
-        // Check for past_due via subscriptions table
-        $hasPastDue = DB::table('subscriptions')
+        $subscription = DB::table('subscriptions')
             ->where('user_id', $user->id)
-            ->where('stripe_status', 'past_due')
-            ->exists();
+            ->where('type', 'default')
+            ->first();
 
-        if ($hasPastDue) {
-            return 5;
+        if (! $subscription) {
+            // Check if on trial (trial_ends_at on user)
+            if ($user->trial_ends_at && $user->trial_ends_at->isFuture()) {
+                return 20;
+            }
+
+            return 0;
         }
 
-        return 0;
+        return match ($subscription->stripe_status) {
+            'active' => 25,
+            'trialing' => 20,
+            'past_due' => 5,
+            default => 0,
+        };
     }
 
     /**

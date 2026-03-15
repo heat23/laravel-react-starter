@@ -54,17 +54,19 @@ it('does not send to unverified users', function () {
 });
 
 it('does not send duplicate emails', function () {
-    Notification::fake();
-
     $user = User::factory()->create([
         'created_at' => now()->subHours(2),
         'email_verified_at' => now()->subHours(1),
     ]);
 
-    // Simulate already-sent notification
-    $user->notify(new WelcomeSequenceNotification(1));
+    // Insert a real notification record in the DB for dedup check
+    $user->notifications()->create([
+        'id' => \Illuminate\Support\Str::uuid(),
+        'type' => WelcomeSequenceNotification::class,
+        'data' => ['type' => 'welcome_sequence_1', 'email_number' => 1],
+        'read_at' => null,
+    ]);
 
-    // Reset fake after seeding
     Notification::fake();
 
     $this->artisan('emails:send-welcome-sequence')
