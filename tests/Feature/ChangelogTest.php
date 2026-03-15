@@ -10,11 +10,11 @@ it('renders changelog page', function () {
     );
 });
 
-it('passes changelog entries as props', function () {
+it('passes changelog entries as array props', function () {
     $response = $this->get('/changelog');
 
     $response->assertInertia(fn ($page) => $page
         ->component('Changelog')
-        ->where('entries', fn ($entries) => is_array($entries))
+        ->has('entries', 1)
     );
 });

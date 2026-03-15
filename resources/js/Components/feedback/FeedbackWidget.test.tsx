@@ -27,7 +27,9 @@ describe('FeedbackWidget', () => {
 
     await user.click(screen.getByRole('button', { name: /send feedback/i }));
 
-    expect(screen.getByText('Send Feedback')).toBeInTheDocument();
+    expect(
+      screen.getByText('Help us improve by sharing your thoughts.')
+    ).toBeInTheDocument();
     expect(screen.getByLabelText(/type/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/message/i)).toBeInTheDocument();
   });

@@ -1,35 +1,40 @@
 <?php
 
+use App\Models\User;
 use App\Models\WebhookDelivery;
 use App\Models\WebhookEndpoint;
-use App\Models\User;
 
 it('deletes old terminal webhook deliveries', function () {
     $user = User::factory()->create();
-    $endpoint = WebhookEndpoint::factory()->for($user)->create();
+    $endpoint = WebhookEndpoint::factory()->create(['user_id' => $user->id]);
 
     // Old terminal deliveries (should be deleted)
-    $oldDelivered = WebhookDelivery::factory()->for($endpoint)->create([
+    $oldDelivered = WebhookDelivery::factory()->create([
+        'webhook_endpoint_id' => $endpoint->id,
         'status' => 'success',
         'created_at' => now()->subDays(100),
     ]);
-    $oldFailed = WebhookDelivery::factory()->for($endpoint)->create([
+    $oldFailed = WebhookDelivery::factory()->create([
+        'webhook_endpoint_id' => $endpoint->id,
         'status' => 'failed',
         'created_at' => now()->subDays(100),
     ]);
-    $oldAbandoned = WebhookDelivery::factory()->for($endpoint)->create([
+    $oldAbandoned = WebhookDelivery::factory()->create([
+        'webhook_endpoint_id' => $endpoint->id,
         'status' => 'abandoned',
         'created_at' => now()->subDays(100),
     ]);
 
     // Recent delivery (should be preserved)
-    $recentDelivery = WebhookDelivery::factory()->for($endpoint)->create([
+    $recentDelivery = WebhookDelivery::factory()->create([
+        'webhook_endpoint_id' => $endpoint->id,
         'status' => 'success',
         'created_at' => now()->subDays(10),
     ]);
 
     // Old pending delivery (should be preserved - not terminal)
-    $oldPending = WebhookDelivery::factory()->for($endpoint)->create([
+    $oldPending = WebhookDelivery::factory()->create([
+        'webhook_endpoint_id' => $endpoint->id,
         'status' => 'pending',
         'created_at' => now()->subDays(100),
     ]);
@@ -47,9 +52,10 @@ it('deletes old terminal webhook deliveries', function () {
 
 it('accepts custom retention days', function () {
     $user = User::factory()->create();
-    $endpoint = WebhookEndpoint::factory()->for($user)->create();
+    $endpoint = WebhookEndpoint::factory()->create(['user_id' => $user->id]);
 
-    $delivery = WebhookDelivery::factory()->for($endpoint)->create([
+    $delivery = WebhookDelivery::factory()->create([
+        'webhook_endpoint_id' => $endpoint->id,
         'status' => 'success',
         'created_at' => now()->subDays(40),
     ]);
