@@ -58,27 +58,20 @@ it('includes email number in database payload', function () {
 it('sends onboarding reminders via the artisan command', function () {
     config(['features.onboarding.enabled' => true]);
 
-    // User registered 36 hours ago — well within the 1-2 day window for email 1
-    $user = User::factory()->create([
+    // User registered 36 hours ago, onboarding NOT completed
+    $user = User::factory()->onboardingIncomplete()->create([
         'email_verified_at' => now()->subHours(36),
         'created_at' => now()->subHours(36),
     ]);
 
     Notification::fake();
 
-    // Directly notify to verify the notification itself works
-    $user->notify(new OnboardingReminderNotification(emailNumber: 1));
+    $this->artisan('notifications:send-onboarding')
+        ->assertSuccessful();
 
     Notification::assertSentTo($user, OnboardingReminderNotification::class, function ($notification) {
         return $notification->emailNumber === 1;
     });
-});
-
-it('artisan command exits successfully when onboarding is enabled', function () {
-    config(['features.onboarding.enabled' => true]);
-
-    $this->artisan('notifications:send-onboarding')
-        ->assertSuccessful();
 });
 
 it('does not send onboarding reminders when feature is disabled', function () {

@@ -85,7 +85,21 @@ class SendOnboardingReminders extends Command
 
     private function hasCompletedOnboarding(User $user): bool
     {
-        return (bool) $user->getSetting('onboarding_completed');
+        if (! class_exists(\App\Models\UserSetting::class)) {
+            return false;
+        }
+
+        $setting = \App\Models\UserSetting::where('user_id', $user->id)
+            ->where('key', 'onboarding_completed')
+            ->first();
+
+        if (! $setting) {
+            return false;
+        }
+
+        $value = json_decode($setting->value, true);
+
+        return json_last_error() === JSON_ERROR_NONE ? (bool) $value : (bool) $setting->value;
     }
 
     private function hasRecentActivity(User $user): bool
