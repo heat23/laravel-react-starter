@@ -26,11 +26,12 @@ class TrackLastActivity
 
     private function shouldUpdate(mixed $user): bool
     {
-        if (! isset($user->last_active_at)) {
+        $lastActive = $user->last_active_at ?? null;
+
+        if ($lastActive === null) {
             return true;
         }
 
-        return $user->last_active_at === null
-            || $user->last_active_at->lt(now()->subMinutes(15));
+        return $lastActive->lt(now()->subMinutes(15));
     }
 }

@@ -82,10 +82,6 @@ class SendTrialNudges extends Command
 
     private function hasActiveSubscription(User $user): bool
     {
-        if (! method_exists($user, 'subscribed')) {
-            return false;
-        }
-
         return $user->subscribed('default');
     }
 

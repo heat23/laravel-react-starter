@@ -34,7 +34,7 @@ class CustomerHealthService
 
             $activatedUsers = User::where('created_at', '>=', now()->subDays(30))
                 ->whereNotNull('email_verified_at')
-                ->whereColumn('email_verified_at', '<=', DB::raw("datetime(created_at, '+7 days')"))
+                ->whereRaw("email_verified_at <= datetime(created_at, '+7 days')")
                 ->count();
 
             return round(($activatedUsers / $totalUsers) * 100, 1);
@@ -157,7 +157,9 @@ class CustomerHealthService
 
         if (! $subscription) {
             // Check if on trial (trial_ends_at on user)
-            if ($user->trial_ends_at && $user->trial_ends_at->isFuture()) {
+            /** @var \Carbon\Carbon|null $trialEndsAt */
+            $trialEndsAt = $user->trial_ends_at;
+            if ($trialEndsAt !== null && $trialEndsAt->isFuture()) {
                 return 20;
             }
 

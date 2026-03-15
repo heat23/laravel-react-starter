@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Services\CustomerHealthService;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -27,12 +28,8 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function getPlanName(mixed $user): ?string
+    private function getPlanName(User $user): string
     {
-        if (! method_exists($user, 'subscription')) {
-            return null;
-        }
-
         $subscription = $user->subscription('default');
 
         if (! $subscription || $subscription->stripe_status !== 'active') {
