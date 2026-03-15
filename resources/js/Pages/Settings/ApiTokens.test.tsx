@@ -10,10 +10,28 @@ vi.mock('@inertiajs/react', async () => {
     ...actual,
     usePage: vi.fn(() => ({
       props: {
-        auth: { user: { id: 1, name: 'Test User', email: 'test@example.com', has_password: true } },
+        auth: {
+          user: {
+            id: 1,
+            name: 'Test User',
+            email: 'test@example.com',
+            has_password: true,
+          },
+        },
         flash: {},
         errors: {},
-        features: { twoFactor: false, billing: false, socialAuth: false, emailVerification: true, apiTokens: true, userSettings: true, notifications: false, onboarding: false, apiDocs: false, webhooks: false },
+        features: {
+          twoFactor: false,
+          billing: false,
+          socialAuth: false,
+          emailVerification: true,
+          apiTokens: true,
+          userSettings: true,
+          notifications: false,
+          onboarding: false,
+          apiDocs: false,
+          webhooks: false,
+        },
         notifications_unread_count: 0,
       },
     })),
@@ -31,7 +49,15 @@ vi.mock('@/Layouts/DashboardLayout', () => ({
 }));
 
 vi.mock('@/Components/layout/PageHeader', () => ({
-  default: ({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) => (
+  default: ({
+    title,
+    subtitle,
+    actions,
+  }: {
+    title: string;
+    subtitle?: string;
+    actions?: React.ReactNode;
+  }) => (
     <div data-testid="page-header">
       <h1>{title}</h1>
       {subtitle && <p>{subtitle}</p>}
@@ -96,28 +122,37 @@ describe('ApiTokens Page', () => {
     render(<ApiTokens />);
 
     expect(screen.getByTestId('page-header')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /api tokens/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /api tokens/i })
+    ).toBeInTheDocument();
   });
 
   it('renders Create token button in header', () => {
     render(<ApiTokens />);
 
-    expect(screen.getByRole('button', { name: /create token/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /create token/i })
+    ).toBeInTheDocument();
   });
 
   it('shows loading state initially', () => {
-    (global.fetch as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+    (global.fetch as ReturnType<typeof vi.fn>).mockReturnValue(
+      new Promise(() => {})
+    );
 
     render(<ApiTokens />);
 
-    expect(screen.getByText(/loading tokens/i)).toBeInTheDocument();
+    const skeletons = document.querySelectorAll('.animate-pulse');
+    expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('shows empty state when no tokens exist', async () => {
     render(<ApiTokens />);
 
     expect(await screen.findByText(/no api tokens/i)).toBeInTheDocument();
-    expect(screen.getByText(/create a token to authenticate with the api/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/create a token to authenticate with the api/i)
+    ).toBeInTheDocument();
   });
 
   it('shows empty state Create token button', async () => {
@@ -164,8 +199,12 @@ describe('ApiTokens Page', () => {
     render(<ApiTokens />);
 
     await screen.findByText('Production Server');
-    expect(screen.getByRole('button', { name: /revoke token production server/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /revoke token ci pipeline/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /revoke token production server/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /revoke token ci pipeline/i })
+    ).toBeInTheDocument();
   });
 
   it('displays last used date when available', async () => {
@@ -198,7 +237,9 @@ describe('ApiTokens Page', () => {
     render(<ApiTokens />);
 
     await screen.findByText(/no api tokens/i);
-    const headerButton = screen.getAllByRole('button', { name: /create token/i })[0];
+    const headerButton = screen.getAllByRole('button', {
+      name: /create token/i,
+    })[0];
     await user.click(headerButton);
 
     expect(screen.getByText('Create API Token')).toBeInTheDocument();
@@ -211,7 +252,9 @@ describe('ApiTokens Page', () => {
     render(<ApiTokens />);
 
     await screen.findByText(/no api tokens/i);
-    await user.click(screen.getAllByRole('button', { name: /create token/i })[0]);
+    await user.click(
+      screen.getAllByRole('button', { name: /create token/i })[0]
+    );
 
     expect(screen.getByText('Read')).toBeInTheDocument();
     expect(screen.getByText('Write')).toBeInTheDocument();
@@ -221,8 +264,11 @@ describe('ApiTokens Page', () => {
   it('fetches tokens on mount', () => {
     render(<ApiTokens />);
 
-    expect(global.fetch).toHaveBeenCalledWith('/api/tokens', expect.objectContaining({
-      headers: { Accept: 'application/json' },
-    }));
+    expect(global.fetch).toHaveBeenCalledWith(
+      '/api/tokens',
+      expect.objectContaining({
+        headers: { Accept: 'application/json' },
+      })
+    );
   });
 });

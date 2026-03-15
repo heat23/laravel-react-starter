@@ -1,18 +1,32 @@
-import { AlertCircle, CheckCircle2, Download, HelpCircle, Info, Receipt } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Download,
+  HelpCircle,
+  Info,
+  Receipt,
+} from 'lucide-react';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { Head, Link, router, usePage } from '@inertiajs/react';
 
-import { CancelSubscriptionDialog } from "@/Components/billing/CancelSubscriptionDialog";
-import { ResumeSubscriptionDialog } from "@/Components/billing/ResumeSubscriptionDialog";
-import { StatusBadge } from "@/Components/billing/StatusBadge";
-import PageHeader from "@/Components/layout/PageHeader";
-import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
-import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
-import { LoadingButton } from "@/Components/ui/loading-button";
-import DashboardLayout from "@/Layouts/DashboardLayout";
+import { CancelSubscriptionDialog } from '@/Components/billing/CancelSubscriptionDialog';
+import { ResumeSubscriptionDialog } from '@/Components/billing/ResumeSubscriptionDialog';
+import { StatusBadge } from '@/Components/billing/StatusBadge';
+import PageHeader from '@/Components/layout/PageHeader';
+import { Alert, AlertDescription, AlertTitle } from '@/Components/ui/alert';
+import { Button } from '@/Components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/Components/ui/card';
+import { LoadingButton } from '@/Components/ui/loading-button';
+import DashboardLayout from '@/Layouts/DashboardLayout';
+import { formatDate } from '@/lib/format';
 
 interface SubscriptionInfo {
   name: string;
@@ -51,61 +65,71 @@ interface BillingPageProps {
   graceDays?: number;
 }
 
-function formatSubscriptionDate(dateString: string): { formatted: string; relative: string } {
+function formatSubscriptionDate(dateString: string): {
+  formatted: string;
+  relative: string;
+} {
   const date = new Date(dateString);
   const now = new Date();
   const diffTime = date.getTime() - now.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-  let relative = "";
+  let relative = '';
   if (diffDays < 0) {
-    relative = "Expired";
+    relative = 'Expired';
   } else if (diffDays === 0) {
-    relative = "Today";
+    relative = 'Today';
   } else if (diffDays === 1) {
-    relative = "Tomorrow";
+    relative = 'Tomorrow';
   } else if (diffDays <= 7) {
     relative = `${diffDays} days`;
   } else if (diffDays <= 30) {
     const weeks = Math.floor(diffDays / 7);
-    relative = `${weeks} ${weeks === 1 ? "week" : "weeks"}`;
+    relative = `${weeks} ${weeks === 1 ? 'week' : 'weeks'}`;
   } else {
     relative = `${Math.floor(diffDays / 30)} months`;
   }
 
   return {
-    formatted: date.toLocaleDateString(),
+    formatted: formatDate(dateString),
     relative,
   };
 }
 
 export default function BillingIndex() {
-  const { subscription, platformTrial, incompletePayment, invoices = [], graceDays = 7 } =
-    usePage<BillingPageProps>().props;
+  const {
+    subscription,
+    platformTrial,
+    incompletePayment,
+    invoices = [],
+    graceDays = 7,
+  } = usePage<BillingPageProps>().props;
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
       return;
     }
 
     const params = new URLSearchParams(window.location.search);
-    if (params.get("checkout") === "success") {
+    if (params.get('checkout') === 'success') {
       setCheckoutSuccess(true);
 
-      params.delete("checkout");
+      params.delete('checkout');
       const nextQuery = params.toString();
-      const nextUrl = nextQuery ? `${window.location.pathname}?${nextQuery}` : window.location.pathname;
-      window.history.replaceState({}, "", nextUrl);
+      const nextUrl = nextQuery
+        ? `${window.location.pathname}?${nextQuery}`
+        : window.location.pathname;
+      window.history.replaceState({}, '', nextUrl);
     }
   }, []);
 
   const handlePortal = () => {
     setPortalLoading(true);
-    router.visit(route("billing.portal"), {
+    router.visit(route('billing.portal'), {
       onFinish: () => setPortalLoading(false),
     });
   };
@@ -131,12 +155,12 @@ export default function BillingIndex() {
             <Alert className="border-success/20 bg-success/5">
               <CheckCircle2 className="h-4 w-4 text-success" />
               <AlertTitle>
-                {!subscription ? "Welcome!" : "Checkout complete"}
+                {!subscription ? 'Welcome!' : 'Checkout complete'}
               </AlertTitle>
               <AlertDescription>
                 {!subscription
                   ? "You're now subscribed! It may take a moment for your subscription details to appear."
-                  : "Thanks for upgrading! It may take a moment for your subscription details to appear."}
+                  : 'Thanks for upgrading! It may take a moment for your subscription details to appear.'}
               </AlertDescription>
             </Alert>
           )}
@@ -146,15 +170,15 @@ export default function BillingIndex() {
               <Info className="h-4 w-4 text-primary" />
               <AlertTitle>Pro Trial Active</AlertTitle>
               <AlertDescription>
-                You have <strong>{platformTrial.daysRemaining} days</strong> remaining to explore all
-                Pro features. Trial expires on{" "}
-                <strong>{new Date(platformTrial.endsAt).toLocaleDateString()}</strong>.{" "}
+                You have <strong>{platformTrial.daysRemaining} days</strong>{' '}
+                remaining to explore all Pro features. Trial expires on{' '}
+                <strong>{formatDate(platformTrial.endsAt)}</strong>.{' '}
                 <Link
                   href="/pricing"
                   className="underline font-medium rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   Upgrade now
-                </Link>{" "}
+                </Link>{' '}
                 to keep access after your trial ends.
               </AlertDescription>
             </Alert>
@@ -165,7 +189,7 @@ export default function BillingIndex() {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Payment Confirmation Required</AlertTitle>
               <AlertDescription>
-                Your subscription requires payment confirmation.{" "}
+                Your subscription requires payment confirmation.{' '}
                 <a
                   href={incompletePayment.confirmUrl}
                   className="underline font-medium rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -176,13 +200,13 @@ export default function BillingIndex() {
             </Alert>
           )}
 
-          {subscription?.status === "incomplete" && !incompletePayment && (
+          {subscription?.status === 'incomplete' && !incompletePayment && (
             <Alert variant="destructive">
               <Info className="h-4 w-4" />
               <AlertTitle>Payment Processing</AlertTitle>
               <AlertDescription>
-                Your subscription is being set up. This usually takes a few moments. If this
-                persists, please contact support or visit the{" "}
+                Your subscription is being set up. This usually takes a few
+                moments. If this persists, please contact support or visit the{' '}
                 <LoadingButton
                   variant="link"
                   onClick={handlePortal}
@@ -197,13 +221,15 @@ export default function BillingIndex() {
             </Alert>
           )}
 
-          {subscription?.status === "past_due" && (
+          {subscription?.status === 'past_due' && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Payment Failed - Automatic Retry in Progress</AlertTitle>
+              <AlertTitle>
+                Payment Failed - Automatic Retry in Progress
+              </AlertTitle>
               <AlertDescription>
-                Your last payment failed. Stripe will automatically retry charging your card. To
-                avoid service interruption,{" "}
+                Your last payment failed. Stripe will automatically retry
+                charging your card. To avoid service interruption,{' '}
                 <button
                   type="button"
                   onClick={handlePortal}
@@ -214,20 +240,21 @@ export default function BillingIndex() {
                 </button>
                 .
                 <p className="mt-2 text-sm text-muted-foreground">
-                  <strong>Note:</strong> If payment fails for {graceDays} days, access to paid
-                  features will be suspended until payment is resolved.
+                  <strong>Note:</strong> If payment fails for {graceDays} days,
+                  access to paid features will be suspended until payment is
+                  resolved.
                 </p>
               </AlertDescription>
             </Alert>
           )}
 
-          {subscription?.status === "incomplete_expired" && (
+          {subscription?.status === 'incomplete_expired' && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Subscription Expired</AlertTitle>
               <AlertDescription>
-                Your subscription could not be completed and has expired. Please start a new
-                subscription to access paid features.{" "}
+                Your subscription could not be completed and has expired. Please
+                start a new subscription to access paid features.{' '}
                 <Link
                   href="/pricing"
                   className="underline font-medium rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -243,9 +270,10 @@ export default function BillingIndex() {
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Subscription Ending</AlertTitle>
               <AlertDescription>
-                Your subscription has been canceled and will end on{" "}
-                <strong>{new Date(subscription.endsAt).toLocaleDateString()}</strong>. You can
-                resume your subscription at any time to continue enjoying all features.
+                Your subscription has been canceled and will end on{' '}
+                <strong>{formatDate(subscription.endsAt)}</strong>. You can
+                resume your subscription at any time to continue enjoying all
+                features.
               </AlertDescription>
             </Alert>
           )}
@@ -255,7 +283,8 @@ export default function BillingIndex() {
               <Info className="h-4 w-4" />
               <AlertTitle>Subscription Ended</AlertTitle>
               <AlertDescription>
-                Your subscription has ended. Upgrade to regain access to premium features.
+                Your subscription has ended. Upgrade to regain access to premium
+                features.
               </AlertDescription>
             </Alert>
           )}
@@ -265,10 +294,10 @@ export default function BillingIndex() {
               <CardTitle>Subscription Status</CardTitle>
               <CardDescription>
                 {subscription
-                  ? "Your current plan details."
+                  ? 'Your current plan details.'
                   : platformTrial
                     ? "You're on a Pro trial. Subscribe to keep access after your trial ends."
-                    : "You are not subscribed to a paid plan yet."}
+                    : 'You are not subscribed to a paid plan yet.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -279,7 +308,9 @@ export default function BillingIndex() {
                       <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">
                         Current Plan
                       </p>
-                      <p className="text-2xl font-semibold text-foreground">{subscription.name}</p>
+                      <p className="text-2xl font-semibold text-foreground">
+                        {subscription.name}
+                      </p>
                     </div>
                     <div className="scale-125">
                       <StatusBadge status={subscription.status} />
@@ -293,7 +324,7 @@ export default function BillingIndex() {
                           Trial ends
                         </span>
                         <span className="text-sm font-semibold text-foreground tabular-nums">
-                          {new Date(subscription.trialEndsAt).toLocaleDateString()}
+                          {formatDate(subscription.trialEndsAt)}
                         </span>
                       </div>
                     )}
@@ -304,10 +335,16 @@ export default function BillingIndex() {
                         </span>
                         <div className="text-right">
                           <p className="text-sm font-semibold text-destructive tabular-nums">
-                            {formatSubscriptionDate(subscription.endsAt).formatted}
+                            {
+                              formatSubscriptionDate(subscription.endsAt)
+                                .formatted
+                            }
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {formatSubscriptionDate(subscription.endsAt).relative}
+                            {
+                              formatSubscriptionDate(subscription.endsAt)
+                                .relative
+                            }
                           </p>
                         </div>
                       </div>
@@ -317,24 +354,32 @@ export default function BillingIndex() {
               ) : platformTrial ? (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Plan</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Plan
+                    </span>
                     <span className="text-sm text-foreground">Pro Trial</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Status</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Status
+                    </span>
                     <StatusBadge status="trialing" />
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-muted-foreground">Trial expires</span>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Trial expires
+                    </span>
                     <span className="text-sm text-foreground">
-                      {new Date(platformTrial.endsAt).toLocaleDateString()}
+                      {formatDate(platformTrial.endsAt)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">
                       Days remaining
                     </span>
-                    <span className="text-sm text-foreground">{platformTrial.daysRemaining}</span>
+                    <span className="text-sm text-foreground">
+                      {platformTrial.daysRemaining}
+                    </span>
                   </div>
                 </div>
               ) : (
@@ -369,7 +414,10 @@ export default function BillingIndex() {
                 {subscription ? (
                   <>
                     {subscription.onGracePeriod ? (
-                      <Button onClick={() => setResumeDialogOpen(true)} className="w-full sm:w-auto">
+                      <Button
+                        onClick={() => setResumeDialogOpen(true)}
+                        className="w-full sm:w-auto"
+                      >
                         Resume Subscription
                       </Button>
                     ) : (
@@ -397,11 +445,15 @@ export default function BillingIndex() {
                 ) : (
                   <Button asChild className="w-full sm:w-auto">
                     <Link href="/pricing">
-                      {platformTrial ? "Upgrade Now" : "View Plans"}
+                      {platformTrial ? 'Upgrade Now' : 'View Plans'}
                     </Link>
                   </Button>
                 )}
-                <Button asChild variant="outline" className="w-full sm:w-auto group">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="w-full sm:w-auto group"
+                >
                   <Link href="/contact" className="gap-2">
                     <HelpCircle className="h-4 w-4 transition-transform group-hover:scale-110" />
                     Need help?
@@ -415,7 +467,9 @@ export default function BillingIndex() {
             <Card>
               <CardHeader>
                 <CardTitle>Billing History</CardTitle>
-                <CardDescription>Your past invoices and payments</CardDescription>
+                <CardDescription>
+                  Your past invoices and payments
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {invoices.length === 0 ? (
@@ -423,7 +477,8 @@ export default function BillingIndex() {
                     <Receipt className="h-8 w-8 text-muted-foreground/50 mb-3" />
                     <p className="font-medium">No invoices yet</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Your invoices will appear here after your first billing cycle.
+                      Your invoices will appear here after your first billing
+                      cycle.
                     </p>
                   </div>
                 ) : (
@@ -435,10 +490,10 @@ export default function BillingIndex() {
                       >
                         <div>
                           <p className="text-sm font-medium text-foreground">
-                            {new Date(invoice.date).toLocaleDateString()}
+                            {formatDate(invoice.date)}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {invoice.status === "paid" ? "Paid" : "Pending"}
+                            {invoice.status === 'paid' ? 'Paid' : 'Pending'}
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -451,7 +506,7 @@ export default function BillingIndex() {
                                 href={invoice.invoice_pdf}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                aria-label={`Download invoice from ${new Date(invoice.date).toLocaleDateString()}`}
+                                aria-label={`Download invoice from ${formatDate(invoice.date)}`}
                               >
                                 <Download className="h-4 w-4" />
                               </a>

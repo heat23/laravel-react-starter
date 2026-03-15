@@ -1,21 +1,37 @@
-import { Copy, Eye, EyeOff, Plus, Radio, RefreshCw, Send, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import {
+  Copy,
+  Eye,
+  EyeOff,
+  Plus,
+  Radio,
+  RefreshCw,
+  Send,
+  Trash2,
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from 'react';
 
-import { Head } from "@inertiajs/react";
+import { Head } from '@inertiajs/react';
 
-import PageHeader from "@/Components/layout/PageHeader";
-import { Badge } from "@/Components/ui/badge";
-import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
-import { ConfirmDialog } from "@/Components/ui/confirm-dialog";
-import { EmptyState } from "@/Components/ui/empty-state";
-import { Input } from "@/Components/ui/input";
-import { Label } from "@/Components/ui/label";
-import { LoadingButton } from "@/Components/ui/loading-button";
-import DashboardLayout from "@/Layouts/DashboardLayout";
-import type { WebhookDelivery, WebhookEndpoint } from "@/types";
+import PageHeader from '@/Components/layout/PageHeader';
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/Components/ui/card';
+import { ConfirmDialog } from '@/Components/ui/confirm-dialog';
+import { EmptyState } from '@/Components/ui/empty-state';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { LoadingButton } from '@/Components/ui/loading-button';
+import { Skeleton } from '@/Components/ui/skeleton';
+import DashboardLayout from '@/Layouts/DashboardLayout';
+import type { WebhookDelivery, WebhookEndpoint } from '@/types';
 
 interface WebhooksProps {
   available_events: string[];
@@ -25,15 +41,18 @@ export default function Webhooks({ available_events }: WebhooksProps) {
   const [endpoints, setEndpoints] = useState<WebhookEndpoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
-  const [selectedEndpoint, setSelectedEndpoint] = useState<WebhookEndpoint | null>(null);
+  const [selectedEndpoint, setSelectedEndpoint] =
+    useState<WebhookEndpoint | null>(null);
   const [showSecret, setShowSecret] = useState<number | null>(null);
   const [deliveries, setDeliveries] = useState<WebhookDelivery[]>([]);
-  const [deleteTarget, setDeleteTarget] = useState<WebhookEndpoint | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<WebhookEndpoint | null>(
+    null
+  );
 
   const fetchEndpoints = useCallback(async () => {
     try {
-      const res = await fetch("/api/webhooks", {
-        headers: { Accept: "application/json" },
+      const res = await fetch('/api/webhooks', {
+        headers: { Accept: 'application/json' },
       });
       const data = await res.json();
       setEndpoints(data);
@@ -49,34 +68,38 @@ export default function Webhooks({ available_events }: WebhooksProps) {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const res = await fetch(`/api/webhooks/${deleteTarget.id}`, {
-      method: "DELETE",
-      headers: { Accept: "application/json", "X-XSRF-TOKEN": getCsrfToken() },
+      method: 'DELETE',
+      headers: { Accept: 'application/json', 'X-XSRF-TOKEN': getCsrfToken() },
     });
     setDeleteTarget(null);
     if (!res.ok) {
-      toast.error("Could not delete the endpoint. Please try again or check your connection.");
+      toast.error(
+        'Could not delete the endpoint. Please try again or check your connection.'
+      );
       return;
     }
     fetchEndpoints();
-    toast.success("Webhook endpoint deleted.");
+    toast.success('Webhook endpoint deleted.');
   };
 
   const handleTest = async (id: number) => {
     const res = await fetch(`/api/webhooks/${id}/test`, {
-      method: "POST",
-      headers: { Accept: "application/json", "X-XSRF-TOKEN": getCsrfToken() },
+      method: 'POST',
+      headers: { Accept: 'application/json', 'X-XSRF-TOKEN': getCsrfToken() },
     });
     if (res.ok) {
-      toast.success("Test webhook queued.");
+      toast.success('Test webhook queued.');
     } else {
-      toast.error("Could not send the test webhook. Please verify the endpoint is active and try again.");
+      toast.error(
+        'Could not send the test webhook. Please verify the endpoint is active and try again.'
+      );
     }
   };
 
   const loadDeliveries = async (endpoint: WebhookEndpoint) => {
     setSelectedEndpoint(endpoint);
     const res = await fetch(`/api/webhooks/${endpoint.id}/deliveries`, {
-      headers: { Accept: "application/json" },
+      headers: { Accept: 'application/json' },
     });
     const data = await res.json();
     setDeliveries(data);
@@ -99,8 +122,12 @@ export default function Webhooks({ available_events }: WebhooksProps) {
         <div className="max-w-4xl mx-auto space-y-6">
           {loading ? (
             <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                Loading endpoints...
+              <CardContent className="py-6">
+                <div className="space-y-3">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
               </CardContent>
             </Card>
           ) : endpoints.length === 0 ? (
@@ -129,11 +156,13 @@ export default function Webhooks({ available_events }: WebhooksProps) {
                         {endpoint.url}
                       </CardTitle>
                       {endpoint.description && (
-                        <CardDescription>{endpoint.description}</CardDescription>
+                        <CardDescription>
+                          {endpoint.description}
+                        </CardDescription>
                       )}
                     </div>
-                    <Badge variant={endpoint.active ? "default" : "secondary"}>
-                      {endpoint.active ? "Active" : "Inactive"}
+                    <Badge variant={endpoint.active ? 'default' : 'secondary'}>
+                      {endpoint.active ? 'Active' : 'Inactive'}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -141,7 +170,11 @@ export default function Webhooks({ available_events }: WebhooksProps) {
                   <div className="space-y-3">
                     <div className="flex flex-wrap gap-1.5">
                       {endpoint.events.map((event) => (
-                        <Badge key={event} variant="outline" className="text-xs">
+                        <Badge
+                          key={event}
+                          variant="outline"
+                          className="text-xs"
+                        >
                           {event}
                         </Badge>
                       ))}
@@ -158,7 +191,7 @@ export default function Webhooks({ available_events }: WebhooksProps) {
                           className="shrink-0"
                           onClick={() => {
                             navigator.clipboard.writeText(endpoint.secret!);
-                            toast.success("Secret copied.");
+                            toast.success('Secret copied.');
                           }}
                           aria-label="Copy webhook secret"
                         >
@@ -171,18 +204,34 @@ export default function Webhooks({ available_events }: WebhooksProps) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setShowSecret(showSecret === endpoint.id ? null : endpoint.id)}
+                        onClick={() =>
+                          setShowSecret(
+                            showSecret === endpoint.id ? null : endpoint.id
+                          )
+                        }
                       >
                         {showSecret === endpoint.id ? (
-                          <><EyeOff className="mr-1.5 h-3 w-3" /> Hide secret</>
+                          <>
+                            <EyeOff className="mr-1.5 h-3 w-3" /> Hide secret
+                          </>
                         ) : (
-                          <><Eye className="mr-1.5 h-3 w-3" /> Show secret</>
+                          <>
+                            <Eye className="mr-1.5 h-3 w-3" /> Show secret
+                          </>
                         )}
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => loadDeliveries(endpoint)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => loadDeliveries(endpoint)}
+                      >
                         <RefreshCw className="mr-1.5 h-3 w-3" /> Deliveries
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleTest(endpoint.id)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleTest(endpoint.id)}
+                      >
                         Test
                       </Button>
                       <Button
@@ -215,36 +264,41 @@ export default function Webhooks({ available_events }: WebhooksProps) {
                     size="sm"
                   />
                 ) : (
-                <div className="space-y-2">
-                  {deliveries.map((delivery) => (
-                    <div
-                      key={delivery.id}
-                      className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Badge
-                          variant={
-                            delivery.status === "success"
-                              ? "default"
-                              : delivery.status === "failed"
-                                ? "destructive"
-                                : "secondary"
-                          }
-                          className="text-xs"
-                        >
-                          {delivery.status}
-                        </Badge>
-                        <span className="font-mono text-xs">{delivery.event_type}</span>
+                  <div className="space-y-2">
+                    {deliveries.map((delivery) => (
+                      <div
+                        key={delivery.id}
+                        className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Badge
+                            variant={
+                              delivery.status === 'success'
+                                ? 'default'
+                                : delivery.status === 'failed'
+                                  ? 'destructive'
+                                  : 'secondary'
+                            }
+                            className="text-xs"
+                          >
+                            {delivery.status}
+                          </Badge>
+                          <span className="font-mono text-xs">
+                            {delivery.event_type}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-muted-foreground text-xs">
+                          {delivery.response_code && (
+                            <span>HTTP {delivery.response_code}</span>
+                          )}
+                          <span>
+                            {delivery.attempts} attempt
+                            {delivery.attempts !== 1 ? 's' : ''}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 text-muted-foreground text-xs">
-                        {delivery.response_code && (
-                          <span>HTTP {delivery.response_code}</span>
-                        )}
-                        <span>{delivery.attempts} attempt{delivery.attempts !== 1 ? "s" : ""}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -280,7 +334,7 @@ export default function Webhooks({ available_events }: WebhooksProps) {
 
 function getCsrfToken(): string {
   const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : "";
+  return match ? decodeURIComponent(match[1]) : '';
 }
 
 function CreateEndpointDialog({
@@ -292,9 +346,9 @@ function CreateEndpointDialog({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState('');
   const [events, setEvents] = useState<string[]>([]);
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
   const [creating, setCreating] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
@@ -304,12 +358,12 @@ function CreateEndpointDialog({
     setCreating(true);
     setErrors({});
 
-    const res = await fetch("/api/webhooks", {
-      method: "POST",
+    const res = await fetch('/api/webhooks', {
+      method: 'POST',
       headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "X-XSRF-TOKEN": getCsrfToken(),
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-XSRF-TOKEN': getCsrfToken(),
       },
       body: JSON.stringify({ url, events, description: description || null }),
     });
@@ -321,13 +375,16 @@ function CreateEndpointDialog({
       if (res.status === 422 && data.errors) {
         setErrors(data.errors);
       } else {
-        toast.error(data.message || "Could not create the endpoint. Please check your input and try again.");
+        toast.error(
+          data.message ||
+            'Could not create the endpoint. Please check your input and try again.'
+        );
       }
       return;
     }
 
     setCreatedSecret(data.secret);
-    toast.success("Webhook endpoint created.");
+    toast.success('Webhook endpoint created.');
   };
 
   if (createdSecret) {
@@ -350,7 +407,7 @@ function CreateEndpointDialog({
                 size="icon"
                 onClick={() => {
                   navigator.clipboard.writeText(createdSecret);
-                  toast.success("Secret copied.");
+                  toast.success('Secret copied.');
                 }}
                 aria-label="Copy webhook secret"
               >
@@ -386,11 +443,13 @@ function CreateEndpointDialog({
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 required
-                aria-describedby={errors.url ? "webhook-url-error" : undefined}
+                aria-describedby={errors.url ? 'webhook-url-error' : undefined}
                 aria-invalid={!!errors.url}
               />
               {errors.url && (
-                <p id="webhook-url-error" className="text-xs text-destructive">{errors.url[0]}</p>
+                <p id="webhook-url-error" className="text-xs text-destructive">
+                  {errors.url[0]}
+                </p>
               )}
             </div>
 
@@ -398,7 +457,10 @@ function CreateEndpointDialog({
               <Label>Events</Label>
               <div className="space-y-2">
                 {availableEvents.map((event) => (
-                  <label key={event} className="flex items-center gap-2 text-sm">
+                  <label
+                    key={event}
+                    className="flex items-center gap-2 text-sm"
+                  >
                     <input
                       type="checkbox"
                       checked={events.includes(event)}
@@ -416,12 +478,20 @@ function CreateEndpointDialog({
                 ))}
               </div>
               {errors.events && (
-                <p id="webhook-events-error" className="text-xs text-destructive" role="alert">{errors.events[0]}</p>
+                <p
+                  id="webhook-events-error"
+                  className="text-xs text-destructive"
+                  role="alert"
+                >
+                  {errors.events[0]}
+                </p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="webhook-description">Description (optional)</Label>
+              <Label htmlFor="webhook-description">
+                Description (optional)
+              </Label>
               <Input
                 id="webhook-description"
                 placeholder="Production server"
@@ -431,10 +501,21 @@ function CreateEndpointDialog({
             </div>
 
             <div className="flex gap-2">
-              <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={onClose}
+              >
                 Cancel
               </Button>
-              <LoadingButton type="submit" className="flex-1" loading={creating} loadingText="Creating..." disabled={events.length === 0}>
+              <LoadingButton
+                type="submit"
+                className="flex-1"
+                loading={creating}
+                loadingText="Creating..."
+                disabled={events.length === 0}
+              >
                 Create endpoint
               </LoadingButton>
             </div>

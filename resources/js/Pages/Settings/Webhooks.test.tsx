@@ -9,10 +9,28 @@ vi.mock('@inertiajs/react', async () => {
     ...actual,
     usePage: vi.fn(() => ({
       props: {
-        auth: { user: { id: 1, name: 'Test', email: 'test@example.com', has_password: true } },
+        auth: {
+          user: {
+            id: 1,
+            name: 'Test',
+            email: 'test@example.com',
+            has_password: true,
+          },
+        },
         flash: {},
         errors: {},
-        features: { twoFactor: false, billing: false, socialAuth: false, emailVerification: true, apiTokens: true, userSettings: true, notifications: false, onboarding: false, apiDocs: false, webhooks: true },
+        features: {
+          twoFactor: false,
+          billing: false,
+          socialAuth: false,
+          emailVerification: true,
+          apiTokens: true,
+          userSettings: true,
+          notifications: false,
+          onboarding: false,
+          apiDocs: false,
+          webhooks: true,
+        },
         notifications_unread_count: 0,
       },
     })),
@@ -30,7 +48,15 @@ vi.mock('@/Layouts/DashboardLayout', () => ({
 }));
 
 vi.mock('@/Components/layout/PageHeader', () => ({
-  default: ({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) => (
+  default: ({
+    title,
+    subtitle,
+    actions,
+  }: {
+    title: string;
+    subtitle?: string;
+    actions?: React.ReactNode;
+  }) => (
     <div data-testid="page-header">
       <h1>{title}</h1>
       {subtitle && <p>{subtitle}</p>}
@@ -68,13 +94,17 @@ describe('Webhooks Page', () => {
     render(<Webhooks available_events={['user.created']} />);
 
     expect(screen.getByTestId('page-header')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /webhooks/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /webhooks/i })
+    ).toBeInTheDocument();
   });
 
   it('renders add endpoint button', () => {
     render(<Webhooks available_events={['user.created']} />);
 
-    expect(screen.getByRole('button', { name: /add endpoint/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /add endpoint/i })
+    ).toBeInTheDocument();
   });
 
   it('shows empty state when no endpoints', async () => {
@@ -87,11 +117,14 @@ describe('Webhooks Page', () => {
 
   it('shows loading state initially', () => {
     // Don't resolve the fetch immediately
-    (global.fetch as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+    (global.fetch as ReturnType<typeof vi.fn>).mockReturnValue(
+      new Promise(() => {})
+    );
 
     render(<Webhooks available_events={['user.created']} />);
 
-    expect(screen.getByText(/loading endpoints/i)).toBeInTheDocument();
+    const skeletons = document.querySelectorAll('.animate-pulse');
+    expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('renders endpoint list when endpoints exist', async () => {
@@ -112,7 +145,9 @@ describe('Webhooks Page', () => {
 
     render(<Webhooks available_events={['user.created']} />);
 
-    expect(await screen.findByText('https://example.com/webhook')).toBeInTheDocument();
+    expect(
+      await screen.findByText('https://example.com/webhook')
+    ).toBeInTheDocument();
   });
 
   it('displays active status badge for active endpoints', async () => {

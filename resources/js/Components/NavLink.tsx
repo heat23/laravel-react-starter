@@ -1,6 +1,6 @@
-import { Link, InertiaLinkProps } from "@inertiajs/react";
+import { Link, InertiaLinkProps } from '@inertiajs/react';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 interface NavLinkProps extends InertiaLinkProps {
   active?: boolean;
@@ -9,21 +9,23 @@ interface NavLinkProps extends InertiaLinkProps {
 
 export function NavLink({
   active,
-  activeClassName = "text-foreground bg-muted",
+  activeClassName = 'text-foreground bg-muted',
   className,
   children,
   ...props
 }: NavLinkProps) {
   // Check if current URL matches the href
-  const isActive = active ?? (typeof window !== 'undefined' && window.location.pathname === props.href);
+  const isActive =
+    active ??
+    (typeof window !== 'undefined' && window.location.pathname === props.href);
 
   return (
     <Link
       {...props}
       className={cn(
-        "transition-colors",
+        'transition-colors',
         className,
-        isActive && activeClassName
+        isActive ? activeClassName : 'hover:bg-muted/50'
       )}
     >
       {children}

@@ -60,6 +60,7 @@
   "resources/js/Components/ui/select.tsx": [],
   "resources/js/Components/ui/separator.tsx": [],
   "resources/js/Components/ui/sheet.tsx": [],
+  "resources/js/Components/ui/skeleton.tsx": [],
   "resources/js/Components/ui/stepper.tsx": [],
   "resources/js/Components/ui/switch.tsx": [],
   "resources/js/Components/ui/table.tsx": [],

@@ -1,20 +1,28 @@
-import { Copy, Key, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { Copy, Key, Plus, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from 'react';
 
-import { Head } from "@inertiajs/react";
+import { Head } from '@inertiajs/react';
 
-import PageHeader from "@/Components/layout/PageHeader";
-import { Badge } from "@/Components/ui/badge";
-import { Button } from "@/Components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
-import { ConfirmDialog } from "@/Components/ui/confirm-dialog";
-import { EmptyState } from "@/Components/ui/empty-state";
-import { Input } from "@/Components/ui/input";
-import { Label } from "@/Components/ui/label";
-import { LoadingButton } from "@/Components/ui/loading-button";
-import DashboardLayout from "@/Layouts/DashboardLayout";
+import PageHeader from '@/Components/layout/PageHeader';
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/Components/ui/card';
+import { ConfirmDialog } from '@/Components/ui/confirm-dialog';
+import { EmptyState } from '@/Components/ui/empty-state';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { LoadingButton } from '@/Components/ui/loading-button';
+import { Skeleton } from '@/Components/ui/skeleton';
+import DashboardLayout from '@/Layouts/DashboardLayout';
+import { formatDate } from '@/lib/format';
 
 interface ApiToken {
   id: number;
@@ -33,8 +41,8 @@ export default function ApiTokens() {
 
   const fetchTokens = useCallback(async () => {
     try {
-      const res = await fetch("/api/tokens", {
-        headers: { Accept: "application/json" },
+      const res = await fetch('/api/tokens', {
+        headers: { Accept: 'application/json' },
       });
       const data = await res.json();
       setTokens(data);
@@ -50,16 +58,16 @@ export default function ApiTokens() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const res = await fetch(`/api/tokens/${deleteTarget.id}`, {
-      method: "DELETE",
-      headers: { Accept: "application/json", "X-XSRF-TOKEN": getCsrfToken() },
+      method: 'DELETE',
+      headers: { Accept: 'application/json', 'X-XSRF-TOKEN': getCsrfToken() },
     });
     setDeleteTarget(null);
     if (!res.ok) {
-      toast.error("Could not revoke the token. Please try again.");
+      toast.error('Could not revoke the token. Please try again.');
       return;
     }
     fetchTokens();
-    toast.success("API token revoked.");
+    toast.success('API token revoked.');
   };
 
   return (
@@ -79,8 +87,12 @@ export default function ApiTokens() {
         <div className="max-w-4xl mx-auto space-y-6">
           {loading ? (
             <Card>
-              <CardContent className="py-12 text-center text-muted-foreground">
-                Loading tokens...
+              <CardContent className="py-6">
+                <div className="space-y-3">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
               </CardContent>
             </Card>
           ) : tokens.length === 0 ? (
@@ -104,7 +116,8 @@ export default function ApiTokens() {
               <CardHeader>
                 <CardTitle>Your Tokens</CardTitle>
                 <CardDescription>
-                  Tokens are used to authenticate API requests. Keep them secret.
+                  Tokens are used to authenticate API requests. Keep them
+                  secret.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -116,28 +129,30 @@ export default function ApiTokens() {
                     >
                       <div className="space-y-1 min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">{token.name}</span>
+                          <span className="font-medium text-sm">
+                            {token.name}
+                          </span>
                           <div className="flex gap-1">
                             {token.abilities.map((ability) => (
-                              <Badge key={ability} variant="outline" className="text-xs">
+                              <Badge
+                                key={ability}
+                                variant="outline"
+                                className="text-xs"
+                              >
                                 {ability}
                               </Badge>
                             ))}
                           </div>
                         </div>
                         <div className="flex gap-3 text-xs text-muted-foreground">
-                          <span>
-                            Created {new Date(token.created_at).toLocaleDateString()}
-                          </span>
+                          <span>Created {formatDate(token.created_at)}</span>
                           {token.last_used_at && (
                             <span>
-                              Last used {new Date(token.last_used_at).toLocaleDateString()}
+                              Last used {formatDate(token.last_used_at)}
                             </span>
                           )}
                           {token.expires_at && (
-                            <span>
-                              Expires {new Date(token.expires_at).toLocaleDateString()}
-                            </span>
+                            <span>Expires {formatDate(token.expires_at)}</span>
                           )}
                         </div>
                       </div>
@@ -186,13 +201,17 @@ export default function ApiTokens() {
 
 function getCsrfToken(): string {
   const match = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : "";
+  return match ? decodeURIComponent(match[1]) : '';
 }
 
 const AVAILABLE_ABILITIES = [
-  { value: "read", label: "Read", description: "Read-only access" },
-  { value: "write", label: "Write", description: "Create and update resources" },
-  { value: "delete", label: "Delete", description: "Delete resources" },
+  { value: 'read', label: 'Read', description: 'Read-only access' },
+  {
+    value: 'write',
+    label: 'Write',
+    description: 'Create and update resources',
+  },
+  { value: 'delete', label: 'Delete', description: 'Delete resources' },
 ] as const;
 
 function CreateTokenDialog({
@@ -202,9 +221,9 @@ function CreateTokenDialog({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const [name, setName] = useState("");
-  const [abilities, setAbilities] = useState<string[]>(["read"]);
-  const [expiresAt, setExpiresAt] = useState("");
+  const [name, setName] = useState('');
+  const [abilities, setAbilities] = useState<string[]>(['read']);
+  const [expiresAt, setExpiresAt] = useState('');
   const [creating, setCreating] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [createdToken, setCreatedToken] = useState<string | null>(null);
@@ -214,12 +233,12 @@ function CreateTokenDialog({
     setCreating(true);
     setErrors({});
 
-    const res = await fetch("/api/tokens", {
-      method: "POST",
+    const res = await fetch('/api/tokens', {
+      method: 'POST',
       headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "X-XSRF-TOKEN": getCsrfToken(),
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-XSRF-TOKEN': getCsrfToken(),
       },
       body: JSON.stringify({
         name,
@@ -235,13 +254,15 @@ function CreateTokenDialog({
       if (res.status === 422 && data.errors) {
         setErrors(data.errors);
       } else {
-        toast.error(data.message || "Could not create the token. Please try again.");
+        toast.error(
+          data.message || 'Could not create the token. Please try again.'
+        );
       }
       return;
     }
 
     setCreatedToken(data.token);
-    toast.success("API token created.");
+    toast.success('API token created.');
   };
 
   if (createdToken) {
@@ -264,7 +285,7 @@ function CreateTokenDialog({
                 size="icon"
                 onClick={() => {
                   navigator.clipboard.writeText(createdToken);
-                  toast.success("Token copied.");
+                  toast.success('Token copied.');
                 }}
                 aria-label="Copy API token"
               >
@@ -299,11 +320,13 @@ function CreateTokenDialog({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                aria-describedby={errors.name ? "token-name-error" : undefined}
+                aria-describedby={errors.name ? 'token-name-error' : undefined}
                 aria-invalid={!!errors.name}
               />
               {errors.name && (
-                <p id="token-name-error" className="text-xs text-destructive">{errors.name[0]}</p>
+                <p id="token-name-error" className="text-xs text-destructive">
+                  {errors.name[0]}
+                </p>
               )}
             </div>
 
@@ -311,7 +334,10 @@ function CreateTokenDialog({
               <Label>Permissions</Label>
               <div className="space-y-2">
                 {AVAILABLE_ABILITIES.map((ability) => (
-                  <label key={ability.value} className="flex items-center gap-2 text-sm">
+                  <label
+                    key={ability.value}
+                    className="flex items-center gap-2 text-sm"
+                  >
                     <input
                       type="checkbox"
                       checked={abilities.includes(ability.value)}
@@ -319,18 +345,22 @@ function CreateTokenDialog({
                         setAbilities(
                           e.target.checked
                             ? [...abilities, ability.value]
-                            : abilities.filter((a) => a !== ability.value),
+                            : abilities.filter((a) => a !== ability.value)
                         )
                       }
                       className="rounded"
                     />
                     <span className="font-medium">{ability.label}</span>
-                    <span className="text-muted-foreground">— {ability.description}</span>
+                    <span className="text-muted-foreground">
+                      — {ability.description}
+                    </span>
                   </label>
                 ))}
               </div>
               {errors.abilities && (
-                <p className="text-xs text-destructive" role="alert">{errors.abilities[0]}</p>
+                <p className="text-xs text-destructive" role="alert">
+                  {errors.abilities[0]}
+                </p>
               )}
             </div>
 
@@ -344,15 +374,27 @@ function CreateTokenDialog({
                 min={new Date().toISOString().slice(0, 16)}
               />
               {errors.expires_at && (
-                <p className="text-xs text-destructive">{errors.expires_at[0]}</p>
+                <p className="text-xs text-destructive">
+                  {errors.expires_at[0]}
+                </p>
               )}
             </div>
 
             <div className="flex gap-2">
-              <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={onClose}
+              >
                 Cancel
               </Button>
-              <LoadingButton type="submit" className="flex-1" loading={creating} loadingText="Creating...">
+              <LoadingButton
+                type="submit"
+                className="flex-1"
+                loading={creating}
+                loadingText="Creating..."
+              >
                 Create token
               </LoadingButton>
             </div>
