@@ -82,7 +82,7 @@ export function getCommunityLinks(
     links.push({
       href: communityUrl,
       label: 'Community',
-      icon: ExternalLink,
+      icon: ExternalLinkIcon,
     });
   }
   return links;
