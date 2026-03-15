@@ -1,0 +1,87 @@
+<?php
+
+use App\Models\User;
+use App\Services\CustomerHealthService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
+
+it('returns a score between 0 and 100', function () {
+    $user = User::factory()->create();
+    $service = new CustomerHealthService;
+
+    $score = $service->calculateHealthScore($user);
+
+    expect($score)->toBeGreaterThanOrEqual(0)
+        ->toBeLessThanOrEqual(100);
+});
+
+it('gives points for email verification', function () {
+    $verified = User::factory()->create();
+    $unverified = User::factory()->unverified()->create();
+    $service = new CustomerHealthService;
+
+    $verifiedScore = $service->calculateHealthScore($verified);
+    $unverifiedScore = $service->calculateHealthScore($unverified);
+
+    expect($verifiedScore)->toBeGreaterThan($unverifiedScore);
+});
+
+it('gives points for having a password set', function () {
+    $withPassword = User::factory()->create(['password' => bcrypt('password')]);
+    $withoutPassword = User::factory()->create(['password' => null]);
+    $service = new CustomerHealthService;
+
+    $withScore = $service->calculateHealthScore($withPassword);
+    $withoutScore = $service->calculateHealthScore($withoutPassword);
+
+    expect($withScore)->toBeGreaterThan($withoutScore);
+});
+
+it('calculates activation rate for recent users', function () {
+    // Create verified users (activated)
+    User::factory()->count(3)->create([
+        'created_at' => now()->subDays(5),
+        'email_verified_at' => now()->subDays(4),
+    ]);
+
+    // Create unverified users (not activated)
+    User::factory()->count(2)->unverified()->create([
+        'created_at' => now()->subDays(5),
+    ]);
+
+    $service = new CustomerHealthService;
+    $rate = $service->getActivationRate();
+
+    expect($rate)->toBe(60.0);
+});
+
+it('returns zero activation rate when no users', function () {
+    $service = new CustomerHealthService;
+    $rate = $service->getActivationRate();
+
+    expect($rate)->toBe(0.0);
+});
+
+it('returns zero trial conversion rate when no trial users', function () {
+    $service = new CustomerHealthService;
+    $rate = $service->getTrialConversionRate();
+
+    expect($rate)->toBe(0.0);
+});
+
+it('returns health distribution buckets', function () {
+    User::factory()->count(3)->create();
+    $service = new CustomerHealthService;
+
+    $distribution = $service->getHealthDistribution();
+
+    expect($distribution)
+        ->toHaveKey('critical')
+        ->toHaveKey('at_risk')
+        ->toHaveKey('moderate')
+        ->toHaveKey('healthy');
+
+    $total = array_sum($distribution);
+    expect($total)->toBe(3);
+});
