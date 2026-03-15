@@ -40,6 +40,14 @@ class AdminUsersController extends Controller
             $query->where('is_admin', (bool) $validated['admin']);
         }
 
+        if (isset($validated['verified']) && $validated['verified'] !== '') {
+            if ((int) $validated['verified'] === 1) {
+                $query->whereNotNull('email_verified_at');
+            } else {
+                $query->whereNull('email_verified_at');
+            }
+        }
+
         $allowedSorts = ['name', 'email', 'created_at', 'last_login_at', 'is_admin'];
         $sort = in_array($validated['sort'] ?? null, $allowedSorts, true) ? $validated['sort'] : 'created_at';
         $dir = ($validated['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
@@ -59,7 +67,7 @@ class AdminUsersController extends Controller
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
-            'filters' => $request->only('search', 'admin', 'sort', 'dir'),
+            'filters' => $request->only('search', 'admin', 'verified', 'sort', 'dir'),
         ]);
     }
 

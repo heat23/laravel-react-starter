@@ -1,9 +1,16 @@
-import { ArrowRight, CheckCircle2, Layers3, Shield, Sparkles, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  Layers3,
+  Shield,
+  Sparkles,
+  Zap,
+} from 'lucide-react';
 
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link } from '@inertiajs/react';
 
-import { Logo, TextLogo } from "@/Components/branding/Logo";
-import { Button } from "@/Components/ui/button";
+import { Logo, TextLogo } from '@/Components/branding/Logo';
+import { Button } from '@/Components/ui/button';
 
 interface WelcomeProps {
   canLogin: boolean;
@@ -13,47 +20,78 @@ interface WelcomeProps {
 const features = [
   {
     icon: Shield,
-    title: "Secure foundation",
-    description: "Built with security best practices including CSRF protection, XSS prevention, and secure authentication.",
+    title: 'Secure foundation',
+    description:
+      'Built with security best practices including CSRF protection, XSS prevention, and secure authentication.',
   },
   {
     icon: Layers3,
-    title: "Modular by default",
-    description: "Feature flags let you enable billing, API tokens, webhooks, and admin tools when your product is ready for them.",
+    title: 'Modular by default',
+    description:
+      'Feature flags let you enable billing, API tokens, webhooks, and admin tools when your product is ready for them.',
   },
   {
     icon: Zap,
-    title: "Production-minded",
-    description: "Typed React pages, reusable UI primitives, and tested auth flows keep you moving without rewriting the basics.",
+    title: 'Production-minded',
+    description:
+      'Typed React pages, reusable UI primitives, and tested auth flows keep you moving without rewriting the basics.',
   },
 ];
 
 const starterHighlights = [
-  "Auth, profile, and security flows included",
-  "Starter-friendly billing and admin scaffolding",
-  "Design tokens you can rebrand quickly",
+  'Auth, profile, and security flows included',
+  'Starter-friendly billing and admin scaffolding',
+  'Design tokens you can rebrand quickly',
 ];
 
-const techStack = ["Laravel 12", "React 18", "TypeScript", "Tailwind CSS v4", "Inertia.js"];
+const techStack = [
+  'Laravel 12',
+  'React 18',
+  'TypeScript',
+  'Tailwind CSS v4',
+  'Inertia.js',
+];
 
 type WelcomeComponent = ((props: WelcomeProps) => JSX.Element) & {
   disableGlobalUi?: boolean;
 };
 
 const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
-  const appName = import.meta.env.VITE_APP_NAME || "Laravel";
+  const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
   return (
     <>
       <Head title="Welcome">
-        <meta name="description" content="A flexible Laravel + React starter with auth, feature flags, billing scaffolding, and a UI foundation you can shape into your product." />
-        <meta property="og:title" content={`${appName} - Start with the parts every SaaS needs`} />
-        <meta property="og:description" content="A flexible Laravel + React starter with auth, feature flags, billing scaffolding, and a UI foundation you can shape into your product." />
+        <meta
+          name="description"
+          content="A flexible Laravel + React starter with auth, feature flags, billing scaffolding, and a UI foundation you can shape into your product."
+        />
+        <meta
+          property="og:title"
+          content={`${appName} - Start with the parts every SaaS needs`}
+        />
+        <meta
+          property="og:description"
+          content="A flexible Laravel + React starter with auth, feature flags, billing scaffolding, and a UI foundation you can shape into your product."
+        />
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary" />
-        <meta name="twitter:title" content={`${appName} - Start with the parts every SaaS needs`} />
-        <meta name="twitter:description" content="A flexible Laravel + React starter with auth, feature flags, billing scaffolding, and a UI foundation you can shape into your product." />
+        <meta
+          name="twitter:title"
+          content={`${appName} - Start with the parts every SaaS needs`}
+        />
+        <meta
+          name="twitter:description"
+          content="A flexible Laravel + React starter with auth, feature flags, billing scaffolding, and a UI foundation you can shape into your product."
+        />
       </Head>
+
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-background focus:text-foreground focus:border focus:border-border focus:rounded-md"
+      >
+        Skip to content
+      </a>
 
       <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-background via-background to-muted/30">
         <div
@@ -74,12 +112,12 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
           <div className="flex items-center gap-4">
             {canLogin && (
               <Button variant="ghost" asChild>
-                <Link href={route("login")}>Log in</Link>
+                <Link href={route('login')}>Log in</Link>
               </Button>
             )}
             {canRegister && (
               <Button asChild>
-                <Link href={route("register")}>
+                <Link href={route('register')}>
                   Get Started
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -103,14 +141,15 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
                   <span className="text-primary">every SaaS needs</span>
                 </h1>
                 <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-                  A flexible Laravel + React starter with authentication, feature flags,
-                  billing scaffolding, and a UI foundation you can shape into your product.
+                  A flexible Laravel + React starter with authentication,
+                  feature flags, billing scaffolding, and a UI foundation you
+                  can shape into your product.
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
                 {canRegister && (
                   <Button size="lg" asChild>
-                    <Link href={route("register")}>
+                    <Link href={route('register')}>
                       Create Your First Account
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
@@ -152,10 +191,17 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
                     className="rounded-2xl border border-border/70 bg-card p-6 text-card-foreground shadow-sm"
                   >
                     <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                      <feature.icon className="h-5 w-5 text-primary" />
+                      <feature.icon
+                        className="h-5 w-5 text-primary"
+                        aria-hidden="true"
+                      />
                     </div>
-                    <h3 className="mb-2 text-lg font-semibold">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    <h3 className="mb-2 text-lg font-semibold">
+                      {feature.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {feature.description}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -165,7 +211,9 @@ const Welcome: WelcomeComponent = ({ canLogin, canRegister }) => {
           {/* Tech Stack Section */}
           <section className="container border-t py-24">
             <div className="mx-auto max-w-4xl text-center">
-              <h2 className="mb-8 text-2xl font-bold">Modern stack, ready to customize</h2>
+              <h2 className="mb-8 text-2xl font-bold">
+                Modern stack, ready to customize
+              </h2>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 {techStack.map((item) => (
                   <div

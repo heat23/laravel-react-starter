@@ -170,5 +170,5 @@ it('handles Stripe API error during swap', function () {
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHas('error', 'Unable to process your request. Please try again.');
+    $response->assertSessionHas('error', 'Unable to process your request. Please try again or contact support.');
 });

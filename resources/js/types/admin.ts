@@ -91,6 +91,7 @@ export interface AdminUserDetail extends AdminUser {
 
 export interface AdminUserFilters extends SortableFilters {
   admin?: string;
+  verified?: string;
 }
 
 // ---------------------------------------------------------------------------
