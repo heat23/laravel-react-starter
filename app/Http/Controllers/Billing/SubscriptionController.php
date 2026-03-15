@@ -64,11 +64,15 @@ class SubscriptionController extends Controller
                 $quantity,
             );
 
+            $tierConfig = config("plans.{$tier}");
+            $amount = (float) ($tierConfig['price_monthly'] ?? 0) * $quantity;
+
             $this->auditService->log('subscription.created', [
                 'user_id' => $user->id,
                 'price_id' => $priceId,
                 'tier' => $tier,
                 'quantity' => $quantity,
+                'amount' => $amount,
             ]);
 
             $this->invalidateAdminCaches();

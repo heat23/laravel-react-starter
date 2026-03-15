@@ -11,6 +11,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
+use App\Services\EngagementScoringService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,7 @@ class AdminUsersController extends Controller
     public function __construct(
         private AuditService $auditService,
         private CacheInvalidationManager $cacheManager,
+        private EngagementScoringService $engagementService,
     ) {}
 
     public function index(AdminUserIndexRequest $request): Response
@@ -55,6 +57,7 @@ class AdminUsersController extends Controller
             'created_at' => $user->created_at?->toISOString(),
             'tokens_count' => $user->tokens_count,
             'deleted_at' => $user->deleted_at?->toISOString(),
+            'engagement_score' => $this->engagementService->score($user),
         ]);
 
         return Inertia::render('Admin/Users/Index', [

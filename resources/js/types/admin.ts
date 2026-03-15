@@ -81,6 +81,7 @@ export interface AdminUser {
   created_at: string;
   tokens_count: number;
   deleted_at: string | null;
+  engagement_score: number;
 }
 
 /** Extended user detail for admin user show page */
@@ -107,6 +108,8 @@ export interface BillingDashboardStats {
   mrr: number;
   churn_rate: number;
   trial_conversion_rate: number;
+  activation_rate: number;
+  signup_to_paid_conversion: number;
 }
 
 export interface BillingTrialStats {
@@ -416,6 +419,15 @@ export interface AdminAuditLogShowProps {
   auditLog: AuditLogDetail;
 }
 
+export interface CohortRetention {
+  cohort: string;
+  total: number;
+  week_1: number | null;
+  week_2: number | null;
+  week_4: number | null;
+  week_8: number | null;
+}
+
 export interface AdminBillingDashboardProps {
   stats: BillingDashboardStats;
   tier_distribution: TierDistribution[];
@@ -423,6 +435,7 @@ export interface AdminBillingDashboardProps {
   growth_chart: ChartDataPoint[];
   trial_stats: BillingTrialStats;
   recent_events: BillingEvent[];
+  cohort_retention: CohortRetention[];
 }
 
 export interface AdminBillingSubscriptionsProps {

@@ -50,6 +50,7 @@ export default function BillingDashboard({
   growth_chart,
   trial_stats,
   recent_events,
+  cohort_retention,
 }: AdminBillingDashboardProps) {
   const hasSubscriptions = stats.total_ever > 0;
 
@@ -101,6 +102,23 @@ export default function BillingDashboard({
     },
   ];
 
+  const growthKpis: StatCard[] = [
+    {
+      title: 'Activation Rate',
+      value: stats.activation_rate,
+      icon: TrendingUp,
+      format: (n) => `${n}%`,
+      description: 'Completed onboarding',
+    },
+    {
+      title: 'Signup → Paid',
+      value: stats.signup_to_paid_conversion,
+      icon: CreditCard,
+      format: (n) => `${n}%`,
+      description: 'Free to paid conversion',
+    },
+  ];
+
   return (
     <AdminLayout>
       <Head title="Admin - Billing" />
@@ -122,6 +140,9 @@ export default function BillingDashboard({
 
         {/* Secondary stats */}
         <AdminStatsGrid stats={secondaryKpis} />
+
+        {/* Growth metrics */}
+        <AdminStatsGrid stats={growthKpis} />
 
         {!hasSubscriptions ? (
           <EmptyState
@@ -211,6 +232,59 @@ export default function BillingDashboard({
               </CardContent>
             </Card>
           </>
+        )}
+
+        {/* Cohort Retention */}
+        {cohort_retention.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Cohort Retention</CardTitle>
+              <CardDescription>
+                Percentage of users active at week 1, 2, 4, and 8 after signup
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cohort</TableHead>
+                      <TableHead className="text-right">Users</TableHead>
+                      <TableHead className="text-right">Week 1</TableHead>
+                      <TableHead className="text-right">Week 2</TableHead>
+                      <TableHead className="text-right">Week 4</TableHead>
+                      <TableHead className="text-right">Week 8</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {cohort_retention.map((cohort) => (
+                      <TableRow key={cohort.cohort}>
+                        <TableCell className="font-medium">
+                          {cohort.cohort}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {cohort.total}
+                        </TableCell>
+                        {[
+                          cohort.week_1,
+                          cohort.week_2,
+                          cohort.week_4,
+                          cohort.week_8,
+                        ].map((value, i) => (
+                          <TableCell
+                            key={i}
+                            className="text-right text-sm text-muted-foreground"
+                          >
+                            {value !== null ? `${value}%` : '—'}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Recent Billing Events */}
