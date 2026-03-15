@@ -1,15 +1,27 @@
-import { FileText, Key, LogOut, Menu, Radio, Shield as ShieldIcon, User } from "lucide-react";
+import {
+  FileText,
+  Key,
+  LogOut,
+  Menu,
+  Radio,
+  Shield as ShieldIcon,
+  User,
+} from 'lucide-react';
 
-import { PropsWithChildren } from "react";
+import { PropsWithChildren } from 'react';
 
-import { Link, usePage } from "@inertiajs/react";
+import { Link, usePage } from '@inertiajs/react';
 
-import { ImpersonationBanner } from "@/Components/admin/ImpersonationBanner";
-import { Logo, TextLogo } from "@/Components/branding/Logo";
-import { CommandPalette, useCommandPalette } from "@/Components/command-palette";
-import { NotificationDropdown } from "@/Components/notifications/NotificationDropdown";
-import { ThemeToggle } from "@/Components/theme";
-import { Button } from "@/Components/ui/button";
+import { ImpersonationBanner } from '@/Components/admin/ImpersonationBanner';
+import { Logo, TextLogo } from '@/Components/branding/Logo';
+import {
+  CommandPalette,
+  useCommandPalette,
+} from '@/Components/command-palette';
+import { FeedbackWidget } from '@/Components/feedback/FeedbackWidget';
+import { NotificationDropdown } from '@/Components/notifications/NotificationDropdown';
+import { ThemeToggle } from '@/Components/theme';
+import { Button } from '@/Components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +29,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/Components/ui/dropdown-menu";
+} from '@/Components/ui/dropdown-menu';
 import {
   Sheet,
   SheetContent,
@@ -25,16 +37,16 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/Components/ui/sheet";
-import { getVisibleNavItems } from "@/config/navigation";
-import { cn } from "@/lib/utils";
-import type { PageProps } from "@/types";
+} from '@/Components/ui/sheet';
+import { getVisibleNavItems } from '@/config/navigation';
+import { cn } from '@/lib/utils';
+import type { PageProps } from '@/types';
 
 function isNavActive(url: string | undefined, href: string): boolean {
   if (!url) return false;
-  const segments = href.split("/").filter(Boolean);
+  const segments = href.split('/').filter(Boolean);
   if (segments.length <= 1) {
-    return url === href || url === href + "/";
+    return url === href || url === href + '/';
   }
   return url.startsWith(href);
 }
@@ -77,13 +89,16 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                     size="sm"
                     asChild
                     className={cn(
-                      "hover:text-foreground",
+                      'hover:text-foreground',
                       isActive
-                        ? "text-foreground bg-accent font-semibold"
-                        : "text-muted-foreground",
+                        ? 'text-foreground bg-accent font-semibold'
+                        : 'text-muted-foreground'
                     )}
                   >
-                    <Link href={item.href} aria-current={isActive ? "page" : undefined}>
+                    <Link
+                      href={item.href}
+                      aria-current={isActive ? 'page' : undefined}
+                    >
                       <item.icon className="mr-2 h-4 w-4" />
                       {item.label}
                     </Link>
@@ -101,7 +116,11 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 min-h-11 min-w-11 rounded-full" aria-label="User menu">
+                <Button
+                  variant="ghost"
+                  className="relative h-9 w-9 min-h-11 min-w-11 rounded-full"
+                  aria-label="User menu"
+                >
                   <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary">
                     {auth.user!.name.charAt(0).toUpperCase()}
                   </div>
@@ -110,7 +129,9 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{auth.user!.name}</p>
+                    <p className="text-sm font-medium leading-none">
+                      {auth.user!.name}
+                    </p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {auth.user!.email}
                     </p>
@@ -149,7 +170,12 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                 )}
                 {features.apiDocs && (
                   <DropdownMenuItem asChild>
-                    <a href="/docs" target="_blank" rel="noopener noreferrer" className="cursor-pointer">
+                    <a
+                      href="/docs"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="cursor-pointer"
+                    >
                       <FileText className="mr-2 h-4 w-4" />
                       API Docs
                     </a>
@@ -169,7 +195,7 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link
-                    href={route("logout")}
+                    href={route('logout')}
                     method="post"
                     as="button"
                     className="w-full cursor-pointer text-destructive focus:text-destructive"
@@ -184,7 +210,11 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
             {/* Mobile Menu */}
             <Sheet>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="ghost" size="icon" aria-label="Toggle navigation menu">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Toggle navigation menu"
+                >
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -194,28 +224,33 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                     <Logo className="h-6 w-6" />
                     <TextLogo />
                   </SheetTitle>
-                  <SheetDescription className="sr-only">Navigation menu</SheetDescription>
+                  <SheetDescription className="sr-only">
+                    Navigation menu
+                  </SheetDescription>
                 </SheetHeader>
                 <nav className="mt-8 flex flex-col gap-2">
                   {navItems.map((item) => {
                     const isActive = isNavActive(currentUrl, item.href);
                     return (
-                    <Button
-                      key={item.href}
-                      variant="ghost"
-                      className={cn(
-                        "justify-start",
-                        isActive
-                          ? "bg-accent text-foreground font-semibold"
-                          : "text-muted-foreground",
-                      )}
-                      asChild
-                    >
-                      <Link href={item.href} aria-current={isActive ? "page" : undefined}>
-                        <item.icon className="mr-2 h-4 w-4" />
-                        {item.label}
-                      </Link>
-                    </Button>
+                      <Button
+                        key={item.href}
+                        variant="ghost"
+                        className={cn(
+                          'justify-start',
+                          isActive
+                            ? 'bg-accent text-foreground font-semibold'
+                            : 'text-muted-foreground'
+                        )}
+                        asChild
+                      >
+                        <Link
+                          href={item.href}
+                          aria-current={isActive ? 'page' : undefined}
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {item.label}
+                        </Link>
+                      </Button>
                     );
                   })}
                 </nav>
@@ -226,9 +261,12 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
       </header>
 
       {/* Main Content */}
-      <main id="main-content" className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1">
+        {children}
+      </main>
 
       <CommandPalette open={open} onOpenChange={setOpen} />
+      <FeedbackWidget />
     </div>
   );
 }

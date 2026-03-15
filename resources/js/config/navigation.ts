@@ -1,7 +1,15 @@
-import { CreditCard, Home, Key, Radio, Shield, User } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import {
+  CreditCard,
+  ExternalLink,
+  Home,
+  Key,
+  Radio,
+  Shield,
+  User,
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-import type { Features } from "@/types";
+import type { Features } from '@/types';
 
 export interface NavItem {
   href: string;
@@ -9,6 +17,7 @@ export interface NavItem {
   icon: LucideIcon;
   shortcut?: string;
   featureFlag?: keyof Features;
+  external?: boolean;
 }
 
 export interface NavGroup {
@@ -18,59 +27,83 @@ export interface NavGroup {
 
 export const navigationGroups: NavGroup[] = [
   {
-    label: "Main",
+    label: 'Main',
     items: [
-      { href: "/dashboard", label: "Dashboard", icon: Home, shortcut: "G D" },
-      { href: "/profile", label: "Profile", icon: User, shortcut: "G P" },
+      { href: '/dashboard', label: 'Dashboard', icon: Home, shortcut: 'G D' },
+      { href: '/profile', label: 'Profile', icon: User, shortcut: 'G P' },
     ],
   },
   {
-    label: "Settings",
+    label: 'Settings',
     items: [
       {
-        href: "/settings/tokens",
-        label: "API Tokens",
+        href: '/settings/tokens',
+        label: 'API Tokens',
         icon: Key,
-        shortcut: "G T",
-        featureFlag: "apiTokens",
+        shortcut: 'G T',
+        featureFlag: 'apiTokens',
       },
       {
-        href: "/settings/security",
-        label: "Security",
+        href: '/settings/security',
+        label: 'Security',
         icon: Shield,
-        shortcut: "G S",
-        featureFlag: "twoFactor",
+        shortcut: 'G S',
+        featureFlag: 'twoFactor',
       },
       {
-        href: "/settings/webhooks",
-        label: "Webhooks",
+        href: '/settings/webhooks',
+        label: 'Webhooks',
         icon: Radio,
-        shortcut: "G W",
-        featureFlag: "webhooks",
+        shortcut: 'G W',
+        featureFlag: 'webhooks',
       },
       {
-        href: "/billing",
-        label: "Billing",
+        href: '/billing',
+        label: 'Billing',
         icon: CreditCard,
-        shortcut: "G B",
-        featureFlag: "billing",
+        shortcut: 'G B',
+        featureFlag: 'billing',
       },
     ],
   },
 ];
 
-export function getVisibleNavItems(features: Record<string, boolean>): NavItem[] {
+export interface ExternalLink {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+export function getCommunityLinks(
+  communityUrl?: string | null
+): ExternalLink[] {
+  const links: ExternalLink[] = [];
+  if (communityUrl) {
+    links.push({
+      href: communityUrl,
+      label: 'Community',
+      icon: ExternalLink,
+    });
+  }
+  return links;
+}
+
+export function getVisibleNavItems(
+  features: Record<string, boolean>
+): NavItem[] {
   return navigationGroups
     .flatMap((g) => g.items)
     .filter((item) => !item.featureFlag || features[item.featureFlag]);
 }
 
-export function getVisibleGroups(features: Record<string, boolean>): NavGroup[] {
+export function getVisibleGroups(
+  features: Record<string, boolean>
+): NavGroup[] {
   return navigationGroups
     .map((group) => ({
       ...group,
       items: group.items.filter(
-        (item) => !item.featureFlag || features[item.featureFlag],
+        (item) => !item.featureFlag || features[item.featureFlag]
       ),
     }))
     .filter((group) => group.items.length > 0);

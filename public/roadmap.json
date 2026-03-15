@@ -1,0 +1,20 @@
+[
+  {
+    "title": "Team Collaboration",
+    "description": "Invite team members, assign roles, and collaborate on projects together.",
+    "status": "planned",
+    "votes": 0
+  },
+  {
+    "title": "API Webhooks v2",
+    "description": "Enhanced webhook system with retry policies, filtering, and delivery logs.",
+    "status": "in_progress",
+    "votes": 0
+  },
+  {
+    "title": "Two-Factor Authentication",
+    "description": "TOTP-based two-factor authentication with recovery codes.",
+    "status": "completed",
+    "votes": 0
+  }
+]

@@ -1,0 +1,9 @@
+[
+  {
+    "version": "1.0.0",
+    "date": "2026-03-15",
+    "title": "Initial Release",
+    "description": "Launch of the application with core features including authentication, billing, and admin panel.",
+    "type": "feature"
+  }
+]

@@ -4,14 +4,18 @@ use App\Http\Controllers\Billing\BillingController;
 use App\Http\Controllers\Billing\PricingController;
 use App\Http\Controllers\Billing\StripeWebhookController;
 use App\Http\Controllers\Billing\SubscriptionController;
+use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\ChartsController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PersonalDataExportController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoadmapController;
 use App\Http\Controllers\SeoController;
 use App\Http\Controllers\Settings\ApiTokenPageController;
 use App\Http\Controllers\Settings\TwoFactorController;
@@ -33,6 +37,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', WelcomeController::class)->name('welcome');
 Route::get('/terms', [LegalController::class, 'terms'])->name('legal.terms');
 Route::get('/privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
+Route::get('/contact', [ContactController::class, 'show'])->middleware('throttle:10,1')->name('contact.show');
+Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contact.store');
+Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
+Route::get('/roadmap', [RoadmapController::class, 'index'])->name('roadmap');
+
+// Feedback (authenticated users only)
+Route::post('/feedback', [FeedbackController::class, 'store'])->middleware(['auth', 'throttle:10,1'])->name('feedback.store');
 
 // Onboarding (route always registered; middleware checks feature flag)
 Route::middleware('auth')->group(function () {
