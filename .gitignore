@@ -78,6 +78,8 @@ stats.html
 .vibe-locks/
 .vibe.json
 REVIEW_REPORT_*
+*.skill
+.claude-branch-lock
 storage/phpstan/cache/*
 .phpunit.cache/*
 storage/phpstan/resultCache.php
