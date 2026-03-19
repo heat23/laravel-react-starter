@@ -294,6 +294,8 @@ class SubscriptionController extends Controller
                 'user_id' => $user->id,
             ]);
 
+            $this->cacheManager->invalidateBilling();
+
             return redirect()->route('billing.index')->with('success', 'Payment method updated successfully.');
         } catch (ApiErrorException $e) {
             Log::error('Stripe API error during payment method update', [
