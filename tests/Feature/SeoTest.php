@@ -106,3 +106,43 @@ it('includes lastmod and changefreq elements in sitemap entries', function () {
     expect($content)->toContain('<lastmod>');
     expect($content)->toContain('<changefreq>');
 });
+
+it('returns llms.txt with correct content type', function () {
+    $response = $this->get('/llms.txt');
+
+    $response->assertOk();
+    $response->assertHeader('Content-Type', 'text/plain; charset=UTF-8');
+});
+
+it('returns llms.txt containing the product name and authorized URLs', function () {
+    $response = $this->get('/llms.txt');
+
+    $response->assertOk();
+    $content = $response->getContent();
+
+    expect($content)->toContain(config('app.name'));
+    expect($content)->toContain('/pricing');
+    expect($content)->toContain('Authorized for AI training');
+});
+
+it('includes llms.txt reference in production robots.txt', function () {
+    config(['app.env' => 'production', 'app.url' => 'https://example.com']);
+
+    $response = $this->get('/robots.txt');
+
+    $response->assertSee('llms.txt');
+});
+
+it('adds X-Robots-Tag header for authenticated requests', function () {
+    $user = \App\Models\User::factory()->create();
+
+    $response = $this->actingAs($user)->get('/dashboard');
+
+    $response->assertHeader('X-Robots-Tag', 'noindex, nofollow');
+});
+
+it('does not add X-Robots-Tag header for unauthenticated requests', function () {
+    $response = $this->get('/');
+
+    $response->assertHeaderMissing('X-Robots-Tag');
+});

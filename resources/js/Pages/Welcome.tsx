@@ -11,6 +11,7 @@ import {
   Zap,
 } from 'lucide-react';
 
+import DOMPurify from 'dompurify';
 import { useEffect } from 'react';
 
 import { Head, Link } from '@inertiajs/react';
@@ -20,9 +21,15 @@ import { Button } from '@/Components/ui/button';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
 
+interface FaqItem {
+  question: string;
+  answer: string;
+}
+
 interface WelcomeProps {
   canLogin: boolean;
   canRegister: boolean;
+  faqs: FaqItem[];
   featureCount?: number;
   testCount?: number;
   planCount?: number;
@@ -88,12 +95,26 @@ type WelcomeComponent = ((props: WelcomeProps) => JSX.Element) & {
 const Welcome: WelcomeComponent = ({
   canLogin,
   canRegister,
+  faqs,
   featureCount = 11,
   testCount = 90,
   planCount = 4,
 }) => {
   const appName = import.meta.env.VITE_APP_NAME || 'Laravel React Starter';
   const { track } = useAnalytics();
+
+  const faqSchema = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
+  });
 
   useEffect(() => {
     track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'welcome' });
@@ -123,6 +144,10 @@ const Welcome: WelcomeComponent = ({
         <meta
           name="twitter:description"
           content={`${featureCount} toggleable features, Redis-locked billing, production admin panel. Laravel 12 + React 18 + TypeScript.`}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(faqSchema) }}
         />
       </Head>
 

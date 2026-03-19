@@ -9,6 +9,7 @@ import {
 import { Head, Link } from '@inertiajs/react';
 
 import { Logo, TextLogo } from '@/Components/branding/Logo';
+import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
 import { Button } from '@/Components/ui/button';
 import type { FeaturePageProps } from '@/types/index';
 
@@ -26,7 +27,7 @@ const flags = [
     { flag: 'email_verification.enabled', env: 'FEATURE_EMAIL_VERIFICATION', description: 'Email verification flow' },
 ];
 
-export default function FeatureFlags({ title, metaDescription }: FeaturePageProps) {
+export default function FeatureFlags({ title, metaDescription, breadcrumbs }: FeaturePageProps) {
     return (
         <>
             <Head title={title}>
@@ -37,6 +38,7 @@ export default function FeatureFlags({ title, metaDescription }: FeaturePageProp
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:title" content={title} />
                 <meta name="twitter:description" content={metaDescription} />
+                {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
             </Head>
 
             <div className="min-h-screen bg-background">

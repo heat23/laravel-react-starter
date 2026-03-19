@@ -9,11 +9,18 @@ class CompareController extends Controller
 {
     public function jetstream(): Response
     {
+        $appUrl = rtrim(config('app.url'), '/');
+
         return Inertia::render('Compare/LaravelJetstream', [
             'competitor' => 'laravel-jetstream',
             'competitorName' => 'Laravel Jetstream',
             'title' => 'Laravel React Starter vs Jetstream — Side-by-Side Comparison',
             'metaDescription' => 'Jetstream uses Vue or Livewire. This starter ships React + TypeScript out of the box. Compare features, billing, admin panel, and production readiness.',
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => $appUrl],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare/laravel-jetstream'],
+                ['name' => 'Laravel Jetstream', 'url' => $appUrl.'/compare/laravel-jetstream'],
+            ],
             'features' => [
                 ['feature' => 'Frontend framework', 'us' => 'React 18 + TypeScript', 'them' => 'Vue 3 or Livewire'],
                 ['feature' => 'Admin panel', 'us' => true, 'them' => false],
@@ -33,11 +40,18 @@ class CompareController extends Controller
 
     public function spark(): Response
     {
+        $appUrl = rtrim(config('app.url'), '/');
+
         return Inertia::render('Compare/LaravelSpark', [
             'competitor' => 'laravel-spark',
             'competitorName' => 'Laravel Spark',
             'title' => 'Laravel React Starter vs Laravel Spark — Feature & Price Comparison',
             'metaDescription' => 'Spark costs $99/year and focuses on billing. This starter includes billing, admin, feature flags, webhooks, and 90+ tests for a one-time price. Compare both.',
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => $appUrl],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare/laravel-spark'],
+                ['name' => 'Laravel Spark', 'url' => $appUrl.'/compare/laravel-spark'],
+            ],
             'features' => [
                 ['feature' => 'Stripe billing', 'us' => true, 'them' => true],
                 ['feature' => 'Team billing / seats', 'us' => true, 'them' => true],
@@ -59,11 +73,18 @@ class CompareController extends Controller
 
     public function saasykit(): Response
     {
+        $appUrl = rtrim(config('app.url'), '/');
+
         return Inertia::render('Compare/SaaSykit', [
             'competitor' => 'saasykit',
             'competitorName' => 'SaaSykit',
             'title' => 'Laravel React Starter vs SaaSykit — Which SaaS Boilerplate Is Right for You?',
             'metaDescription' => 'SaaSykit uses Filament for admin. This starter uses a custom React admin panel with TypeScript. Compare stack, features, and philosophy for your SaaS build.',
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => $appUrl],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare/saasykit'],
+                ['name' => 'SaaSykit', 'url' => $appUrl.'/compare/saasykit'],
+            ],
             'features' => [
                 ['feature' => 'Frontend', 'us' => 'React 18 + TypeScript', 'them' => 'React (Inertia)'],
                 ['feature' => 'Admin panel', 'us' => 'Custom React + TypeScript', 'them' => 'Filament (Livewire)'],

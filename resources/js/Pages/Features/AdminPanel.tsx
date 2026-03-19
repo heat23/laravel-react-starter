@@ -14,6 +14,7 @@ import {
 import { Head, Link } from '@inertiajs/react';
 
 import { Logo, TextLogo } from '@/Components/branding/Logo';
+import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
 import { Button } from '@/Components/ui/button';
 import type { FeaturePageProps } from '@/types/index';
 
@@ -68,7 +69,7 @@ const adminFeatures = [
     },
 ];
 
-export default function AdminPanel({ title, metaDescription }: FeaturePageProps) {
+export default function AdminPanel({ title, metaDescription, breadcrumbs }: FeaturePageProps) {
     return (
         <>
             <Head title={title}>
@@ -79,6 +80,7 @@ export default function AdminPanel({ title, metaDescription }: FeaturePageProps)
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:title" content={title} />
                 <meta name="twitter:description" content={metaDescription} />
+                {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
             </Head>
 
             <div className="min-h-screen bg-background">

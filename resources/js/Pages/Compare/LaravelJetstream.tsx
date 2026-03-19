@@ -4,6 +4,7 @@ import { Head, Link } from '@inertiajs/react';
 
 import { ComparisonTable } from '@/Components/compare/ComparisonTable';
 import { Logo, TextLogo } from '@/Components/branding/Logo';
+import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
 import { Button } from '@/Components/ui/button';
 import type { ComparisonPageProps } from '@/types/index';
 
@@ -11,6 +12,7 @@ export default function LaravelJetstream({
   title,
   metaDescription,
   features,
+  breadcrumbs,
 }: ComparisonPageProps) {
   return (
     <>
@@ -22,6 +24,7 @@ export default function LaravelJetstream({
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={metaDescription} />
+        {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
       </Head>
 
       <div className="min-h-screen bg-background">

@@ -103,18 +103,25 @@ export interface ComparisonFeature {
   them: string | boolean;
 }
 
+export interface BreadcrumbItem {
+  name: string;
+  url: string;
+}
+
 export interface ComparisonPageProps {
   competitor: string;
   competitorName: string;
   title: string;
   metaDescription: string;
   features: ComparisonFeature[];
+  breadcrumbs?: BreadcrumbItem[];
 }
 
 // Feature landing pages
 export interface FeaturePageProps {
   title: string;
   metaDescription: string;
+  breadcrumbs?: BreadcrumbItem[];
 }
 
 // Form state helpers

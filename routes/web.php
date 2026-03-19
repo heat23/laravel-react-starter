@@ -153,6 +153,7 @@ Route::get('/favicon.ico', function () {
 })->name('favicon');
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
+Route::get('/llms.txt', [SeoController::class, 'llms'])->name('llms');
 
 // Health check (controller handles its own authorization)
 Route::get('/health', HealthCheckController::class)->name('health');

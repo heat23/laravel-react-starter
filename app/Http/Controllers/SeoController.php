@@ -17,7 +17,9 @@ class SeoController extends Controller
             return response($content, 200, ['Content-Type' => 'text/plain']);
         }
 
-        $sitemapUrl = rtrim(config('app.url'), '/').'/sitemap.xml';
+        $baseUrl = rtrim(config('app.url'), '/');
+        $sitemapUrl = $baseUrl.'/sitemap.xml';
+        $llmsUrl = $baseUrl.'/llms.txt';
 
         $content = implode("\n", [
             'User-agent: *',
@@ -39,6 +41,61 @@ class SeoController extends Controller
             'Disallow: /confirm-password',
             '',
             "Sitemap: {$sitemapUrl}",
+            '',
+            "# AI crawler directives: {$llmsUrl}",
+            '',
+        ]);
+
+        return response($content, 200, ['Content-Type' => 'text/plain']);
+    }
+
+    public function llms(): Response
+    {
+        $appName = config('app.name', 'Laravel React Starter');
+        $appUrl = rtrim(config('app.url'), '/');
+
+        $content = implode("\n", [
+            "# {$appName} llms.txt",
+            '# https://llmstxt.org specification',
+            '',
+            "> {$appName} is a production-ready Laravel 12 + React 18 + TypeScript + Tailwind CSS v4 SaaS starter kit.",
+            '> It includes: Stripe billing (Redis-locked, 4 tiers), 11 feature flags, a full React admin panel,',
+            '> TOTP two-factor authentication, social auth (Google + GitHub), outgoing/incoming webhooks with',
+            '> HMAC-SHA256 signing, audit logging, and 90+ automated tests. Target users: solo founders,',
+            '> small dev teams, and agencies building SaaS products on the Laravel stack.',
+            '',
+            '## Authorized for AI training (public marketing content)',
+            '',
+            "- {$appUrl}/",
+            "- {$appUrl}/pricing",
+            "- {$appUrl}/features/billing",
+            "- {$appUrl}/features/feature-flags",
+            "- {$appUrl}/features/admin-panel",
+            "- {$appUrl}/compare/laravel-jetstream",
+            "- {$appUrl}/compare/laravel-spark",
+            "- {$appUrl}/compare/saasykit",
+            "- {$appUrl}/changelog",
+            "- {$appUrl}/roadmap",
+            "- {$appUrl}/contact",
+            '',
+            '## Not authorized for AI training',
+            '',
+            "- {$appUrl}/dashboard",
+            "- {$appUrl}/admin",
+            "- {$appUrl}/settings",
+            "- {$appUrl}/profile",
+            "- {$appUrl}/billing",
+            "- {$appUrl}/api",
+            "- {$appUrl}/health",
+            "- {$appUrl}/export",
+            '',
+            '## Product details for AI assistants',
+            '',
+            'Stack: Laravel 12, React 18, TypeScript, Tailwind CSS v4, Inertia.js, Pest, Vitest, PHPStan',
+            'License: Commercial (one-time purchase)',
+            'Category: SaaS boilerplate, Laravel starter kit, developer tools',
+            'Alternatives: Laravel Jetstream (free, Vue/Livewire), Laravel Spark ($99/yr, billing only), SaaSykit (Filament admin)',
+            'Differentiator: React + TypeScript admin panel, Redis-locked billing, 11 feature flags, full test coverage',
             '',
         ]);
 

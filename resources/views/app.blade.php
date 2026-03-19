@@ -7,6 +7,15 @@
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
         <link rel="canonical" href="{{ request()->url() }}" />
 
+        <!-- Robot / AI crawler meta tags -->
+        @auth
+        <meta name="robots" content="noindex, nofollow" />
+        <meta name="google-extended" content="noindex" />
+        @else
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+        <meta name="google-extended" content="index" />
+        @endauth
+
         <!-- Default Open Graph / Twitter meta tags (overridable per-page via Inertia Head) -->
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="{{ config('app.name', 'Laravel') }}" />
@@ -43,18 +52,58 @@
             @endif
         @endproduction
 
-        <!-- JSON-LD Structured Data -->
+        <!-- JSON-LD Structured Data: SoftwareApplication -->
         @php
-            $jsonLd = json_encode([
+            $offersBlock = ['@type' => 'Offer', 'priceCurrency' => 'USD', 'price' => '0', 'description' => 'Contact for pricing', 'availability' => 'https://schema.org/InStock'];
+            if (config('features.billing.enabled', false)) {
+                $plans = config('plans', []);
+                $startingPrice = collect($plans)->filter(fn ($p) => ($p['price_monthly'] ?? 0) > 0)->min('price_monthly');
+                if ($startingPrice) {
+                    $offersBlock['price'] = (string) $startingPrice;
+                    $offersBlock['description'] = 'Starting price per month';
+                }
+            }
+            $softwareAppLd = json_encode([
                 '@context' => 'https://schema.org',
-                '@type' => 'WebApplication',
+                '@type' => 'SoftwareApplication',
                 'name' => config('app.name', 'Laravel'),
                 'url' => config('app.url'),
-                'applicationCategory' => 'BusinessApplication',
-                'operatingSystem' => 'All',
+                'applicationCategory' => 'DeveloperApplication',
+                'operatingSystem' => 'Web',
+                'description' => 'Production-ready Laravel 12 + React 18 + TypeScript SaaS starter kit with Stripe billing, admin panel, feature flags, and 90+ tests.',
+                'offers' => $offersBlock,
+                'featureList' => [
+                    'Stripe billing with Redis-locked mutations',
+                    '11 feature flags with database overrides',
+                    'React + TypeScript admin panel',
+                    'TOTP two-factor authentication',
+                    'Social auth (Google + GitHub OAuth)',
+                    'Outgoing and incoming webhooks',
+                    'Audit logging',
+                    '90+ automated tests',
+                ],
+                'softwareVersion' => '1.0',
+                'screenshot' => rtrim(config('app.url'), '/').'/images/og-default.png',
             ], JSON_UNESCAPED_SLASHES);
         @endphp
-        <script type="application/ld+json" nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">{!! $jsonLd !!}</script>
+        <script type="application/ld+json" nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">{!! $softwareAppLd !!}</script>
+
+        <!-- JSON-LD Structured Data: Organization -->
+        @php
+            $organizationLd = json_encode([
+                '@context' => 'https://schema.org',
+                '@type' => 'Organization',
+                'name' => config('app.name', 'Laravel'),
+                'url' => config('app.url'),
+                'logo' => rtrim(config('app.url'), '/').'/images/og-default.png',
+                'contactPoint' => [
+                    '@type' => 'ContactPoint',
+                    'contactType' => 'customer support',
+                    'url' => rtrim(config('app.url'), '/').'/contact',
+                ],
+            ], JSON_UNESCAPED_SLASHES);
+        @endphp
+        <script type="application/ld+json" nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">{!! $organizationLd !!}</script>
 
         <!-- Scripts -->
         @routes(null, Illuminate\Support\Facades\Vite::cspNonce())
