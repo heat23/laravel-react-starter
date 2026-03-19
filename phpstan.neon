@@ -12,6 +12,9 @@ parameters:
     # Levels: 0-9 (0=loosest, 9=strictest)
     level: 5
 
+    # Allow baseline entries that only match in CI (different Larastan version)
+    reportUnmatchedIgnoredErrors: false
+
     # Ignore patterns
     ignoreErrors:
         # Allow dynamic properties on models (Laravel magic)
