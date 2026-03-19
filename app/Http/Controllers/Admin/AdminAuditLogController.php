@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminCacheKey;
+use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminAuditLogIndexRequest;
 use App\Http\Requests\Admin\AdminExportRequest;
@@ -48,7 +49,7 @@ class AdminAuditLogController extends Controller
 
     public function export(AdminExportRequest $request): StreamedResponse
     {
-        $this->auditService->log('admin.audit_logs_exported', [
+        $this->auditService->log(AnalyticsEvent::ADMIN_AUDIT_LOGS_EXPORTED, [
             'filters' => $request->validated(),
         ]);
 

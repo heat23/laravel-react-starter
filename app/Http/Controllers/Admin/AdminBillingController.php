@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminSubscriptionIndexRequest;
 use App\Models\AuditLog;
@@ -108,7 +109,7 @@ class AdminBillingController extends Controller
 
     public function export(AdminSubscriptionIndexRequest $request): \Symfony\Component\HttpFoundation\StreamedResponse
     {
-        $this->auditService->log('admin.subscriptions_exported', [
+        $this->auditService->log(AnalyticsEvent::ADMIN_SUBSCRIPTIONS_EXPORTED, [
             'filters' => $request->validated(),
         ]);
 

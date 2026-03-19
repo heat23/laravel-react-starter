@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AnalyticsEvent;
 use App\Jobs\PersistAuditLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -13,24 +14,19 @@ class AuditService
     {
         $user = $user ?? Auth::user();
 
-        $this->persist('auth.login', $user?->id, [
-            'email' => $user?->email,
-        ]);
+        $this->persist(AnalyticsEvent::AUTH_LOGIN->value, $user?->id, []);
     }
 
     public function logLogout(?User $user = null): void
     {
         $user = $user ?? Auth::user();
 
-        $this->persist('auth.logout', $user?->id, [
-            'email' => $user?->email,
-        ]);
+        $this->persist(AnalyticsEvent::AUTH_LOGOUT->value, $user?->id, []);
     }
 
     public function logRegistration(User $user): void
     {
-        $this->persist('auth.register', $user->id, [
-            'email' => $user->email,
+        $this->persist(AnalyticsEvent::AUTH_REGISTER->value, $user->id, [
             'signup_source' => $user->signup_source ?? 'direct',
         ]);
     }
@@ -39,22 +35,25 @@ class AuditService
      * Log a generic audit event. Metadata values should be scalar types
      * (strings, numbers, booleans) — never pass raw user input without sanitization.
      */
-    public function log(string $event, array $context = []): void
+    public function log(AnalyticsEvent|string $event, array $context = []): void
     {
-        $this->persist($event, Auth::id(), $context);
+        $eventName = $event instanceof AnalyticsEvent ? $event->value : $event;
+
+        $this->persist($eventName, Auth::id(), $context);
     }
 
     /**
      * Log a product analytics event with enriched user context.
      * Adds plan tier, signup cohort, and activation status automatically.
      */
-    public function logProductEvent(string $event, ?User $user = null, array $context = []): void
+    public function logProductEvent(AnalyticsEvent|string $event, ?User $user = null, array $context = []): void
     {
         $user = $user ?? Auth::user();
+        $eventName = $event instanceof AnalyticsEvent ? $event->value : $event;
 
         $enriched = array_merge($context, $this->getProductContext($user));
 
-        $this->persist($event, $user?->id, $enriched);
+        $this->persist($eventName, $user?->id, $enriched);
     }
 
     /**

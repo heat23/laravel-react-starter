@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AnalyticsEvent;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -129,7 +130,12 @@ class PlanLimitService
         foreach ($thresholds as $threshold) {
             if ($percentage >= $threshold) {
                 $auditService = app(AuditService::class);
-                $auditService->logProductEvent("limit.threshold_{$threshold}", $user, [
+                $analyticsEvent = match ($threshold) {
+                    50 => AnalyticsEvent::LIMIT_THRESHOLD_50,
+                    80 => AnalyticsEvent::LIMIT_THRESHOLD_80,
+                    100 => AnalyticsEvent::LIMIT_THRESHOLD_100,
+                };
+                $auditService->logProductEvent($analyticsEvent, $user, [
                     'limit_key' => $limitKey,
                     'current' => $currentCount,
                     'max' => $limit,

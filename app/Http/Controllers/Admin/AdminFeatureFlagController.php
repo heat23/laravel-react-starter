@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminFeatureFlagRequest;
 use App\Http\Requests\Admin\AdminFeatureFlagUserRequest;
@@ -43,7 +44,7 @@ class AdminFeatureFlagController extends Controller
 
             $this->featureFlagService->setGlobalOverride($flag, $enabled, $reason, $request->user());
 
-            $this->auditService->log('admin.feature_flag.global_override', [
+            $this->auditService->log(AnalyticsEvent::ADMIN_FEATURE_FLAG_GLOBAL_OVERRIDE, [
                 'flag' => $flag,
                 'enabled' => $enabled,
                 'reason' => $reason,
@@ -65,7 +66,7 @@ class AdminFeatureFlagController extends Controller
         try {
             $this->featureFlagService->removeGlobalOverride($flag);
 
-            $this->auditService->log('admin.feature_flag.global_override_removed', [
+            $this->auditService->log(AnalyticsEvent::ADMIN_FEATURE_FLAG_GLOBAL_OVERRIDE_REMOVED, [
                 'flag' => $flag,
             ]);
 
@@ -106,7 +107,7 @@ class AdminFeatureFlagController extends Controller
 
             $this->featureFlagService->setUserOverride($flag, $userId, $enabled, $reason, $request->user());
 
-            $this->auditService->log('admin.feature_flag.user_override', [
+            $this->auditService->log(AnalyticsEvent::ADMIN_FEATURE_FLAG_USER_OVERRIDE, [
                 'flag' => $flag,
                 'target_user_id' => $userId,
                 'enabled' => $enabled,
@@ -129,7 +130,7 @@ class AdminFeatureFlagController extends Controller
         try {
             $this->featureFlagService->removeUserOverride($flag, $user);
 
-            $this->auditService->log('admin.feature_flag.user_override_removed', [
+            $this->auditService->log(AnalyticsEvent::ADMIN_FEATURE_FLAG_USER_OVERRIDE_REMOVED, [
                 'flag' => $flag,
                 'user_id' => $user,
             ]);
@@ -150,7 +151,7 @@ class AdminFeatureFlagController extends Controller
         try {
             $this->featureFlagService->removeAllUserOverrides($flag);
 
-            $this->auditService->log('admin.feature_flag.all_user_overrides_removed', [
+            $this->auditService->log(AnalyticsEvent::ADMIN_FEATURE_FLAG_ALL_USER_OVERRIDES_REMOVED, [
                 'flag' => $flag,
             ]);
 

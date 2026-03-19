@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\AnalyticsEvent;
 use App\Models\User;
 use App\Services\AuditService;
 use Carbon\Carbon;
@@ -37,13 +38,13 @@ test('log login captures user id', function () {
     $this->service->logLogin($user);
 });
 
-test('log login captures email in metadata', function () {
+test('log login does not include email in metadata', function () {
     expectLogChannel();
 
     Log::shouldReceive('info')
         ->once()
         ->withArgs(function ($message, $context) {
-            return $context['metadata']['email'] === 'test@example.com';
+            return ! array_key_exists('email', $context['metadata']);
         });
 
     $user = User::factory()->create(['email' => 'test@example.com']);
@@ -113,8 +114,7 @@ test('log login uses auth user when not provided', function () {
     Log::shouldReceive('info')
         ->once()
         ->withArgs(function ($message, $context) {
-            return $context['user_id'] === 1
-                && $context['metadata']['email'] === 'auth@example.com';
+            return $context['user_id'] === 1;
         });
 
     $user = User::factory()->create(['id' => 1, 'email' => 'auth@example.com']);
@@ -130,7 +130,7 @@ test('log login handles null user', function () {
         ->once()
         ->withArgs(function ($message, $context) {
             return $context['user_id'] === null
-                && $context['metadata']['email'] === null;
+                && empty($context['metadata']);
         });
 
     $this->service->logLogin(null);
@@ -179,13 +179,13 @@ test('log logout captures user id', function () {
     $this->service->logLogout($user);
 });
 
-test('log logout captures email in metadata', function () {
+test('log logout does not include email in metadata', function () {
     expectLogChannel();
 
     Log::shouldReceive('info')
         ->once()
         ->withArgs(function ($message, $context) {
-            return $context['metadata']['email'] === 'logout@example.com';
+            return ! array_key_exists('email', $context['metadata']);
         });
 
     $user = User::factory()->create(['email' => 'logout@example.com']);
@@ -268,13 +268,13 @@ test('log registration captures user id', function () {
     $this->service->logRegistration($user);
 });
 
-test('log registration captures email in metadata', function () {
+test('log registration does not include email in metadata', function () {
     expectLogChannel();
 
     Log::shouldReceive('info')
         ->once()
         ->withArgs(function ($message, $context) {
-            return $context['metadata']['email'] === 'newuser@example.com';
+            return ! array_key_exists('email', $context['metadata']);
         });
 
     $user = User::factory()->create(['email' => 'newuser@example.com']);
@@ -352,6 +352,19 @@ test('log generic event captures event name', function () {
         });
 
     $this->service->log('custom.action');
+});
+
+test('log accepts AnalyticsEvent enum', function () {
+    expectLogChannel();
+
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function ($message, $context) {
+            return $message === 'auth.login'
+                && $context['event'] === 'auth.login';
+        });
+
+    $this->service->log(AnalyticsEvent::AUTH_LOGIN);
 });
 
 test('log generic event passes context as metadata', function () {
@@ -445,6 +458,19 @@ test('logProductEvent includes user tier and signup cohort in event metadata', f
     $this->service->logProductEvent('product.test_event', $user, ['custom' => 'value']);
 
     Carbon::setTestNow();
+});
+
+test('logProductEvent accepts AnalyticsEvent enum', function () {
+    expectLogChannel();
+
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function ($message, $context) {
+            return $message === 'limit.threshold_50';
+        });
+
+    $user = User::factory()->create();
+    $this->service->logProductEvent(AnalyticsEvent::LIMIT_THRESHOLD_50, $user);
 });
 
 test('logProductEvent defaults to free plan tier when billing disabled', function () {

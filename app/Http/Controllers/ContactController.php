@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AnalyticsEvent;
 use App\Http\Requests\ContactRequest;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +22,7 @@ class ContactController extends Controller
     {
         $validated = $request->validated();
 
-        $this->auditService->log('contact.submitted', [
+        $this->auditService->log(AnalyticsEvent::CONTACT_SUBMITTED, [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'subject' => $validated['subject'],

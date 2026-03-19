@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
@@ -89,9 +90,13 @@ class SocialAuthController extends Controller
         Auth::login($user, remember: false);
         $request->session()->regenerate();
 
-        $this->auditService->log('auth.social_login', [
+        // Log registration for new social auth users (Fix FUNNEL-004)
+        if ($user->wasRecentlyCreated) {
+            $this->auditService->logRegistration($user);
+        }
+
+        $this->auditService->log(AnalyticsEvent::AUTH_SOCIAL_LOGIN, [
             'provider' => $provider,
-            'email' => $user->email,
         ]);
 
         // Update last login timestamp
@@ -129,9 +134,8 @@ class SocialAuthController extends Controller
                 $user->socialAccounts()->where('provider', $provider)->delete();
             });
 
-            $this->auditService->log('auth.social_disconnected', [
+            $this->auditService->log(AnalyticsEvent::AUTH_SOCIAL_DISCONNECTED, [
                 'provider' => $provider,
-                'email' => $user->email,
             ]);
 
             $this->cacheManager->invalidateSocialAuth();

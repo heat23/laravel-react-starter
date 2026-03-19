@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CreateTokenRequest;
 use App\Services\AuditService;
@@ -71,7 +72,7 @@ class TokenController extends Controller
             $expiresAt
         );
 
-        $this->auditService->log('api_token.created', [
+        $this->auditService->log(AnalyticsEvent::API_TOKEN_CREATED, [
             'token_name' => $request->validated('name'),
         ]);
 
@@ -103,7 +104,7 @@ class TokenController extends Controller
             return response()->json(['message' => 'Token not found.'], 404);
         }
 
-        $this->auditService->log('api_token.deleted', [
+        $this->auditService->log(AnalyticsEvent::API_TOKEN_DELETED, [
             'token_id' => $tokenId,
         ]);
 

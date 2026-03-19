@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AuditService;
@@ -34,7 +35,7 @@ class AdminImpersonationController extends Controller
             return back()->with('error', 'Cannot impersonate a deactivated user.');
         }
 
-        $this->auditService->log('admin.impersonation_started', [
+        $this->auditService->log(AnalyticsEvent::ADMIN_IMPERSONATION_STARTED, [
             'admin_id' => $request->user()->id,
             'admin_email' => $request->user()->email,
             'target_user_id' => $user->id,
@@ -77,7 +78,7 @@ class AdminImpersonationController extends Controller
             return redirect()->route('login');
         }
 
-        $this->auditService->log('admin.impersonation_stopped', [
+        $this->auditService->log(AnalyticsEvent::ADMIN_IMPERSONATION_STOPPED, [
             'admin_id' => $adminId,
             'impersonated_user_id' => $request->user()->id,
             'impersonated_email' => $request->user()->email,

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AnalyticsEvent;
 use App\Http\Requests\FeedbackRequest;
 use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
@@ -14,7 +15,7 @@ class FeedbackController extends Controller
     {
         $validated = $request->validated();
 
-        $this->auditService->log('feedback.submitted', [
+        $this->auditService->log(AnalyticsEvent::FEEDBACK_SUBMITTED, [
             'type' => $validated['type'],
             'message' => $validated['message'],
         ]);

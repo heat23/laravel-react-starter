@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\AnalyticsEvent;
 use App\Services\AuditService;
 use Closure;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class EnsureIsAdmin
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user()?->isAdmin()) {
-            $this->auditService->log('admin.unauthorized_access_attempt', [
+            $this->auditService->log(AnalyticsEvent::ADMIN_UNAUTHORIZED_ACCESS, [
                 'route' => $request->route()?->getName(),
                 'path' => $request->path(),
             ]);

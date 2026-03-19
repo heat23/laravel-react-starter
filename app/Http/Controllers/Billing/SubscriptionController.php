@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Enums\AnalyticsEvent;
 use App\Exceptions\ConcurrentOperationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Billing\CancelSubscriptionRequest;
@@ -67,7 +68,7 @@ class SubscriptionController extends Controller
             $tierConfig = config("plans.{$tier}");
             $amount = (float) ($tierConfig['price_monthly'] ?? 0) * $quantity;
 
-            $this->auditService->log('subscription.created', [
+            $this->auditService->log(AnalyticsEvent::SUBSCRIPTION_CREATED, [
                 'user_id' => $user->id,
                 'price_id' => $priceId,
                 'tier' => $tier,
@@ -110,7 +111,7 @@ class SubscriptionController extends Controller
         try {
             $this->billingService->cancelSubscription($user, $immediately);
 
-            $this->auditService->log('subscription.canceled', array_filter([
+            $this->auditService->log(AnalyticsEvent::SUBSCRIPTION_CANCELED, array_filter([
                 'user_id' => $user->id,
                 'immediately' => $immediately,
                 'reason' => $request->validated('reason'),
@@ -165,7 +166,7 @@ class SubscriptionController extends Controller
         try {
             $this->billingService->resumeSubscription($user);
 
-            $this->auditService->log('subscription.resumed', [
+            $this->auditService->log(AnalyticsEvent::SUBSCRIPTION_RESUMED, [
                 'user_id' => $user->id,
             ]);
 
@@ -212,7 +213,7 @@ class SubscriptionController extends Controller
 
             $newTier = $this->billingService->resolveTierFromPrice($newPriceId) ?? 'unknown';
 
-            $this->auditService->log('subscription.swapped', [
+            $this->auditService->log(AnalyticsEvent::SUBSCRIPTION_SWAPPED, [
                 'user_id' => $user->id,
                 'new_price_id' => $newPriceId,
                 'new_tier' => $newTier,
@@ -256,7 +257,7 @@ class SubscriptionController extends Controller
         try {
             $this->billingService->updateQuantity($user, $quantity);
 
-            $this->auditService->log('subscription.quantity_updated', [
+            $this->auditService->log(AnalyticsEvent::SUBSCRIPTION_QUANTITY_UPDATED, [
                 'user_id' => $user->id,
                 'quantity' => $quantity,
             ]);
@@ -289,7 +290,7 @@ class SubscriptionController extends Controller
                 $request->validated('payment_method'),
             );
 
-            $this->auditService->log('billing.payment_method_updated', [
+            $this->auditService->log(AnalyticsEvent::BILLING_PAYMENT_METHOD_UPDATED, [
                 'user_id' => $user->id,
             ]);
 

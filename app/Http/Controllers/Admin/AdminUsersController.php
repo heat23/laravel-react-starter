@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AnalyticsEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminBulkDeactivateRequest;
@@ -78,7 +79,7 @@ class AdminUsersController extends Controller
     {
         $user->loadCount('tokens');
 
-        $this->auditService->log('admin.user_viewed', [
+        $this->auditService->log(AnalyticsEvent::ADMIN_USER_VIEWED, [
             'target_user_id' => $user->id,
             'target_email' => $user->email,
         ]);
@@ -145,7 +146,7 @@ class AdminUsersController extends Controller
 
         $this->cacheManager->invalidateDashboard();
 
-        $this->auditService->log('admin.toggle_admin', [
+        $this->auditService->log(AnalyticsEvent::ADMIN_TOGGLE_ADMIN, [
             'target_user_id' => $user->id,
             'target_email' => $user->email,
             'changes' => ['is_admin' => ['from' => $wasAdmin, 'to' => $user->is_admin]],
@@ -167,7 +168,7 @@ class AdminUsersController extends Controller
             $deactivated = 0;
             foreach ($users as $user) {
                 $user->delete();
-                $this->auditService->log('admin.user_deactivated', [
+                $this->auditService->log(AnalyticsEvent::ADMIN_USER_DEACTIVATED, [
                     'target_user_id' => $user->id,
                     'target_email' => $user->email,
                     'bulk' => true,
@@ -197,7 +198,7 @@ class AdminUsersController extends Controller
 
         if ($user->trashed()) {
             $user->restore();
-            $this->auditService->log('admin.user_restored', [
+            $this->auditService->log(AnalyticsEvent::ADMIN_USER_RESTORED, [
                 'target_user_id' => $user->id,
                 'target_email' => $user->email,
                 'changes' => ['active' => ['from' => false, 'to' => true]],
@@ -209,7 +210,7 @@ class AdminUsersController extends Controller
         }
 
         $user->delete();
-        $this->auditService->log('admin.user_deactivated', [
+        $this->auditService->log(AnalyticsEvent::ADMIN_USER_DEACTIVATED, [
             'target_user_id' => $user->id,
             'target_email' => $user->email,
             'changes' => ['active' => ['from' => true, 'to' => false]],
@@ -222,7 +223,7 @@ class AdminUsersController extends Controller
 
     public function export(AdminUserExportRequest $request): \Symfony\Component\HttpFoundation\StreamedResponse
     {
-        $this->auditService->log('admin.users_exported', [
+        $this->auditService->log(AnalyticsEvent::ADMIN_USERS_EXPORTED, [
             'filters' => $request->validated(),
         ]);
 
@@ -271,7 +272,7 @@ class AdminUsersController extends Controller
         $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
         $user->sendPasswordResetNotification($token);
 
-        $this->auditService->log('admin.password_reset_sent', [
+        $this->auditService->log(AnalyticsEvent::ADMIN_PASSWORD_RESET_SENT, [
             'target_user_id' => $user->id,
             'target_email' => $user->email,
         ]);

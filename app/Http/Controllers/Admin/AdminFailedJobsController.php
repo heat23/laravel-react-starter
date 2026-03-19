@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminFailedJobIndexRequest;
 use App\Services\AuditService;
@@ -65,7 +66,7 @@ class AdminFailedJobsController extends Controller
 
         Artisan::call('queue:retry', ['id' => [$job->uuid]]);
 
-        $audit->log('admin.failed_job.retry', [
+        $audit->log(AnalyticsEvent::ADMIN_FAILED_JOB_RETRY, [
             'job_id' => $job->id,
             'job_uuid' => $job->uuid,
             'job_name' => $this->extractJobName($job->payload),
@@ -83,7 +84,7 @@ class AdminFailedJobsController extends Controller
 
         DB::table('failed_jobs')->where('id', $id)->delete();
 
-        $audit->log('admin.failed_job.delete', [
+        $audit->log(AnalyticsEvent::ADMIN_FAILED_JOB_DELETE, [
             'job_id' => $job->id,
             'job_uuid' => $job->uuid,
             'job_name' => $this->extractJobName($job->payload),
