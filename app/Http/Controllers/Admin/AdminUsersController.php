@@ -29,7 +29,9 @@ class AdminUsersController extends Controller
     public function index(AdminUserIndexRequest $request): Response
     {
         $validated = $request->validated();
-        $query = User::withTrashed()->withCount('tokens');
+        $query = User::withTrashed()
+            ->withCount('tokens', 'settings', 'webhookEndpoints')
+            ->with('settings:id,user_id,key');
 
         if (! empty($validated['search'])) {
             $query->where(function ($q) use ($validated) {

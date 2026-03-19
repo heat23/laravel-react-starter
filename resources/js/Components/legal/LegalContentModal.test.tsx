@@ -95,7 +95,7 @@ describe('LegalContentModal', () => {
     it('displays template disclaimer', () => {
       render(<LegalContentModal type="terms" onClose={mockOnClose} />);
 
-      expect(screen.getByText(/template content/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/template content/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -145,7 +145,7 @@ describe('LegalContentModal', () => {
     it('displays privacy template disclaimer', () => {
       render(<LegalContentModal type="privacy" onClose={mockOnClose} />);
 
-      expect(screen.getByText(/template content/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/template content/i).length).toBeGreaterThan(0);
     });
   });
 

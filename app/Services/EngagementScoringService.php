@@ -53,33 +53,34 @@ class EngagementScoringService
     {
         $score = 0;
 
-        // Settings customized
-        $settingsCount = DB::table('user_settings')
-            ->where('user_id', $user->id)
-            ->count();
+        // Use pre-loaded counts (from withCount) when available, fall back to queries
+        $settingsCount = $user->getAttribute('settings_count')
+            ?? DB::table('user_settings')->where('user_id', $user->id)->count();
         if ($settingsCount > 0) {
             $score += 8;
         }
 
-        // API tokens created
-        $tokenCount = DB::table('personal_access_tokens')
-            ->where('tokenable_id', $user->id)
-            ->where('tokenable_type', User::class)
-            ->count();
+        $tokenCount = $user->getAttribute('tokens_count')
+            ?? DB::table('personal_access_tokens')
+                ->where('tokenable_id', $user->id)
+                ->where('tokenable_type', User::class)
+                ->count();
         if ($tokenCount > 0) {
             $score += 9;
         }
 
-        // Webhook endpoints (if table exists)
-        try {
-            $webhookCount = DB::table('webhook_endpoints')
-                ->where('user_id', $user->id)
-                ->count();
-            if ($webhookCount > 0) {
-                $score += 8;
+        $webhookCount = $user->getAttribute('webhook_endpoints_count');
+        if ($webhookCount === null) {
+            try {
+                $webhookCount = DB::table('webhook_endpoints')
+                    ->where('user_id', $user->id)
+                    ->count();
+            } catch (\Illuminate\Database\QueryException) {
+                $webhookCount = 0;
             }
-        } catch (\Illuminate\Database\QueryException) {
-            // Table doesn't exist
+        }
+        if ($webhookCount > 0) {
+            $score += 8;
         }
 
         return min(25, $score);
@@ -87,6 +88,11 @@ class EngagementScoringService
 
     private function onboardingScore(User $user): int
     {
+        // Use pre-loaded relationship when available
+        if ($user->relationLoaded('settings')) {
+            return $user->settings->contains('key', 'onboarding_completed') ? 25 : 0;
+        }
+
         $completed = DB::table('user_settings')
             ->where('user_id', $user->id)
             ->where('key', 'onboarding_completed')
