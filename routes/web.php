@@ -61,6 +61,8 @@ Route::get('/features/admin-panel', [FeaturesController::class, 'adminPanel'])->
 
 // Guides (long-form pillar content — separate from shorter blog posts)
 Route::get('/guides/building-saas-with-laravel-12', [GuidesController::class, 'laravelSaasGuide'])->name('guides.laravel-saas');
+Route::get('/guides/laravel-stripe-billing-tutorial', [GuidesController::class, 'stripeGuide'])->name('guides.stripe-guide');
+Route::get('/guides/laravel-feature-flags-tutorial', [GuidesController::class, 'featureFlagsGuide'])->name('guides.feature-flags-guide');
 
 // Feedback (authenticated users only)
 Route::post('/feedback', [FeedbackController::class, 'store'])->middleware(['auth', 'throttle:10,1'])->name('feedback.store');

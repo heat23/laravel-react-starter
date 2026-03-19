@@ -133,8 +133,10 @@ class SeoController extends Controller
         $urls[] = ['loc' => config('app.url').'/features/feature-flags', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
         $urls[] = ['loc' => config('app.url').'/features/admin-panel', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
 
-        // Guides (pillar content)
+        // Guides (pillar content + tutorials)
         $urls[] = ['loc' => config('app.url').'/guides/building-saas-with-laravel-12', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => $now];
+        $urls[] = ['loc' => config('app.url').'/guides/laravel-stripe-billing-tutorial', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
+        $urls[] = ['loc' => config('app.url').'/guides/laravel-feature-flags-tutorial', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
 
         // Competitor comparison pages
         $urls[] = ['loc' => config('app.url').'/compare/laravel-jetstream', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
