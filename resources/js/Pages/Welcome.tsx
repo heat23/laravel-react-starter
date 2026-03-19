@@ -34,18 +34,21 @@ const features = [
     title: 'Secure by default',
     description:
       '12 rate limits, CSRF protection, security headers, 2FA, audit logging, and session management — all configured out of the box.',
+    link: null,
   },
   {
     icon: Layers3,
     title: '11 feature flags',
     description:
       'Toggle billing, webhooks, admin panel, social auth, and more. Ship only what your product needs — disable the rest with one env var.',
+    link: '/features/feature-flags',
   },
   {
     icon: Zap,
     title: 'Production-grade billing',
     description:
       'Redis-locked Stripe mutations prevent race conditions. 4 plan tiers, team seats, dunning emails, and incomplete payment recovery.',
+    link: '/features/billing',
   },
 ];
 
@@ -148,6 +151,24 @@ const Welcome: WelcomeComponent = ({
           </Link>
 
           <div className="flex items-center gap-4">
+            <Link
+              href="/features/billing"
+              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
+            >
+              Billing
+            </Link>
+            <Link
+              href="/features/feature-flags"
+              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
+            >
+              Feature Flags
+            </Link>
+            <Link
+              href="/features/admin-panel"
+              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
+            >
+              Admin Panel
+            </Link>
             {canLogin && (
               <Button variant="ghost" asChild>
                 <Link href={route('login')}>Log in</Link>
@@ -231,25 +252,46 @@ const Welcome: WelcomeComponent = ({
                 Everything you need to launch
               </h2>
               <div className="grid gap-8 md:grid-cols-3">
-                {features.map((feature) => (
-                  <div
-                    key={feature.title}
-                    className="rounded-2xl border border-border/70 bg-card p-6 text-card-foreground shadow-sm"
-                  >
-                    <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                      <feature.icon
-                        className="h-5 w-5 text-primary"
-                        aria-hidden="true"
-                      />
+                {features.map((feature) => {
+                  const card = (
+                    <>
+                      <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
+                        <feature.icon
+                          className="h-5 w-5 text-primary"
+                          aria-hidden="true"
+                        />
+                      </div>
+                      <h3 className="mb-2 text-lg font-semibold">
+                        {feature.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {feature.description}
+                      </p>
+                      {feature.link && (
+                        <span className="mt-3 inline-flex items-center text-sm font-medium text-primary">
+                          Learn more
+                          <ArrowRight className="ml-1 h-3 w-3" />
+                        </span>
+                      )}
+                    </>
+                  );
+                  return feature.link ? (
+                    <Link
+                      key={feature.title}
+                      href={feature.link}
+                      className="rounded-2xl border border-border/70 bg-card p-6 text-card-foreground shadow-sm transition-colors hover:border-primary/30"
+                    >
+                      {card}
+                    </Link>
+                  ) : (
+                    <div
+                      key={feature.title}
+                      className="rounded-2xl border border-border/70 bg-card p-6 text-card-foreground shadow-sm"
+                    >
+                      {card}
                     </div>
-                    <h3 className="mb-2 text-lg font-semibold">
-                      {feature.title}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {feature.description}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </section>

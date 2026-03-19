@@ -10,6 +10,7 @@ use App\Http\Controllers\CompareController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\FeaturesController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\LegalController;
@@ -48,6 +49,11 @@ Route::get('/roadmap', [RoadmapController::class, 'index'])->name('roadmap');
 Route::get('/compare/laravel-jetstream', [CompareController::class, 'jetstream'])->name('compare.jetstream');
 Route::get('/compare/laravel-spark', [CompareController::class, 'spark'])->name('compare.spark');
 Route::get('/compare/saasykit', [CompareController::class, 'saasykit'])->name('compare.saasykit');
+
+// Feature landing pages (SEO)
+Route::get('/features/billing', [FeaturesController::class, 'billing'])->name('features.billing');
+Route::get('/features/feature-flags', [FeaturesController::class, 'featureFlags'])->name('features.feature-flags');
+Route::get('/features/admin-panel', [FeaturesController::class, 'adminPanel'])->name('features.admin-panel');
 
 // Feedback (authenticated users only)
 Route::post('/feedback', [FeedbackController::class, 'store'])->middleware(['auth', 'throttle:10,1'])->name('feedback.store');

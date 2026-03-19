@@ -111,6 +111,12 @@ export interface ComparisonPageProps {
   features: ComparisonFeature[];
 }
 
+// Feature landing pages
+export interface FeaturePageProps {
+  title: string;
+  metaDescription: string;
+}
+
 // Form state helpers
 export interface FormErrors {
   [key: string]: string;

@@ -67,6 +67,11 @@ class SeoController extends Controller
             $urls[] = ['loc' => config('app.url').'/docs', 'priority' => '0.6', 'changefreq' => 'weekly', 'lastmod' => $now];
         }
 
+        // Feature landing pages
+        $urls[] = ['loc' => config('app.url').'/features/billing', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
+        $urls[] = ['loc' => config('app.url').'/features/feature-flags', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
+        $urls[] = ['loc' => config('app.url').'/features/admin-panel', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
+
         // Competitor comparison pages
         $urls[] = ['loc' => config('app.url').'/compare/laravel-jetstream', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
         $urls[] = ['loc' => config('app.url').'/compare/laravel-spark', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
