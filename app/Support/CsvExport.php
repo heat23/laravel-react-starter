@@ -79,11 +79,11 @@ class CsvExport
         foreach ($items as $item) {
             $row = [];
             foreach ($this->columns as $accessor) {
-                $value = is_callable($accessor)
+                $value = $accessor instanceof \Closure
                     ? $accessor($item)
                     : $this->resolveValue($item, $accessor);
 
-                $row[] = $this->sanitize($value);
+                $row[] = $this->sanitize(is_string($value) || $value === null ? $value : (string) $value);
             }
             fputcsv($stream, $row, $this->delimiter, '"');
         }

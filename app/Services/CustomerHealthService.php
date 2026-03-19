@@ -9,6 +9,20 @@ use Illuminate\Support\Facades\DB;
 
 class CustomerHealthService
 {
+    /** @var bool|null Cached result of subscriptions table existence check */
+    private static ?bool $subscriptionsTableExists = null;
+
+    /** @var array<int, int> Per-request cache of login counts keyed by user ID */
+    private array $loginCountCache = [];
+
+    /**
+     * Per-request cache of subscription stripe_status keyed by user ID.
+     * Null value means no subscription found; false means not yet cached.
+     *
+     * @var array<int, string|null>
+     */
+    private array $subscriptionStatusCache = [];
+
     /**
      * Calculate a health score (0-100) for a user based on 4 dimensions.
      */
@@ -83,6 +97,11 @@ class CustomerHealthService
             User::whereNull('deleted_at')
                 ->withCount(['settings', 'tokens', 'webhookEndpoints'])
                 ->chunk(100, function ($users) use (&$distribution) {
+                    // Pre-fetch all login counts and subscription statuses for this chunk in 2 queries
+                    $userIds = $users->pluck('id')->all();
+                    $this->primeLoginCountCache($userIds);
+                    $this->primeBillingCache($userIds);
+
                     foreach ($users as $user) {
                         $score = $this->calculateHealthScore($user);
                         match (true) {
@@ -92,6 +111,10 @@ class CustomerHealthService
                             default => $distribution['critical']++,
                         };
                     }
+
+                    // Clear per-chunk caches to free memory
+                    $this->loginCountCache = [];
+                    $this->subscriptionStatusCache = [];
                 });
 
             return $distribution;
@@ -99,14 +122,73 @@ class CustomerHealthService
     }
 
     /**
+     * Pre-populate the subscription status cache for a batch of user IDs (1 query for N users).
+     *
+     * @param  int[]  $userIds
+     */
+    private function primeBillingCache(array $userIds): void
+    {
+        if (empty($userIds)) {
+            return;
+        }
+
+        if (self::$subscriptionsTableExists === null) {
+            self::$subscriptionsTableExists = DB::getSchemaBuilder()->hasTable('subscriptions');
+        }
+
+        if (! self::$subscriptionsTableExists) {
+            foreach ($userIds as $id) {
+                $this->subscriptionStatusCache[$id] = null;
+            }
+
+            return;
+        }
+
+        $statuses = DB::table('subscriptions')
+            ->whereIn('user_id', $userIds)
+            ->where('type', 'default')
+            ->pluck('stripe_status', 'user_id');
+
+        foreach ($userIds as $id) {
+            $this->subscriptionStatusCache[$id] = $statuses[$id] ?? null;
+        }
+    }
+
+    /**
+     * Pre-populate the login count cache for a batch of user IDs (1 query for N users).
+     *
+     * @param  int[]  $userIds
+     */
+    private function primeLoginCountCache(array $userIds): void
+    {
+        if (! class_exists(\App\Models\AuditLog::class) || empty($userIds)) {
+            return;
+        }
+
+        $counts = \App\Models\AuditLog::whereIn('user_id', $userIds)
+            ->where('event', 'login')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->groupBy('user_id')
+            ->selectRaw('user_id, count(*) as cnt')
+            ->pluck('cnt', 'user_id');
+
+        foreach ($userIds as $id) {
+            $this->loginCountCache[$id] = (int) ($counts[$id] ?? 0);
+        }
+    }
+
+    /**
      * Login frequency score (0-25 points).
      * Based on audit log entries in last 30 days.
+     * Uses loginCountCache when populated by primeLoginCountCache() for batch operations.
      */
     private function loginFrequencyScore(User $user): int
     {
         $loginCount = 0;
 
-        if (class_exists(\App\Models\AuditLog::class)) {
+        if (isset($this->loginCountCache[$user->id])) {
+            $loginCount = $this->loginCountCache[$user->id];
+        } elseif (class_exists(\App\Models\AuditLog::class)) {
             $loginCount = \App\Models\AuditLog::where('user_id', $user->id)
                 ->where('event', 'login')
                 ->where('created_at', '>=', now()->subDays(30))
@@ -146,20 +228,41 @@ class CustomerHealthService
 
     /**
      * Billing status score (0-25 points).
-     * Uses direct DB queries to avoid lazy loading violations.
+     * Uses eager-loaded subscriptions when available, falls back to DB query.
+     * Uses subscriptionStatusCache when populated by primeBillingCache() for batch operations.
      */
     private function billingStatusScore(User $user): int
     {
-        if (! DB::getSchemaBuilder()->hasTable('subscriptions')) {
-            return 0;
+        // 1. Use batch cache when populated by primeBillingCache()
+        if (array_key_exists($user->id, $this->subscriptionStatusCache)) {
+            $stripeStatus = $this->subscriptionStatusCache[$user->id];
+        }
+        // 2. Use eager-loaded subscriptions relationship if available
+        elseif ($user->relationLoaded('subscriptions')) {
+            /** @var \Laravel\Cashier\Subscription|null $subscription */
+            $subscription = $user->subscriptions
+                ->where('type', 'default')
+                ->sortByDesc('created_at')
+                ->first();
+            $stripeStatus = $subscription?->stripe_status;
+        }
+        // 3. Fall back to DB query
+        else {
+            if (self::$subscriptionsTableExists === null) {
+                self::$subscriptionsTableExists = DB::getSchemaBuilder()->hasTable('subscriptions');
+            }
+
+            if (! self::$subscriptionsTableExists) {
+                return 0;
+            }
+
+            $stripeStatus = DB::table('subscriptions')
+                ->where('user_id', $user->id)
+                ->where('type', 'default')
+                ->value('stripe_status') ?? null;
         }
 
-        $subscription = DB::table('subscriptions')
-            ->where('user_id', $user->id)
-            ->where('type', 'default')
-            ->first();
-
-        if (! $subscription) {
+        if ($stripeStatus === null) {
             // Check if on trial (trial_ends_at on user)
             /** @var \Carbon\Carbon|null $trialEndsAt */
             $trialEndsAt = $user->trial_ends_at;
@@ -170,7 +273,7 @@ class CustomerHealthService
             return 0;
         }
 
-        return match ($subscription->stripe_status) {
+        return match ($stripeStatus) {
             'active' => 25,
             'trialing' => 20,
             'past_due' => 5,

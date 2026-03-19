@@ -13,6 +13,8 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         $user->loadCount(['settings', 'tokens']);
+        // Eager load subscriptions to avoid N+1 from subscribed(), subscription(), onTrial(), billingStatusScore()
+        $user->load('subscriptions');
 
         $stats = [
             'days_since_signup' => (int) $user->created_at->diffInDays(now()),

@@ -29,7 +29,7 @@ class EngagementScoringService
             webhookCount: (int) ($user->getAttribute('webhook_endpoints_count')
                 ?? $this->countWebhooks($user->id)),
             onboardingComplete: $user->relationLoaded('settings')
-                ? $user->settings->contains(fn ($s) => $s->key === 'onboarding_completed' && $s->value === '1')
+                ? $user->settings->contains(fn ($s) => $s->getAttribute('key') === 'onboarding_completed' && $s->getAttribute('value') === '1')
                 : DB::table('user_settings')
                     ->where('user_id', $user->id)
                     ->where('key', 'onboarding_completed')

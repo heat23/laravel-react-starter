@@ -34,8 +34,10 @@ test('audit service persists login to database', function () {
         'user_id' => $user->id,
     ]);
 
+    // Email is intentionally excluded from login metadata (PII cleanup — see commit 2da3a16).
+    // Empty metadata is stored as null (PersistAuditLog uses [] ?: null), so assert no email key.
     $log = AuditLog::first();
-    $this->assertEquals($user->email, $log->metadata['email']);
+    $this->assertNull($log->metadata);
 });
 
 test('audit service persists logout to database', function () {

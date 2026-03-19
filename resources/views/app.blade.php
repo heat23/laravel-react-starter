@@ -105,6 +105,30 @@
         @endphp
         <script type="application/ld+json" nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">{!! $organizationLd !!}</script>
 
+        <!-- JSON-LD Structured Data: FAQPage (homepage only) -->
+        @if(isset($page['component']) && $page['component'] === 'Welcome')
+        @php
+            $faqItems = $page['props']['faqs'] ?? [];
+            if (!empty($faqItems)) {
+                $faqLd = json_encode([
+                    '@context' => 'https://schema.org',
+                    '@type' => 'FAQPage',
+                    'mainEntity' => array_map(fn ($faq) => [
+                        '@type' => 'Question',
+                        'name' => $faq['question'],
+                        'acceptedAnswer' => [
+                            '@type' => 'Answer',
+                            'text' => $faq['answer'],
+                        ],
+                    ], $faqItems),
+                ], JSON_UNESCAPED_SLASHES);
+            }
+        @endphp
+        @if(isset($faqLd))
+        <script type="application/ld+json" nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">{!! $faqLd !!}</script>
+        @endif
+        @endif
+
         <!-- Scripts -->
         @routes(null, Illuminate\Support\Facades\Vite::cspNonce())
         @viteReactRefresh

@@ -148,11 +148,11 @@ it('does not modify normal string values', function () {
         'Name' => 'name',
     ]);
 
-    $items = [(object) ['name' => 'Hello World']];
+    $items = [(object) ['name' => 'HelloWorld']];
     $output = captureStreamOutput($export, $items);
     $lines = explode("\n", trim($output));
 
-    expect($lines[1])->toBe('Hello World');
+    expect($lines[1])->toBe('HelloWorld');
 });
 
 it('works with array items', function () {

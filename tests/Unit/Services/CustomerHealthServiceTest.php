@@ -98,9 +98,11 @@ it('calculates health score without N+1 queries when counts are preloaded', func
     $queries = DB::getQueryLog();
     DB::disableQueryLog();
 
-    // Counts already loaded — only audit log query expected (loginFrequencyScore)
-    $countQueries = collect($queries)->filter(fn ($q) => str_contains($q['query'], 'count'));
-    expect($countQueries)->toHaveCount(0);
+    // Counts already loaded — only 1 audit log count + 1 subscription query expected, no loadCount queries
+    $loadCountQueries = collect($queries)->filter(fn ($q) => str_contains($q['query'], 'settings_count') || str_contains($q['query'], 'tokens_count'));
+    expect($loadCountQueries)->toHaveCount(0);
+    // Total queries bounded: audit_log count + subscriptions = 2
+    expect(count($queries))->toBeLessThanOrEqual(2);
 });
 
 it('loads health distribution for 50 users with bounded query count', function () {
