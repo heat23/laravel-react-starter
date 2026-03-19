@@ -20,16 +20,21 @@ class EngagementScoringService
     {
         return $this->computeScore(
             user: $user,
-            settingsCount: (int) DB::table('user_settings')->where('user_id', $user->id)->count(),
-            tokenCount: (int) DB::table('personal_access_tokens')
-                ->where('tokenable_type', User::class)
-                ->where('tokenable_id', $user->id)->count(),
-            webhookCount: $this->countWebhooks($user->id),
-            onboardingComplete: DB::table('user_settings')
-                ->where('user_id', $user->id)
-                ->where('key', 'onboarding_completed')
-                ->where('value', '1')
-                ->exists(),
+            settingsCount: (int) ($user->getAttribute('settings_count')
+                ?? DB::table('user_settings')->where('user_id', $user->id)->count()),
+            tokenCount: (int) ($user->getAttribute('tokens_count')
+                ?? DB::table('personal_access_tokens')
+                    ->where('tokenable_type', User::class)
+                    ->where('tokenable_id', $user->id)->count()),
+            webhookCount: (int) ($user->getAttribute('webhook_endpoints_count')
+                ?? $this->countWebhooks($user->id)),
+            onboardingComplete: $user->relationLoaded('settings')
+                ? $user->settings->contains(fn ($s) => $s->key === 'onboarding_completed' && $s->value === '1')
+                : DB::table('user_settings')
+                    ->where('user_id', $user->id)
+                    ->where('key', 'onboarding_completed')
+                    ->where('value', '1')
+                    ->exists(),
         );
     }
 
