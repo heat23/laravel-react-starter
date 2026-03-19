@@ -102,4 +102,105 @@ class CompareController extends Controller
             ],
         ]);
     }
+
+    public function wave(): Response
+    {
+        $appUrl = rtrim(config('app.url'), '/');
+
+        return Inertia::render('Compare/Wave', [
+            'competitor' => 'wave',
+            'competitorName' => 'Wave',
+            'title' => 'Laravel React Starter vs Wave — SaaS Boilerplate Comparison',
+            'metaDescription' => 'Wave uses Blade templates and Spark for billing. This starter uses React + TypeScript with Redis-locked Stripe billing built-in. Full side-by-side comparison.',
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => $appUrl],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare/wave'],
+                ['name' => 'Wave', 'url' => $appUrl.'/compare/wave'],
+            ],
+            'features' => [
+                ['feature' => 'Frontend', 'us' => 'React 18 + TypeScript', 'them' => 'Blade + Livewire + Alpine.js'],
+                ['feature' => 'Admin panel', 'us' => 'React + TypeScript', 'them' => 'Filament-based'],
+                ['feature' => 'Stripe billing', 'us' => 'Yes (Redis-locked, custom)', 'them' => 'Via Laravel Spark'],
+                ['feature' => 'Feature flags', 'us' => 'Yes (11 flags, DB overrides)', 'them' => 'Limited built-in'],
+                ['feature' => 'Webhooks (in + out)', 'us' => 'Yes (HMAC-signed)', 'them' => false],
+                ['feature' => 'Audit logging', 'us' => true, 'them' => 'Limited'],
+                ['feature' => 'Social auth', 'us' => true, 'them' => true],
+                ['feature' => '2FA', 'us' => 'Yes (TOTP)', 'them' => true],
+                ['feature' => 'PHPStan / static analysis', 'us' => 'Yes (Larastan, level 8)', 'them' => 'Not standard'],
+                ['feature' => 'Vitest / TypeScript tests', 'us' => true, 'them' => 'No (no TypeScript)'],
+                ['feature' => 'Test coverage', 'us' => '90+ Pest + Vitest', 'them' => 'PHP tests only'],
+                ['feature' => 'Blog / announcements', 'us' => 'No (add your own)', 'them' => 'Yes (built-in blog)'],
+                ['feature' => 'License', 'us' => 'Commercial', 'them' => 'Open-source (MIT)'],
+                ['feature' => 'Price', 'us' => 'One-time', 'them' => 'Free'],
+            ],
+        ]);
+    }
+
+    public function shipfast(): Response
+    {
+        $appUrl = rtrim(config('app.url'), '/');
+
+        return Inertia::render('Compare/Shipfast', [
+            'competitor' => 'shipfast',
+            'competitorName' => 'Shipfast',
+            'title' => 'Laravel React Starter vs Shipfast — Laravel vs Next.js SaaS Starter',
+            'metaDescription' => 'Shipfast is a Next.js starter. This is its Laravel equivalent: full-stack React + TypeScript with server-side rendering via Inertia, Stripe billing, and a built-in admin panel.',
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => $appUrl],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare/shipfast'],
+                ['name' => 'Shipfast', 'url' => $appUrl.'/compare/shipfast'],
+            ],
+            'features' => [
+                ['feature' => 'Backend', 'us' => 'Laravel 12 (PHP)', 'them' => 'Next.js (Node.js)'],
+                ['feature' => 'Frontend', 'us' => 'React 18 + TypeScript', 'them' => 'React + TypeScript'],
+                ['feature' => 'Rendering', 'us' => 'SSR via Inertia.js', 'them' => 'SSR via Next.js'],
+                ['feature' => 'Database', 'us' => 'MySQL / PostgreSQL (Eloquent)', 'them' => 'MongoDB or PostgreSQL (Prisma)'],
+                ['feature' => 'Auth', 'us' => 'Breeze + Sanctum', 'them' => 'NextAuth.js'],
+                ['feature' => 'Stripe billing', 'us' => 'Yes (Redis-locked, 4 tiers)', 'them' => 'Yes (Stripe.js)'],
+                ['feature' => 'Admin panel', 'us' => 'Yes (custom React)', 'them' => false],
+                ['feature' => 'Feature flags', 'us' => 'Yes (11 flags, DB overrides)', 'them' => false],
+                ['feature' => 'Webhooks', 'us' => 'Yes (in + out, HMAC)', 'them' => 'Partial'],
+                ['feature' => 'Audit logging', 'us' => true, 'them' => false],
+                ['feature' => '2FA', 'us' => 'Yes (TOTP)', 'them' => false],
+                ['feature' => 'PHPStan / TypeScript', 'us' => 'Both (PHP + TS)', 'them' => 'TypeScript only'],
+                ['feature' => 'Test coverage', 'us' => '90+ Pest + Vitest', 'them' => 'Varies'],
+                ['feature' => 'Deployment', 'us' => 'VPS (nginx + supervisor)', 'them' => 'Vercel / serverless'],
+                ['feature' => 'License', 'us' => 'Commercial', 'them' => 'Commercial'],
+            ],
+        ]);
+    }
+
+    public function supastarter(): Response
+    {
+        $appUrl = rtrim(config('app.url'), '/');
+
+        return Inertia::render('Compare/Supastarter', [
+            'competitor' => 'supastarter',
+            'competitorName' => 'Supastarter',
+            'title' => 'Laravel React Starter vs Supastarter — Laravel vs Supabase SaaS Starter',
+            'metaDescription' => 'Supastarter uses Supabase + Next.js. This starter uses Laravel + MySQL + Redis. Compare auth, billing, admin, and backend philosophy for your SaaS architecture decision.',
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => $appUrl],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare/supastarter'],
+                ['name' => 'Supastarter', 'url' => $appUrl.'/compare/supastarter'],
+            ],
+            'features' => [
+                ['feature' => 'Backend', 'us' => 'Laravel 12 (PHP)', 'them' => 'Supabase (BaaS) + Next.js'],
+                ['feature' => 'Database', 'us' => 'MySQL / PostgreSQL (Eloquent ORM)', 'them' => 'PostgreSQL (Supabase)'],
+                ['feature' => 'Auth', 'us' => 'Breeze + Sanctum (self-hosted)', 'them' => 'Supabase Auth (managed)'],
+                ['feature' => 'Realtime', 'us' => 'Via Laravel Echo + Pusher/Reverb', 'them' => 'Supabase Realtime (built-in)'],
+                ['feature' => 'File storage', 'us' => 'Laravel Storage (S3/local)', 'them' => 'Supabase Storage'],
+                ['feature' => 'Stripe billing', 'us' => 'Yes (Redis-locked, 4 tiers)', 'them' => 'Yes (via Stripe SDK)'],
+                ['feature' => 'Admin panel', 'us' => 'Yes (custom React)', 'them' => 'Limited'],
+                ['feature' => 'Feature flags', 'us' => 'Yes (11 flags, DB overrides)', 'them' => false],
+                ['feature' => 'Webhooks', 'us' => 'Yes (in + out, HMAC)', 'them' => 'Supabase webhooks (limited)'],
+                ['feature' => 'Audit logging', 'us' => true, 'them' => 'Supabase audit log (limited)'],
+                ['feature' => '2FA', 'us' => 'Yes (TOTP)', 'them' => 'Via Supabase Auth'],
+                ['feature' => 'Social auth', 'us' => 'Yes (Google + GitHub)', 'them' => 'Via Supabase Auth'],
+                ['feature' => 'Test coverage', 'us' => '90+ Pest + Vitest', 'them' => 'Varies'],
+                ['feature' => 'Vendor lock-in', 'us' => 'Low (self-hosted MySQL)', 'them' => 'Medium (Supabase APIs)'],
+                ['feature' => 'Deployment', 'us' => 'VPS or cloud (flexible)', 'them' => 'Vercel + Supabase Cloud'],
+            ],
+        ]);
+    }
 }

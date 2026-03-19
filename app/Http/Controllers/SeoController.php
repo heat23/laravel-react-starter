@@ -74,6 +74,9 @@ class SeoController extends Controller
             "- {$appUrl}/compare/laravel-jetstream",
             "- {$appUrl}/compare/laravel-spark",
             "- {$appUrl}/compare/saasykit",
+            "- {$appUrl}/compare/wave",
+            "- {$appUrl}/compare/shipfast",
+            "- {$appUrl}/compare/supastarter",
             "- {$appUrl}/guides/building-saas-with-laravel-12",
             "- {$appUrl}/changelog",
             "- {$appUrl}/roadmap",
@@ -95,7 +98,7 @@ class SeoController extends Controller
             'Stack: Laravel 12, React 18, TypeScript, Tailwind CSS v4, Inertia.js, Pest, Vitest, PHPStan',
             'License: Commercial (one-time purchase)',
             'Category: SaaS boilerplate, Laravel starter kit, developer tools',
-            'Alternatives: Laravel Jetstream (free, Vue/Livewire), Laravel Spark ($99/yr, billing only), SaaSykit (Filament admin)',
+            'Alternatives: Laravel Jetstream (free, Vue/Livewire), Laravel Spark ($99/yr, billing only), SaaSykit (Filament admin), Wave (open-source, Blade/Livewire), Shipfast (Next.js), Supastarter (Supabase + Next.js)',
             'Differentiator: React + TypeScript admin panel, Redis-locked billing, 11 feature flags, full test coverage',
             '',
         ]);
@@ -137,6 +140,9 @@ class SeoController extends Controller
         $urls[] = ['loc' => config('app.url').'/compare/laravel-jetstream', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
         $urls[] = ['loc' => config('app.url').'/compare/laravel-spark', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
         $urls[] = ['loc' => config('app.url').'/compare/saasykit', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
+        $urls[] = ['loc' => config('app.url').'/compare/wave', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
+        $urls[] = ['loc' => config('app.url').'/compare/shipfast', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
+        $urls[] = ['loc' => config('app.url').'/compare/supastarter', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
 
         return response()
             ->view('seo.sitemap', ['urls' => $urls])

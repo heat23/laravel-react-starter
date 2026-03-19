@@ -50,6 +50,9 @@ Route::get('/roadmap', [RoadmapController::class, 'index'])->name('roadmap');
 Route::get('/compare/laravel-jetstream', [CompareController::class, 'jetstream'])->name('compare.jetstream');
 Route::get('/compare/laravel-spark', [CompareController::class, 'spark'])->name('compare.spark');
 Route::get('/compare/saasykit', [CompareController::class, 'saasykit'])->name('compare.saasykit');
+Route::get('/compare/wave', [CompareController::class, 'wave'])->name('compare.wave');
+Route::get('/compare/shipfast', [CompareController::class, 'shipfast'])->name('compare.shipfast');
+Route::get('/compare/supastarter', [CompareController::class, 'supastarter'])->name('compare.supastarter');
 
 // Feature landing pages (SEO)
 Route::get('/features/billing', [FeaturesController::class, 'billing'])->name('features.billing');
