@@ -14,6 +14,10 @@ class CustomerHealthService
      */
     public function calculateHealthScore(User $user): int
     {
+        if (! isset($user->settings_count)) {
+            $user->loadCount(['settings', 'tokens', 'webhookEndpoints']);
+        }
+
         return $this->loginFrequencyScore($user)
             + $this->featureAdoptionScore($user)
             + $this->billingStatusScore($user)
@@ -75,6 +79,7 @@ class CustomerHealthService
             $distribution = ['critical' => 0, 'at_risk' => 0, 'moderate' => 0, 'healthy' => 0];
 
             User::whereNull('deleted_at')
+                ->withCount(['settings', 'tokens', 'webhookEndpoints'])
                 ->chunk(100, function ($users) use (&$distribution) {
                     foreach ($users as $user) {
                         $score = $this->calculateHealthScore($user);
@@ -122,18 +127,15 @@ class CustomerHealthService
     {
         $score = 0;
 
-        // Has settings configured
-        if ($user->settings()->count() > 0) {
+        if ($user->settings_count > 0) {
             $score += 8;
         }
 
-        // Has API tokens
-        if ($user->tokens()->count() > 0) {
+        if ($user->tokens_count > 0) {
             $score += 8;
         }
 
-        // Has webhook endpoints
-        if ($user->webhookEndpoints()->count() > 0) {
+        if ($user->webhook_endpoints_count > 0) {
             $score += 9;
         }
 
@@ -186,8 +188,7 @@ class CustomerHealthService
             $score += 10;
         }
 
-        // Has settings configured (theme, timezone, etc.)
-        if ($user->settings()->count() >= 2) {
+        if ($user->settings_count >= 2) {
             $score += 8;
         }
 

@@ -3,6 +3,8 @@
 use App\Models\User;
 use App\Services\CustomerHealthService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -84,4 +86,34 @@ it('returns health distribution buckets', function () {
 
     $total = array_sum($distribution);
     expect($total)->toBe(3);
+});
+
+it('calculates health score without N+1 queries when counts are preloaded', function () {
+    $user = User::factory()->create();
+    $user->loadCount(['settings', 'tokens', 'webhookEndpoints']);
+
+    DB::enableQueryLog();
+    $service = new CustomerHealthService;
+    $service->calculateHealthScore($user);
+    $queries = DB::getQueryLog();
+    DB::disableQueryLog();
+
+    // Counts already loaded — only audit log query expected (loginFrequencyScore)
+    $countQueries = collect($queries)->filter(fn ($q) => str_contains($q['query'], 'count'));
+    expect($countQueries)->toHaveCount(0);
+});
+
+it('loads health distribution for 50 users with bounded query count', function () {
+    User::factory()->count(50)->create();
+
+    Cache::forget('metrics:health_distribution');
+
+    DB::enableQueryLog();
+    $service = new CustomerHealthService;
+    $service->getHealthDistribution();
+    $queries = DB::getQueryLog();
+    DB::disableQueryLog();
+
+    // With withCount at chunk level: expect bounded queries, not 4 per user
+    expect(count($queries))->toBeLessThanOrEqual(10);
 });

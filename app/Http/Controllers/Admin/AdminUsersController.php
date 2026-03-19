@@ -56,7 +56,11 @@ class AdminUsersController extends Controller
         $dir = ($validated['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sort, $dir);
 
-        $users = $query->paginate(config('pagination.admin.users', 25))->through(fn (User $user) => [
+        $users = $query->paginate(config('pagination.admin.users', 25));
+
+        $engagementScores = $this->engagementService->scoreBatch($users->getCollection());
+
+        $users->through(fn (User $user) => [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
@@ -66,7 +70,7 @@ class AdminUsersController extends Controller
             'created_at' => $user->created_at?->toISOString(),
             'tokens_count' => $user->tokens_count,
             'deleted_at' => $user->deleted_at?->toISOString(),
-            'engagement_score' => $this->engagementService->score($user),
+            'engagement_score' => $engagementScores[$user->id] ?? 0,
         ]);
 
         return Inertia::render('Admin/Users/Index', [

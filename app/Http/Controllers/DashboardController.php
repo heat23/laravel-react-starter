@@ -12,6 +12,7 @@ class DashboardController extends Controller
     public function __invoke(CustomerHealthService $healthService): Response
     {
         $user = auth()->user();
+        $user->loadCount(['settings', 'tokens']);
 
         $stats = [
             'days_since_signup' => (int) $user->created_at->diffInDays(now()),
@@ -19,8 +20,8 @@ class DashboardController extends Controller
             'email_verified' => $user->hasVerifiedEmail(),
             'has_subscription' => method_exists($user, 'subscribed') && $user->subscribed('default'),
             'plan_name' => $this->getPlanName($user),
-            'settings_count' => $user->settings()->count(),
-            'tokens_count' => $user->tokens()->count(),
+            'settings_count' => $user->settings_count,
+            'tokens_count' => $user->tokens_count,
         ];
 
         return Inertia::render('Dashboard', [
@@ -40,8 +41,8 @@ class DashboardController extends Controller
         $plans = config('plans', []);
         foreach ($plans as $key => $plan) {
             $priceIds = array_filter([
-                $plan['stripe_monthly_price_id'] ?? null,
-                $plan['stripe_yearly_price_id'] ?? null,
+                $plan['stripe_price_monthly'] ?? null,
+                $plan['stripe_price_annual'] ?? null,
             ]);
             foreach ($priceIds as $priceId) {
                 if ($subscription->hasPrice($priceId)) {
