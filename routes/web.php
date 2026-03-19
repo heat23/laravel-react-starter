@@ -6,6 +6,7 @@ use App\Http\Controllers\Billing\StripeWebhookController;
 use App\Http\Controllers\Billing\SubscriptionController;
 use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\ChartsController;
+use App\Http\Controllers\CompareController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
@@ -42,6 +43,11 @@ Route::get('/contact', [ContactController::class, 'show'])->middleware('throttle
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contact.store');
 Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
 Route::get('/roadmap', [RoadmapController::class, 'index'])->name('roadmap');
+
+// Competitor comparison pages (SEO landing pages)
+Route::get('/compare/laravel-jetstream', [CompareController::class, 'jetstream'])->name('compare.jetstream');
+Route::get('/compare/laravel-spark', [CompareController::class, 'spark'])->name('compare.spark');
+Route::get('/compare/saasykit', [CompareController::class, 'saasykit'])->name('compare.saasykit');
 
 // Feedback (authenticated users only)
 Route::post('/feedback', [FeedbackController::class, 'store'])->middleware(['auth', 'throttle:10,1'])->name('feedback.store');

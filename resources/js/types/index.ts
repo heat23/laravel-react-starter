@@ -96,6 +96,21 @@ export interface WebhookDelivery {
   created_at: string;
 }
 
+// Comparison pages
+export interface ComparisonFeature {
+  feature: string;
+  us: string | boolean;
+  them: string | boolean;
+}
+
+export interface ComparisonPageProps {
+  competitor: string;
+  competitorName: string;
+  title: string;
+  metaDescription: string;
+  features: ComparisonFeature[];
+}
+
 // Form state helpers
 export interface FormErrors {
   [key: string]: string;
