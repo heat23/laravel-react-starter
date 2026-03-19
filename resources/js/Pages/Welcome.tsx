@@ -98,7 +98,7 @@ const Welcome: WelcomeComponent = ({
 
   return (
     <>
-      <Head title="Welcome">
+      <Head title={`${appName} — Laravel React SaaS Starter Kit`}>
         <meta
           name="description"
           content={`A production-ready Laravel + React starter with ${featureCount} feature flags, ${planCount} billing tiers, and ${testCount}+ tests. Auth, admin panel, Stripe billing, and email sequences — ready to ship.`}
@@ -112,7 +112,7 @@ const Welcome: WelcomeComponent = ({
           content={`${featureCount} toggleable features, Redis-locked billing, production admin panel. Laravel 12 + React 18 + TypeScript.`}
         />
         <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
           content={`${appName} — Ship your SaaS in days, not months`}

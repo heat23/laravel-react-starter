@@ -57,7 +57,12 @@ export default function Roadmap({ entries }: RoadmapProps) {
 
   return (
     <>
-      <Head title="Roadmap" />
+      <Head title="Roadmap">
+        <meta
+          name="description"
+          content="See what features are planned, in progress, and recently shipped. The public roadmap — updated weekly."
+        />
+      </Head>
       <div className="min-h-screen bg-background">
         <div className="container max-w-3xl py-12">
           <div className="mb-6">
@@ -71,7 +76,7 @@ export default function Roadmap({ entries }: RoadmapProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Roadmap</CardTitle>
+              <CardTitle asChild><h1 className="text-2xl font-bold">Roadmap</h1></CardTitle>
               <p className="text-sm text-muted-foreground">
                 See what we're working on and what's coming next.
               </p>

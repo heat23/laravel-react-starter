@@ -19,6 +19,7 @@ it('returns Allow: / in robots.txt for production environment', function () {
     $response->assertOk();
     $response->assertHeader('Content-Type', 'text/plain; charset=UTF-8');
     $response->assertSee('Allow: /');
+    $response->assertSee('Disallow: /admin');
     $response->assertSee('Disallow: /dashboard');
     $response->assertSee('Disallow: /profile');
     $response->assertSee('Disallow: /settings');
@@ -87,4 +88,21 @@ it('excludes docs URL from sitemap when api docs disabled', function () {
 
     $content = $response->getContent();
     expect($content)->not->toContain('/docs</loc>');
+});
+
+it('includes changelog, roadmap, and contact URLs in sitemap', function () {
+    $response = $this->get('/sitemap.xml');
+
+    $content = $response->getContent();
+    expect($content)->toContain(config('app.url').'/changelog</loc>');
+    expect($content)->toContain(config('app.url').'/roadmap</loc>');
+    expect($content)->toContain(config('app.url').'/contact</loc>');
+});
+
+it('includes lastmod and changefreq elements in sitemap entries', function () {
+    $response = $this->get('/sitemap.xml');
+
+    $content = $response->getContent();
+    expect($content)->toContain('<lastmod>');
+    expect($content)->toContain('<changefreq>');
 });

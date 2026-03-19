@@ -9,7 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 export default function Terms() {
   return (
     <>
-      <Head title="Terms of Service" />
+      <Head title="Terms of Service">
+        <meta
+          name="description"
+          content="Terms of service — the agreement governing your use of the platform."
+        />
+      </Head>
       <div className="min-h-screen bg-background">
         <div className="container max-w-3xl py-12">
           <div className="mb-6">

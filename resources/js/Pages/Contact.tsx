@@ -49,7 +49,12 @@ export default function Contact() {
 
   return (
     <>
-      <Head title="Contact Us" />
+      <Head title="Contact Us">
+        <meta
+          name="description"
+          content="Get in touch with our team. We respond to all inquiries within one business day."
+        />
+      </Head>
       <div className="min-h-screen bg-background">
         <div className="container max-w-2xl py-12">
           <div className="mb-6">
@@ -63,9 +68,11 @@ export default function Contact() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <Mail className="h-6 w-6" />
-                Contact Us
+              <CardTitle asChild>
+                <h1 className="flex items-center gap-2 text-2xl font-bold">
+                  <Mail className="h-6 w-6" />
+                  Contact Us
+                </h1>
               </CardTitle>
               <p className="text-sm text-muted-foreground">
                 Have a question or need help? Fill out the form below and we'll

@@ -46,7 +46,12 @@ export default function Changelog({ entries }: ChangelogProps) {
 
   return (
     <>
-      <Head title="Changelog" />
+      <Head title="Changelog">
+        <meta
+          name="description"
+          content="Track every update, improvement, and bug fix. See the complete release history — updated with every deploy."
+        />
+      </Head>
       <div className="min-h-screen bg-background">
         <div className="container max-w-3xl py-12">
           <div className="mb-6">
@@ -60,7 +65,7 @@ export default function Changelog({ entries }: ChangelogProps) {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Changelog</CardTitle>
+              <CardTitle asChild><h1 className="text-2xl font-bold">Changelog</h1></CardTitle>
               <p className="text-sm text-muted-foreground">
                 Stay up to date with the latest changes and improvements.
               </p>

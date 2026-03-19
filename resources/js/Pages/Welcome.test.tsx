@@ -55,10 +55,12 @@ describe('Welcome', () => {
       ).toBeInTheDocument();
     });
 
-    it('sets page title to Welcome', () => {
+    it('sets page title with app name and SaaS keyword', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(document.querySelector('title')).toHaveTextContent('Welcome');
+      expect(document.querySelector('title')).toHaveTextContent(
+        /Laravel React SaaS Starter Kit/
+      );
     });
   });
 

@@ -9,7 +9,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 export default function Privacy() {
   return (
     <>
-      <Head title="Privacy Policy" />
+      <Head title="Privacy Policy">
+        <meta
+          name="description"
+          content="Privacy policy — how we collect, use, store, and protect your personal data."
+        />
+      </Head>
       <div className="min-h-screen bg-background">
         <div className="container max-w-3xl py-12">
           <div className="mb-6">
