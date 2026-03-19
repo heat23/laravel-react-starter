@@ -12,6 +12,8 @@
         <meta property="og:site_name" content="{{ config('app.name', 'Laravel') }}" />
         <meta property="og:url" content="{{ request()->url() }}" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta property="og:image" content="{{ asset('images/og-default.png') }}" />
+        <meta name="twitter:image" content="{{ asset('images/og-default.png') }}" />
         <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='6' fill='%231e56e2'/%3E%3Cpath d='M9 16.5 14 21l9-10' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
 
         <!-- Fonts -->

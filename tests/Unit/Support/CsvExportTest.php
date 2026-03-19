@@ -112,11 +112,47 @@ it('protects against CSV injection', function () {
     $output = captureStreamOutput($export, $items);
     $lines = explode("\n", trim($output));
 
-    // Each dangerous cell should be prefixed with a tab character
-    expect($lines[1])->toContain("\t=SUM(A1:A10)");
-    expect($lines[2])->toContain("\t+cmd|evil");
-    expect($lines[3])->toContain("\t-danger");
-    expect($lines[4])->toContain("\t@evil");
+    // Each dangerous cell should be prefixed with a single quote
+    expect($lines[1])->toContain("'=SUM(A1:A10)");
+    expect($lines[2])->toContain("'+cmd|evil");
+    expect($lines[3])->toContain("'-danger");
+    expect($lines[4])->toContain("'@evil");
+});
+
+it('catches tab-prefixed formula injection', function () {
+    $export = new CsvExport([
+        'Value' => 'value',
+    ]);
+
+    $items = [(object) ['value' => "\t=cmd|evil"]];
+    $output = captureStreamOutput($export, $items);
+    $lines = explode("\n", trim($output));
+
+    expect($lines[1])->toContain("'\t=cmd|evil");
+});
+
+it('catches carriage-return-prefixed formula injection', function () {
+    $export = new CsvExport([
+        'Value' => 'value',
+    ]);
+
+    $items = [(object) ['value' => "\r=cmd|evil"]];
+    $output = captureStreamOutput($export, $items);
+    $lines = explode("\n", trim($output));
+
+    expect($lines[1])->toContain("'\r=cmd|evil");
+});
+
+it('does not modify normal string values', function () {
+    $export = new CsvExport([
+        'Name' => 'name',
+    ]);
+
+    $items = [(object) ['name' => 'Hello World']];
+    $output = captureStreamOutput($export, $items);
+    $lines = explode("\n", trim($output));
+
+    expect($lines[1])->toBe('Hello World');
 });
 
 it('works with array items', function () {

@@ -83,9 +83,8 @@ export function ThemeProvider({ children, defaultTheme = "system" }: ThemeProvid
     if (isAuthenticated) {
       try {
         await axios.post("/api/settings", { key: "theme", value: newTheme });
-      } catch (error: unknown) {
+      } catch {
         // Silent fail - theme will still be saved to localStorage
-        console.error("Failed to save theme to server:", error);
       }
     }
   };

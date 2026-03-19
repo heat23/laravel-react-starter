@@ -74,6 +74,7 @@
   "resources/js/Layouts/AdminLayout.tsx": [],
   "resources/js/Layouts/AuthLayout.tsx": [],
   "resources/js/Layouts/DashboardLayout.tsx": [],
+  "resources/js/Pages/About.tsx": [],
   "resources/js/Pages/Admin/AuditLogs/Index.tsx": [],
   "resources/js/Pages/Admin/AuditLogs/Show.tsx": [],
   "resources/js/Pages/Admin/Billing/Dashboard.tsx": [],

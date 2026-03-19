@@ -104,9 +104,9 @@ class CsvExport
             return '';
         }
 
-        // CSV injection protection: prefix cells starting with = + - @ with tab
-        if (preg_match('/^[=+\-@]/', $value)) {
-            return "\t".$value;
+        // CSV injection protection: prefix cells starting with = + - @ \t \r with single quote
+        if (preg_match('/^[=+\-@\t\r]/', $value)) {
+            return "'".$value;
         }
 
         return $value;

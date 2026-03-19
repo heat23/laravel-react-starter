@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
 use App\Services\EngagementScoringService;
+use App\Support\CsvExport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -231,40 +232,20 @@ class AdminUsersController extends Controller
             'filters' => $request->validated(),
         ]);
 
-        $query = $this->buildUserQuery($request->validated());
-        $maxRows = config('pagination.export.max_rows', 10000);
+        $query = $this->buildUserQuery($request->validated())
+            ->limit(config('pagination.export.max_rows', 10000));
 
-        return response()->streamDownload(function () use ($query, $maxRows) {
-            $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['ID', 'Name', 'Email', 'Admin', 'Verified', 'Last Login', 'Created', 'Status']);
-
-            $exported = 0;
-            foreach ($query->lazyById(500) as $user) {
-                if ($exported >= $maxRows) {
-                    break;
-                }
-                fputcsv($handle, array_map(
-                    fn ($v) => is_string($v) && isset($v[0]) && in_array($v[0], ['=', '+', '-', '@', "\t", "\r"])
-                        ? "'".$v
-                        : $v,
-                    [
-                        $user->id,
-                        $user->name,
-                        $user->email,
-                        $user->is_admin ? 'Yes' : 'No',
-                        $user->email_verified_at ? 'Yes' : 'No',
-                        $user->last_login_at?->toISOString(),
-                        $user->created_at?->toISOString(),
-                        $user->deleted_at ? 'Deactivated' : 'Active',
-                    ]
-                ));
-                $exported++;
-            }
-
-            fclose($handle);
-        }, 'users-'.now()->format('Y-m-d').'.csv', [
-            'Content-Type' => 'text/csv',
-        ]);
+        return (new CsvExport([
+            'ID' => 'id',
+            'Name' => 'name',
+            'Email' => 'email',
+            'Admin' => fn ($u) => $u->is_admin ? 'Yes' : 'No',
+            'Verified' => fn ($u) => $u->email_verified_at ? 'Yes' : 'No',
+            'Last Login' => fn ($u) => $u->last_login_at?->toISOString() ?? '',
+            'Created' => fn ($u) => $u->created_at?->toISOString() ?? '',
+            'Status' => fn ($u) => $u->deleted_at ? 'Deactivated' : 'Active',
+        ]))->filename('users-'.now()->format('Y-m-d').'.csv')
+            ->fromQuery($query);
     }
 
     public function sendPasswordReset(Request $request, User $user): RedirectResponse

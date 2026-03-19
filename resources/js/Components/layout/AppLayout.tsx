@@ -41,6 +41,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       title: "Starter",
       links: [
         { href: "/", label: "Overview" },
+        { href: "/about", label: "About" },
         ...(features.billing ? [{ href: "/pricing", label: "Pricing" }] : []),
       ],
     },

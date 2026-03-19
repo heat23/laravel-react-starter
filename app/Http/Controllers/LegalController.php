@@ -16,4 +16,9 @@ class LegalController extends Controller
     {
         return Inertia::render('Legal/Privacy');
     }
+
+    public function about(): Response
+    {
+        return Inertia::render('About');
+    }
 }
