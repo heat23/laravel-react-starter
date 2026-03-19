@@ -24,13 +24,13 @@ test.describe('Welcome Page', () => {
     await expect(page.getByRole('link', { name: /get started/i })).toBeVisible();
 
     // Hero
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Start with the parts');
-    await expect(page.getByText('every SaaS needs')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Ship your SaaS');
+    await expect(page.getByText('in days, not months')).toBeVisible();
 
     // Feature cards
-    await expect(page.getByText('Secure foundation')).toBeVisible();
-    await expect(page.getByText('Modular by default')).toBeVisible();
-    await expect(page.getByText('Production-minded')).toBeVisible();
+    await expect(page.getByText('Secure by default')).toBeVisible();
+    await expect(page.getByText('11 feature flags')).toBeVisible();
+    await expect(page.getByText('Production-grade billing')).toBeVisible();
 
     // Tech stack
     await expect(page.getByText('Laravel 12')).toBeVisible();
@@ -49,7 +49,7 @@ test.describe('Welcome Page', () => {
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: /log in/i })).toBeVisible();
-    await expect(page.getByText('Secure foundation')).toBeVisible();
+    await expect(page.getByText('Secure by default')).toBeVisible();
   });
 
   test('renders correctly on tablet', async ({ page }, testInfo) => {
@@ -58,7 +58,7 @@ test.describe('Welcome Page', () => {
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByRole('link', { name: /log in/i })).toBeVisible();
-    await expect(page.getByText('Secure foundation')).toBeVisible();
+    await expect(page.getByText('Secure by default')).toBeVisible();
   });
 
   test('dark mode renders without errors', async ({ page }, testInfo) => {

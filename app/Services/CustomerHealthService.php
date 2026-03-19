@@ -38,7 +38,9 @@ class CustomerHealthService
 
             $activatedUsers = User::where('created_at', '>=', now()->subDays(30))
                 ->whereNotNull('email_verified_at')
-                ->whereRaw("email_verified_at <= datetime(created_at, '+7 days')")
+                ->whereRaw('email_verified_at <= '.(DB::getDriverName() === 'sqlite'
+                    ? "datetime(created_at, '+7 days')"
+                    : 'DATE_ADD(created_at, INTERVAL 7 DAY)'))
                 ->count();
 
             return round(($activatedUsers / $totalUsers) * 100, 1);
@@ -106,7 +108,7 @@ class CustomerHealthService
 
         if (class_exists(\App\Models\AuditLog::class)) {
             $loginCount = \App\Models\AuditLog::where('user_id', $user->id)
-                ->where('action', 'login')
+                ->where('event', 'login')
                 ->where('created_at', '>=', now()->subDays(30))
                 ->count();
         }
