@@ -15,7 +15,7 @@ class AdminBillingStatsService
     ) {}
 
     /**
-     * @return array{active_subscriptions: int, trialing: int, past_due: int, canceled: int, total_ever: int, mrr: float, churn_rate: float, trial_conversion_rate: float, activation_rate: float, signup_to_paid_conversion: float}
+     * @return array{active_subscriptions: int, trialing: int, past_due: int, canceled: int, total_ever: int, mrr: float, churn_rate: float, trial_conversion_rate: float, activation_rate: float, signup_to_paid_conversion: float, cohort_conversion_30d: float}
      */
     public function getDashboardStats(): array
     {
@@ -40,6 +40,7 @@ class AdminBillingStatsService
                 'trial_conversion_rate' => $this->calculateTrialConversion(),
                 'activation_rate' => $this->calculateActivationRate(),
                 'signup_to_paid_conversion' => $this->calculateSignupToPaidConversion(),
+                'cohort_conversion_30d' => $this->calculateCohortedConversion(),
             ];
         });
     }
@@ -246,6 +247,10 @@ class AdminBillingStatsService
         $canceledInPeriod = DB::table('subscriptions')
             ->whereNotNull('ends_at')
             ->where('ends_at', '>=', $thirtyDaysAgo)
+            ->where(function ($q) {
+                $q->where('stripe_status', 'canceled')
+                    ->orWhere('ends_at', '<', now());
+            })
             ->count();
 
         $activeAtStart = DB::table('subscriptions')
@@ -275,9 +280,11 @@ class AdminBillingStatsService
         }
 
         $activatedUsers = DB::table('user_settings')
-            ->where('key', 'onboarding_completed')
-            ->distinct('user_id')
-            ->count('user_id');
+            ->join('users', 'user_settings.user_id', '=', 'users.id')
+            ->whereNull('users.deleted_at')
+            ->where('user_settings.key', 'onboarding_completed')
+            ->distinct('user_settings.user_id')
+            ->count('user_settings.user_id');
 
         return round(($activatedUsers / $totalUsers) * 100, 1);
     }
@@ -360,6 +367,7 @@ class AdminBillingStatsService
     {
         $totalTrialed = DB::table('subscriptions')
             ->whereNotNull('trial_ends_at')
+            ->where('trial_ends_at', '<', now())
             ->count();
 
         if ($totalTrialed === 0) {
@@ -368,6 +376,7 @@ class AdminBillingStatsService
 
         $converted = DB::table('subscriptions')
             ->whereNotNull('trial_ends_at')
+            ->where('trial_ends_at', '<', now())
             ->where('stripe_status', 'active')
             ->where(function ($q) {
                 $q->whereNull('ends_at')
@@ -376,5 +385,33 @@ class AdminBillingStatsService
             ->count();
 
         return round(($converted / $totalTrialed) * 100, 1);
+    }
+
+    private function calculateCohortedConversion(): float
+    {
+        $thirtyDaysAgo = now()->subDays(30);
+
+        $cohortUsers = DB::table('users')
+            ->whereNull('deleted_at')
+            ->where('created_at', '>=', $thirtyDaysAgo)
+            ->count();
+
+        if ($cohortUsers === 0) {
+            return 0;
+        }
+
+        $converted = DB::table('users')
+            ->whereNull('deleted_at')
+            ->where('created_at', '>=', $thirtyDaysAgo)
+            ->whereExists(function ($q) {
+                $q->select(DB::raw(1))
+                    ->from('subscriptions')
+                    ->whereColumn('subscriptions.user_id', 'users.id')
+                    ->where('stripe_status', 'active')
+                    ->whereNull('ends_at');
+            })
+            ->count();
+
+        return round(($converted / $cohortUsers) * 100, 1);
     }
 }

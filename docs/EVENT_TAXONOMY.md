@@ -90,7 +90,7 @@ billing.pricing_viewed → billing.plan_selected → billing.checkout_started �
 auth.login → feature.used → engagement.return_visit
 ```
 
-**Activation metric:** Users who completed onboarding AND used 2+ features within first 7 days.
+**Activation metric:** Users who completed onboarding. (Future: AND used 2+ features within first 7 days — requires feature.used event instrumentation.)
 
 ## Product Context (Backend Enrichment)
 

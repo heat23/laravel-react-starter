@@ -111,6 +111,7 @@ export interface BillingDashboardStats {
   trial_conversion_rate: number;
   activation_rate: number;
   signup_to_paid_conversion: number;
+  cohort_conversion_30d: number;
 }
 
 export interface BillingTrialStats {

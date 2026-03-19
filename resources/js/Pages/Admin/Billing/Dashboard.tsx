@@ -111,11 +111,18 @@ export default function BillingDashboard({
       description: 'Completed onboarding',
     },
     {
-      title: 'Signup → Paid',
+      title: 'Lifetime Conversion',
       value: stats.signup_to_paid_conversion,
       icon: CreditCard,
       format: (n) => `${n}%`,
-      description: 'Free to paid conversion',
+      description: 'All-time free to paid',
+    },
+    {
+      title: '30d Cohort Conversion',
+      value: stats.cohort_conversion_30d,
+      icon: TrendingUp,
+      format: (n) => `${n}%`,
+      description: 'Last 30 days signup to paid',
     },
   ];
 
