@@ -74,6 +74,7 @@ class SeoController extends Controller
             "- {$appUrl}/compare/laravel-jetstream",
             "- {$appUrl}/compare/laravel-spark",
             "- {$appUrl}/compare/saasykit",
+            "- {$appUrl}/guides/building-saas-with-laravel-12",
             "- {$appUrl}/changelog",
             "- {$appUrl}/roadmap",
             "- {$appUrl}/contact",
@@ -128,6 +129,9 @@ class SeoController extends Controller
         $urls[] = ['loc' => config('app.url').'/features/billing', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
         $urls[] = ['loc' => config('app.url').'/features/feature-flags', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
         $urls[] = ['loc' => config('app.url').'/features/admin-panel', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
+
+        // Guides (pillar content)
+        $urls[] = ['loc' => config('app.url').'/guides/building-saas-with-laravel-12', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => $now];
 
         // Competitor comparison pages
         $urls[] = ['loc' => config('app.url').'/compare/laravel-jetstream', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];

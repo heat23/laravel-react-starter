@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\FeaturesController;
 use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\GuidesController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\OnboardingController;
@@ -54,6 +55,9 @@ Route::get('/compare/saasykit', [CompareController::class, 'saasykit'])->name('c
 Route::get('/features/billing', [FeaturesController::class, 'billing'])->name('features.billing');
 Route::get('/features/feature-flags', [FeaturesController::class, 'featureFlags'])->name('features.feature-flags');
 Route::get('/features/admin-panel', [FeaturesController::class, 'adminPanel'])->name('features.admin-panel');
+
+// Guides (long-form pillar content — separate from shorter blog posts)
+Route::get('/guides/building-saas-with-laravel-12', [GuidesController::class, 'laravelSaasGuide'])->name('guides.laravel-saas');
 
 // Feedback (authenticated users only)
 Route::post('/feedback', [FeedbackController::class, 'store'])->middleware(['auth', 'throttle:10,1'])->name('feedback.store');

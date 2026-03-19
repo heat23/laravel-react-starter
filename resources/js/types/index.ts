@@ -124,6 +124,14 @@ export interface FeaturePageProps {
   breadcrumbs?: BreadcrumbItem[];
 }
 
+// Guide/pillar article pages
+export interface GuidePageProps {
+  title: string;
+  metaDescription: string;
+  appName: string;
+  breadcrumbs?: BreadcrumbItem[];
+}
+
 // Form state helpers
 export interface FormErrors {
   [key: string]: string;
