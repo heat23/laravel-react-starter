@@ -31,6 +31,8 @@ class AdminDashboardController extends Controller
                     ->count();
             }
 
+            $stats['cached_at'] = now()->toISOString();
+
             return $stats;
         });
 

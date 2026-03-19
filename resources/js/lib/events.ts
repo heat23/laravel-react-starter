@@ -37,3 +37,26 @@ export const AnalyticsEvents = {
 
 export type AnalyticsEventName =
   (typeof AnalyticsEvents)[keyof typeof AnalyticsEvents];
+
+/**
+ * Per-event property schemas.
+ * TypeScript enforces that each event receives only its declared properties.
+ */
+export type EventPropertyMap = {
+  [AnalyticsEvents.AUTH_LOGIN]: { source?: string } | undefined;
+  [AnalyticsEvents.AUTH_REGISTER]: { signup_source?: string } | undefined;
+  [AnalyticsEvents.ONBOARDING_STARTED]: undefined;
+  [AnalyticsEvents.ONBOARDING_STEP_COMPLETED]: { step: string };
+  [AnalyticsEvents.ONBOARDING_COMPLETED]: undefined;
+  [AnalyticsEvents.BILLING_PRICING_VIEWED]: undefined;
+  [AnalyticsEvents.BILLING_PLAN_SELECTED]: { plan: string; billing_period: string };
+  [AnalyticsEvents.BILLING_CHECKOUT_STARTED]: { plan: string; price_id: string; billing_period: string };
+  [AnalyticsEvents.BILLING_CHECKOUT_COMPLETED]: { plan: string; price_id: string; billing_period: string };
+  [AnalyticsEvents.FEATURE_USED]: { feature_name: string };
+  [AnalyticsEvents.FEATURE_API_TOKEN_CREATED]: { token_name?: string } | undefined;
+  [AnalyticsEvents.FEATURE_WEBHOOK_CREATED]: { endpoint_url?: string } | undefined;
+  [AnalyticsEvents.FEATURE_SETTINGS_UPDATED]: { setting_key?: string } | undefined;
+  [AnalyticsEvents.ENGAGEMENT_DASHBOARD_VIEWED]: undefined;
+  [AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED]: { page: string };
+  [AnalyticsEvents.ERROR_PAGE_VIEWED]: { error_code: number; error_title?: string };
+};

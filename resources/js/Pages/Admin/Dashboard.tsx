@@ -37,7 +37,7 @@ export default function AdminDashboard({ stats, signup_chart, recent_activity }:
       <PageHeader title="Admin Dashboard" subtitle="System overview and metrics" />
 
       <div className="container py-8 space-y-8">
-        <AdminStatsGrid stats={statCards} />
+        <AdminStatsGrid stats={statCards} cachedAt={stats.cached_at} />
 
         {/* Signup Chart */}
         <Card>

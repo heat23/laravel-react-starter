@@ -112,6 +112,7 @@ export interface BillingDashboardStats {
   activation_rate: number;
   signup_to_paid_conversion: number;
   cohort_conversion_30d: number;
+  cached_at?: string;
 }
 
 export interface BillingTrialStats {
@@ -383,6 +384,7 @@ export interface AdminDashboardStats {
   new_users_30d: number;
   admin_count: number;
   active_subscriptions?: number;
+  cached_at?: string;
 }
 
 // ---------------------------------------------------------------------------

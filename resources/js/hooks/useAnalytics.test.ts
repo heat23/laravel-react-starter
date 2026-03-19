@@ -24,13 +24,15 @@ describe('useAnalytics', () => {
     const { result } = renderHook(() => useAnalytics());
 
     act(() => {
-      result.current.track(AnalyticsEvents.BILLING_PRICING_VIEWED, {
+      result.current.track(AnalyticsEvents.BILLING_PLAN_SELECTED, {
         plan: 'pro',
+        billing_period: 'monthly',
       });
     });
 
-    expect(trackEvent).toHaveBeenCalledWith('billing.pricing_viewed', {
+    expect(trackEvent).toHaveBeenCalledWith('billing.plan_selected', {
       plan: 'pro',
+      billing_period: 'monthly',
     });
   });
 

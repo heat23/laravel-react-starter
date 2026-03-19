@@ -60,6 +60,8 @@ class AuthenticatedSessionController extends Controller
 
         $this->auditService->logLogin();
 
+        $request->user()->updateLastLogin();
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

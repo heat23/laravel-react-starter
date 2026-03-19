@@ -1,12 +1,10 @@
-import type { AnalyticsEventName } from './events';
+import type { AnalyticsEventName, EventPropertyMap } from './events';
 
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
   }
 }
-
-type EventProperties = Record<string, string | number | boolean | undefined>;
 
 /**
  * Check if the user has accepted cookie consent.
@@ -30,9 +28,9 @@ function isGtagAvailable(): boolean {
  * Track an analytics event via GA4 gtag.
  * Only fires if cookie consent has been granted and gtag is loaded.
  */
-export function trackEvent(
-  eventName: AnalyticsEventName,
-  properties?: EventProperties
+export function trackEvent<E extends AnalyticsEventName>(
+  eventName: E,
+  properties?: EventPropertyMap[E]
 ): void {
   if (!hasConsent()) {
     return;

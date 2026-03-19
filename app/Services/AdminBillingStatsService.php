@@ -41,6 +41,7 @@ class AdminBillingStatsService
                 'activation_rate' => $this->calculateActivationRate(),
                 'signup_to_paid_conversion' => $this->calculateSignupToPaidConversion(),
                 'cohort_conversion_30d' => $this->calculateCohortedConversion(),
+                'cached_at' => now()->toISOString(),
             ];
         });
     }

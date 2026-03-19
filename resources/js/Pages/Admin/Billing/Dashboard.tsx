@@ -75,6 +75,7 @@ export default function BillingDashboard({
       icon: TrendingDown,
       format: (n) => `${n}%`,
       description: 'Cancellations vs active',
+      threshold: { warning: 10, critical: 20, direction: 'above' },
     },
     {
       title: 'Trial Conversion',
@@ -83,6 +84,7 @@ export default function BillingDashboard({
       format: (n) => `${n}%`,
       description: 'Trial to paid',
       href: '/admin/billing/subscriptions?status=trialing',
+      threshold: { warning: 20, critical: 10, direction: 'below' },
     },
   ];
 
@@ -143,7 +145,7 @@ export default function BillingDashboard({
 
       <div className="container py-8 space-y-8">
         {/* Primary KPIs */}
-        <AdminStatsGrid stats={primaryKpis} />
+        <AdminStatsGrid stats={primaryKpis} cachedAt={stats.cached_at} />
 
         {/* Secondary stats */}
         <AdminStatsGrid stats={secondaryKpis} />

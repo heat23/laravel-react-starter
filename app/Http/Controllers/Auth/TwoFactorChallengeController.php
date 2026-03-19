@@ -70,6 +70,8 @@ class TwoFactorChallengeController extends Controller
             'method' => $code ? 'totp' : 'recovery',
         ]);
 
+        $user->updateLastLogin();
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 }

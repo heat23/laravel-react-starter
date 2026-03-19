@@ -1,9 +1,7 @@
 import { useCallback } from 'react';
 
 import { trackEvent } from '@/lib/analytics';
-import type { AnalyticsEventName } from '@/lib/events';
-
-type EventProperties = Record<string, string | number | boolean | undefined>;
+import type { AnalyticsEventName, EventPropertyMap } from '@/lib/events';
 
 /**
  * React hook for analytics event tracking.
@@ -11,7 +9,10 @@ type EventProperties = Record<string, string | number | boolean | undefined>;
  */
 export function useAnalytics() {
   const track = useCallback(
-    (eventName: AnalyticsEventName, properties?: EventProperties) => {
+    <E extends AnalyticsEventName>(
+      eventName: E,
+      properties?: EventPropertyMap[E]
+    ) => {
       trackEvent(eventName, properties);
     },
     []

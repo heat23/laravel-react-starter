@@ -66,4 +66,20 @@ describe('trackEvent', () => {
       {}
     );
   });
+
+  it('passes typed properties through to gtag', () => {
+    const mockGtag = vi.fn();
+    window.gtag = mockGtag;
+    localStorage.setItem('cookie_consent', 'accepted');
+
+    trackEvent(AnalyticsEvents.BILLING_PLAN_SELECTED, {
+      plan: 'pro',
+      billing_period: 'monthly',
+    });
+
+    expect(mockGtag).toHaveBeenCalledWith('event', 'billing.plan_selected', {
+      plan: 'pro',
+      billing_period: 'monthly',
+    });
+  });
 });
