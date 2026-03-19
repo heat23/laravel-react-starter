@@ -8,21 +8,21 @@ class QueryHelper
 {
     /**
      * Escape LIKE wildcards (% and _) in a search string.
-     * Uses backslash as escape character, compatible with MySQL (default) and SQLite (via ESCAPE clause).
+     * Uses pipe as escape character to avoid backslash interpretation differences between MySQL and SQLite.
      */
     public static function escapeLike(string $value): string
     {
-        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
+        return str_replace(['|', '%', '_'], ['||', '|%', '|_'], $value);
     }
 
     /**
      * Apply a LIKE condition with properly escaped wildcards.
-     * Works with both MySQL and SQLite by adding an explicit ESCAPE clause.
+     * Works with both MySQL and SQLite by using pipe as the ESCAPE character.
      */
     public static function whereLike(\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder $query, string $column, string $value, string $boolean = 'and'): void
     {
         $escaped = self::escapeLike($value);
-        $query->whereRaw("{$column} LIKE ? ESCAPE '\\'", ["%{$escaped}%"], $boolean);
+        $query->whereRaw("{$column} LIKE ? ESCAPE '|'", ["%{$escaped}%"], $boolean);
     }
 
     /**
