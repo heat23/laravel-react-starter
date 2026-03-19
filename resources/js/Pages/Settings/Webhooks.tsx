@@ -14,6 +14,8 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Head } from '@inertiajs/react';
 
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
 import PageHeader from '@/Components/layout/PageHeader';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
@@ -352,6 +354,7 @@ function CreateEndpointDialog({
   const [creating, setCreating] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
+  const { track } = useAnalytics();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -384,6 +387,7 @@ function CreateEndpointDialog({
     }
 
     setCreatedSecret(data.secret);
+    track(AnalyticsEvents.FEATURE_WEBHOOK_CREATED);
     toast.success('Webhook endpoint created.');
   };
 

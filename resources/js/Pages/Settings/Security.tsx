@@ -14,7 +14,9 @@ import { useState, FormEventHandler } from 'react';
 
 import { Head, useForm, usePage, router } from '@inertiajs/react';
 
+import { useAnalytics } from '@/hooks/useAnalytics';
 import InputError from '@/Components/InputError';
+import { AnalyticsEvents } from '@/lib/events';
 import PageHeader from '@/Components/layout/PageHeader';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
@@ -129,9 +131,15 @@ function SetupState({ qrCode, secret }: { qrCode: string; secret: string }) {
     code: '',
   });
 
+  const { track } = useAnalytics();
+
   const handleConfirm: FormEventHandler = (e) => {
     e.preventDefault();
-    post(route('two-factor.confirm'));
+    post(route('two-factor.confirm'), {
+      onSuccess: () => {
+        track(AnalyticsEvents.FEATURE_USED, { feature_name: '2fa_enabled' });
+      },
+    });
   };
 
   return (

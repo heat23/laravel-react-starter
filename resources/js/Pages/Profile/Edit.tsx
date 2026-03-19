@@ -3,6 +3,8 @@ import { toast } from 'sonner';
 
 import { Head } from '@inertiajs/react';
 
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
 import PageHeader from '@/Components/layout/PageHeader';
 import { TimezoneSelector } from '@/Components/settings/TimezoneSelector';
 import {
@@ -32,6 +34,7 @@ export default function Edit({
   status,
   timezone: initialTimezone,
 }: EditProps) {
+  const { track } = useAnalytics();
   const {
     timezone,
     setTimezone: saveTimezone,
@@ -43,6 +46,7 @@ export default function Edit({
   const handleTimezoneChange = async (newTimezone: string) => {
     const success = await saveTimezone(newTimezone);
     if (success) {
+      track(AnalyticsEvents.FEATURE_SETTINGS_UPDATED, { setting_key: 'profile' });
       toast.success('Timezone updated successfully');
     } else {
       toast.error(

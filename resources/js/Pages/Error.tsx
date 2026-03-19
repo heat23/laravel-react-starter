@@ -3,6 +3,8 @@ import { useEffect, useRef } from "react";
 import { Head } from "@inertiajs/react";
 
 import { Button } from "@/Components/ui/button";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { AnalyticsEvents } from "@/lib/events";
 
 const statusMessages: Record<number, { title: string; description: string }> = {
     403: {
@@ -37,11 +39,19 @@ export default function Error({ status }: { status: number }) {
         description: "An unexpected error occurred.",
     };
 
+    const { track } = useAnalytics();
     const headingRef = useRef<HTMLHeadingElement>(null);
 
     useEffect(() => {
         headingRef.current?.focus();
     }, []);
+
+    useEffect(() => {
+        track(AnalyticsEvents.ERROR_PAGE_VIEWED, {
+            error_code: status,
+            error_title: title,
+        });
+    }, [track, status, title]);
 
     return (
         <>

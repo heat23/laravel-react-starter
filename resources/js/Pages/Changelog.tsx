@@ -1,10 +1,14 @@
 import { ArrowLeft } from 'lucide-react';
 
+import { useEffect } from 'react';
+
 import { Head, Link } from '@inertiajs/react';
 
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
 
 interface ChangelogEntry {
   version: string;
@@ -34,6 +38,12 @@ const typeLabel: Record<ChangelogEntry['type'], string> = {
 };
 
 export default function Changelog({ entries }: ChangelogProps) {
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'changelog' });
+  }, [track]);
+
   return (
     <>
       <Head title="Changelog" />

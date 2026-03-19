@@ -11,10 +11,14 @@ import {
   Zap,
 } from 'lucide-react';
 
+import { useEffect } from 'react';
+
 import { Head, Link } from '@inertiajs/react';
 
 import { Logo, TextLogo } from '@/Components/branding/Logo';
 import { Button } from '@/Components/ui/button';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
 
 interface WelcomeProps {
   canLogin: boolean;
@@ -86,6 +90,11 @@ const Welcome: WelcomeComponent = ({
   planCount = 4,
 }) => {
   const appName = import.meta.env.VITE_APP_NAME || 'Laravel React Starter';
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'welcome' });
+  }, [track]);
 
   return (
     <>

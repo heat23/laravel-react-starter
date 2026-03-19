@@ -21,7 +21,9 @@ import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { LoadingButton } from '@/Components/ui/loading-button';
 import { Skeleton } from '@/Components/ui/skeleton';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { AnalyticsEvents } from '@/lib/events';
 import { formatDate } from '@/lib/format';
 
 interface ApiToken {
@@ -227,6 +229,7 @@ function CreateTokenDialog({
   const [creating, setCreating] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [createdToken, setCreatedToken] = useState<string | null>(null);
+  const { track } = useAnalytics();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -262,6 +265,7 @@ function CreateTokenDialog({
     }
 
     setCreatedToken(data.token);
+    track(AnalyticsEvents.FEATURE_API_TOKEN_CREATED);
     toast.success('API token created.');
   };
 

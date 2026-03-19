@@ -23,9 +23,16 @@ export const AnalyticsEvents = {
 
   // Feature usage
   FEATURE_USED: 'feature.used',
+  FEATURE_API_TOKEN_CREATED: 'feature.api_token_created',
+  FEATURE_WEBHOOK_CREATED: 'feature.webhook_created',
+  FEATURE_SETTINGS_UPDATED: 'feature.settings_updated',
 
   // Engagement
   ENGAGEMENT_DASHBOARD_VIEWED: 'engagement.dashboard_viewed',
+  ENGAGEMENT_PAGE_VIEWED: 'engagement.page_viewed',
+
+  // Errors
+  ERROR_PAGE_VIEWED: 'error.page_viewed',
 } as const;
 
 export type AnalyticsEventName =

@@ -1,6 +1,10 @@
+import { useEffect } from "react";
+
 import { Head } from "@inertiajs/react";
 
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { AreaChart, BarChart, LineChart, PieChart } from "@/Components/ui/charts";
+import { AnalyticsEvents } from "@/lib/events";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 
 const revenueData = [
@@ -32,6 +36,12 @@ const visitorsData = [
 ];
 
 export default function Charts() {
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'charts' });
+  }, [track]);
+
   return (
     <DashboardLayout>
       <Head title="Charts" />

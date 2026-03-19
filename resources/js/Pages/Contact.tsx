@@ -1,8 +1,12 @@
 import { ArrowLeft, Mail } from 'lucide-react';
 
+import { useEffect } from 'react';
+
 import { Head, Link, useForm } from '@inertiajs/react';
 
 import { Button } from '@/Components/ui/button';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
@@ -23,6 +27,7 @@ const subjects = [
 ] as const;
 
 export default function Contact() {
+  const { track } = useAnalytics();
   const { data, setData, post, processing, errors, reset, wasSuccessful } =
     useForm({
       name: '',
@@ -30,6 +35,10 @@ export default function Contact() {
       subject: '',
       message: '',
     });
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'contact' });
+  }, [track]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

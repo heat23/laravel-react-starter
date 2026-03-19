@@ -25,7 +25,9 @@ import {
   CardTitle,
 } from '@/Components/ui/card';
 import { LoadingButton } from '@/Components/ui/loading-button';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { AnalyticsEvents } from '@/lib/events';
 import { formatDate } from '@/lib/format';
 
 interface SubscriptionInfo {
@@ -104,10 +106,15 @@ export default function BillingIndex() {
     invoices = [],
     graceDays = 7,
   } = usePage<BillingPageProps>().props;
+  const { track } = useAnalytics();
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'billing' });
+  }, [track]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {

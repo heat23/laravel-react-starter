@@ -1,10 +1,14 @@
 import { ArrowLeft, CheckCircle2, Circle, Loader2 } from 'lucide-react';
 
+import { useEffect } from 'react';
+
 import { Head, Link } from '@inertiajs/react';
 
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
 
 interface RoadmapEntry {
   title: string;
@@ -37,6 +41,12 @@ const statusOrder: RoadmapEntry['status'][] = [
 ];
 
 export default function Roadmap({ entries }: RoadmapProps) {
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'roadmap' });
+  }, [track]);
+
   const groupedEntries = statusOrder.reduce(
     (acc, status) => {
       acc[status] = entries.filter((e) => e.status === status);
