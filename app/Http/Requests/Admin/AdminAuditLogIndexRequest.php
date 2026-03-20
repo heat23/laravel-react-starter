@@ -18,6 +18,8 @@ class AdminAuditLogIndexRequest extends FormRequest
             'user_id' => ['nullable', 'integer', 'min:1'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'sort' => ['nullable', 'string', 'in:event,created_at'],
+            'dir' => ['nullable', 'string', 'in:asc,desc'],
         ];
     }
 }

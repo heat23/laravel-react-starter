@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 
 import { AdminDataTable } from '@/Components/admin/AdminDataTable';
+import { SortHeader } from '@/Components/admin/SortHeader';
 import PageHeader from '@/Components/layout/PageHeader';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
@@ -38,12 +39,14 @@ export default function AdminAuditLogsIndex({
   filters,
 }: AdminAuditLogsIndexProps) {
   const userIdInputRef = useRef<HTMLInputElement>(null);
+  const userIdTimeout = useRef<ReturnType<typeof setTimeout>>();
   const [from, setFrom] = useState(filters.from ?? '');
   const [to, setTo] = useState(filters.to ?? '');
   const [userId, setUserId] = useState(filters.user_id ?? '');
   const {
     updateFilter,
     handlePage,
+    handleSort,
     clearFilters: baseClearFilters,
   } = useAdminFilters({
     route: '/admin/audit-logs',
@@ -51,6 +54,7 @@ export default function AdminAuditLogsIndex({
   });
 
   const clearFilters = () => {
+    clearTimeout(userIdTimeout.current);
     setFrom('');
     setTo('');
     setUserId('');
@@ -66,11 +70,6 @@ export default function AdminAuditLogsIndex({
       currentPage < lastPage ? () => handlePage(currentPage + 1) : undefined,
     onPrevPage: currentPage > 1 ? () => handlePage(currentPage - 1) : undefined,
   });
-
-  const hasPendingFilters =
-    from !== (filters.from ?? '') ||
-    to !== (filters.to ?? '') ||
-    userId !== (filters.user_id ?? '');
 
   const exportParams: Record<string, string> = {};
   if (filters.event) exportParams.event = filters.event;
@@ -122,7 +121,14 @@ export default function AdminAuditLogsIndex({
             pattern="[0-9]*"
             placeholder="User ID"
             value={userId}
-            onChange={(e) => setUserId(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setUserId(val);
+              clearTimeout(userIdTimeout.current);
+              userIdTimeout.current = setTimeout(() => {
+                updateFilter({ user_id: val || undefined });
+              }, 400);
+            }}
             className="w-30"
             aria-label="Filter by user ID"
           />
@@ -132,6 +138,13 @@ export default function AdminAuditLogsIndex({
             placeholder="From"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
+            onBlur={() =>
+              updateFilter({
+                from: from || undefined,
+                to: to || undefined,
+                user_id: userId || undefined,
+              })
+            }
             className="w-[160px]"
             aria-label="Filter from date"
           />
@@ -140,22 +153,16 @@ export default function AdminAuditLogsIndex({
             placeholder="To"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="w-[160px]"
-            aria-label="Filter to date"
-          />
-          <Button
-            variant={hasPendingFilters ? 'default' : 'outline'}
-            size="default"
-            onClick={() =>
+            onBlur={() =>
               updateFilter({
                 from: from || undefined,
                 to: to || undefined,
                 user_id: userId || undefined,
               })
             }
-          >
-            {hasPendingFilters ? 'Apply Filters' : 'Filters Applied'}
-          </Button>
+            className="w-[160px]"
+            aria-label="Filter to date"
+          />
         </fieldset>
 
         <AdminDataTable
@@ -182,10 +189,22 @@ export default function AdminAuditLogsIndex({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Event</TableHead>
+                <SortHeader
+                  column="event"
+                  label="Event"
+                  currentSort={filters.sort}
+                  currentDir={filters.dir}
+                  onSort={handleSort}
+                />
                 <TableHead>User</TableHead>
                 <TableHead>IP</TableHead>
-                <TableHead>Date</TableHead>
+                <SortHeader
+                  column="created_at"
+                  label="Date"
+                  currentSort={filters.sort}
+                  currentDir={filters.dir}
+                  onSort={handleSort}
+                />
                 <TableHead className="w-[80px]" />
               </TableRow>
             </TableHeader>

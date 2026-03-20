@@ -7,6 +7,13 @@ import PageHeader from '@/Components/layout/PageHeader';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/Components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -22,10 +29,12 @@ import type { AdminFailedJobsIndexProps } from '@/types/admin';
 
 export default function AdminFailedJobsIndex({
   jobs,
+  queues,
+  filters,
 }: AdminFailedJobsIndexProps) {
-  const { handlePage } = useAdminFilters({
+  const { updateFilter, handlePage, clearFilters } = useAdminFilters({
     route: '/admin/failed-jobs',
-    filters: {},
+    filters,
   });
   const isNavigating = useNavigationState();
 
@@ -38,6 +47,28 @@ export default function AdminFailedJobsIndex({
       />
 
       <div className="container py-8 space-y-4">
+        <fieldset className="flex flex-col sm:flex-row gap-3 flex-wrap">
+          <legend className="sr-only">Failed Job Filters</legend>
+          <Select
+            value={filters.queue ?? 'all'}
+            onValueChange={(value) =>
+              updateFilter({ queue: value === 'all' ? undefined : value })
+            }
+          >
+            <SelectTrigger className="w-[200px]" aria-label="Filter by queue">
+              <SelectValue placeholder="All queues" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Queues</SelectItem>
+              {queues.map((queue) => (
+                <SelectItem key={queue} value={queue}>
+                  {queue}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </fieldset>
+
         <AdminDataTable
           isEmpty={jobs.data.length === 0}
           isNavigating={isNavigating}
@@ -46,7 +77,18 @@ export default function AdminFailedJobsIndex({
           paginationLabel="jobs"
           emptyIcon={AlertCircle}
           emptyTitle="No failed jobs"
-          emptyDescription="All queue jobs are running successfully."
+          emptyDescription={
+            filters.queue
+              ? 'No failed jobs match the selected queue.'
+              : 'All queue jobs are running successfully.'
+          }
+          emptyAction={
+            filters.queue ? (
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            ) : undefined
+          }
         >
           <Table>
             <TableHeader>

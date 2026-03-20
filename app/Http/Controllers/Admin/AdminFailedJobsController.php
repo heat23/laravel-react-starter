@@ -35,7 +35,18 @@ class AdminFailedJobsController extends Controller
                 'exception_summary' => Str::limit($job->exception, 200),
             ]);
 
-        return Inertia::render('Admin/FailedJobs/Index', ['jobs' => $jobs]);
+        $queues = DB::table('failed_jobs')
+            ->distinct()
+            ->orderBy('queue')
+            ->pluck('queue')
+            ->values()
+            ->toArray();
+
+        return Inertia::render('Admin/FailedJobs/Index', [
+            'jobs' => $jobs,
+            'queues' => $queues,
+            'filters' => ['queue' => $request->validated('queue')],
+        ]);
     }
 
     public function show(int $id): Response

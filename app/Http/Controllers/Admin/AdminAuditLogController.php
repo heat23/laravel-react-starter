@@ -23,9 +23,15 @@ class AdminAuditLogController extends Controller
 
     public function index(AdminAuditLogIndexRequest $request): Response
     {
-        $query = $this->applyFilters(AuditLog::with('user'), $request->validated());
+        $validated = $request->validated();
+        $query = $this->applyFilters(AuditLog::with('user'), $validated);
 
-        $logs = $query->latest()->paginate(config('pagination.admin.audit_logs', 50))->through(fn (AuditLog $log) => $log->toDetailArray());
+        $allowedSorts = ['event', 'created_at'];
+        $sort = in_array($validated['sort'] ?? null, $allowedSorts, true) ? $validated['sort'] : 'created_at';
+        $dir = ($validated['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+        $query->orderBy($sort, $dir);
+
+        $logs = $query->paginate(config('pagination.admin.audit_logs', 50))->through(fn (AuditLog $log) => $log->toDetailArray());
 
         $eventTypes = Cache::remember(AdminCacheKey::AUDIT_EVENT_TYPES->value, AdminCacheKey::DEFAULT_TTL, function () {
             return AuditLog::distinct()->pluck('event')->sort()->values();
@@ -34,7 +40,7 @@ class AdminAuditLogController extends Controller
         return Inertia::render('Admin/AuditLogs/Index', [
             'logs' => $logs,
             'eventTypes' => $eventTypes,
-            'filters' => $request->only('event', 'user_id', 'from', 'to'),
+            'filters' => $request->only('event', 'user_id', 'from', 'to', 'sort', 'dir'),
         ]);
     }
 

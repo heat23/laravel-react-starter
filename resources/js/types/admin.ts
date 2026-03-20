@@ -416,6 +416,8 @@ export interface AdminAuditLogsIndexProps {
     user_id?: string;
     from?: string;
     to?: string;
+    sort?: string;
+    dir?: string;
   };
 }
 
@@ -525,6 +527,8 @@ export interface FeatureFlagUserSearch {
 
 export interface AdminFailedJobsIndexProps {
   jobs: PaginatedResponse<FailedJobSummary>;
+  queues: string[];
+  filters: { queue?: string };
 }
 
 export interface AdminFailedJobShowProps {
