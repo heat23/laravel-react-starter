@@ -93,13 +93,13 @@ export default function BillingDashboard({
     {
       title: 'Past Due',
       value: stats.past_due,
-      valueClassName: 'text-amber-600 dark:text-amber-400',
+      valueClassName: 'text-warning',
     },
     { title: 'Canceled', value: stats.canceled },
     {
       title: 'Trials Expiring Soon',
       value: trial_stats.expiring_soon,
-      valueClassName: 'text-amber-600 dark:text-amber-400',
+      valueClassName: 'text-warning',
       description: 'Within 3 days',
     },
   ];

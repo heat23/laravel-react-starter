@@ -116,7 +116,7 @@ export default function AdminAuditLogShow({
                             {String(change.from)}
                           </span>
                           <span className="text-muted-foreground">&rarr;</span>
-                          <span className="text-green-600 dark:text-green-400">
+                          <span className="text-success">
                             {String(change.to)}
                           </span>
                         </div>

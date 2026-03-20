@@ -42,10 +42,10 @@ function getThresholdClassName(value: number, threshold?: StatCardThreshold): st
 
   if (direction === 'above') {
     if (value >= critical) return 'text-destructive';
-    if (value >= warning) return 'text-amber-600 dark:text-amber-400';
+    if (value >= warning) return 'text-warning';
   } else {
     if (value <= critical) return 'text-destructive';
-    if (value <= warning) return 'text-amber-600 dark:text-amber-400';
+    if (value <= warning) return 'text-warning';
   }
 
   return undefined;
