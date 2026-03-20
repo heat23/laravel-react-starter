@@ -3,8 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminCacheKey;
+use App\Enums\AnalyticsEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Models\WebhookEndpoint;
+use App\Services\AuditService;
+use App\Services\CacheInvalidationManager;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -12,6 +19,11 @@ use Inertia\Response;
 
 class AdminWebhooksController extends Controller
 {
+    public function __construct(
+        private AuditService $auditService,
+        private CacheInvalidationManager $cacheManager,
+    ) {}
+
     public function __invoke(): Response
     {
         $stats = Cache::remember(AdminCacheKey::WEBHOOKS_STATS->value, AdminCacheKey::DEFAULT_TTL, function () {
@@ -101,5 +113,58 @@ class AdminWebhooksController extends Controller
             'delivery_chart' => $deliveryChart,
             'recent_failures' => $recentFailures,
         ]);
+    }
+
+    public function endpoints(): Response
+    {
+        $endpoints = WebhookEndpoint::withTrashed()
+            ->with(['user:id,name,email'])
+            ->withCount('deliveries')
+            ->orderByRaw('deleted_at IS NOT NULL ASC')
+            ->orderByDesc('created_at')
+            ->paginate(config('pagination.admin.users', 25))
+            ->through(function ($ep) {
+                /** @var WebhookEndpoint $ep */
+                $user = $ep->user instanceof User ? $ep->user : null;
+
+                return [
+                    'id' => $ep->id,
+                    'user_id' => $ep->user_id,
+                    'user_name' => $user !== null ? $user->name : '[Deleted User]',
+                    'user_email' => $user !== null ? $user->email : '',
+                    'url' => $ep->url,
+                    'description' => $ep->description,
+                    'active' => $ep->active,
+                    'events' => $ep->events,
+                    'deliveries_count' => $ep->deliveries_count,
+                    'deleted_at' => $ep->deleted_at?->toISOString(),
+                    'created_at' => $ep->created_at?->toISOString(),
+                ];
+            });
+
+        return Inertia::render('Admin/Webhooks/Endpoints', [
+            'endpoints' => $endpoints,
+        ]);
+    }
+
+    public function restoreEndpoint(int $id, Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->isSuperAdmin(), 403);
+
+        $endpoint = WebhookEndpoint::withTrashed()->findOrFail($id);
+
+        abort_unless($endpoint->trashed(), 422, 'Endpoint is not deleted.');
+
+        $endpoint->restore();
+
+        $this->auditService->log(AnalyticsEvent::ADMIN_WEBHOOK_ENDPOINT_RESTORED, [
+            'endpoint_id' => $endpoint->id,
+            'url' => $endpoint->url,
+        ]);
+
+        $this->cacheManager->invalidateWebhooks();
+
+        return redirect()->route('admin.webhooks.endpoints')
+            ->with('success', 'Webhook endpoint restored.');
     }
 }

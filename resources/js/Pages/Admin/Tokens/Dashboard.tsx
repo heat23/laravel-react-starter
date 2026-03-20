@@ -1,10 +1,11 @@
 import { Clock, Key, Users } from "lucide-react";
 
-import { Head } from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 
 import { AdminStatsGrid, type StatCard } from "@/Components/admin/AdminStatsGrid";
 import PageHeader from "@/Components/layout/PageHeader";
 import { Badge } from "@/Components/ui/badge";
+import { Button } from "@/Components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Components/ui/card";
 import { EmptyState } from "@/Components/ui/empty-state";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/Components/ui/table";
@@ -16,7 +17,15 @@ export default function TokensDashboard({ stats, most_active }: AdminTokensDashb
   return (
     <AdminLayout>
       <Head title="Admin - API Tokens" />
-      <PageHeader title="API Tokens" subtitle="Token usage and statistics" />
+      <PageHeader
+        title="API Tokens"
+        subtitle="Token usage and statistics"
+        actions={
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/admin/tokens/list">Browse All Tokens</Link>
+          </Button>
+        }
+      />
 
       <div className="container py-8 space-y-8">
         {/* Stats */}

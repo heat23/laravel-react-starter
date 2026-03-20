@@ -3,7 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminCacheKey;
+use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminTokenIndexRequest;
+use App\Services\AuditService;
+use App\Services\CacheInvalidationManager;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -11,6 +17,11 @@ use Inertia\Response;
 
 class AdminTokensController extends Controller
 {
+    public function __construct(
+        private AuditService $auditService,
+        private CacheInvalidationManager $cacheManager,
+    ) {}
+
     public function __invoke(): Response
     {
         $stats = Cache::remember(AdminCacheKey::TOKENS_STATS->value, AdminCacheKey::DEFAULT_TTL, function () {
@@ -62,5 +73,72 @@ class AdminTokensController extends Controller
             'stats' => $stats,
             'most_active' => $mostActive,
         ]);
+    }
+
+    public function index(AdminTokenIndexRequest $request): Response
+    {
+        $query = DB::table('personal_access_tokens')
+            ->join('users', 'personal_access_tokens.tokenable_id', '=', 'users.id')
+            ->where('personal_access_tokens.tokenable_type', 'App\\Models\\User')
+            ->select(
+                'personal_access_tokens.id',
+                'personal_access_tokens.name as token_name',
+                'personal_access_tokens.abilities',
+                'personal_access_tokens.last_used_at',
+                'personal_access_tokens.expires_at',
+                'personal_access_tokens.created_at',
+                'users.id as user_id',
+                'users.name as user_name',
+                'users.email as user_email',
+            )
+            ->orderByDesc('personal_access_tokens.last_used_at');
+
+        if ($search = $request->validated('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('personal_access_tokens.name', 'like', "%{$search}%")
+                    ->orWhere('users.email', 'like', "%{$search}%")
+                    ->orWhere('users.name', 'like', "%{$search}%");
+            });
+        }
+
+        $tokens = $query
+            ->paginate(config('pagination.admin.users', 25))
+            ->through(fn ($row) => [
+                'id' => $row->id,
+                'token_name' => $row->token_name,
+                'abilities' => json_decode($row->abilities, true),
+                'last_used_at' => $row->last_used_at,
+                'expires_at' => $row->expires_at,
+                'created_at' => $row->created_at,
+                'user_id' => $row->user_id,
+                'user_name' => $row->user_name,
+                'user_email' => $row->user_email,
+            ]);
+
+        return Inertia::render('Admin/Tokens/Index', [
+            'tokens' => $tokens,
+            'filters' => $request->only('search'),
+        ]);
+    }
+
+    public function revoke(int $id, Request $request): RedirectResponse
+    {
+        abort_unless($request->user()?->isSuperAdmin(), 403);
+
+        $token = DB::table('personal_access_tokens')->where('id', $id)->first();
+        abort_unless((bool) $token, 404);
+
+        DB::table('personal_access_tokens')->where('id', $id)->delete();
+
+        $this->auditService->log(AnalyticsEvent::ADMIN_TOKEN_REVOKED, [
+            'token_id' => $id,
+            'token_name' => $token->name,
+            'user_id' => $token->tokenable_id,
+        ]);
+
+        $this->cacheManager->invalidateTokens();
+
+        return redirect()->route('admin.tokens.index')
+            ->with('success', 'Token revoked successfully.');
     }
 }

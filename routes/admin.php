@@ -153,10 +153,18 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
 
         if (config('features.webhooks.enabled')) {
             Route::get('/webhooks', AdminWebhooksController::class)->name('webhooks');
+            Route::get('/webhooks/endpoints', [AdminWebhooksController::class, 'endpoints'])->name('webhooks.endpoints');
+            Route::patch('/webhooks/endpoints/{id}/restore', [AdminWebhooksController::class, 'restoreEndpoint'])
+                ->middleware('throttle:10,1')
+                ->name('webhooks.endpoints.restore');
         }
 
         if (config('features.api_tokens.enabled')) {
             Route::get('/tokens', AdminTokensController::class)->name('tokens');
+            Route::get('/tokens/list', [AdminTokensController::class, 'index'])->name('tokens.index');
+            Route::delete('/tokens/{id}', [AdminTokensController::class, 'revoke'])
+                ->middleware('throttle:10,1')
+                ->name('tokens.revoke');
         }
 
         if (config('features.social_auth.enabled')) {

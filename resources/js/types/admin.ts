@@ -477,15 +477,50 @@ export interface AdminSystemProps {
   system: SystemInfo;
 }
 
+export interface AdminWebhookEndpoint {
+  id: number;
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  url: string;
+  description: string | null;
+  active: boolean;
+  events: string[];
+  deliveries_count: number;
+  deleted_at: string | null;
+  created_at: string;
+}
+
 export interface AdminWebhooksDashboardProps {
   stats: WebhookDashboardStats;
   delivery_chart: WebhookDeliveryChartPoint[];
   recent_failures: WebhookFailure[];
 }
 
+export interface AdminWebhookEndpointsProps {
+  endpoints: PaginatedResponse<AdminWebhookEndpoint>;
+}
+
 export interface AdminTokensDashboardProps {
   stats: TokenDashboardStats;
   most_active: ActiveToken[];
+}
+
+export interface AdminTokenRow {
+  id: number;
+  token_name: string;
+  abilities: string[] | null;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+  user_id: number;
+  user_name: string;
+  user_email: string;
+}
+
+export interface AdminTokensIndexProps {
+  tokens: PaginatedResponse<AdminTokenRow>;
+  filters: { search?: string };
 }
 
 export interface AdminSocialAuthDashboardProps {

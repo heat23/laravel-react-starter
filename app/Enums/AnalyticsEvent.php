@@ -47,6 +47,8 @@ enum AnalyticsEvent: string
     case ADMIN_FEATURE_FLAG_USER_OVERRIDE_REMOVED = 'admin.feature_flag.user_override_removed';
     case ADMIN_FEATURE_FLAG_ALL_USER_OVERRIDES_REMOVED = 'admin.feature_flag.all_user_overrides_removed';
     case ADMIN_CACHE_FLUSHED = 'admin.cache_flushed';
+    case ADMIN_WEBHOOK_ENDPOINT_RESTORED = 'admin.webhook_endpoint.restored';
+    case ADMIN_TOKEN_REVOKED = 'admin.token.revoked';
 
     // User actions
     case PROFILE_UPDATED = 'profile.updated';
