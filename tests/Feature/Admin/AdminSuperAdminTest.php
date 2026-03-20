@@ -45,7 +45,8 @@ it('regular admin can access the admin panel', function () {
 
 it('non-admin cannot access super-admin-gated route', function () {
     $user = User::factory()->create();
+    $target = User::factory()->create();
     $this->actingAs($user)
-        ->post('/admin/users/1/impersonate')
+        ->post("/admin/users/{$target->id}/impersonate")
         ->assertForbidden();
 });

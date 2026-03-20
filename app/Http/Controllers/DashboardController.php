@@ -30,7 +30,7 @@ class DashboardController extends Controller
         $recentActivity = AuditLog::where('user_id', $user->id)
             ->latest()
             ->limit(5)
-            ->get(['id', 'event', 'created_at', 'ip_address'])
+            ->get(['id', 'event', 'created_at'])
             ->map(fn (AuditLog $log) => [
                 'event' => $log->event,
                 'created_at' => $log->created_at?->toISOString(),
