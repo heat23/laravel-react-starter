@@ -14,10 +14,13 @@ import {
 } from "@/Components/ui/input-otp";
 import { Label } from "@/Components/ui/label";
 import { LoadingButton } from "@/Components/ui/loading-button";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import AuthLayout from "@/Layouts/AuthLayout";
+import { AnalyticsEvents } from "@/lib/events";
 
 export default function TwoFactorChallenge() {
   const [useRecovery, setUseRecovery] = useState(false);
+  const { track } = useAnalytics();
 
   const { data, setData, post, processing, errors } = useForm({
     code: "",
@@ -26,7 +29,11 @@ export default function TwoFactorChallenge() {
 
   const handleSubmit: FormEventHandler = (e) => {
     e.preventDefault();
-    post(route("two-factor.challenge"));
+    post(route("two-factor.challenge"), {
+      onSuccess: () => {
+        track(AnalyticsEvents.AUTH_LOGIN, { source: '2fa' });
+      },
+    });
   };
 
   return (

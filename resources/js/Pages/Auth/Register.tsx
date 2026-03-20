@@ -27,7 +27,9 @@ import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { LoadingButton } from "@/Components/ui/loading-button";
 import { useFormValidation } from "@/hooks/useFormValidation";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import AuthLayout from "@/Layouts/AuthLayout";
+import { AnalyticsEvents } from "@/lib/events";
 
 const registerSchema = z.object({
   name: z.string().min(1, "Name is required").max(255, "Name is too long"),
@@ -88,6 +90,7 @@ export default function Register({ error, rememberDays = 30, features }: Registe
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
   const { errors: clientErrors, validateField, validateAll, clearError, setErrors: setClientErrors } = useFormValidation(registerSchema);
+  const { track } = useAnalytics();
 
   // Helper for grammatically correct day/days
   const dayText = rememberDays === 1 ? 'day' : 'days';
@@ -110,6 +113,9 @@ export default function Register({ error, rememberDays = 30, features }: Registe
 
     post(route("register"), {
       onFinish: () => reset("password", "password_confirmation"),
+      onSuccess: () => {
+        track(AnalyticsEvents.AUTH_REGISTER, { signup_source: 'email' });
+      },
     });
   };
 

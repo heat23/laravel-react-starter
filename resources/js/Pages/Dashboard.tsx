@@ -10,7 +10,7 @@ import {
 
 import { useEffect } from 'react';
 
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 
 import PageHeader from '@/Components/layout/PageHeader';
 import {
@@ -48,10 +48,25 @@ function healthLabel(score: number): { label: string; color: string } {
 
 export default function Dashboard({ stats }: DashboardProps) {
   const { track } = useAnalytics();
+  const { flash } = usePage<{ flash: Record<string, unknown> }>().props;
   const health = healthLabel(stats.health_score);
 
   useEffect(() => {
     track(AnalyticsEvents.ENGAGEMENT_DASHBOARD_VIEWED);
+  }, [track]);
+
+  useEffect(() => {
+    if (flash?.new_registration) {
+      track(AnalyticsEvents.AUTH_REGISTER, { signup_source: String(flash.social_provider ?? 'social') });
+    }
+  }, [flash?.new_registration, flash?.social_provider, track]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('verified') === '1') {
+      track(AnalyticsEvents.AUTH_EMAIL_VERIFIED);
+    }
   }, [track]);
 
   const statCards = [

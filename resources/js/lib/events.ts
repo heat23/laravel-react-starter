@@ -9,6 +9,7 @@ export const AnalyticsEvents = {
   // Auth
   AUTH_LOGIN: 'auth.login',
   AUTH_REGISTER: 'auth.register',
+  AUTH_EMAIL_VERIFIED: 'auth.email_verified',
 
   // Onboarding
   ONBOARDING_STARTED: 'onboarding.started',
@@ -20,6 +21,7 @@ export const AnalyticsEvents = {
   BILLING_PLAN_SELECTED: 'billing.plan_selected',
   BILLING_CHECKOUT_STARTED: 'billing.checkout_started',
   BILLING_CHECKOUT_COMPLETED: 'billing.checkout_completed',
+  BILLING_SUBSCRIPTION_CANCELED: 'billing.subscription_canceled',
 
   // Feature usage
   FEATURE_USED: 'feature.used',
@@ -45,6 +47,7 @@ export type AnalyticsEventName =
 export type EventPropertyMap = {
   [AnalyticsEvents.AUTH_LOGIN]: { source?: string } | undefined;
   [AnalyticsEvents.AUTH_REGISTER]: { signup_source?: string } | undefined;
+  [AnalyticsEvents.AUTH_EMAIL_VERIFIED]: Record<string, never> | undefined;
   [AnalyticsEvents.ONBOARDING_STARTED]: undefined;
   [AnalyticsEvents.ONBOARDING_STEP_COMPLETED]: { step: string };
   [AnalyticsEvents.ONBOARDING_COMPLETED]: undefined;
@@ -52,6 +55,7 @@ export type EventPropertyMap = {
   [AnalyticsEvents.BILLING_PLAN_SELECTED]: { plan: string; billing_period: string };
   [AnalyticsEvents.BILLING_CHECKOUT_STARTED]: { plan: string; price_id: string; billing_period: string };
   [AnalyticsEvents.BILLING_CHECKOUT_COMPLETED]: { plan: string; price_id: string; billing_period: string };
+  [AnalyticsEvents.BILLING_SUBSCRIPTION_CANCELED]: { reason?: string } | undefined;
   [AnalyticsEvents.FEATURE_USED]: { feature_name: string };
   [AnalyticsEvents.FEATURE_API_TOKEN_CREATED]: { token_name?: string } | undefined;
   [AnalyticsEvents.FEATURE_WEBHOOK_CREATED]: { endpoint_url?: string } | undefined;

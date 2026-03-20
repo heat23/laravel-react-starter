@@ -13,7 +13,9 @@ import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { LoadingButton } from "@/Components/ui/loading-button";
 import { useFormValidation } from "@/hooks/useFormValidation";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import AuthLayout from "@/Layouts/AuthLayout";
+import { AnalyticsEvents } from "@/lib/events";
 
 // P1-004: Client-side Zod validation for instant feedback
 const loginSchema = z.object({
@@ -35,6 +37,7 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
   const [showPassword, setShowPassword] = useState(false);
   const { errors: clientErrors, validateField, validateAll, clearError } = useFormValidation(loginSchema);
   const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
+  const { track } = useAnalytics();
 
   // Helper for grammatically correct day/days
   const dayText = rememberDays === 1 ? 'day' : 'days';
@@ -52,6 +55,12 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
 
     post(route("login"), {
       onFinish: () => reset("password"),
+      onSuccess: (page) => {
+        // Only fire login event if not redirected to 2FA challenge
+        if (!page.component.includes('TwoFactor')) {
+          track(AnalyticsEvents.AUTH_LOGIN, { source: 'email' });
+        }
+      },
     });
   };
 

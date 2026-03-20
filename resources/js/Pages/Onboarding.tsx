@@ -2,7 +2,7 @@ import axios from "axios";
 import { BookOpen, Home, Key, Palette, Settings, Sparkles, User as UserIcon } from "lucide-react";
 import { toast } from "sonner";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 import { Head, router, usePage } from "@inertiajs/react";
 
@@ -12,7 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/Com
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { StepContent, Stepper, StepperNavigation } from "@/Components/ui/stepper";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { useTimezone } from "@/hooks/useTimezone";
+import { AnalyticsEvents } from "@/lib/events";
 import type { PageProps } from "@/types";
 
 const steps = [
@@ -25,10 +27,15 @@ export default function Onboarding() {
   const { auth } = usePage<PageProps>().props;
   const { theme, setTheme } = useTheme();
   const { timezone, setTimezone } = useTimezone();
+  const { track } = useAnalytics();
 
   const [currentStep, setCurrentStep] = useState(0);
   const [name, setName] = useState(auth.user?.name ?? "");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    track(AnalyticsEvents.ONBOARDING_STARTED);
+  }, [track]);
 
   const completeOnboarding = useCallback(async () => {
     setSaving(true);
@@ -41,8 +48,9 @@ export default function Onboarding() {
     } catch {
       toast.warning("Could not save onboarding progress, but you can continue.");
     }
+    track(AnalyticsEvents.ONBOARDING_COMPLETED);
     router.visit("/dashboard");
-  }, []);
+  }, [track]);
 
   const handleSkip = useCallback(() => {
     completeOnboarding();
@@ -70,15 +78,17 @@ export default function Onboarding() {
           });
         });
       }
+      track(AnalyticsEvents.ONBOARDING_STEP_COMPLETED, { step: 'welcome' });
       setCurrentStep(1);
     } else if (currentStep === 1) {
       // Timezone and theme are saved via their own hooks
+      track(AnalyticsEvents.ONBOARDING_STEP_COMPLETED, { step: 'preferences' });
       setCurrentStep(2);
     } else {
       // Final step — complete onboarding
       completeOnboarding();
     }
-  }, [currentStep, name, auth.user?.name, auth.user?.email, completeOnboarding]);
+  }, [currentStep, name, auth.user?.name, auth.user?.email, completeOnboarding, track]);
 
   const handleBack = useCallback(() => {
     setCurrentStep((prev) => Math.max(0, prev - 1));

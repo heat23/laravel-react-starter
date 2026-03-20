@@ -77,6 +77,8 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'warning' => fn () => $request->session()->get('warning'),
                 'info' => fn () => $request->session()->get('info'),
+                'new_registration' => fn () => $request->session()->get('new_registration'),
+                'social_provider' => fn () => $request->session()->get('social_provider'),
             ],
             'features' => [
                 'billing' => $features['billing'],

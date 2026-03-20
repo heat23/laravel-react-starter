@@ -4,6 +4,8 @@ import { toast } from "sonner";
 
 import { useEffect, useState } from "react";
 
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { AnalyticsEvents } from "@/lib/events";
 import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
 import { Button } from "@/Components/ui/button";
 import {
@@ -39,6 +41,7 @@ export function CancelSubscriptionDialog({
   const [reason, setReason] = useState<string>("");
   const [feedback, setFeedback] = useState<string>("");
   const [processing, setProcessing] = useState(false);
+  const { track } = useAnalytics();
 
   const showRetentionOffer = reason === "too_expensive";
   const showFeedbackField = ["missing_features", "other", "switching_tools"].includes(reason);
@@ -54,6 +57,7 @@ export function CancelSubscriptionDialog({
       toast.success("Subscription Canceled", {
         description: message,
       });
+      track(AnalyticsEvents.BILLING_SUBSCRIPTION_CANCELED, { reason: reason || undefined });
       onOpenChange(false);
       setReason("");
       setFeedback("");

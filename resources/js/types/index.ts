@@ -43,6 +43,10 @@ export interface PageProps {
   flash: {
     success?: string;
     error?: string;
+    warning?: string;
+    info?: string;
+    new_registration?: boolean;
+    social_provider?: string;
   };
   errors: Record<string, string>;
   features: Features;

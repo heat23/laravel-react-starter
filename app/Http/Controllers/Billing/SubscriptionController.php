@@ -78,7 +78,7 @@ class SubscriptionController extends Controller
 
             $this->invalidateAdminCaches();
 
-            return redirect()->route('billing.index')->with('success', 'Subscription created successfully.');
+            return redirect()->route('billing.index', ['checkout' => 'success'])->with('success', 'Subscription created successfully.');
         } catch (ConcurrentOperationException) {
             return back()->with('error', 'A subscription request is already in progress. Please try again.');
         } catch (IncompletePayment $e) {

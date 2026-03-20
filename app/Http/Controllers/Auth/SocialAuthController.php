@@ -93,6 +93,8 @@ class SocialAuthController extends Controller
         // Log registration for new social auth users (Fix FUNNEL-004)
         if ($user->wasRecentlyCreated) {
             $this->auditService->logRegistration($user);
+            session()->flash('new_registration', true);
+            session()->flash('social_provider', $provider);
         }
 
         $this->auditService->log(AnalyticsEvent::AUTH_SOCIAL_LOGIN, [

@@ -125,6 +125,12 @@ export default function BillingIndex() {
     if (params.get('checkout') === 'success') {
       setCheckoutSuccess(true);
 
+      track(AnalyticsEvents.BILLING_CHECKOUT_COMPLETED, {
+        plan: subscription?.name ?? 'unknown',
+        price_id: subscription?.priceId ?? 'unknown',
+        billing_period: (subscription?.priceId?.includes('annual') || subscription?.priceId?.includes('yearly')) ? 'annual' : 'monthly',
+      });
+
       params.delete('checkout');
       const nextQuery = params.toString();
       const nextUrl = nextQuery
@@ -132,7 +138,7 @@ export default function BillingIndex() {
         : window.location.pathname;
       window.history.replaceState({}, '', nextUrl);
     }
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePortal = () => {
     setPortalLoading(true);
