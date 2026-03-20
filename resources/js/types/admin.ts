@@ -548,3 +548,54 @@ export interface AdminDataHealthProps {
 export interface AdminFeatureFlagsIndexProps {
   flags: FeatureFlagAdmin[];
 }
+
+// ---------------------------------------------------------------------------
+// Sessions
+// ---------------------------------------------------------------------------
+
+export interface AdminSessionRow {
+  session_id: string;
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  ip_address: string | null;
+  user_agent: string | null;
+  last_activity: string;
+}
+
+export interface AdminSessionsIndexProps {
+  sessions: PaginatedResponse<AdminSessionRow> | Record<string, never>;
+  driver: string;
+  driverSupported: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Cache Management
+// ---------------------------------------------------------------------------
+
+export interface AdminCacheKey {
+  key: string;
+  name: string;
+  exists: boolean;
+}
+
+export interface AdminCacheIndexProps {
+  cacheKeys: AdminCacheKey[];
+  scopes: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Schedule Monitor
+// ---------------------------------------------------------------------------
+
+export interface AdminScheduleTask {
+  command: string;
+  expression: string;
+  description: string | null;
+  timezone: string;
+  next_run_date: string | null;
+}
+
+export interface AdminScheduleIndexProps {
+  tasks: AdminScheduleTask[];
+}

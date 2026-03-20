@@ -54,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureIsAdmin::class,
+            'super_admin' => \App\Http\Middleware\EnsureIsSuperAdmin::class,
             'onboarding' => \App\Http\Middleware\EnsureOnboardingCompleted::class,
             'subscribed' => \App\Http\Middleware\EnsureSubscribed::class,
             'verify-webhook' => \App\Http\Middleware\VerifyWebhookSignature::class,

@@ -38,6 +38,8 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
         'signup_source',
         'trial_ends_at',
         'email_verified_at',
+        'is_admin',
+        'super_admin',
     ];
 
     /**
@@ -64,12 +66,18 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
             'trial_ends_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'super_admin' => 'boolean',
         ];
     }
 
     public function isAdmin(): bool
     {
         return $this->is_admin === true;
+    }
+
+    public function isSuperAdmin(): bool
+    {
+        return $this->super_admin === true;
     }
 
     /**

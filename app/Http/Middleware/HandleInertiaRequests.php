@@ -49,6 +49,7 @@ class HandleInertiaRequests extends Middleware
                     'email_verified_at' => $user->email_verified_at?->toISOString(),
                     'has_password' => $user->hasPassword(),
                     'is_admin' => $user->is_admin,
+                    'is_super_admin' => $user->isSuperAdmin(),
                     'two_factor_enabled' => $features['two_factor']
                         ? $user->hasTwoFactorEnabled()
                         : false,

@@ -67,6 +67,17 @@ class UserFactory extends Factory
     }
 
     /**
+     * Indicate the user is a super admin (implies is_admin).
+     */
+    public function superAdmin(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_admin' => true,
+            'super_admin' => true,
+        ]);
+    }
+
+    /**
      * Indicate the user has two-factor authentication enabled.
      */
     public function withTwoFactor(): static

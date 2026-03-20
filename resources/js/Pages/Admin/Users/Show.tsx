@@ -41,7 +41,9 @@ export default function AdminUserShow({
 }: AdminUsersShowProps) {
   const { confirmAction, setConfirmAction, executeAction, getDialogProps } =
     useAdminAction();
-  const currentUserId = usePage<PageProps>().props.auth.user?.id;
+  const authUser = usePage<PageProps>().props.auth.user;
+  const currentUserId = authUser?.id;
+  const isSuperAdmin = authUser?.is_super_admin ?? false;
 
   const editForm = useForm({
     name: user.name,
@@ -84,7 +86,7 @@ export default function AdminUserShow({
           subtitle={user.email}
           actions={
             <div className="flex flex-col sm:flex-row gap-2">
-              {!user.deleted_at && user.id !== currentUserId && (
+              {isSuperAdmin && !user.deleted_at && user.id !== currentUserId && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -107,7 +109,8 @@ export default function AdminUserShow({
                   {user.deleted_at ? 'Restore' : 'Deactivate'}
                 </Button>
               )}
-              {!user.is_admin &&
+              {isSuperAdmin &&
+                !user.is_admin &&
                 !user.deleted_at &&
                 user.id !== currentUserId && (
                   <Button

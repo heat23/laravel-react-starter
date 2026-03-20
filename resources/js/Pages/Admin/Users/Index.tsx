@@ -62,7 +62,9 @@ export default function AdminUsersIndex({
   const isNavigating = useNavigationState();
   const { confirmAction, setConfirmAction, executeAction, getDialogProps } =
     useAdminAction();
-  const currentUserId = usePage<PageProps>().props.auth.user?.id;
+  const authUser = usePage<PageProps>().props.auth.user;
+  const currentUserId = authUser?.id;
+  const isSuperAdmin = authUser?.is_super_admin ?? false;
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
@@ -410,7 +412,7 @@ export default function AdminUsersIndex({
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          {!user.deleted_at && user.id !== currentUserId && (
+                          {isSuperAdmin && !user.deleted_at && user.id !== currentUserId && (
                             <DropdownMenuItem
                               onClick={() =>
                                 setConfirmAction({ type: 'toggleAdmin', user })
@@ -431,7 +433,8 @@ export default function AdminUsersIndex({
                                 : 'Deactivate User'}
                             </DropdownMenuItem>
                           )}
-                          {!user.is_admin &&
+                          {isSuperAdmin &&
+                            !user.is_admin &&
                             !user.deleted_at &&
                             user.id !== currentUserId && (
                               <DropdownMenuItem

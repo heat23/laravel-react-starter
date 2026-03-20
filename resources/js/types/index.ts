@@ -12,6 +12,7 @@ export interface User {
   email_verified_at: string | null;
   has_password: boolean;
   is_admin: boolean;
+  is_super_admin: boolean;
   two_factor_enabled?: boolean;
 }
 

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminAuditLogController;
 use App\Http\Controllers\Admin\AdminBillingController;
+use App\Http\Controllers\Admin\AdminCacheController;
 use App\Http\Controllers\Admin\AdminConfigController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminDataHealthController;
@@ -10,6 +11,8 @@ use App\Http\Controllers\Admin\AdminFeatureFlagController;
 use App\Http\Controllers\Admin\AdminHealthController;
 use App\Http\Controllers\Admin\AdminImpersonationController;
 use App\Http\Controllers\Admin\AdminNotificationsController;
+use App\Http\Controllers\Admin\AdminScheduleController;
+use App\Http\Controllers\Admin\AdminSessionsController;
 use App\Http\Controllers\Admin\AdminSocialAuthController;
 use App\Http\Controllers\Admin\AdminSystemController;
 use App\Http\Controllers\Admin\AdminTokensController;
@@ -45,7 +48,7 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
             ->middleware('throttle:10,1')
             ->name('users.update');
         Route::patch('/users/{user}/toggle-admin', [AdminUsersController::class, 'toggleAdmin'])
-            ->middleware('throttle:10,1')
+            ->middleware(['throttle:10,1', 'super_admin'])
             ->name('users.toggle-admin');
         Route::patch('/users/{user}/toggle-active', [AdminUsersController::class, 'toggleActive'])
             ->withTrashed()
@@ -60,10 +63,10 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
             ->middleware('throttle:10,1')
             ->name('users.bulk-deactivate');
 
-        // Impersonation
+        // Impersonation — super_admin only
         Route::post('/users/{user}/impersonate', [AdminImpersonationController::class, 'start'])
             ->withTrashed()
-            ->middleware('throttle:5,1')
+            ->middleware(['throttle:5,1', 'super_admin'])
             ->name('users.impersonate');
 
         // Health Status
@@ -99,29 +102,44 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         Route::get('/feature-flags', [AdminFeatureFlagController::class, 'index'])->name('feature-flags.index');
         Route::patch('/feature-flags/{flag}', [AdminFeatureFlagController::class, 'updateGlobal'])
             ->where('flag', '[a-z_]+')
-            ->middleware('throttle:30,1')
+            ->middleware(['throttle:30,1', 'super_admin'])
             ->name('feature-flags.update-global');
         Route::delete('/feature-flags/{flag}', [AdminFeatureFlagController::class, 'removeGlobal'])
             ->where('flag', '[a-z_]+')
-            ->middleware('throttle:30,1')
+            ->middleware(['throttle:30,1', 'super_admin'])
             ->name('feature-flags.remove-global');
         Route::get('/feature-flags/{flag}/users', [AdminFeatureFlagController::class, 'getTargetedUsers'])
             ->where('flag', '[a-z_]+')
             ->name('feature-flags.users');
         Route::post('/feature-flags/{flag}/users', [AdminFeatureFlagController::class, 'addUserOverride'])
             ->where('flag', '[a-z_]+')
-            ->middleware('throttle:30,1')
+            ->middleware(['throttle:30,1', 'super_admin'])
             ->name('feature-flags.add-user');
         Route::delete('/feature-flags/{flag}/users/{user}', [AdminFeatureFlagController::class, 'removeUserOverride'])
             ->where('flag', '[a-z_]+')
-            ->middleware('throttle:30,1')
+            ->middleware(['throttle:30,1', 'super_admin'])
             ->name('feature-flags.remove-user');
         Route::delete('/feature-flags/{flag}/users', [AdminFeatureFlagController::class, 'removeAllUserOverrides'])
             ->where('flag', '[a-z_]+')
-            ->middleware('throttle:30,1')
+            ->middleware(['throttle:30,1', 'super_admin'])
             ->name('feature-flags.remove-all-users');
         Route::get('/feature-flags/search-users', [AdminFeatureFlagController::class, 'searchUsers'])
             ->name('feature-flags.search-users');
+
+        // Session Manager
+        Route::get('/sessions', [AdminSessionsController::class, 'index'])->name('sessions.index');
+        Route::delete('/sessions/{userId}', [AdminSessionsController::class, 'destroy'])
+            ->middleware(['throttle:10,1', 'super_admin'])
+            ->name('sessions.destroy');
+
+        // Cache Management
+        Route::get('/cache', [AdminCacheController::class, 'index'])->name('cache.index');
+        Route::post('/cache/flush', [AdminCacheController::class, 'flush'])
+            ->middleware(['throttle:10,1', 'super_admin'])
+            ->name('cache.flush');
+
+        // Schedule Monitor
+        Route::get('/schedule', AdminScheduleController::class)->name('schedule');
 
         // Feature-gated admin sections (auth via group middleware on line 21)
         if (config('features.billing.enabled')) {
