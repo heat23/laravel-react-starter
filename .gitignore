@@ -85,3 +85,6 @@ storage/phpstan/cache/*
 .phpunit.cache/*
 storage/phpstan/resultCache.php
 tests/e2e/__screenshots__/pages/register.spec.ts/chromium-desktop/register-dark.png
+.claude/prompt-pack-runs/*
+v-*-prompts/*
+v-prompts/*

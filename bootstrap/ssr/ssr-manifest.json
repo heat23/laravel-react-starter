@@ -97,6 +97,7 @@
   "resources/js/Pages/Admin/System.tsx": [],
   "resources/js/Pages/Admin/Tokens/Dashboard.tsx": [],
   "resources/js/Pages/Admin/TwoFactor/Dashboard.tsx": [],
+  "resources/js/Pages/Admin/Users/Create.tsx": [],
   "resources/js/Pages/Admin/Users/Index.tsx": [],
   "resources/js/Pages/Admin/Users/Show.tsx": [],
   "resources/js/Pages/Admin/Webhooks/Dashboard.tsx": [],

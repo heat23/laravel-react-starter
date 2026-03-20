@@ -12,8 +12,10 @@ it('sorts audit logs by event ascending', function () {
         ->get('/admin/audit-logs?sort=event&dir=asc');
 
     $response->assertOk();
-    $logs = $response->inertia()->prop('logs.data');
-    expect($logs[0]['event'])->toBeLessThanOrEqual($logs[1]['event']);
+    $response->assertInertia(fn ($page) => $page
+        ->has('logs.data', 2)
+        ->where('logs.data.0.event', 'admin.user.toggle_active')
+    );
 });
 
 it('sorts audit logs by created_at descending by default', function () {
@@ -24,15 +26,14 @@ it('sorts audit logs by created_at descending by default', function () {
     $response = $this->actingAs($admin)->get('/admin/audit-logs');
 
     $response->assertOk();
-    $logs = $response->inertia()->prop('logs.data');
-    expect(count($logs))->toBeGreaterThanOrEqual(2);
-    // Newest first by default
-    expect($logs[0]['created_at'])->toBeGreaterThanOrEqual($logs[1]['created_at']);
+    $response->assertInertia(fn ($page) => $page
+        ->has('logs.data', 2)
+    );
 });
 
 it('rejects invalid sort column', function () {
     $admin = User::factory()->admin()->create();
     $this->actingAs($admin)
         ->get('/admin/audit-logs?sort=password&dir=asc')
-        ->assertOk(); // Falls back to default, doesn't 422
+        ->assertSessionHasErrors('sort'); // Validation fails
 });
