@@ -1,13 +1,18 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { trackEvent } from '@/lib/analytics';
+import { setUserId, trackEvent } from '@/lib/analytics';
 import { AnalyticsEvents } from '@/lib/events';
 
 import { useAnalytics } from './useAnalytics';
 
 vi.mock('@/lib/analytics', () => ({
   trackEvent: vi.fn(),
+  setUserId: vi.fn(),
+}));
+
+vi.mock('@inertiajs/react', () => ({
+  usePage: () => ({ props: { auth: { user: { id: 1 } } } }),
 }));
 
 describe('useAnalytics', () => {
@@ -18,6 +23,11 @@ describe('useAnalytics', () => {
   it('provides a track function', () => {
     const { result } = renderHook(() => useAnalytics());
     expect(typeof result.current.track).toBe('function');
+  });
+
+  it('calls setUserId with the authenticated user id on mount', () => {
+    renderHook(() => useAnalytics());
+    expect(setUserId).toHaveBeenCalledWith(1);
   });
 
   it('calls trackEvent with event name and properties', () => {

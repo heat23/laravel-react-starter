@@ -114,7 +114,7 @@ export default function Register({ error, rememberDays = 30, features }: Registe
     post(route("register"), {
       onFinish: () => reset("password", "password_confirmation"),
       onSuccess: () => {
-        track(AnalyticsEvents.AUTH_REGISTER, { signup_source: 'email' });
+        track(AnalyticsEvents.AUTH_REGISTER, { source: 'email' });
       },
     });
   };

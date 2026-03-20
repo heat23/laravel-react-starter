@@ -27,7 +27,7 @@ import {
 import { LoadingButton } from '@/Components/ui/loading-button';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { AnalyticsEvents } from '@/lib/events';
+import { AnalyticsEvents, type PlanKey } from '@/lib/events';
 import { formatDate } from '@/lib/format';
 
 interface SubscriptionInfo {
@@ -126,8 +126,8 @@ export default function BillingIndex() {
       setCheckoutSuccess(true);
 
       track(AnalyticsEvents.BILLING_CHECKOUT_COMPLETED, {
-        plan: subscription?.name ?? 'unknown',
-        price_id: subscription?.priceId ?? 'unknown',
+        plan: (subscription?.name ?? 'unknown') as PlanKey,
+        price_id: subscription?.priceId ?? undefined,
         billing_period: (subscription?.priceId?.includes('annual') || subscription?.priceId?.includes('yearly')) ? 'annual' : 'monthly',
       });
 

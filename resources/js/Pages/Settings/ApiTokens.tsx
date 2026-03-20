@@ -265,7 +265,7 @@ function CreateTokenDialog({
     }
 
     setCreatedToken(data.token);
-    track(AnalyticsEvents.FEATURE_API_TOKEN_CREATED);
+    track(AnalyticsEvents.FEATURE_USED, { feature_name: 'api_token_created' });
     toast.success('API token created.');
   };
 

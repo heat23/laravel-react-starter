@@ -19,7 +19,7 @@ import { LoadingButton } from '@/Components/ui/loading-button';
 import { ToggleGroup, ToggleGroupItem } from '@/Components/ui/toggle-group';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { AnalyticsEvents } from '@/lib/events';
+import { AnalyticsEvents, type BillingPeriod, type PlanKey } from '@/lib/events';
 import type { PageProps } from '@/types';
 
 interface TierConfig {
@@ -106,8 +106,8 @@ export default function Pricing() {
 
   const handlePlanSelect = (planKey: string) => {
     track(AnalyticsEvents.BILLING_PLAN_SELECTED, {
-      plan: planKey,
-      billing_period: billingPeriod,
+      plan: planKey as PlanKey,
+      billing_period: billingPeriod as BillingPeriod,
     });
   };
 
@@ -120,9 +120,9 @@ export default function Pricing() {
 
     handlePlanSelect(planKey);
     track(AnalyticsEvents.BILLING_CHECKOUT_STARTED, {
-      plan: planKey,
-      price_id: priceId ?? '',
-      billing_period: billingPeriod,
+      plan: planKey as PlanKey,
+      price_id: priceId ?? undefined,
+      billing_period: billingPeriod as BillingPeriod,
     });
 
     setCheckoutLoading(planKey);

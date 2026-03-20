@@ -14,11 +14,13 @@ All events use `category.action` format with snake_case:
 
 ### Auth Events
 
+> **PII rule:** Never include `email` or any personally identifiable information in GA4 event properties. Sending email addresses to GA4 violates GDPR/CCPA.
+
 | Event | Properties | Funnel Stage |
 |-------|-----------|--------------|
-| `auth.login` | `email` | Engagement |
-| `auth.logout` | `email` | — |
-| `auth.register` | `email`, `signup_source` | Registration |
+| `auth.login` | `source` | Engagement |
+| `auth.logout` | — | — |
+| `auth.register` | `source` | Registration |
 | `auth.verify_email` | — | Registration |
 | `auth.password_reset` | — | — |
 

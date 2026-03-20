@@ -46,7 +46,7 @@ export default function Edit({
   const handleTimezoneChange = async (newTimezone: string) => {
     const success = await saveTimezone(newTimezone);
     if (success) {
-      track(AnalyticsEvents.FEATURE_SETTINGS_UPDATED, { setting_key: 'profile' });
+      track(AnalyticsEvents.FEATURE_SETTINGS_UPDATED, { setting_key: 'timezone' });
       toast.success('Timezone updated successfully');
     } else {
       toast.error(

@@ -387,7 +387,7 @@ function CreateEndpointDialog({
     }
 
     setCreatedSecret(data.secret);
-    track(AnalyticsEvents.FEATURE_WEBHOOK_CREATED);
+    track(AnalyticsEvents.FEATURE_USED, { feature_name: 'webhook_created' });
     toast.success('Webhook endpoint created.');
   };
 

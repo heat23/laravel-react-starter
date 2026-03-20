@@ -4,6 +4,11 @@
  *
  * Naming convention: category.action (snake_case)
  * See docs/EVENT_TAXONOMY.md for full specification.
+ *
+ * Feature tracking pattern: all feature actions use FEATURE_USED with a
+ * consistent `feature_name` value (e.g. 'api_token_created', 'webhook_created',
+ * '2fa_enabled'). Dedicated per-feature events were removed to allow unified
+ * feature adoption queries in GA4.
  */
 export const AnalyticsEvents = {
   // Auth
@@ -23,14 +28,11 @@ export const AnalyticsEvents = {
   BILLING_CHECKOUT_COMPLETED: 'billing.checkout_completed',
   BILLING_SUBSCRIPTION_CANCELED: 'billing.subscription_canceled',
 
-  // Feature usage
+  // Feature usage — all features use FEATURE_USED with feature_name property
   FEATURE_USED: 'feature.used',
-  FEATURE_API_TOKEN_CREATED: 'feature.api_token_created',
-  FEATURE_WEBHOOK_CREATED: 'feature.webhook_created',
   FEATURE_SETTINGS_UPDATED: 'feature.settings_updated',
 
   // Engagement
-  ENGAGEMENT_DASHBOARD_VIEWED: 'engagement.dashboard_viewed',
   ENGAGEMENT_PAGE_VIEWED: 'engagement.page_viewed',
 
   // Errors
@@ -40,27 +42,32 @@ export const AnalyticsEvents = {
 export type AnalyticsEventName =
   (typeof AnalyticsEvents)[keyof typeof AnalyticsEvents];
 
+/** Valid Stripe billing periods. */
+export type BillingPeriod = 'monthly' | 'annual';
+
+/** Valid plan keys — mirrors config/plans.php. */
+export type PlanKey = 'free' | 'pro' | 'team' | 'enterprise';
+
 /**
  * Per-event property schemas.
  * TypeScript enforces that each event receives only its declared properties.
  */
 export type EventPropertyMap = {
   [AnalyticsEvents.AUTH_LOGIN]: { source?: string } | undefined;
-  [AnalyticsEvents.AUTH_REGISTER]: { signup_source?: string } | undefined;
+  // Both auth events use `source` for attribution consistency across GA4 queries.
+  // NEVER include `email` — sending email addresses to GA4 violates GDPR/CCPA.
+  [AnalyticsEvents.AUTH_REGISTER]: { source?: string } | undefined;
   [AnalyticsEvents.AUTH_EMAIL_VERIFIED]: Record<string, never> | undefined;
   [AnalyticsEvents.ONBOARDING_STARTED]: undefined;
   [AnalyticsEvents.ONBOARDING_STEP_COMPLETED]: { step: string };
   [AnalyticsEvents.ONBOARDING_COMPLETED]: undefined;
   [AnalyticsEvents.BILLING_PRICING_VIEWED]: undefined;
-  [AnalyticsEvents.BILLING_PLAN_SELECTED]: { plan: string; billing_period: string };
-  [AnalyticsEvents.BILLING_CHECKOUT_STARTED]: { plan: string; price_id: string; billing_period: string };
-  [AnalyticsEvents.BILLING_CHECKOUT_COMPLETED]: { plan: string; price_id: string; billing_period: string };
+  [AnalyticsEvents.BILLING_PLAN_SELECTED]: { plan: PlanKey; billing_period: BillingPeriod };
+  [AnalyticsEvents.BILLING_CHECKOUT_STARTED]: { plan: PlanKey; price_id?: string; billing_period: BillingPeriod };
+  [AnalyticsEvents.BILLING_CHECKOUT_COMPLETED]: { plan: PlanKey; price_id?: string; billing_period: BillingPeriod };
   [AnalyticsEvents.BILLING_SUBSCRIPTION_CANCELED]: { reason?: string } | undefined;
   [AnalyticsEvents.FEATURE_USED]: { feature_name: string };
-  [AnalyticsEvents.FEATURE_API_TOKEN_CREATED]: { token_name?: string } | undefined;
-  [AnalyticsEvents.FEATURE_WEBHOOK_CREATED]: { endpoint_url?: string } | undefined;
   [AnalyticsEvents.FEATURE_SETTINGS_UPDATED]: { setting_key?: string } | undefined;
-  [AnalyticsEvents.ENGAGEMENT_DASHBOARD_VIEWED]: undefined;
   [AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED]: { page: string };
   [AnalyticsEvents.ERROR_PAGE_VIEWED]: { error_code: number; error_title?: string };
 };

@@ -52,12 +52,12 @@ export default function Dashboard({ stats }: DashboardProps) {
   const health = healthLabel(stats.health_score);
 
   useEffect(() => {
-    track(AnalyticsEvents.ENGAGEMENT_DASHBOARD_VIEWED);
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'dashboard' });
   }, [track]);
 
   useEffect(() => {
     if (flash?.new_registration) {
-      track(AnalyticsEvents.AUTH_REGISTER, { signup_source: String(flash.social_provider ?? 'social') });
+      track(AnalyticsEvents.AUTH_REGISTER, { source: String(flash.social_provider ?? 'social') });
     }
   }, [flash?.new_registration, flash?.social_provider, track]);
 

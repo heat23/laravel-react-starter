@@ -42,3 +42,16 @@ export function trackEvent<E extends AnalyticsEventName>(
 
   window.gtag!('event', eventName, properties ?? {});
 }
+
+/**
+ * Set the GA4 user_id for cross-device attribution and user-level LTV analysis.
+ * Pass null on logout to clear the identity.
+ * Only runs in production when consent is granted and gtag is loaded.
+ */
+export function setUserId(userId: number | null): void {
+  if (!hasConsent() || !isGtagAvailable()) {
+    return;
+  }
+
+  window.gtag!('set', { user_id: userId ?? undefined });
+}

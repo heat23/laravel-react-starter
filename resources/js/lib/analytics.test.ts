@@ -58,11 +58,11 @@ describe('trackEvent', () => {
     window.gtag = mockGtag;
     localStorage.setItem('cookie_consent', 'accepted');
 
-    trackEvent(AnalyticsEvents.ENGAGEMENT_DASHBOARD_VIEWED);
+    trackEvent(AnalyticsEvents.ONBOARDING_STARTED);
 
     expect(mockGtag).toHaveBeenCalledWith(
       'event',
-      'engagement.dashboard_viewed',
+      'onboarding.started',
       {}
     );
   });
