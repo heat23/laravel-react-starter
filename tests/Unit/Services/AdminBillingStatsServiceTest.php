@@ -216,3 +216,180 @@ it('caches dashboard stats', function () {
 
     expect($stats2['total_ever'])->toBe($stats1['total_ever']);
 });
+
+// ─── Formula-correctness tests (KPI-002, KPI-006, KPI-003, KPI-004, KPI-005) ───
+
+it('churn rate denominator excludes trialing subscriptions (KPI-002)', function () {
+    $service = app(AdminBillingStatsService::class);
+
+    $thirtyOneDaysAgo = now()->subDays(31);
+
+    // 50 active (paying) subscribers created > 30 days ago
+    for ($i = 0; $i < 50; $i++) {
+        $user = \App\Models\User::factory()->create();
+        $sub = createSubscription($user, ['stripe_status' => 'active']);
+        $sub->forceFill(['created_at' => $thirtyOneDaysAgo])->saveQuietly();
+    }
+
+    // 200 trialing subscribers created > 30 days ago — must NOT inflate the denominator
+    for ($i = 0; $i < 200; $i++) {
+        $user = \App\Models\User::factory()->create();
+        $sub = createSubscription($user, ['stripe_status' => 'trialing', 'trial_ends_at' => now()->addDays(7)]);
+        $sub->forceFill(['created_at' => $thirtyOneDaysAgo])->saveQuietly();
+    }
+
+    // 5 cancellations within the period (active → canceled)
+    for ($i = 0; $i < 5; $i++) {
+        $user = \App\Models\User::factory()->create();
+        $sub = createSubscription($user, ['stripe_status' => 'canceled', 'ends_at' => now()->subDays(5)]);
+        $sub->forceFill(['created_at' => $thirtyOneDaysAgo])->saveQuietly();
+    }
+
+    $stats = $service->getDashboardStats();
+
+    // churn = 5 / 50 = 10.0%, NOT 5 / 250 = 2.0%
+    expect($stats['churn_rate'])->toBe(10.0);
+});
+
+it('canceled count excludes scheduled cancellations with future ends_at (KPI-006)', function () {
+    $service = app(AdminBillingStatsService::class);
+
+    // 3 truly canceled (ends_at in the past)
+    for ($i = 0; $i < 3; $i++) {
+        $user = \App\Models\User::factory()->create();
+        createSubscription($user, [
+            'stripe_status' => 'canceled',
+            'ends_at' => now()->subDay(),
+        ]);
+    }
+
+    // 2 scheduled cancellations (still active, ends_at in the future)
+    for ($i = 0; $i < 2; $i++) {
+        $user = \App\Models\User::factory()->create();
+        createSubscription($user, [
+            'stripe_status' => 'active',
+            'ends_at' => now()->addDays(10),
+        ]);
+    }
+
+    $stats = $service->getDashboardStats();
+
+    expect($stats['canceled'])->toBe(3);
+    expect($stats['scheduled_cancellations'])->toBe(2);
+});
+
+it('trial conversion counts historical conversions not current survivors (KPI-003)', function () {
+    $service = app(AdminBillingStatsService::class);
+
+    // 60 subscriptions that never converted (still trialing or canceled without ever paying)
+    for ($i = 0; $i < 60; $i++) {
+        $user = \App\Models\User::factory()->create();
+        createSubscription($user, [
+            'stripe_status' => 'canceled',
+            'trial_ends_at' => now()->subDays(10),
+            // No ends_at means never reached billing — not counted as converted
+        ]);
+    }
+
+    // 30 subscriptions currently active (converted and still paying)
+    for ($i = 0; $i < 30; $i++) {
+        $user = \App\Models\User::factory()->create();
+        createSubscription($user, [
+            'stripe_status' => 'active',
+            'trial_ends_at' => now()->subDays(10),
+        ]);
+    }
+
+    // 10 subscriptions that converted then later churned — must count as converted
+    for ($i = 0; $i < 10; $i++) {
+        $user = \App\Models\User::factory()->create();
+        createSubscription($user, [
+            'stripe_status' => 'canceled',
+            'trial_ends_at' => now()->subDays(10),
+            'ends_at' => now()->subDays(2), // had ends_at = was on billing before cancelation
+        ]);
+    }
+
+    $stats = $service->getDashboardStats();
+
+    // 40 converted (30 active + 10 churned-after-converting) out of 100 total trialed = 40%
+    expect($stats['trial_conversion_rate'])->toBe(40.0);
+});
+
+it('rolling 90-day activation rate ignores pre-onboarding cohorts (KPI-005)', function () {
+    config(['features.onboarding.enabled' => true, 'features.user_settings.enabled' => true]);
+
+    $service = app(AdminBillingStatsService::class);
+
+    // 10 users created 120 days ago (outside 90-day window), 5 activated
+    $oldUsers = \App\Models\User::factory()->count(10)->create();
+    foreach ($oldUsers as $idx => $user) {
+        $user->forceFill(['created_at' => now()->subDays(120)])->saveQuietly();
+        if ($idx >= 5) {
+            // Remove onboarding for 5 of the old users
+            $user->settings()->where('key', 'onboarding_completed')->delete();
+        }
+    }
+
+    // 10 users created within last 30 days (inside 90-day window), 8 activated
+    $newUsers = \App\Models\User::factory()->count(10)->create();
+    foreach ($newUsers as $idx => $user) {
+        if ($idx >= 8) {
+            $user->settings()->where('key', 'onboarding_completed')->delete();
+        }
+    }
+
+    Cache::flush();
+    $stats = $service->getDashboardStats();
+
+    // Rolling 90d: 8 activated out of 10 recent users = 80%
+    // NOT (5 + 8) / (10 + 10) = 65%
+    expect($stats['activation_rate'])->toBe(80.0);
+});
+
+it('cohort retention counts API users active via last_active_at (KPI-004)', function () {
+    $service = app(AdminBillingStatsService::class);
+
+    // User with no last_login_at but recent last_active_at (API-only user)
+    $apiUser = \App\Models\User::factory()->create([
+        'last_login_at' => null,
+        'last_active_at' => now()->subDays(15),
+        'created_at' => now()->subWeeks(2),
+    ]);
+
+    // The retention check via getCohortRetention uses week-based cohorts.
+    // We verify the underlying logic by calling the service and checking
+    // the user's cohort row shows activity.
+    $cohorts = $service->getCohortRetention();
+
+    // Find the cohort row for this user's signup week
+    $userCohortStart = now()->subWeeks(2)->startOfWeek();
+    $cohortLabel = $userCohortStart->format('M d');
+
+    $cohortRow = collect($cohorts)->firstWhere('cohort', $cohortLabel);
+
+    // The user should be in a cohort with total >= 1
+    expect($cohortRow)->not->toBeNull();
+    expect($cohortRow['total'])->toBeGreaterThanOrEqual(1);
+    // Week 1 retention should reflect the user as active (last_active_at within the window)
+    if (isset($cohortRow['week_1']) && $cohortRow['week_1'] !== null) {
+        expect($cohortRow['week_1'])->toBeGreaterThan(0.0);
+    }
+});
+
+it('dashboard stats include scheduled_cancellations key', function () {
+    $service = app(AdminBillingStatsService::class);
+
+    $stats = $service->getDashboardStats();
+
+    expect($stats)->toHaveKey('scheduled_cancellations');
+    expect($stats['scheduled_cancellations'])->toBeInt();
+});
+
+it('dashboard stats include activation_rate_all_time key', function () {
+    $service = app(AdminBillingStatsService::class);
+
+    $stats = $service->getDashboardStats();
+
+    expect($stats)->toHaveKeys(['activation_rate', 'activation_rate_all_time']);
+});

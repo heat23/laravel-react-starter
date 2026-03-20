@@ -16,6 +16,7 @@ enum AdminCacheKey: string
     case BILLING_STATUS = 'admin:billing:status';
     case BILLING_GROWTH_CHART = 'admin:billing:growth_chart';
     case BILLING_TRIALS = 'admin:billing:trials';
+    case BILLING_COHORT_RETENTION = 'admin:billing:cohort_retention';
 
     // Audit Logs
     case AUDIT_EVENT_TYPES = 'admin:audit_logs:event_types';

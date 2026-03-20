@@ -106,11 +106,13 @@ export interface BillingDashboardStats {
   trialing: number;
   past_due: number;
   canceled: number;
+  scheduled_cancellations: number;
   total_ever: number;
   mrr: number;
   churn_rate: number;
   trial_conversion_rate: number;
   activation_rate: number;
+  activation_rate_all_time: number;
   signup_to_paid_conversion: number;
   cohort_conversion_30d: number;
   cached_at?: string;

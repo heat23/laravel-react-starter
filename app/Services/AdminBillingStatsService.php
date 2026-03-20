@@ -15,7 +15,7 @@ class AdminBillingStatsService
     ) {}
 
     /**
-     * @return array{active_subscriptions: int, trialing: int, past_due: int, canceled: int, total_ever: int, mrr: float, churn_rate: float, trial_conversion_rate: float, activation_rate: float, signup_to_paid_conversion: float, cohort_conversion_30d: float}
+     * @return array{active_subscriptions: int, trialing: int, past_due: int, canceled: int, scheduled_cancellations: int, total_ever: int, mrr: float, churn_rate: float, trial_conversion_rate: float, activation_rate: float, activation_rate_all_time: float, signup_to_paid_conversion: float, cohort_conversion_30d: float}
      */
     public function getDashboardStats(): array
     {
@@ -31,14 +31,23 @@ class AdminBillingStatsService
                 'past_due' => DB::table('subscriptions')
                     ->where('stripe_status', 'past_due')
                     ->count(),
+                // Only truly canceled (ends_at in the past); scheduled cancellations (future ends_at) are separate
                 'canceled' => DB::table('subscriptions')
                     ->whereNotNull('ends_at')
+                    ->where('ends_at', '<=', now())
+                    ->count(),
+                // Still paying but scheduled to cancel (ends_at in the future, status still active)
+                'scheduled_cancellations' => DB::table('subscriptions')
+                    ->whereNotNull('ends_at')
+                    ->where('ends_at', '>', now())
+                    ->where('stripe_status', 'active')
                     ->count(),
                 'total_ever' => DB::table('subscriptions')->count(),
                 'mrr' => $this->calculateMrr(),
                 'churn_rate' => $this->calculateChurnRate(),
                 'trial_conversion_rate' => $this->calculateTrialConversion(),
                 'activation_rate' => $this->calculateActivationRate(),
+                'activation_rate_all_time' => $this->calculateActivationRateAllTime(),
                 'signup_to_paid_conversion' => $this->calculateSignupToPaidConversion(),
                 'cohort_conversion_30d' => $this->calculateCohortedConversion(),
                 'cached_at' => now()->toISOString(),
@@ -254,8 +263,11 @@ class AdminBillingStatsService
             })
             ->count();
 
+        // Only paying subscribers (active or past_due) count in the denominator.
+        // Trialing subscriptions are excluded to avoid artificially deflating churn rate.
         $activeAtStart = DB::table('subscriptions')
             ->where('created_at', '<', $thirtyDaysAgo)
+            ->whereIn('stripe_status', ['active', 'past_due'])
             ->where(function ($q) use ($thirtyDaysAgo) {
                 $q->whereNull('ends_at')
                     ->orWhere('ends_at', '>', $thirtyDaysAgo);
@@ -270,9 +282,40 @@ class AdminBillingStatsService
     }
 
     /**
-     * Activation rate: users who completed onboarding / total signups.
+     * Activation rate (rolling 90-day cohort): of users who signed up in the last 90 days,
+     * what % completed onboarding? This avoids denominator inflation from pre-onboarding users.
+     *
+     * @param  int  $windowDays  Cohort window in days (default 90)
      */
-    private function calculateActivationRate(): float
+    private function calculateActivationRate(int $windowDays = 90): float
+    {
+        $since = now()->subDays($windowDays);
+
+        $cohortUsers = DB::table('users')
+            ->whereNull('deleted_at')
+            ->where('created_at', '>=', $since)
+            ->count();
+
+        if ($cohortUsers === 0) {
+            return 0;
+        }
+
+        $activatedUsers = DB::table('user_settings')
+            ->join('users', 'user_settings.user_id', '=', 'users.id')
+            ->whereNull('users.deleted_at')
+            ->where('users.created_at', '>=', $since)
+            ->where('user_settings.key', 'onboarding_completed')
+            ->distinct('user_settings.user_id')
+            ->count('user_settings.user_id');
+
+        return round(($activatedUsers / $cohortUsers) * 100, 1);
+    }
+
+    /**
+     * All-time activation rate (legacy): users who completed onboarding / total signups.
+     * Kept for transparency alongside the rolling cohort metric.
+     */
+    private function calculateActivationRateAllTime(): float
     {
         $totalUsers = DB::table('users')->whereNull('deleted_at')->count();
 
@@ -317,7 +360,7 @@ class AdminBillingStatsService
      */
     public function getCohortRetention(): array
     {
-        return Cache::remember('admin:billing:cohort_retention', AdminCacheKey::CHART_TTL, function () {
+        return Cache::remember(AdminCacheKey::BILLING_COHORT_RETENTION->value, AdminCacheKey::CHART_TTL, function () {
             $cohorts = [];
             $now = now();
 
@@ -348,9 +391,14 @@ class AdminBillingStatsService
                     if ($checkDate->isAfter($now)) {
                         $retention["week_{$week}"] = null;
                     } else {
+                        // API-heavy users update last_active_at (not last_login_at) on each request.
+                        // Use an OR to retain both session-based and API-based active users.
                         $activeCount = DB::table('users')
                             ->whereIn('id', $usersInCohort)
-                            ->where('last_login_at', '>=', $checkDate)
+                            ->where(function ($q) use ($checkDate) {
+                                $q->where('last_login_at', '>=', $checkDate)
+                                    ->orWhere('last_active_at', '>=', $checkDate);
+                            })
                             ->count();
 
                         $retention["week_{$week}"] = round(($activeCount / $total) * 100, 1);
@@ -375,13 +423,19 @@ class AdminBillingStatsService
             return 0;
         }
 
+        // Proxy for "ever converted": subscription was in trial AND ever moved to a paid status.
+        // Counts subscriptions that converted even if they later churned — avoids survivor bias.
+        // A subscription "ever converted" if it is now active, OR if it is canceled/past_due
+        // and has an ends_at (meaning it was once billing and then canceled/expired).
         $converted = DB::table('subscriptions')
             ->whereNotNull('trial_ends_at')
             ->where('trial_ends_at', '<', now())
-            ->where('stripe_status', 'active')
             ->where(function ($q) {
-                $q->whereNull('ends_at')
-                    ->orWhere('ends_at', '>', now());
+                $q->where('stripe_status', 'active')
+                    ->orWhere(function ($q2) {
+                        $q2->whereIn('stripe_status', ['canceled', 'past_due', 'incomplete_expired'])
+                            ->whereNotNull('ends_at');
+                    });
             })
             ->count();
 

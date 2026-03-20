@@ -29,11 +29,11 @@ class EngagementScoringService
             webhookCount: (int) ($user->getAttribute('webhook_endpoints_count')
                 ?? $this->countWebhooks($user->id)),
             onboardingComplete: $user->relationLoaded('settings')
-                ? $user->settings->contains(fn ($s) => $s->getAttribute('key') === 'onboarding_completed' && $s->getAttribute('value') === '1')
+                ? $user->settings->contains(fn ($s) => $s->getAttribute('key') === 'onboarding_completed' && $s->getAttribute('value') !== null)
                 : DB::table('user_settings')
                     ->where('user_id', $user->id)
                     ->where('key', 'onboarding_completed')
-                    ->where('value', '1')
+                    ->whereNotNull('value')
                     ->exists(),
         );
     }
@@ -71,10 +71,12 @@ class EngagementScoringService
             // Table doesn't exist
         }
 
+        // Onboarding stores ISO timestamp as value (e.g., '2024-03-15T10:30:00.000Z'), not '1'.
+        // Check key existence (whereNotNull) rather than a specific value.
         $onboardingCompleted = DB::table('user_settings')
             ->whereIn('user_id', $userIds)
             ->where('key', 'onboarding_completed')
-            ->where('value', '1')
+            ->whereNotNull('value')
             ->pluck('user_id')
             ->flip();
 

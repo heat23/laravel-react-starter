@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Enums\AdminCacheKey;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -42,5 +44,22 @@ class RegistrationTest extends TestCase
         $user = \App\Models\User::where('email', 'attacker@test.com')->first();
         $this->assertNotNull($user);
         $this->assertFalse($user->is_admin);
+    }
+
+    public function test_registration_invalidates_signup_chart_cache(): void
+    {
+        // Pre-populate the signup chart cache key
+        Cache::put(AdminCacheKey::DASHBOARD_SIGNUP_CHART->value, ['stale' => 'data'], 3600);
+
+        $this->assertTrue(Cache::has(AdminCacheKey::DASHBOARD_SIGNUP_CHART->value));
+
+        $this->post('/register', [
+            'name' => 'New User',
+            'email' => 'newuser@example.com',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
+        ]);
+
+        $this->assertFalse(Cache::has(AdminCacheKey::DASHBOARD_SIGNUP_CHART->value));
     }
 }

@@ -57,4 +57,10 @@ class CacheInvalidationManager
     {
         Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
     }
+
+    public function invalidateOnRegistration(): void
+    {
+        Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
+        Cache::forget(AdminCacheKey::DASHBOARD_SIGNUP_CHART->value);
+    }
 }

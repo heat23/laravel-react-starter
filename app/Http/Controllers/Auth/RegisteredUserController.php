@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\CacheInvalidationManager;
 use App\Services\PlanLimitService;
 use App\Services\SessionDataMigrationService;
 use Illuminate\Auth\Events\Registered;
@@ -22,7 +23,8 @@ class RegisteredUserController extends Controller
     public function __construct(
         private SessionDataMigrationService $sessionDataMigration,
         private PlanLimitService $planLimitService,
-        private AuditService $auditService
+        private AuditService $auditService,
+        private CacheInvalidationManager $cacheInvalidation,
     ) {}
 
     /**
@@ -105,6 +107,7 @@ class RegisteredUserController extends Controller
         Auth::login($user, $request->boolean('remember', false));
 
         $this->auditService->logRegistration($user);
+        $this->cacheInvalidation->invalidateOnRegistration();
 
         return redirect(route('dashboard', absolute: false));
     }
