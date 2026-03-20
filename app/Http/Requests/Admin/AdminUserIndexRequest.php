@@ -19,6 +19,7 @@ class AdminUserIndexRequest extends FormRequest
             'verified' => ['nullable', 'in:0,1'],
             'sort' => ['nullable', 'string', 'in:name,email,created_at,last_login_at,is_admin'],
             'dir' => ['nullable', 'string', 'in:asc,desc'],
+            'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
         ];
     }
 }

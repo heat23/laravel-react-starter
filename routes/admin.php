@@ -29,12 +29,21 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         Route::get('/users/export', [AdminUsersController::class, 'export'])
             ->middleware('throttle:10,1')
             ->name('users.export');
+        Route::get('/users/create', [AdminUsersController::class, 'create'])
+            ->name('users.create');
+        Route::post('/users', [AdminUsersController::class, 'store'])
+            ->middleware('throttle:10,1')
+            ->name('users.store');
         Route::get('/users', [AdminUsersController::class, 'index'])
             ->name('users.index');
         Route::get('/users/{user}', [AdminUsersController::class, 'show'])
             ->withTrashed()
             ->middleware('throttle:30,1')
             ->name('users.show');
+        Route::patch('/users/{user}', [AdminUsersController::class, 'update'])
+            ->withTrashed()
+            ->middleware('throttle:10,1')
+            ->name('users.update');
         Route::patch('/users/{user}/toggle-admin', [AdminUsersController::class, 'toggleAdmin'])
             ->middleware('throttle:10,1')
             ->name('users.toggle-admin');

@@ -6,6 +6,8 @@ use App\Enums\AnalyticsEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminBulkDeactivateRequest;
+use App\Http\Requests\Admin\AdminCreateUserRequest;
+use App\Http\Requests\Admin\AdminUpdateUserRequest;
 use App\Http\Requests\Admin\AdminUserExportRequest;
 use App\Http\Requests\Admin\AdminUserIndexRequest;
 use App\Models\AuditLog;
@@ -17,6 +19,7 @@ use App\Support\CsvExport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,6 +30,38 @@ class AdminUsersController extends Controller
         private CacheInvalidationManager $cacheManager,
         private EngagementScoringService $engagementService,
     ) {}
+
+    public function create(): Response
+    {
+        return Inertia::render('Admin/Users/Create');
+    }
+
+    public function store(AdminCreateUserRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        if (! empty($validated['is_admin'])) {
+            $user->is_admin = true;
+            $user->save();
+        }
+
+        $this->auditService->log(AnalyticsEvent::ADMIN_USER_CREATED, [
+            'created_user_id' => $user->id,
+            'created_email' => $user->email,
+            'is_admin' => $user->is_admin,
+        ]);
+
+        $this->cacheManager->invalidateDashboard();
+
+        return redirect()->route('admin.users.index')
+            ->with('success', "User {$user->name} created successfully.");
+    }
 
     public function index(AdminUserIndexRequest $request): Response
     {
@@ -59,7 +94,8 @@ class AdminUsersController extends Controller
         $dir = ($validated['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sort, $dir);
 
-        $users = $query->paginate(config('pagination.admin.users', 25));
+        $perPage = (int) ($validated['per_page'] ?? config('pagination.admin.users', 25));
+        $users = $query->paginate($perPage);
 
         $engagementScores = $this->engagementService->scoreBatch($users->getCollection());
 
@@ -78,7 +114,7 @@ class AdminUsersController extends Controller
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
-            'filters' => $request->only('search', 'admin', 'verified', 'sort', 'dir'),
+            'filters' => $request->only('search', 'admin', 'verified', 'sort', 'dir', 'per_page'),
         ]);
     }
 
@@ -135,6 +171,24 @@ class AdminUsersController extends Controller
             'recent_audit_logs' => $recentAuditLogs,
             'subscription' => $subscription,
         ]);
+    }
+
+    public function update(AdminUpdateUserRequest $request, User $user): RedirectResponse
+    {
+        abort_unless(! $user->trashed(), 403, 'Cannot update a deactivated user.');
+
+        $before = ['name' => $user->name, 'email' => $user->email];
+        $validated = $request->validated();
+        $user->update($validated);
+        $after = ['name' => $user->name, 'email' => $user->email];
+
+        $this->auditService->log(AnalyticsEvent::ADMIN_USER_UPDATED, [
+            'target_user_id' => $user->id,
+            'changes' => ['before' => $before, 'after' => $after],
+        ]);
+
+        return redirect()->route('admin.users.show', $user)
+            ->with('success', 'User updated successfully.');
     }
 
     public function toggleAdmin(Request $request, User $user): RedirectResponse

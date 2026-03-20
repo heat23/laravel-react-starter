@@ -93,6 +93,7 @@ export interface AdminUserDetail extends AdminUser {
 export interface AdminUserFilters extends SortableFilters {
   admin?: string;
   verified?: string;
+  per_page?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -418,7 +419,12 @@ export interface AdminAuditLogsIndexProps {
     to?: string;
     sort?: string;
     dir?: string;
+    per_page?: string;
   };
+}
+
+export interface AdminCreateUserProps {
+  // No additional props needed; form submits to /admin/users
 }
 
 export interface AdminAuditLogShowProps {

@@ -143,15 +143,20 @@ export default function AdminUsersIndex({
         title="Users"
         subtitle="Manage user accounts"
         actions={
-          <ExportButton
-            href="/admin/users/export"
-            params={Object.fromEntries(
-              Object.entries(filters).filter(([, v]) => v != null) as [
-                string,
-                string,
-              ][]
-            )}
-          />
+          <div className="flex gap-2">
+            <Button asChild size="sm">
+              <Link href="/admin/users/create">Create User</Link>
+            </Button>
+            <ExportButton
+              href="/admin/users/export"
+              params={Object.fromEntries(
+                Object.entries(filters).filter(([, v]) => v != null) as [
+                  string,
+                  string,
+                ][]
+              )}
+            />
+          </div>
         }
       />
 
@@ -240,6 +245,10 @@ export default function AdminUsersIndex({
           pagination={users}
           onPage={handlePage}
           paginationLabel="users"
+          perPage={Number(filters.per_page ?? 25)}
+          onPerPageChange={(value) =>
+            updateFilter({ per_page: String(value) })
+          }
           emptyIcon={Users}
           emptyTitle="No users found"
           emptyDescription={

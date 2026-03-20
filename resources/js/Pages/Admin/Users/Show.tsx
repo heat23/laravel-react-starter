@@ -1,6 +1,6 @@
 import { ArrowLeft, KeyRound, Shield } from 'lucide-react';
 
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, usePage, useForm } from '@inertiajs/react';
 
 import PageHeader from '@/Components/layout/PageHeader';
 import { Badge } from '@/Components/ui/badge';
@@ -16,6 +16,9 @@ import { Button } from '@/Components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { ConfirmDialog } from '@/Components/ui/confirm-dialog';
 import { EmptyState } from '@/Components/ui/empty-state';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { LoadingButton } from '@/Components/ui/loading-button';
 import {
   Table,
   TableBody,
@@ -39,6 +42,16 @@ export default function AdminUserShow({
   const { confirmAction, setConfirmAction, executeAction, getDialogProps } =
     useAdminAction();
   const currentUserId = usePage<PageProps>().props.auth.user?.id;
+
+  const editForm = useForm({
+    name: user.name,
+    email: user.email,
+  });
+
+  function submitEdit(e: React.FormEvent) {
+    e.preventDefault();
+    editForm.patch(`/admin/users/${user.id}`);
+  }
 
   return (
     <AdminLayout>
@@ -255,6 +268,55 @@ export default function AdminUserShow({
             </Card>
           )}
         </div>
+
+        {/* Edit Details */}
+        {!user.deleted_at && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Edit Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={submitEdit} className="space-y-4 max-w-sm">
+                <div className="space-y-1">
+                  <Label htmlFor="edit-name">Name</Label>
+                  <Input
+                    id="edit-name"
+                    value={editForm.data.name}
+                    onChange={(e) => editForm.setData('name', e.target.value)}
+                    aria-describedby={
+                      editForm.errors.name ? 'edit-name-error' : undefined
+                    }
+                  />
+                  {editForm.errors.name && (
+                    <p id="edit-name-error" className="text-sm text-destructive">
+                      {editForm.errors.name}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="edit-email">Email</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={editForm.data.email}
+                    onChange={(e) => editForm.setData('email', e.target.value)}
+                    aria-describedby={
+                      editForm.errors.email ? 'edit-email-error' : undefined
+                    }
+                  />
+                  {editForm.errors.email && (
+                    <p id="edit-email-error" className="text-sm text-destructive">
+                      {editForm.errors.email}
+                    </p>
+                  )}
+                </div>
+                <LoadingButton type="submit" loading={editForm.processing}>
+                  Save Changes
+                </LoadingButton>
+              </form>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Audit Logs */}
         <Card>

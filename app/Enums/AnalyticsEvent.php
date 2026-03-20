@@ -37,6 +37,8 @@ enum AnalyticsEvent: string
     case ADMIN_SUBSCRIPTIONS_EXPORTED = 'admin.subscriptions_exported';
     case ADMIN_USERS_EXPORTED = 'admin.users_exported';
     case ADMIN_PASSWORD_RESET_SENT = 'admin.password_reset_sent';
+    case ADMIN_USER_CREATED = 'admin.user.created';
+    case ADMIN_USER_UPDATED = 'admin.user.updated';
     case ADMIN_FAILED_JOB_RETRY = 'admin.failed_job.retry';
     case ADMIN_FAILED_JOB_DELETE = 'admin.failed_job.delete';
     case ADMIN_FEATURE_FLAG_GLOBAL_OVERRIDE = 'admin.feature_flag.global_override';

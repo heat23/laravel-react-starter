@@ -4,6 +4,13 @@ import type { ReactNode } from "react";
 
 import { Card, CardContent } from "@/Components/ui/card";
 import { EmptyState } from "@/Components/ui/empty-state";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/Components/ui/select";
 
 import { AdminPagination } from "./AdminPagination";
 
@@ -36,6 +43,10 @@ interface AdminDataTableProps {
   emptyAction?: ReactNode;
   /** Extra classes on the Card wrapper. */
   className?: string;
+  /** Current per-page value for the selector. Omit to hide the selector. */
+  perPage?: number;
+  /** Called when the user changes the per-page select. */
+  onPerPageChange?: (value: number) => void;
 }
 
 /**
@@ -58,6 +69,8 @@ export function AdminDataTable({
   emptyDescription,
   emptyAction,
   className,
+  perPage,
+  onPerPageChange,
 }: AdminDataTableProps) {
   return (
     <>
@@ -78,15 +91,37 @@ export function AdminDataTable({
         </CardContent>
       </Card>
 
-      <AdminPagination
-        currentPage={pagination.current_page}
-        lastPage={pagination.last_page}
-        from={pagination.from}
-        to={pagination.to}
-        total={pagination.total}
-        onPage={onPage}
-        label={paginationLabel}
-      />
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <AdminPagination
+          currentPage={pagination.current_page}
+          lastPage={pagination.last_page}
+          from={pagination.from}
+          to={pagination.to}
+          total={pagination.total}
+          onPage={onPage}
+          label={paginationLabel}
+        />
+        {perPage !== undefined && onPerPageChange && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Rows per page:</span>
+            <Select
+              value={String(perPage)}
+              onValueChange={(v) => onPerPageChange(Number(v))}
+            >
+              <SelectTrigger className="h-8 w-[70px]" aria-label="Rows per page">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[10, 25, 50, 100].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
     </>
   );
 }

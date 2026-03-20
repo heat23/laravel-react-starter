@@ -31,7 +31,8 @@ class AdminAuditLogController extends Controller
         $dir = ($validated['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $query->orderBy($sort, $dir);
 
-        $logs = $query->paginate(config('pagination.admin.audit_logs', 50))->through(fn (AuditLog $log) => $log->toDetailArray());
+        $perPage = (int) ($validated['per_page'] ?? config('pagination.admin.audit_logs', 50));
+        $logs = $query->paginate($perPage)->through(fn (AuditLog $log) => $log->toDetailArray());
 
         $eventTypes = Cache::remember(AdminCacheKey::AUDIT_EVENT_TYPES->value, AdminCacheKey::DEFAULT_TTL, function () {
             return AuditLog::distinct()->pluck('event')->sort()->values();
@@ -40,7 +41,7 @@ class AdminAuditLogController extends Controller
         return Inertia::render('Admin/AuditLogs/Index', [
             'logs' => $logs,
             'eventTypes' => $eventTypes,
-            'filters' => $request->only('event', 'user_id', 'from', 'to', 'sort', 'dir'),
+            'filters' => $request->only('event', 'user_id', 'from', 'to', 'sort', 'dir', 'per_page'),
         ]);
     }
 
