@@ -7,6 +7,7 @@ import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { formatRelativeTime } from '@/lib/format';
 import type { AdminDataHealthProps, DataHealthCheck } from '@/types/admin';
 
 function statusIcon(status: DataHealthCheck['status']) {
@@ -40,7 +41,7 @@ function formatCheckName(key: string): string {
     .join(' ');
 }
 
-export default function AdminDataHealth({ checks }: AdminDataHealthProps) {
+export default function AdminDataHealth({ checks, ran_at }: AdminDataHealthProps) {
   const checkEntries = Object.entries(checks);
   const hasIssues = checkEntries.some(([, check]) => check.status !== 'ok');
 
@@ -51,12 +52,17 @@ export default function AdminDataHealth({ checks }: AdminDataHealthProps) {
         title="Data Health"
         subtitle="Check for orphaned records, stale data, and inconsistencies"
         actions={
-          <Button
-            variant="outline"
-            onClick={() => router.reload({ only: ['checks'] })}
-          >
-            Re-run Checks
-          </Button>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">
+              Last checked: {formatRelativeTime(ran_at)}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => router.reload({ only: ['checks', 'ran_at'] })}
+            >
+              Re-run Checks
+            </Button>
+          </div>
         }
       />
 

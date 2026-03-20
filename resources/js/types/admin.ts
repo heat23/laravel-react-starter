@@ -442,6 +442,12 @@ export interface CohortRetention {
   week_8: number | null;
 }
 
+export interface AnalyticsThresholds {
+  churn_rate: { warning: number; critical: number };
+  mrr_drop_percent: { warning: number; critical: number };
+  trial_conversion: { warning_below: number; critical_below: number };
+}
+
 export interface AdminBillingDashboardProps {
   stats: BillingDashboardStats;
   tier_distribution: TierDistribution[];
@@ -450,6 +456,7 @@ export interface AdminBillingDashboardProps {
   trial_stats: BillingTrialStats;
   recent_events: BillingEvent[];
   cohort_retention: CohortRetention[];
+  analyticsThresholds: AnalyticsThresholds;
 }
 
 export interface AdminBillingSubscriptionsProps {
@@ -580,6 +587,7 @@ export interface AdminFailedJobShowProps {
 
 export interface AdminDataHealthProps {
   checks: DataHealthResults;
+  ran_at: string;
 }
 
 export interface AdminFeatureFlagsIndexProps {

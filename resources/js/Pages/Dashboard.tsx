@@ -13,6 +13,7 @@ import { useEffect } from 'react';
 import { Head, usePage } from '@inertiajs/react';
 
 import PageHeader from '@/Components/layout/PageHeader';
+import { formatRelativeTime } from '@/lib/format';
 import {
   Card,
   CardContent,
@@ -35,8 +36,14 @@ interface DashboardStats {
   tokens_count: number;
 }
 
+interface RecentActivityItem {
+  event: string;
+  created_at: string;
+}
+
 interface DashboardProps {
   stats: DashboardStats;
+  recent_activity: RecentActivityItem[];
 }
 
 function healthLabel(score: number): { label: string; color: string } {
@@ -46,7 +53,7 @@ function healthLabel(score: number): { label: string; color: string } {
   return { label: 'Getting Started', color: 'text-muted-foreground' };
 }
 
-export default function Dashboard({ stats }: DashboardProps) {
+export default function Dashboard({ stats, recent_activity }: DashboardProps) {
   const { track } = useAnalytics();
   const { flash } = usePage<{ flash: Record<string, unknown> }>().props;
   const health = healthLabel(stats.health_score);
@@ -169,7 +176,21 @@ export default function Dashboard({ stats }: DashboardProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {stats.days_since_signup === 0 ? (
+                {recent_activity.length > 0 ? (
+                  <div className="space-y-2">
+                    {recent_activity.map((item, i) => (
+                      <div key={i} className="flex items-center justify-between gap-3 text-sm">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Activity className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="truncate">{item.event}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground shrink-0">
+                          {formatRelativeTime(item.created_at)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : stats.days_since_signup === 0 ? (
                   <div className="flex items-center gap-3 text-sm">
                     <Users className="h-4 w-4 text-primary" />
                     <span>Account created today — welcome!</span>

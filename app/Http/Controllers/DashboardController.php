@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\CustomerHealthService;
 use Inertia\Inertia;
@@ -26,8 +27,19 @@ class DashboardController extends Controller
             'tokens_count' => $user->tokens_count,
         ];
 
+        $recentActivity = AuditLog::where('user_id', $user->id)
+            ->latest()
+            ->limit(5)
+            ->get(['id', 'event', 'created_at', 'ip_address'])
+            ->map(fn (AuditLog $log) => [
+                'event' => $log->event,
+                'created_at' => $log->created_at?->toISOString(),
+            ])
+            ->toArray();
+
         return Inertia::render('Dashboard', [
             'stats' => $stats,
+            'recent_activity' => $recentActivity,
         ]);
     }
 

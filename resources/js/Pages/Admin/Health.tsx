@@ -17,7 +17,7 @@ import {
 } from '@/Components/ui/select';
 import { Switch } from '@/Components/ui/switch';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { capitalize } from '@/lib/format';
+import { capitalize, formatRelativeTime } from '@/lib/format';
 import type { AdminHealthProps } from '@/types/admin';
 
 function StatusIcon({ status }: { status: string }) {
@@ -106,7 +106,7 @@ export default function AdminHealth({ health }: AdminHealthProps) {
               {capitalize(health.status)}
             </Badge>
             <span className="text-sm text-muted-foreground">
-              {new Date(health.timestamp).toLocaleString()}
+              {formatRelativeTime(health.timestamp)}
             </span>
             {refreshing && (
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />

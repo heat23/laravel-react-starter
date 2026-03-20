@@ -46,6 +46,7 @@ class AdminBillingController extends Controller
             'trial_stats' => $this->statsService->getTrialStats(),
             'recent_events' => $recentEvents,
             'cohort_retention' => $this->statsService->getCohortRetention(),
+            'analyticsThresholds' => config('analytics-thresholds'),
         ]);
     }
 

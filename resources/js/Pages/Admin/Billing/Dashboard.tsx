@@ -51,6 +51,7 @@ export default function BillingDashboard({
   trial_stats,
   recent_events,
   cohort_retention,
+  analyticsThresholds,
 }: AdminBillingDashboardProps) {
   const hasSubscriptions = stats.total_ever > 0;
 
@@ -60,7 +61,8 @@ export default function BillingDashboard({
       value: stats.mrr,
       icon: DollarSign,
       format: formatCurrency,
-      description: 'Monthly recurring revenue',
+      description:
+        'Excludes trialing subscriptions. Committed MRR from active paying subscribers only.',
     },
     {
       title: 'Active Subscriptions',
@@ -75,7 +77,11 @@ export default function BillingDashboard({
       icon: TrendingDown,
       format: (n) => `${n}%`,
       description: 'Cancellations vs active',
-      threshold: { warning: 10, critical: 20, direction: 'above' },
+      threshold: {
+        warning: analyticsThresholds.churn_rate.warning,
+        critical: analyticsThresholds.churn_rate.critical,
+        direction: 'above',
+      },
     },
     {
       title: 'Trial Conversion',
@@ -84,7 +90,11 @@ export default function BillingDashboard({
       format: (n) => `${n}%`,
       description: 'Trial to paid',
       href: '/admin/billing/subscriptions?status=trialing',
-      threshold: { warning: 20, critical: 10, direction: 'below' },
+      threshold: {
+        warning: analyticsThresholds.trial_conversion.warning_below,
+        critical: analyticsThresholds.trial_conversion.critical_below,
+        direction: 'below',
+      },
     },
   ];
 
@@ -148,10 +158,10 @@ export default function BillingDashboard({
         <AdminStatsGrid stats={primaryKpis} cachedAt={stats.cached_at} />
 
         {/* Secondary stats */}
-        <AdminStatsGrid stats={secondaryKpis} />
+        <AdminStatsGrid stats={secondaryKpis} cachedAt={stats.cached_at} />
 
         {/* Growth metrics */}
-        <AdminStatsGrid stats={growthKpis} />
+        <AdminStatsGrid stats={growthKpis} cachedAt={stats.cached_at} />
 
         {!hasSubscriptions ? (
           <EmptyState

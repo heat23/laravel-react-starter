@@ -13,6 +13,7 @@ class AdminDataHealthController extends Controller
     {
         return Inertia::render('Admin/DataHealth', [
             'checks' => $dataHealth->runAllChecks(),
+            'ran_at' => now()->toISOString(),
         ]);
     }
 }
