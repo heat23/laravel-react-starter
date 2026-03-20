@@ -50,6 +50,7 @@ export default function Webhooks({ available_events }: WebhooksProps) {
   const [deleteTarget, setDeleteTarget] = useState<WebhookEndpoint | null>(
     null
   );
+  const { track } = useAnalytics();
 
   const fetchEndpoints = useCallback(async () => {
     try {
@@ -80,6 +81,7 @@ export default function Webhooks({ available_events }: WebhooksProps) {
       );
       return;
     }
+    track(AnalyticsEvents.FEATURE_USED, { feature_name: 'webhook_deleted' });
     fetchEndpoints();
     toast.success('Webhook endpoint deleted.');
   };

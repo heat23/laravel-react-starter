@@ -55,8 +55,10 @@ export default function Pricing() {
   const tierEntries = useMemo(() => Object.entries(tiers), [tiers]);
 
   useEffect(() => {
-    track(AnalyticsEvents.BILLING_PRICING_VIEWED);
-  }, [track]);
+    track(AnalyticsEvents.BILLING_PRICING_VIEWED, {
+      user_type: auth.user ? 'authenticated' : 'anonymous',
+    });
+  }, [track]); // eslint-disable-line react-hooks/exhaustive-deps
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>(
     'monthly'
   );
@@ -104,13 +106,6 @@ export default function Pricing() {
 
   const isSubscribed = !!currentPlan && currentPlan !== 'free';
 
-  const handlePlanSelect = (planKey: string) => {
-    track(AnalyticsEvents.BILLING_PLAN_SELECTED, {
-      plan: planKey as PlanKey,
-      billing_period: billingPeriod as BillingPeriod,
-    });
-  };
-
   const handleCheckout = (planKey: string) => {
     const tier = tiers[planKey];
     const priceId =
@@ -118,7 +113,6 @@ export default function Pricing() {
         ? tier.stripe_price_id_annual
         : tier.stripe_price_id;
 
-    handlePlanSelect(planKey);
     track(AnalyticsEvents.BILLING_CHECKOUT_STARTED, {
       plan: planKey as PlanKey,
       price_id: priceId ?? undefined,
@@ -219,6 +213,14 @@ export default function Pricing() {
                 <Card
                   key={key}
                   className={isCurrent ? 'border-primary shadow-md' : ''}
+                  onMouseEnter={() => {
+                    if (!isCurrent && !isEnterprise && key !== 'free') {
+                      track(AnalyticsEvents.BILLING_PLAN_SELECTED, {
+                        plan: key as PlanKey,
+                        billing_period: billingPeriod as BillingPeriod,
+                      });
+                    }
+                  }}
                 >
                   <CardHeader>
                     <div className="flex items-center justify-between">

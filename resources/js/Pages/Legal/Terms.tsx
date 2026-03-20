@@ -1,12 +1,22 @@
 import { ArrowLeft } from 'lucide-react';
 
+import { useEffect } from 'react';
+
 import { Head, Link } from '@inertiajs/react';
 
 import { TermsContent } from '@/Components/legal/LegalContent';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 
 export default function Terms() {
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'legal-terms' });
+  }, [track]);
+
   return (
     <>
       <Head title="Terms of Service">

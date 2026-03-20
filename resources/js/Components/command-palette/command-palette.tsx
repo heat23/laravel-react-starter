@@ -1,6 +1,8 @@
 import { router, usePage } from "@inertiajs/react";
 
+import { useAnalytics } from "@/hooks/useAnalytics";
 import { useTheme } from "@/Components/theme";
+import { AnalyticsEvents } from "@/lib/events";
 import {
   CommandDialog,
   CommandEmpty,
@@ -22,6 +24,7 @@ interface CommandPaletteProps {
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const { features } = usePage<PageProps>().props;
   const { resolvedTheme, setTheme } = useTheme();
+  const { track } = useAnalytics();
 
   const close = () => onOpenChange(false);
 
@@ -48,7 +51,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
     if (!command) return;
 
     if (command.id === "action-logout") {
-      router.post(route("logout"));
+      router.post(route("logout"), {}, {
+        onBefore: () => {
+          track(AnalyticsEvents.AUTH_LOGOUT);
+        },
+      });
       close();
       return;
     }

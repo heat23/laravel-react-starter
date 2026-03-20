@@ -4,6 +4,9 @@ import { useRef, useState } from "react";
 
 import { useForm } from "@inertiajs/react";
 
+import { useAnalytics } from "@/hooks/useAnalytics";
+import { AnalyticsEvents } from "@/lib/events";
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +29,7 @@ interface DeleteUserFormProps {
 export default function DeleteUserForm({ className = "" }: DeleteUserFormProps) {
   const [open, setOpen] = useState(false);
   const passwordInput = useRef<HTMLInputElement>(null);
+  const { track } = useAnalytics();
 
   const {
     data,
@@ -45,6 +49,7 @@ export default function DeleteUserForm({ className = "" }: DeleteUserFormProps) 
     destroy(route("profile.destroy"), {
       preserveScroll: true,
       onSuccess: () => {
+        track(AnalyticsEvents.FEATURE_USED, { feature_name: 'account_deleted' });
         setOpen(false);
       },
       onError: () => {

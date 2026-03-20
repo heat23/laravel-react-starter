@@ -4,6 +4,9 @@ import type { PropsWithChildren, ReactNode } from 'react';
 
 import { Link, usePage } from '@inertiajs/react';
 
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
+
 import { ImpersonationBanner } from '@/Components/admin/ImpersonationBanner';
 import { Logo, TextLogo } from '@/Components/branding/Logo';
 import {
@@ -53,6 +56,7 @@ function SidebarInner({
     useSidebar();
   const { open: commandPaletteOpen, setOpen: setCommandPaletteOpen } =
     useCommandPalette();
+  const { track } = useAnalytics();
 
   const visibleGroups = navigationGroups ?? getVisibleGroups(features);
 
@@ -146,6 +150,7 @@ function SidebarInner({
               method="post"
               as="button"
               className="w-full"
+              onBefore={() => track(AnalyticsEvents.AUTH_LOGOUT)}
             >
               <LogOut className="mr-2 h-4 w-4" />
               {!collapsed && 'Log out'}
@@ -197,6 +202,7 @@ function SidebarInner({
                 method="post"
                 as="button"
                 className="w-full"
+                onBefore={() => track(AnalyticsEvents.AUTH_LOGOUT)}
               >
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out

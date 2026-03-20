@@ -221,7 +221,7 @@ class SubscriptionController extends Controller
 
             $this->invalidateAdminCaches();
 
-            return redirect()->route('billing.index')->with('success', 'Plan updated successfully.');
+            return redirect()->route('billing.index', ['swapped' => 'true'])->with('success', 'Plan updated successfully.');
         } catch (ConcurrentOperationException) {
             return back()->with('error', 'A plan change is already in progress. Please try again.');
         } catch (IncompletePayment $e) {

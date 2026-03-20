@@ -6,10 +6,14 @@ import {
     ToggleRight,
 } from 'lucide-react';
 
+import { useEffect } from 'react';
+
 import { Head, Link } from '@inertiajs/react';
 
 import { Logo, TextLogo } from '@/Components/branding/Logo';
 import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
 import type { FeaturePageProps } from '@/types/index';
 
@@ -28,6 +32,11 @@ const flags = [
 ];
 
 export default function FeatureFlags({ title, metaDescription, breadcrumbs }: FeaturePageProps) {
+    const { track } = useAnalytics();
+
+    useEffect(() => {
+        track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'features-feature-flags' });
+    }, [track]);
     return (
         <>
             <Head title={title}>

@@ -244,6 +244,7 @@ function EnabledState() {
   const [disableDialogOpen, setDisableDialogOpen] = useState(false);
 
   const disableForm = useForm({ password: '' });
+  const { track } = useAnalytics();
 
   const fetchRecoveryCodes = async () => {
     setLoadingCodes(true);
@@ -270,6 +271,7 @@ function EnabledState() {
       {},
       {
         onSuccess: () => {
+          track(AnalyticsEvents.FEATURE_USED, { feature_name: '2fa_recovery_regenerated' });
           setRecoveryCodes(null);
           setShowRecoveryCodes(false);
           toast.success('Recovery codes have been regenerated.');
@@ -280,7 +282,10 @@ function EnabledState() {
 
   const handleDisable = () => {
     disableForm.delete(route('two-factor.disable'), {
-      onSuccess: () => setDisableDialogOpen(false),
+      onSuccess: () => {
+        track(AnalyticsEvents.FEATURE_USED, { feature_name: '2fa_disabled' });
+        setDisableDialogOpen(false);
+      },
       onError: () => {},
     });
   };

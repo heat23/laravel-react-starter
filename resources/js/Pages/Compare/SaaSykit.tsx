@@ -1,10 +1,14 @@
 import { ArrowRight } from 'lucide-react';
 
+import { useEffect } from 'react';
+
 import { Head, Link } from '@inertiajs/react';
 
 import { ComparisonTable } from '@/Components/compare/ComparisonTable';
 import { Logo, TextLogo } from '@/Components/branding/Logo';
 import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
 import type { ComparisonPageProps } from '@/types/index';
 
@@ -14,6 +18,12 @@ export default function SaaSykit({
   features,
   breadcrumbs,
 }: ComparisonPageProps) {
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'compare-saasykit' });
+  }, [track]);
+
   return (
     <>
       <Head title={title}>

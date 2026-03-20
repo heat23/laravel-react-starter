@@ -110,6 +110,7 @@ export default function BillingIndex() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
+  const [planSwapped, setPlanSwapped] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
@@ -122,6 +123,7 @@ export default function BillingIndex() {
     }
 
     const params = new URLSearchParams(window.location.search);
+
     if (params.get('checkout') === 'success') {
       setCheckoutSuccess(true);
 
@@ -132,12 +134,23 @@ export default function BillingIndex() {
       });
 
       params.delete('checkout');
-      const nextQuery = params.toString();
-      const nextUrl = nextQuery
-        ? `${window.location.pathname}?${nextQuery}`
-        : window.location.pathname;
-      window.history.replaceState({}, '', nextUrl);
     }
+
+    if (params.get('swapped') === 'true') {
+      setPlanSwapped(true);
+
+      track(AnalyticsEvents.BILLING_PLAN_SWAPPED, {
+        to_plan: subscription?.name ?? undefined,
+      });
+
+      params.delete('swapped');
+    }
+
+    const nextQuery = params.toString();
+    const nextUrl = nextQuery
+      ? `${window.location.pathname}?${nextQuery}`
+      : window.location.pathname;
+    window.history.replaceState({}, '', nextUrl);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handlePortal = () => {

@@ -8,7 +8,9 @@ import InputError from '@/Components/InputError';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { LoadingButton } from '@/Components/ui/loading-button';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { AnalyticsEvents } from '@/lib/events';
 
 interface UpdatePasswordFormProps {
     className?: string;
@@ -17,6 +19,7 @@ interface UpdatePasswordFormProps {
 export default function UpdatePasswordForm({ className = '' }: UpdatePasswordFormProps) {
     const passwordInput = useRef<HTMLInputElement>(null);
     const currentPasswordInput = useRef<HTMLInputElement>(null);
+    const { track } = useAnalytics();
 
     const {
         data,
@@ -58,7 +61,10 @@ export default function UpdatePasswordForm({ className = '' }: UpdatePasswordFor
 
         put(route('password.update'), {
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onSuccess: () => {
+                reset();
+                track(AnalyticsEvents.FEATURE_SETTINGS_UPDATED, { setting_key: 'password' });
+            },
             onError: (errors) => {
                 if (errors.password) {
                     reset('password', 'password_confirmation');

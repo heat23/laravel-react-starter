@@ -9,8 +9,10 @@ import InputError from '@/Components/InputError';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { LoadingButton } from '@/Components/ui/loading-button';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
+import { AnalyticsEvents } from '@/lib/events';
 import type { User } from '@/types';
 
 const profileSchema = z.object({
@@ -36,6 +38,7 @@ export default function UpdateProfileInformationForm({
     className = '',
 }: UpdateProfileInformationFormProps) {
     const user = usePage<PageProps>().props.auth.user;
+    const { track } = useAnalytics();
     const { errors: clientErrors, validateField, validateAll, clearError } = useFormValidation(profileSchema);
 
     const { data, setData, patch, errors, processing, recentlySuccessful, isDirty } =
@@ -51,7 +54,11 @@ export default function UpdateProfileInformationForm({
 
         if (!validateAll(data)) return;
 
-        patch(route('profile.update'));
+        patch(route('profile.update'), {
+            onSuccess: () => {
+                track(AnalyticsEvents.FEATURE_SETTINGS_UPDATED, { setting_key: 'profile_info' });
+            },
+        });
     };
 
     return (

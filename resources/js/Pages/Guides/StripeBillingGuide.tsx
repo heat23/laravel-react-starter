@@ -1,10 +1,14 @@
 import { ArrowRight } from 'lucide-react';
 
+import { useEffect } from 'react';
+
 import { Head, Link } from '@inertiajs/react';
 
 import { TableOfContents, type TocSection } from '@/Components/blog/TableOfContents';
 import { Logo, TextLogo } from '@/Components/branding/Logo';
 import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
 import type { GuidePageProps } from '@/types/index';
 
@@ -25,6 +29,12 @@ const sections: TocSection[] = [
 ];
 
 export default function StripeBillingGuide({ title, metaDescription, appName, breadcrumbs }: GuidePageProps) {
+    const { track } = useAnalytics();
+
+    useEffect(() => {
+        track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'guides-stripe-billing' });
+    }, [track]);
+
     const articleSchema = JSON.stringify({
         '@context': 'https://schema.org',
         '@type': 'Article',

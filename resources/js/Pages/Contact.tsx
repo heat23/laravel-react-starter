@@ -43,7 +43,10 @@ export default function Contact() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     post(route('contact.store'), {
-      onSuccess: () => reset(),
+      onSuccess: () => {
+        reset();
+        track(AnalyticsEvents.CONTACT_FORM_SUBMITTED);
+      },
     });
   }
 

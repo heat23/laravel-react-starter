@@ -40,6 +40,7 @@ export default function ApiTokens() {
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ApiToken | null>(null);
+  const { track } = useAnalytics();
 
   const fetchTokens = useCallback(async () => {
     try {
@@ -68,6 +69,7 @@ export default function ApiTokens() {
       toast.error('Could not revoke the token. Please try again.');
       return;
     }
+    track(AnalyticsEvents.FEATURE_USED, { feature_name: 'api_token_deleted' });
     fetchTokens();
     toast.success('API token revoked.');
   };
