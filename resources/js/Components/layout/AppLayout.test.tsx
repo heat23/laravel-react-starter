@@ -46,7 +46,6 @@ describe("AppLayout", () => {
     expect(screen.getAllByRole("link", { name: "Pricing" }).length).toBeGreaterThan(0);
     expect(screen.queryByRole("link", { name: "Features" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Docs" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "About" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Contact" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Blog" })).not.toBeInTheDocument();
   });

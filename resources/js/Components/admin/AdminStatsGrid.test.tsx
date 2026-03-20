@@ -75,19 +75,19 @@ describe("AdminStatsGrid", () => {
     const { container } = render(
       <AdminStatsGrid stats={stats} columns="grid-cols-2" />,
     );
-    const grid = container.firstElementChild;
+    const grid = container.querySelector('.grid');
     expect(grid?.className).toContain("grid-cols-2");
   });
 
   it("uses default columns when not specified", () => {
     const { container } = render(<AdminStatsGrid stats={stats} />);
-    const grid = container.firstElementChild;
+    const grid = container.querySelector('.grid');
     expect(grid?.className).toContain("lg:grid-cols-4");
   });
 
   it("renders empty grid when no stats", () => {
     const { container } = render(<AdminStatsGrid stats={[]} />);
-    const grid = container.firstElementChild;
+    const grid = container.querySelector('.grid');
     expect(grid?.children.length).toBe(0);
   });
 });
