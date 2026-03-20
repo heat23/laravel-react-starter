@@ -29,7 +29,7 @@ interface FaqItem {
 interface WelcomeProps {
   canLogin: boolean;
   canRegister: boolean;
-  faqs: FaqItem[];
+  faqs?: FaqItem[];
   featureCount?: number;
   testCount?: number;
   planCount?: number;
@@ -95,7 +95,7 @@ type WelcomeComponent = ((props: WelcomeProps) => JSX.Element) & {
 const Welcome: WelcomeComponent = ({
   canLogin,
   canRegister,
-  faqs,
+  faqs = [],
   featureCount = 11,
   testCount = 90,
   planCount = 4,
