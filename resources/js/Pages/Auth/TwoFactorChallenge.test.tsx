@@ -159,7 +159,7 @@ describe('TwoFactorChallenge Page', () => {
       const form = screen.getByRole('button', { name: /verify/i }).closest('form')!;
       fireEvent.submit(form);
 
-      expect(mockPost).toHaveBeenCalledWith(expect.stringContaining('two-factor'));
+      expect(mockPost).toHaveBeenCalledWith(expect.stringContaining('two-factor'), expect.anything());
     });
   });
 

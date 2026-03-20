@@ -118,12 +118,11 @@ it('calculates trial conversion rate', function () {
         'trial_ends_at' => now()->subDays(5),
     ]);
 
-    // Unconverted trial (canceled)
+    // Unconverted trial (canceled before billing started — no ends_at)
     $user2 = \App\Models\User::factory()->create();
     createSubscription($user2, [
         'stripe_status' => 'canceled',
         'trial_ends_at' => now()->subDays(3),
-        'ends_at' => now()->subDay(),
     ]);
 
     // 1 converted out of 2 trialed = 50%
@@ -348,12 +347,16 @@ it('rolling 90-day activation rate ignores pre-onboarding cohorts (KPI-005)', fu
 });
 
 it('cohort retention counts API users active via last_active_at (KPI-004)', function () {
+    Cache::flush();
+
     $service = app(AdminBillingStatsService::class);
 
-    // User with no last_login_at but recent last_active_at (API-only user)
+    // User created 2 weeks ago with no login but recent API activity (within week 1 window)
+    // week_1 checkDate ≈ now()->subWeeks(2)->startOfWeek() + 1 week ≈ 7 days ago
+    // last_active_at must be >= checkDate to show retention
     $apiUser = \App\Models\User::factory()->create([
         'last_login_at' => null,
-        'last_active_at' => now()->subDays(15),
+        'last_active_at' => now()->subDays(3),
         'created_at' => now()->subWeeks(2),
     ]);
 

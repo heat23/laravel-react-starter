@@ -15,7 +15,7 @@ it('returns 403 for non-admin on impersonate', function () {
 });
 
 it('allows admin to impersonate a regular user', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     $response = $this->actingAs($admin)->post("/admin/users/{$user->id}/impersonate");
@@ -25,7 +25,7 @@ it('allows admin to impersonate a regular user', function () {
 });
 
 it('cannot impersonate self', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->post("/admin/users/{$admin->id}/impersonate");
 
@@ -35,7 +35,7 @@ it('cannot impersonate self', function () {
 });
 
 it('cannot impersonate another admin', function () {
-    $admin1 = User::factory()->admin()->create();
+    $admin1 = User::factory()->superAdmin()->create();
     $admin2 = User::factory()->admin()->create();
 
     $response = $this->actingAs($admin1)->post("/admin/users/{$admin2->id}/impersonate");
@@ -46,7 +46,7 @@ it('cannot impersonate another admin', function () {
 });
 
 it('cannot impersonate soft-deleted user', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
     $user->delete();
 
@@ -70,7 +70,7 @@ it('allows stopping impersonation as unverified user', function () {
 });
 
 it('stops impersonation and returns to admin user', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     // Start impersonation
@@ -87,7 +87,7 @@ it('stops impersonation and returns to admin user', function () {
 });
 
 it('regenerates session on impersonation start', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     $sessionIdBefore = session()->getId();
@@ -115,7 +115,7 @@ it('regenerates session on impersonation stop', function () {
 });
 
 it('creates audit log on impersonation start', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     $this->actingAs($admin)->post("/admin/users/{$user->id}/impersonate");
@@ -203,7 +203,7 @@ it('returns 404 for non-existent user impersonation', function () {
 });
 
 it('audit log includes admin email on start', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     $this->actingAs($admin)->post("/admin/users/{$user->id}/impersonate");

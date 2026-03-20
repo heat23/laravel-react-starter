@@ -50,9 +50,9 @@ it('admin tokens list paginates correctly', function () {
         $user->createToken('key-2');
     }
 
-    $response = $this->actingAs($admin)->get('/admin/tokens/list');
-    $tokens = $response->inertia()->prop('tokens.data');
-    expect(count($tokens))->toBeGreaterThanOrEqual(1);
+    $this->actingAs($admin)->get('/admin/tokens/list')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('tokens.data', 6));
 });
 
 it('tokens list can be searched by user email', function () {
@@ -62,11 +62,14 @@ it('tokens list can be searched by user email', function () {
     $userA->createToken('alice-token');
     $userB->createToken('bob-token');
 
-    $response = $this->actingAs($admin)->get('/admin/tokens/list?search=alice');
-    $tokens = $response->inertia()->prop('tokens.data');
-    $names = collect($tokens)->pluck('token_name');
-    expect($names)->toContain('alice-token');
-    expect($names)->not->toContain('bob-token');
+    $this->actingAs($admin)->get('/admin/tokens/list?search=alice')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('tokens.data', 1, fn ($token) => $token
+                ->where('token_name', 'alice-token')
+                ->etc()
+            )
+        );
 });
 
 it('returns 404 when revoking non-existent token', function () {

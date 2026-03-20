@@ -38,7 +38,7 @@ it('loads index page with all feature flags', function () {
 });
 
 it('enables a global override', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->patch('/admin/feature-flags/billing', [
         'enabled' => true,
@@ -53,7 +53,7 @@ it('enables a global override', function () {
 });
 
 it('disables a global override', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     // First enable it
     FeatureFlagOverride::create(['flag' => 'billing', 'user_id' => null, 'enabled' => true]);
@@ -71,7 +71,7 @@ it('disables a global override', function () {
 });
 
 it('removes a global override', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     FeatureFlagOverride::create(['flag' => 'billing', 'user_id' => null, 'enabled' => true]);
 
@@ -85,7 +85,7 @@ it('removes a global override', function () {
 });
 
 it('prevents any override on protected admin flag', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->patch('/admin/feature-flags/admin', [
         'enabled' => false,
@@ -96,7 +96,7 @@ it('prevents any override on protected admin flag', function () {
 });
 
 it('prevents per-user override on protected admin flag', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $targetUser = User::factory()->create();
 
     $response = $this->actingAs($admin)->post('/admin/feature-flags/admin/users', [
@@ -109,7 +109,7 @@ it('prevents per-user override on protected admin flag', function () {
 });
 
 it('adds a user override', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $targetUser = User::factory()->create();
 
     $response = $this->actingAs($admin)->post('/admin/feature-flags/billing/users', [
@@ -126,7 +126,7 @@ it('adds a user override', function () {
 });
 
 it('removes a user override', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $targetUser = User::factory()->create();
 
     FeatureFlagOverride::create(['flag' => 'billing', 'user_id' => $targetUser->id, 'enabled' => true]);
@@ -141,7 +141,7 @@ it('removes a user override', function () {
 });
 
 it('removes all user overrides for a flag', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user1 = User::factory()->create();
     $user2 = User::factory()->create();
 
@@ -158,7 +158,7 @@ it('removes all user overrides for a flag', function () {
 });
 
 it('returns error for unknown flag name', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->patch('/admin/feature-flags/unknown_flag', [
         'enabled' => true,
@@ -169,7 +169,7 @@ it('returns error for unknown flag name', function () {
 });
 
 it('returns validation error for non-existent user_id', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->post('/admin/feature-flags/billing/users', [
         'user_id' => 99999,
@@ -181,7 +181,7 @@ it('returns validation error for non-existent user_id', function () {
 });
 
 it('audit logs global override changes', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->patch('/admin/feature-flags/billing', [
         'enabled' => true,
@@ -196,7 +196,7 @@ it('audit logs global override changes', function () {
 });
 
 it('audit logs user override changes', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $targetUser = User::factory()->create();
 
     $response = $this->actingAs($admin)->post('/admin/feature-flags/billing/users', [
@@ -256,7 +256,7 @@ it('getUserOverrides returns targeted users for flag', function () {
 });
 
 it('stores reason when setting global override', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->patch('/admin/feature-flags/billing', [
         'enabled' => true,
@@ -271,7 +271,7 @@ it('stores reason when setting global override', function () {
 });
 
 it('stores reason when setting user override', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $targetUser = User::factory()->create();
 
     $response = $this->actingAs($admin)->post('/admin/feature-flags/billing/users', [
@@ -291,7 +291,7 @@ it('stores reason when setting user override', function () {
 });
 
 it('accepts null reason when setting override', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->patch('/admin/feature-flags/billing', [
         'enabled' => true,

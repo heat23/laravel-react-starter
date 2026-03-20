@@ -197,18 +197,31 @@ describe("Admin UI Smoke Tests", () => {
       render(
         <BillingDashboard
           stats={{
-            total_subscriptions: 10,
             active_subscriptions: 8,
-            canceled_subscriptions: 2,
-            mrr: 8000,
-            past_due_count: 1,
+            trialing: 1,
+            past_due: 1,
+            canceled: 2,
+            scheduled_cancellations: 0,
             total_ever: 10,
+            mrr: 8000,
+            churn_rate: 0,
+            trial_conversion_rate: 0,
+            activation_rate: 0,
+            activation_rate_all_time: 0,
+            signup_to_paid_conversion: 0,
+            cohort_conversion_30d: 0,
           }}
           tier_distribution={[]}
           status_breakdown={[]}
           growth_chart={[]}
-          trial_stats={{ expiring_soon: 0, total_trials: 0 }}
+          trial_stats={{ active_trials: 1, expiring_soon: 0 }}
           recent_events={[]}
+          cohort_retention={[]}
+          analyticsThresholds={{
+            churn_rate: { warning: 5, critical: 10 },
+            mrr_drop_percent: { warning: 10, critical: 20 },
+            trial_conversion: { warning_below: 10, critical_below: 5 },
+          }}
         />
       );
 

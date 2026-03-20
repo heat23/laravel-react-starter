@@ -98,7 +98,7 @@ it('handles search with backslash safely', function () {
 */
 
 it('impersonated user cannot access admin routes', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     // Start impersonation (switches auth to $user)
@@ -210,8 +210,8 @@ it('export respects date range filters', function () {
 */
 
 it('two admins toggling same user does not cause errors', function () {
-    $admin1 = User::factory()->admin()->create();
-    $admin2 = User::factory()->admin()->create();
+    $admin1 = User::factory()->superAdmin()->create();
+    $admin2 = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     // Both admins toggle admin on the same user

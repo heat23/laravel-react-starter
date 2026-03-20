@@ -12,7 +12,7 @@ it('admin can view the schedule page', function () {
 
 it('schedule page returns task list', function () {
     $admin = User::factory()->admin()->create();
-    $response = $this->actingAs($admin)->get('/admin/schedule');
-    $tasks = $response->inertia()->prop('tasks');
-    expect($tasks)->toBeArray();
+    $this->actingAs($admin)->get('/admin/schedule')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->has('tasks'));
 });

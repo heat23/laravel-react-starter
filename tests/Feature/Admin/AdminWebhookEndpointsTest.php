@@ -6,7 +6,6 @@ use App\Models\WebhookEndpoint;
 beforeEach(function () {
     config(['features.webhooks.enabled' => true]);
     registerAdminRoutes();
-    ensureWebhookTablesExist();
 });
 
 it('admin can list webhook endpoints including soft-deleted', function () {
@@ -17,13 +16,11 @@ it('admin can list webhook endpoints including soft-deleted', function () {
     $deleted = WebhookEndpoint::factory()->create(['user_id' => $user->id, 'url' => 'https://deleted.example.com']);
     $deleted->delete();
 
-    $response = $this->actingAs($admin)->get('/admin/webhooks/endpoints');
-
-    $response->assertOk();
-    $endpoints = $response->inertia()->prop('endpoints.data');
-    $urls = collect($endpoints)->pluck('url');
-    expect($urls)->toContain('https://active.example.com');
-    expect($urls)->toContain('https://deleted.example.com');
+    $this->actingAs($admin)->get('/admin/webhooks/endpoints')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('endpoints.data', 2)
+        );
 });
 
 it('admin can restore a soft-deleted webhook endpoint', function () {

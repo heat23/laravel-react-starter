@@ -158,7 +158,7 @@ it('shows user detail with audit logs', function () {
 });
 
 it('toggles admin status', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create(['is_admin' => false]);
 
     $response = $this->actingAs($admin)->patch("/admin/users/{$user->id}/toggle-admin");
@@ -168,7 +168,7 @@ it('toggles admin status', function () {
 });
 
 it('prevents self-demotion', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->patch("/admin/users/{$admin->id}/toggle-admin");
 
@@ -290,7 +290,7 @@ it('returns 404 for non-existent user', function () {
 });
 
 it('toggles admin off for existing admin when more than two admins exist', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $otherAdmin = User::factory()->admin()->create();
     User::factory()->admin()->create(); // third admin
 
@@ -300,7 +300,7 @@ it('toggles admin off for existing admin when more than two admins exist', funct
 });
 
 it('prevents removing admin when it would leave fewer than two admins', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $otherAdmin = User::factory()->admin()->create();
     // Only 2 admins exist
 
@@ -312,7 +312,7 @@ it('prevents removing admin when it would leave fewer than two admins', function
 });
 
 it('shows success flash on toggle admin', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     $response = $this->actingAs($admin)->patch("/admin/users/{$user->id}/toggle-admin");
@@ -378,7 +378,7 @@ it('user index query count does not scale with user count', function () {
 });
 
 it('invalidates dashboard cache on toggle admin', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     Cache::put(AdminCacheKey::DASHBOARD_STATS->value, ['cached' => true], 300);
@@ -414,7 +414,7 @@ it('invalidates dashboard cache on bulk deactivate', function () {
 
 // Fix 1: Before/after value capture in audit trail
 it('captures before/after values when toggling admin', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create(['is_admin' => false]);
 
     $this->actingAs($admin)->patch("/admin/users/{$user->id}/toggle-admin");
