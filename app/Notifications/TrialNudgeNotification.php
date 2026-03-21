@@ -61,7 +61,7 @@ class TrialNudgeNotification extends Notification implements ShouldQueue
             ->line("Your {$appName} trial ends in {$daysLeft} days. Here's a quick check-in:")
             ->line('**Have you explored the features that matter most to you?** If not, now is a great time to dive in.')
             ->line('Your trial gives you full access to everything — no features are held back.')
-            ->action('Explore Your Account', route('dashboard'))
+            ->action('See Plans & Pricing', config('features.billing.enabled') ? route('pricing') : route('dashboard'))
             ->line('Questions about which plan is right for you? Reply to this email.');
     }
 

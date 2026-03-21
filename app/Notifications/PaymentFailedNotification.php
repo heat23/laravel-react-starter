@@ -32,7 +32,8 @@ class PaymentFailedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $firstName = explode(' ', $notifiable->name)[0] ?: $notifiable->name;
+        $fullName = $notifiable->name ?? '';
+        $firstName = explode(' ', $fullName)[0] ?: $fullName ?: 'there';
         $appName = config('app.name');
 
         return (new MailMessage)

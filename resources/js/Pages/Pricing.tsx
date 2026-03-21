@@ -5,9 +5,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 
 import { AnnouncementBanner, type AnnouncementBannerProps } from '@/Components/layout/AnnouncementBanner';
-import { MarketingNav } from '@/Components/layout/MarketingNav';
+import { PublicFooter } from '@/Components/marketing/PublicFooter';
+import { PublicNav } from '@/Components/marketing/PublicNav';
 import PageHeader from '@/Components/layout/PageHeader';
 import { Alert, AlertDescription } from '@/Components/ui/alert';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/Components/ui/accordion';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import {
@@ -55,39 +57,50 @@ interface PricingPageProps extends PageProps {
   trialEnabled?: boolean;
   trialDays?: number;
   faqs?: FaqItem[];
+  contactEmail?: string;
   announcementBanner?: AnnouncementBannerProps | null;
 }
 
 const DEFAULT_FAQS: FaqItem[] = [
   {
-    question: 'Can I change plans?',
+    question: 'Can I switch plans anytime?',
     answer:
-      'Yes. You can upgrade or downgrade your plan at any time. Changes take effect immediately and billing is prorated automatically.',
+      'Yes. Upgrade or downgrade at any time from your billing dashboard. Changes take effect immediately and billing is prorated automatically — you only pay for what you use.',
   },
   {
-    question: 'What happens when I cancel?',
+    question: 'Is there a free trial?',
     answer:
-      'Your subscription remains active until the end of the billing period. After that, your account reverts to the Free plan — your data is never deleted.',
+      'The Free plan is yours forever with no credit card required. If you want to try Pro features, we offer a free trial period — just sign up and explore before committing.',
   },
   {
-    question: 'Is billing automatic?',
+    question: 'What happens when I hit my plan limits?',
     answer:
-      'Yes. Subscriptions renew automatically each billing cycle. You\'ll receive an email receipt before each renewal. Cancel anytime from your billing dashboard.',
+      "You'll see a prompt to upgrade before we block anything. We never silently delete your data or lock you out — you get a clear notice and a path to upgrade.",
   },
   {
-    question: 'Do you offer refunds?',
+    question: 'Can I get a refund?',
     answer:
-      'We offer a 30-day money-back guarantee. If you\'re not satisfied, contact us within 30 days of your first payment for a full refund.',
+      "We offer a 30-day money-back guarantee. If you're not satisfied for any reason, contact us within 30 days of your first payment and we'll refund you in full — no questions asked.",
   },
   {
-    question: 'How do team seats work?',
+    question: 'How does seat billing work?',
     answer:
-      'The Team plan includes a minimum of 3 seats and supports up to 50. You can adjust the seat count at any time and billing is prorated accordingly.',
+      'Team seats are billed per person per month with a 3-seat minimum. You can add or remove seats at any time; billing adjusts on a prorated basis. Enterprise seats start at 10.',
+  },
+  {
+    question: 'Do you offer annual discounts?',
+    answer:
+      'Yes. Annual billing saves you compared to paying month-to-month. Toggle to "Annual" above to see the discounted price for each plan.',
+  },
+  {
+    question: 'What payment methods do you accept?',
+    answer:
+      'We accept all major credit and debit cards (Visa, Mastercard, Amex, Discover) via Stripe. Enterprise customers can arrange invoiced billing — contact us to set that up.',
   },
 ];
 
 export default function Pricing() {
-  const { tiers, currentPlan, trial, trialEnabled, trialDays, auth, faqs, announcementBanner } =
+  const { tiers, currentPlan, trial, trialEnabled, trialDays, auth, faqs, contactEmail, announcementBanner } =
     usePage<PricingPageProps>().props;
   const { track } = useAnalytics();
   const tierEntries = useMemo(() => Object.entries(tiers), [tiers]);
@@ -125,8 +138,8 @@ export default function Pricing() {
   }, [tiers.pro]);
 
   const getPrice = (tier: TierConfig) => {
-    if (tier.price === null)
-      return { label: 'Custom', sublabel: null, savings: null };
+    if (tier.price === null || tier.price === undefined)
+      return { label: 'Custom pricing', sublabel: null, savings: null };
 
     if (billingPeriod === 'annual' && tier.price_annual) {
       const monthlyEquivalent = (tier.price_annual / 12).toFixed(2);
@@ -182,6 +195,8 @@ export default function Pricing() {
     }
   };
 
+  const salesEmail = contactEmail ?? 'hello@example.com';
+
   const content = (
     <>
       <Head title="Pricing">
@@ -192,10 +207,15 @@ export default function Pricing() {
       </Head>
       <PageHeader
         title="Pricing"
-        subtitle="One-time purchase. Full source code. No subscriptions."
+        subtitle="Start free. Upgrade when you have paying customers."
       />
       <div className="container py-12">
         <div className="max-w-5xl mx-auto space-y-10">
+          {/* Social proof */}
+          <p className="text-center text-sm text-muted-foreground">
+            Join <strong className="text-foreground">hundreds of developers</strong> already building with Laravel React Starter.
+          </p>
+
           {hasAnnualPricing && (
             <div className="flex justify-center">
               <div className="inline-flex items-center gap-4 p-1 bg-muted rounded-lg">
@@ -228,6 +248,15 @@ export default function Pricing() {
             </div>
           )}
 
+          {!hasAnnualPricing && (
+            <p className="text-center text-sm text-muted-foreground">
+              Switch to annual billing and save 20%.{' '}
+              <a href={`mailto:${salesEmail}`} className="underline hover:text-foreground transition-colors">
+                Email us to switch.
+              </a>
+            </p>
+          )}
+
           {trial?.active && (
             <Alert className="border-primary/30 bg-primary/10">
               <Sparkles className="h-4 w-4 text-primary" />
@@ -255,7 +284,7 @@ export default function Pricing() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {tierEntries.map(([key, tier]) => {
               const isCurrent = currentPlan === key;
-              const isEnterprise = tier.price === null;
+              const isEnterprise = tier.price === null || tier.price === undefined;
               const pricing = getPrice(tier);
 
               return (
@@ -265,7 +294,7 @@ export default function Pricing() {
                     isCurrent
                       ? 'border-primary shadow-md'
                       : tier.popular
-                        ? 'ring-2 ring-primary shadow-md'
+                        ? 'ring-2 ring-primary shadow-lg md:scale-[1.02] md:z-10'
                         : ''
                   }
                   onMouseEnter={() => {
@@ -278,14 +307,18 @@ export default function Pricing() {
                   }}
                 >
                   <CardHeader>
+                    {tier.popular && !isCurrent && !tier.coming_soon && (
+                      <div className="mb-2">
+                        <Badge variant="default" className="bg-primary text-primary-foreground">
+                          Most Popular
+                        </Badge>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{tier.name}</CardTitle>
                       <div className="flex items-center gap-2">
                         {tier.coming_soon && (
                           <Badge variant="outline">Coming Soon</Badge>
-                        )}
-                        {tier.popular && !isCurrent && !tier.coming_soon && (
-                          <Badge variant="default">Most Popular</Badge>
                         )}
                         {pricing.savings &&
                           billingPeriod === 'annual' &&
@@ -308,9 +341,14 @@ export default function Pricing() {
                           ({pricing.sublabel} billed annually)
                         </CardDescription>
                       )}
-                      {tier.per_seat && tier.min_seats && (
+                      {tier.per_seat && tier.price != null && tier.price > 0 && tier.min_seats && (
                         <CardDescription className="text-xs text-muted-foreground">
-                          per seat, min {tier.min_seats} seats
+                          ${tier.price}/seat/mo — starts at ${tier.price * tier.min_seats}/mo for {tier.min_seats} seats
+                        </CardDescription>
+                      )}
+                      {!tier.per_seat && key === 'pro' && (
+                        <CardDescription className="text-xs text-muted-foreground">
+                          For one developer. Upgrade to Team to add collaborators.
                         </CardDescription>
                       )}
                     </div>
@@ -335,66 +373,66 @@ export default function Pricing() {
                     </ul>
 
                     <div className="pt-2">
-                      {!auth.user && (
-                        <Button asChild className="w-full">
-                          <Link href="/register">
-                            {key === 'pro' && trialEnabled
-                              ? `Start ${trialDays}-Day Free Trial`
-                              : 'Get Started'}
-                          </Link>
+                      {isEnterprise ? (
+                        <Button asChild className="w-full" variant="outline">
+                          <a href={`mailto:${salesEmail}`}>Contact Sales</a>
                         </Button>
-                      )}
+                      ) : (
+                        <>
+                          {!auth.user && (
+                            <Button asChild className="w-full">
+                              <Link href="/register">
+                                {key === 'pro' && trialEnabled
+                                  ? `Start ${trialDays}-Day Free Trial`
+                                  : 'Get Started'}
+                              </Link>
+                            </Button>
+                          )}
 
-                      {auth.user &&
-                        !isEnterprise &&
-                        !isCurrent &&
-                        key !== 'free' && (
-                          <>
-                            {tier.coming_soon ? (
-                              <Button
-                                className="w-full"
-                                variant="secondary"
-                                disabled
-                              >
-                                Coming Soon
-                              </Button>
-                            ) : (
-                              <LoadingButton
-                                className="w-full"
-                                onClick={() => handleCheckout(key)}
-                                loading={checkoutLoading === key}
-                                loadingText="Processing..."
-                              >
-                                {isSubscribed ? 'Switch to' : 'Upgrade to'}{' '}
-                                {tier.name}
-                                {billingPeriod === 'annual' && ' (Annual)'}
-                              </LoadingButton>
+                          {auth.user &&
+                            !isCurrent &&
+                            key !== 'free' && (
+                              <>
+                                {tier.coming_soon ? (
+                                  <Button
+                                    className="w-full"
+                                    variant="secondary"
+                                    disabled
+                                  >
+                                    Coming Soon
+                                  </Button>
+                                ) : (
+                                  <LoadingButton
+                                    className="w-full"
+                                    onClick={() => handleCheckout(key)}
+                                    loading={checkoutLoading === key}
+                                    loadingText="Processing..."
+                                  >
+                                    {isSubscribed ? 'Switch to' : 'Upgrade to'}{' '}
+                                    {tier.name}
+                                    {billingPeriod === 'annual' && ' (Annual)'}
+                                  </LoadingButton>
+                                )}
+                              </>
                             )}
-                          </>
-                        )}
 
-                      {auth.user &&
-                        !isEnterprise &&
-                        !isCurrent &&
-                        key === 'free' &&
-                        currentPlan !== 'free' && (
-                          <Button asChild className="w-full" variant="outline">
-                            <Link href="/dashboard">Go to Dashboard</Link>
-                          </Button>
-                        )}
+                          {auth.user &&
+                            !isCurrent &&
+                            key === 'free' &&
+                            currentPlan !== 'free' && (
+                              <Button asChild className="w-full" variant="outline">
+                                <Link href="/dashboard">Go to Dashboard</Link>
+                              </Button>
+                            )}
 
-                      {auth.user && isEnterprise && !isCurrent && (
-                        <Button asChild className="w-full" variant="outline">
-                          <Link href="/contact">Contact Sales</Link>
-                        </Button>
-                      )}
-
-                      {auth.user && isCurrent && (
-                        <Button asChild className="w-full" variant="outline">
-                          <Link href={route('billing.index')}>
-                            Manage Billing
-                          </Link>
-                        </Button>
+                          {auth.user && isCurrent && (
+                            <Button asChild className="w-full" variant="outline">
+                              <Link href={route('billing.index')}>
+                                Manage Billing
+                              </Link>
+                            </Button>
+                          )}
+                        </>
                       )}
                     </div>
                   </CardContent>
@@ -442,19 +480,24 @@ export default function Pricing() {
           {/* FAQ */}
           <div className="pt-6">
             <h2 className="mb-6 text-center text-2xl font-bold">
-              Frequently asked questions
+              Common questions
             </h2>
-            <div className="space-y-4">
-              {(faqs ?? DEFAULT_FAQS).map((faq) => (
-                <div
+            <Accordion type="single" collapsible className="space-y-2">
+              {(faqs ?? DEFAULT_FAQS).map((faq, index) => (
+                <AccordionItem
                   key={faq.question}
-                  className="rounded-2xl border border-border/70 bg-card p-5"
+                  value={`faq-${index}`}
+                  className="rounded-2xl border border-border/70 bg-card px-5 last:border-b"
                 >
-                  <h3 className="mb-1.5 font-semibold">{faq.question}</h3>
-                  <p className="text-sm text-muted-foreground">{faq.answer}</p>
-                </div>
+                  <AccordionTrigger className="font-semibold hover:no-underline">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
               ))}
-            </div>
+            </Accordion>
           </div>
         </div>
       </div>
@@ -474,8 +517,9 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-background">
       {announcementBanner && <AnnouncementBanner {...announcementBanner} />}
-      <MarketingNav canLogin canRegister currentPath="/pricing" />
+      <PublicNav canLogin canRegister currentPath="/pricing" />
       {content}
+      <PublicFooter />
     </div>
   );
 }
