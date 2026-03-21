@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Subscription;
 use App\Models\User;
 use App\Policies\UserPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -22,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // We register our own billing routes in routes/web.php
         Cashier::ignoreRoutes();
+        Cashier::useSubscriptionModel(Subscription::class);
     }
 
     /**

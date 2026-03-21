@@ -31,6 +31,8 @@ export const AnalyticsEvents = {
   BILLING_SUBSCRIPTION_CANCELED: 'billing.subscription_canceled',
   BILLING_SUBSCRIPTION_RESUMED: 'billing.subscription_resumed',
   BILLING_PLAN_SWAPPED: 'billing.plan_swapped',
+  BILLING_SWAP_CONFIRMED: 'billing.swap_confirmed',
+  BILLING_TRIAL_UPGRADE_CLICKED: 'billing.trial_upgrade_clicked',
   BILLING_PAYMENT_FAILED: 'billing.payment_failed',
   BILLING_PERIOD_TOGGLED: 'billing.period_toggled',
 
@@ -120,7 +122,9 @@ export type EventPropertyMap = {
   [AnalyticsEvents.ONBOARDING_COMPLETED]: undefined;
   [AnalyticsEvents.BILLING_PRICING_VIEWED]: { user_type?: 'authenticated' | 'anonymous' } | undefined;
   [AnalyticsEvents.BILLING_PLAN_SELECTED]: { plan: PlanKey; billing_period: BillingPeriod };
-  [AnalyticsEvents.BILLING_CHECKOUT_STARTED]: { plan: PlanKey; price_id?: string; billing_period: BillingPeriod };
+  [AnalyticsEvents.BILLING_CHECKOUT_STARTED]: { plan: PlanKey; price_id?: string; billing_period?: BillingPeriod; source?: string };
+  [AnalyticsEvents.BILLING_SWAP_CONFIRMED]: { from_plan?: string; to_plan: string; price_id?: string } | undefined;
+  [AnalyticsEvents.BILLING_TRIAL_UPGRADE_CLICKED]: { tier: string } | undefined;
   [AnalyticsEvents.BILLING_CHECKOUT_COMPLETED]: { plan: PlanKey; price_id?: string; billing_period: BillingPeriod };
   [AnalyticsEvents.BILLING_SUBSCRIPTION_CANCELED]: { reason?: string } | undefined;
   [AnalyticsEvents.BILLING_SUBSCRIPTION_RESUMED]: { plan?: PlanKey } | undefined;

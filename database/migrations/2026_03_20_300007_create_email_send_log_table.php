@@ -8,10 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasTable('email_send_log')) {
+        if (Schema::hasTable('email_send_logs')) {
             return;
         }
-        Schema::create('email_send_log', function (Blueprint $table) {
+        Schema::create('email_send_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('sequence_type', 60);
@@ -24,6 +24,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('email_send_log');
+        Schema::dropIfExists('email_send_logs');
     }
 };

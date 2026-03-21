@@ -80,7 +80,7 @@ function ensureCashierTablesExist(): void
     // Drop and recreate to ensure schema matches latest version
     if (Schema::hasTable('subscriptions')) {
         // Check if it has the new columns - if not, drop and recreate
-        if (! Schema::hasColumn('subscriptions', 'billable_type')) {
+        if (! Schema::hasColumn('subscriptions', 'billable_type') || ! Schema::hasColumn('subscriptions', 'past_due_since')) {
             // Drop foreign key from subscription_items first (MySQL requires this)
             if (Schema::hasTable('subscription_items')) {
                 try {
@@ -109,6 +109,7 @@ function ensureCashierTablesExist(): void
             $table->integer('quantity')->nullable();
             $table->timestamp('trial_ends_at')->nullable();
             $table->timestamp('ends_at')->nullable();
+            $table->timestamp('past_due_since')->nullable();
             $table->unsignedBigInteger('last_webhook_at')->nullable();
             $table->timestamps();
             $table->index(['billable_type', 'billable_id']);

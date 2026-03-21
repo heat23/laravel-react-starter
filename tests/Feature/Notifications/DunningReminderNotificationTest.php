@@ -1,9 +1,9 @@
 <?php
 
+use App\Models\EmailSendLog;
 use App\Models\User;
 use App\Notifications\DunningReminderNotification;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Str;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -79,10 +79,10 @@ it('sends dunning reminders via the artisan command', function () {
         'email_verified_at' => now(),
     ]);
 
-    // Create a past_due subscription updated 4 days ago
+    // Create a past_due subscription that went past_due 4 days ago
     createSubscription($user, [
         'stripe_status' => 'past_due',
-        'updated_at' => now()->subDays(4),
+        'past_due_since' => now()->subDays(4),
     ]);
 
     $this->artisan('notifications:send-dunning')
@@ -111,15 +111,11 @@ it('does not send duplicate dunning reminders', function () {
 
     createSubscription($user, [
         'stripe_status' => 'past_due',
-        'updated_at' => now()->subDays(4),
+        'past_due_since' => now()->subDays(4),
     ]);
 
-    // Insert a notification record directly to simulate having already received this
-    $user->notifications()->create([
-        'id' => Str::uuid(),
-        'type' => DunningReminderNotification::class,
-        'data' => ['type' => 'dunning_reminder_1', 'email_number' => 1, 'plan_name' => 'Pro', 'actionUrl' => route('billing.index')],
-    ]);
+    // Insert an EmailSendLog record to simulate having already sent email #1
+    EmailSendLog::record($user->id, 'dunning_reminder', 1);
 
     Notification::fake();
 
