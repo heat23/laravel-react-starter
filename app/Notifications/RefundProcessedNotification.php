@@ -34,10 +34,20 @@ class RefundProcessedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $formattedAmount = '$'.number_format($this->amountRefunded / 100, 2);
+        $appName = config('app.name');
+        $currencySymbol = match (strtolower($this->currency)) {
+            'eur' => '€',
+            'gbp' => '£',
+            'cad', 'aud', 'nzd' => $this->currency.'$',
+            default => '$',
+        };
+        $formattedAmount = $currencySymbol.number_format($this->amountRefunded / 100, 2);
+        $fullName = $notifiable->name ?? '';
+        $firstName = explode(' ', $fullName)[0] ?: $fullName ?: 'there';
 
         $mail = (new MailMessage)
-            ->subject('Refund Processed - '.config('app.name'))
+            ->subject("{$appName}: Your {$formattedAmount} refund is confirmed")
+            ->greeting("Hi {$firstName},")
             ->line("We've processed a refund of {$formattedAmount} to your payment method.");
 
         if ($this->reason) {

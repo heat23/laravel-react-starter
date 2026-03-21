@@ -44,7 +44,7 @@ class WelcomeSequenceNotification extends Notification implements ShouldQueue
         $appName = config('app.name');
 
         $mail = (new MailMessage)
-            ->subject("Welcome to {$appName} — Let's Get You Started")
+            ->subject("{$appName}: Welcome aboard!")
             ->greeting("Hi {$notifiable->name}!")
             ->line("Thanks for signing up for {$appName}. Your account is ready. Here's how to get set up in the next 10 minutes:")
             ->line('**1. Set up your profile (2 min)** — add your details and customize your experience');
@@ -68,7 +68,7 @@ class WelcomeSequenceNotification extends Notification implements ShouldQueue
         $appName = config('app.name');
 
         return (new MailMessage)
-            ->subject("3 things to try first in {$appName}")
+            ->subject("{$appName}: 3 things to try first")
             ->greeting("Hi {$notifiable->name}!")
             ->line("Now that you've had a day to look around, here are the three things our most successful users do first:")
             ->line('**1. Configure your settings** — set your timezone and theme preferences')
@@ -90,7 +90,7 @@ class WelcomeSequenceNotification extends Notification implements ShouldQueue
         };
 
         $mail = (new MailMessage)
-            ->subject("What you can do with {$appName}")
+            ->subject("{$appName}: Features you might not have found yet")
             ->greeting("Hi {$notifiable->name}!")
             ->line("You've been with us for a few days now. Here are some features you might not have discovered yet:");
 

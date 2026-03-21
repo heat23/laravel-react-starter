@@ -21,7 +21,7 @@ it('renders email 2 — urgency', function () {
 
     $mail = $notification->toMail($user);
 
-    expect($mail->subject)->toContain('days left');
+    expect($mail->subject)->toContain('Your trial ends');
 });
 
 it('renders email 3 — expired', function () {

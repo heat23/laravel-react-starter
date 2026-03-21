@@ -63,7 +63,7 @@ function healthLabel(score: number): { label: string; color: string } {
 
 export default function Dashboard({ stats, recent_activity }: DashboardProps) {
   const { track } = useAnalytics();
-  const { flash, features, limit_warnings } = usePage<PageProps>().props;
+  const { auth, flash, features, limit_warnings } = usePage<PageProps>().props;
   const health = healthLabel(stats.health_score);
   const activationFiredRef = useRef(false);
   const healthCelebrationFiredRef = useRef(false);
@@ -227,8 +227,8 @@ export default function Dashboard({ stats, recent_activity }: DashboardProps) {
       <PageHeader
         title="Dashboard"
         subtitle={allSetupDone
-          ? "Here's what's happening in your app today."
-          : "Your app is ready. Complete setup to unlock all features."}
+          ? `Welcome back, ${auth.user?.name ?? 'there'}. Here's your overview.`
+          : `Welcome back, ${auth.user?.name ?? 'there'}. Complete setup to unlock all features.`}
       />
 
       <div className="container py-8">

@@ -5,11 +5,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 
 import { AnnouncementBanner, type AnnouncementBannerProps } from '@/Components/layout/AnnouncementBanner';
+import PageHeader from '@/Components/layout/PageHeader';
+import { FaqAccordion } from '@/Components/marketing/FaqAccordion';
 import { PublicFooter } from '@/Components/marketing/PublicFooter';
 import { PublicNav } from '@/Components/marketing/PublicNav';
-import PageHeader from '@/Components/layout/PageHeader';
 import { Alert, AlertDescription } from '@/Components/ui/alert';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/Components/ui/accordion';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import {
@@ -65,37 +65,37 @@ const DEFAULT_FAQS: FaqItem[] = [
   {
     question: 'Can I switch plans anytime?',
     answer:
-      'Yes. Upgrade or downgrade at any time from your billing dashboard. Changes take effect immediately and billing is prorated automatically — you only pay for what you use.',
+      'Yes. Upgrade or downgrade at any time — changes take effect immediately. Downgrades are prorated, so you only pay for what you use.',
   },
   {
     question: 'Is there a free trial?',
     answer:
-      'The Free plan is yours forever with no credit card required. If you want to try Pro features, we offer a free trial period — just sign up and explore before committing.',
+      'The Free tier is free forever with no credit card required. Paid tiers offer a 14-day trial so you can test all features before committing.',
   },
   {
-    question: 'What happens when I hit my plan limits?',
+    question: 'What happens when I exceed my plan limits?',
     answer:
-      "You'll see a prompt to upgrade before we block anything. We never silently delete your data or lock you out — you get a clear notice and a path to upgrade.",
+      "You'll get a notification and can upgrade instantly. We never shut down your app or block your users — you just can't create new resources beyond the limit until you upgrade.",
   },
   {
-    question: 'Can I get a refund?',
+    question: 'How does team seat billing work?',
     answer:
-      "We offer a 30-day money-back guarantee. If you're not satisfied for any reason, contact us within 30 days of your first payment and we'll refund you in full — no questions asked.",
-  },
-  {
-    question: 'How does seat billing work?',
-    answer:
-      'Team seats are billed per person per month with a 3-seat minimum. You can add or remove seats at any time; billing adjusts on a prorated basis. Enterprise seats start at 10.',
-  },
-  {
-    question: 'Do you offer annual discounts?',
-    answer:
-      'Yes. Annual billing saves you compared to paying month-to-month. Toggle to "Annual" above to see the discounted price for each plan.',
+      'Team plans are billed per seat per month. The Team tier requires a minimum of 3 seats ($147/mo). Add or remove seats anytime — billing adjusts automatically.',
   },
   {
     question: 'What payment methods do you accept?',
     answer:
-      'We accept all major credit and debit cards (Visa, Mastercard, Amex, Discover) via Stripe. Enterprise customers can arrange invoiced billing — contact us to set that up.',
+      'We accept all major credit cards via Stripe. For Enterprise plans, we can arrange invoicing.',
+  },
+  {
+    question: 'Can I get a refund?',
+    answer:
+      "Yes. If you're not satisfied within the first 14 days, contact us for a full refund. No questions asked.",
+  },
+  {
+    question: 'Do you offer annual pricing?',
+    answer:
+      'Annual plans with a 20% discount are coming soon. Sign up for monthly now and we\'ll automatically apply the discount when annual billing launches.',
   },
 ];
 
@@ -453,7 +453,7 @@ export default function Pricing() {
             </span>
             <span className="flex items-center gap-1.5">
               <Lock className="h-4 w-4 text-success" />
-              30-day money-back guarantee
+              14-day money-back guarantee. No lock-in.
             </span>
           </div>
 
@@ -482,22 +482,7 @@ export default function Pricing() {
             <h2 className="mb-6 text-center text-2xl font-bold">
               Common questions
             </h2>
-            <Accordion type="single" collapsible className="space-y-2">
-              {(faqs ?? DEFAULT_FAQS).map((faq, index) => (
-                <AccordionItem
-                  key={faq.question}
-                  value={`faq-${index}`}
-                  className="rounded-2xl border border-border/70 bg-card px-5 last:border-b"
-                >
-                  <AccordionTrigger className="font-semibold hover:no-underline">
-                    {faq.question}
-                  </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
-                    {faq.answer}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
+            <FaqAccordion faqs={faqs ?? DEFAULT_FAQS} />
           </div>
         </div>
       </div>

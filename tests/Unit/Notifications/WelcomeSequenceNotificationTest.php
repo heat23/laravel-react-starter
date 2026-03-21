@@ -50,7 +50,7 @@ it('renders email 3 — advanced features', function () {
 
     $mail = $notification->toMail($user);
 
-    expect($mail->subject)->toContain('What you can do with');
+    expect($mail->subject)->toContain('might not have found');
 });
 
 it('includes email_number in toArray', function () {

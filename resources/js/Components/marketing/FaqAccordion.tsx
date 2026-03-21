@@ -10,6 +10,8 @@ interface FaqAccordionProps {
 }
 
 export function FaqAccordion({ faqs }: FaqAccordionProps) {
+  if (!faqs || faqs.length === 0) return null;
+
   return (
     <Accordion type="single" collapsible className="w-full space-y-3">
       {faqs.map((faq, index) => (

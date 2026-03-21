@@ -32,10 +32,15 @@ class IncompletePaymentReminder extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        $appName = config('app.name');
+        $fullName = $notifiable->name ?? '';
+        $firstName = explode(' ', $fullName)[0] ?: $fullName ?: 'there';
+
         return (new MailMessage)
-            ->subject("Complete Your Subscription - {$this->hoursRemaining} Hours Remaining")
+            ->subject("{$appName}: Complete your payment to keep your subscription active")
+            ->greeting("Hi {$firstName},")
             ->line('Your subscription is waiting for payment confirmation.')
-            ->line("You have **{$this->hoursRemaining} hours remaining** before it expires.")
+            ->line("You have **{$this->hoursRemaining} ".($this->hoursRemaining === 1 ? 'hour' : 'hours').' remaining** before it expires.')
             ->action('Complete Payment Now', $this->confirmUrl)
             ->line('If you have any questions, please contact our support team.');
     }

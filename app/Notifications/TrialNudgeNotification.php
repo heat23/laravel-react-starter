@@ -55,10 +55,12 @@ class TrialNudgeNotification extends Notification implements ShouldQueue
         $appName = config('app.name');
         $daysLeft = $this->daysLeft();
 
+        $dayLabel = $daysLeft === 1 ? 'day' : 'days';
+
         return (new MailMessage)
-            ->subject("{$daysLeft} days left on your {$appName} trial")
+            ->subject("{$appName}: {$daysLeft} {$dayLabel} left in your trial")
             ->greeting("Hi {$notifiable->name}!")
-            ->line("Your {$appName} trial ends in {$daysLeft} days. Here's a quick check-in:")
+            ->line("Your {$appName} trial ends in {$daysLeft} {$dayLabel}. Here's a quick check-in:")
             ->line('**Have you explored the features that matter most to you?** If not, now is a great time to dive in.')
             ->line('Your trial gives you full access to everything — no features are held back.')
             ->action('See Plans & Pricing', config('features.billing.enabled') ? route('pricing') : route('dashboard'))
@@ -69,7 +71,11 @@ class TrialNudgeNotification extends Notification implements ShouldQueue
     {
         $appName = config('app.name');
         $daysLeft = $this->daysLeft();
-        $subject = $daysLeft <= 1 ? 'Last day of your trial' : "{$daysLeft} days left on your trial";
+        $subject = match (true) {
+            $daysLeft === 0 => "{$appName}: Your trial ends today",
+            $daysLeft === 1 => "{$appName}: Your trial ends tomorrow",
+            default => "{$appName}: Your trial ends in {$daysLeft} days",
+        };
 
         return (new MailMessage)
             ->subject($subject)
@@ -85,7 +91,7 @@ class TrialNudgeNotification extends Notification implements ShouldQueue
         $appName = config('app.name');
 
         return (new MailMessage)
-            ->subject('Your trial has ended')
+            ->subject("{$appName}: Your trial has ended")
             ->greeting("Hi {$notifiable->name}!")
             ->line("Your {$appName} trial period has ended. Your account and data are still here.")
             ->line('To regain access to premium features, subscribe to a plan.')

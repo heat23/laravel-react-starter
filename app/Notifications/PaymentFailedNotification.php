@@ -37,8 +37,9 @@ class PaymentFailedNotification extends Notification implements ShouldQueue
         $appName = config('app.name');
 
         return (new MailMessage)
-            ->subject('Action required: payment failed for your '.$appName.' subscription')
+            ->subject("{$appName}: Your payment needs attention")
             ->greeting("Hi {$firstName},")
+            ->line("Don't worry — this happens sometimes and is easy to fix.")
             ->line("We weren't able to process your last payment for your {$appName} subscription. Your account remains active for now, but we'll pause your subscription in 3 days if we can't collect payment.")
             ->line('To keep your access uninterrupted, update your payment method using the button below.')
             ->action('Update Payment Method →', route('billing.index'))

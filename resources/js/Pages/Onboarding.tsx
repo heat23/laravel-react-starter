@@ -1,4 +1,4 @@
-import { BookOpen, CreditCard, Home, Key, Palette, Settings, Sparkles, User as UserIcon } from "lucide-react";
+import { BookOpen, CheckCircle2, CreditCard, Key, LayoutDashboard, Palette, Settings, Sparkles, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useState, useCallback, useEffect } from "react";
@@ -117,8 +117,8 @@ export default function Onboarding({ email_verified = false }: OnboardingProps) 
             <StepContent step={0} currentStep={currentStep}>
               <Card>
                 <CardHeader className="text-center">
-                  <CardTitle className="text-2xl">You're 3 steps from a production-ready app.</CardTitle>
-                  <CardDescription>We'll set up your profile and preferences — so you can focus on building what makes your product unique.</CardDescription>
+                  <CardTitle className="text-2xl">Let's get your SaaS ready to ship</CardTitle>
+                  <CardDescription>Three quick steps to make this yours. Takes about 2 minutes.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
@@ -148,8 +148,8 @@ export default function Onboarding({ email_verified = false }: OnboardingProps) 
             <StepContent step={1} currentStep={currentStep}>
               <Card>
                 <CardHeader className="text-center">
-                  <CardTitle>Set your preferences</CardTitle>
-                  <CardDescription>Customize your experience. You can change these anytime.</CardDescription>
+                  <CardTitle>Make it feel like yours</CardTitle>
+                  <CardDescription>Your timezone and theme stay consistent across all your sessions.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
@@ -181,32 +181,20 @@ export default function Onboarding({ email_verified = false }: OnboardingProps) 
               </Card>
             </StepContent>
 
-            {/* Step 3: Get Started */}
+            {/* Step 3: Completion Celebration */}
             <StepContent step={2} currentStep={currentStep}>
               <Card>
                 <CardHeader className="text-center">
-                  <CardTitle>You're ready to ship.</CardTitle>
-                  <CardDescription>Your app is production-ready. Pick where to go first.</CardDescription>
+                  <div
+                    aria-hidden="true"
+                    className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10 ring-4 ring-success/20 motion-safe:animate-pulse"
+                  >
+                    <CheckCircle2 className="h-8 w-8 text-success" />
+                  </div>
+                  <CardTitle className="text-2xl">You're all set!</CardTitle>
+                  <CardDescription>Your SaaS is ready to ship. Here's where to go first.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex flex-col items-center gap-2 pb-2">
-                    <button
-                      type="button"
-                      onClick={() => completeOnboardingAndGoTo("/dashboard")}
-                      disabled={saving}
-                      className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-                    >
-                      Go to your dashboard →
-                    </button>
-                    {features?.apiDocs && (
-                      <a
-                        href="/docs"
-                        className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-                      >
-                        Read the docs
-                      </a>
-                    )}
-                  </div>
                   {!email_verified && (
                     <Alert className="border-warning/30 bg-warning/10">
                       <AlertDescription className="text-sm">
@@ -225,45 +213,35 @@ export default function Onboarding({ email_verified = false }: OnboardingProps) 
                     </Alert>
                   )}
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <FeatureCard
-                      icon={Home}
-                      title="Dashboard"
-                      description="View your overview and key metrics"
-                      href="/dashboard"
-                      onNavigate={completeOnboardingAndGoTo}
-                    />
-                    <FeatureCard
-                      icon={UserIcon}
-                      title="Profile"
-                      description="Complete your profile information"
-                      href="/settings/profile"
-                      onNavigate={completeOnboardingAndGoTo}
-                    />
-                    <FeatureCard
-                      icon={Key}
-                      title="API Tokens"
-                      description="Generate tokens for API access"
-                      href="/settings/tokens"
-                      onNavigate={completeOnboardingAndGoTo}
-                      highlighted
-                    />
-                    <FeatureCard
-                      icon={Settings}
-                      title="Settings"
-                      description="Fine-tune your preferences"
-                      href="/settings"
-                      onNavigate={completeOnboardingAndGoTo}
-                    />
+                  <div className="flex flex-col gap-3">
+                    {features?.admin && (
+                      <ActionCard
+                        icon={LayoutDashboard}
+                        title="Explore the admin panel"
+                        description="User management, feature flags, and system health"
+                        time="2 min"
+                        href="/admin"
+                        onNavigate={completeOnboardingAndGoTo}
+                      />
+                    )}
                     {features?.billing && (
-                      <FeatureCard
+                      <ActionCard
                         icon={CreditCard}
-                        title="Upgrade to Pro"
-                        description="Unlock billing, more API tokens, and team features"
+                        title="Set up billing"
+                        description="Choose a plan and connect Stripe payments"
+                        time="5 min"
                         href="/pricing?ref=onboarding"
                         onNavigate={completeOnboardingAndGoTo}
                       />
                     )}
+                    <ActionCard
+                      icon={Key}
+                      title="Create an API token"
+                      description="Start building integrations right away"
+                      time="1 min"
+                      href="/settings/tokens"
+                      onNavigate={completeOnboardingAndGoTo}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -285,36 +263,35 @@ export default function Onboarding({ email_verified = false }: OnboardingProps) 
   );
 }
 
-function FeatureCard({
+function ActionCard({
   icon: Icon,
   title,
   description,
+  time,
   href,
   onNavigate,
-  highlighted = false,
 }: {
-  icon: typeof Home;
+  icon: LucideIcon;
   title: string;
   description: string;
+  time: string;
   href: string;
   onNavigate: (href: string) => void;
-  highlighted?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={() => onNavigate(href)}
-      className={`flex w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-        highlighted ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/20' : ''
-      }`}
+      className="flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:border-primary/40 hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
         <Icon className="h-4 w-4" />
       </div>
-      <div>
+      <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">{title}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-xs text-muted-foreground truncate">{description}</p>
       </div>
+      <span className="shrink-0 text-xs text-muted-foreground/60 tabular-nums">{time}</span>
     </button>
   );
 }

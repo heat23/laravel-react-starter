@@ -84,19 +84,19 @@ describe("Onboarding", () => {
   it("navigates to step 2 on Next", () => {
     render(<Onboarding />);
     fireEvent.click(screen.getByText("Next"));
-    expect(screen.getByText(/set your preferences/i)).toBeInTheDocument();
+    expect(screen.getByText(/make it feel like yours/i)).toBeInTheDocument();
   });
 
   it("shows timezone selector in step 2", () => {
     render(<Onboarding />);
     fireEvent.click(screen.getByText("Next"));
-    expect(screen.getByText(/timezone/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/timezone/i).length).toBeGreaterThan(0);
   });
 
   it("shows theme options in step 2", () => {
     render(<Onboarding />);
     fireEvent.click(screen.getByText("Next"));
-    expect(screen.getByText(/theme/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/theme/i).length).toBeGreaterThan(0);
     expect(screen.getByText("light")).toBeInTheDocument();
     expect(screen.getByText("dark")).toBeInTheDocument();
     expect(screen.getByText("system")).toBeInTheDocument();
@@ -106,16 +106,14 @@ describe("Onboarding", () => {
     render(<Onboarding />);
     fireEvent.click(screen.getByText("Next")); // Step 1 -> 2
     fireEvent.click(screen.getByText("Next")); // Step 2 -> 3
-    expect(screen.getByText(/you're ready to ship/i)).toBeInTheDocument();
+    expect(screen.getByText(/you're all set/i)).toBeInTheDocument();
   });
 
   it("shows feature cards in step 3", () => {
     render(<Onboarding />);
     fireEvent.click(screen.getByText("Next"));
     fireEvent.click(screen.getByText("Next"));
-    expect(screen.getByText("Dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Profile")).toBeInTheDocument();
-    expect(screen.getByText("API Tokens")).toBeInTheDocument();
+    expect(screen.getByText(/create an api token/i)).toBeInTheDocument();
   });
 
   it("shows Go to Dashboard button on last step", () => {
@@ -139,7 +137,7 @@ describe("Onboarding", () => {
   it("can navigate back from step 2", () => {
     render(<Onboarding />);
     fireEvent.click(screen.getByText("Next")); // Go to step 2
-    expect(screen.getByText(/set your preferences/i)).toBeInTheDocument();
+    expect(screen.getByText(/make it feel like yours/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByText("Back")); // Go back to step 1
     expect(screen.getByLabelText(/your name/i)).toBeInTheDocument();
