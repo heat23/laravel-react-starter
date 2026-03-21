@@ -202,7 +202,7 @@ export default function Pricing() {
       <Head title="Pricing">
         <meta
           name="description"
-          content="One-time purchase. Free, Pro, Team, and Enterprise plans — no recurring subscription fees. Full source code included."
+          content="Start free, upgrade when you're ready. Simple per-seat pricing for Laravel React Starter — no credit card required to begin."
         />
       </Head>
       <PageHeader

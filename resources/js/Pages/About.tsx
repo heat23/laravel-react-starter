@@ -65,7 +65,7 @@ export default function About() {
                             <p>
                                 <strong>This is an opinionated production template.</strong> It makes
                                 specific choices: Laravel 12, React 18, TypeScript strict mode, Inertia.js,
-                                Tailwind CSS v4, Redis-locked billing, Pest for tests. These choices are
+                                Tailwind CSS v4, concurrent payment protection, Pest for tests. These choices are
                                 deliberate and have been validated together.
                             </p>
                             <p>
@@ -117,7 +117,7 @@ export default function About() {
                             <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                                 <Button asChild size="lg">
                                     <Link href="/pricing">
-                                        See pricing
+                                        View pricing
                                         <ArrowRight className="ml-2 h-4 w-4" />
                                     </Link>
                                 </Button>

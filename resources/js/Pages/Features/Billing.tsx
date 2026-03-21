@@ -4,7 +4,6 @@ import {
     Database,
     Lock,
     Mail,
-    Settings,
     Shield,
     Users,
 } from 'lucide-react';
@@ -26,15 +25,15 @@ import type { FeaturePageProps } from '@/types/index';
 const billingFeatures = [
     {
         icon: Lock,
-        title: 'Redis-locked mutations',
+        title: 'Double-charge prevention',
         description:
-            'Every subscribe, cancel, resume, and swap operation acquires a Redis lock (35-second timeout). Concurrent requests are rejected with a clear error, not a double-charge.',
+            "Every subscribe, cancel, resume, and swap operation is protected against concurrent execution. Two simultaneous upgrades can't both go through — we prevent that.",
     },
     {
         icon: CreditCard,
-        title: '4 plan tiers',
+        title: '4 billing plans',
         description:
-            'Free, Pro, Team (3–50 seats), Enterprise (custom pricing). Plan definitions live in config/plans.php — change a price in one place, it propagates everywhere.',
+            'Free, Pro, Team (3–50 seats), Enterprise (custom pricing). Plan definitions live in one config file — change a price in one place, it propagates everywhere.',
     },
     {
         icon: Users,
@@ -249,14 +248,14 @@ export default function Billing({ title, metaDescription, breadcrumbs, canonical
                                     }
                                 >
                                     <Link href="/register">
-                                        Get the Starter Kit
+                                        Start Building Free
                                         <ArrowRight className="ml-2 h-4 w-4" />
                                     </Link>
                                 </Button>
                             )}
                             <Button variant="outline" size="lg" asChild>
                                 <Link href="/pricing">
-                                    See pricing
+                                    View pricing
                                 </Link>
                             </Button>
                             <Button variant="ghost" size="lg" asChild>

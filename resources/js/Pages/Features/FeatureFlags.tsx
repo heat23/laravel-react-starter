@@ -82,14 +82,10 @@ export default function FeatureFlags({ title, metaDescription, breadcrumbs, cano
                                 Ship Features Safely with Built-in Feature Flags
                             </h1>
                             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-                                Feature flags let you deploy code before it&apos;s ready for
-                                all users, run A/B tests on pricing or onboarding flows, give
-                                beta users early access, or disable a broken feature in
-                                production without a deploy. This SaaS starter kit ships 11 pre-built
-                                feature flags covering the major subsystems — billing, admin,
-                                notifications, webhooks, 2FA, social auth, onboarding, API
-                                docs, and API tokens. Add your own in minutes using the same
-                                pattern.
+                                Ship incomplete features safely. Toggle any feature on or off
+                                — globally or per-user — without a redeploy. Useful for
+                                gradual rollouts, A/B tests, and keeping half-finished work
+                                out of production.
                             </p>
                         </header>
 
@@ -234,7 +230,7 @@ export default function FeatureFlags({ title, metaDescription, breadcrumbs, cano
                                     }
                                 >
                                     <Link href="/register">
-                                        Get the Starter Kit
+                                        Start Building Free
                                         <ArrowRight className="ml-2 h-4 w-4" />
                                     </Link>
                                 </Button>

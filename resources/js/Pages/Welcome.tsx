@@ -17,6 +17,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 
 import { AnnouncementBanner, type AnnouncementBannerProps } from '@/Components/layout/AnnouncementBanner';
+import { FaqAccordion } from '@/Components/marketing/FaqAccordion';
 import { PublicFooter } from '@/Components/marketing/PublicFooter';
 import { PublicNav } from '@/Components/marketing/PublicNav';
 import { Button } from '@/Components/ui/button';
@@ -37,7 +38,7 @@ interface Testimonial {
 const DEFAULT_TESTIMONIALS: Testimonial[] = [
   {
     quote:
-      "Saved me 2 months of boilerplate. The Redis-locked billing alone is worth the price.",
+      "Saved me 2 months of boilerplate. The double-charge prevention alone is worth the price.",
     name: 'Alex M.',
     role: 'Senior Developer, Solo SaaS Founder',
   },
@@ -88,7 +89,7 @@ const features = [
     icon: Zap,
     title: 'Production-grade billing',
     description:
-      'Redis-locked Stripe mutations prevent race conditions. 4 plan tiers, team seats, dunning emails, and incomplete payment recovery.',
+      'Double-charge prevention, 4 billing plans, team seats, dunning emails, and incomplete payment recovery.',
     link: '/features/billing',
   },
 ];
@@ -183,7 +184,7 @@ const Welcome: WelcomeComponent = ({
       <Head title={`${appName} — Laravel React SaaS Starter Kit`}>
         <meta
           name="description"
-          content={`A production-ready Laravel + React starter with ${featureCount} feature flags, ${planCount} billing tiers, and ${testCount}+ tests. Auth, admin panel, Stripe billing, and email sequences — ready to ship.`}
+          content={`A production-ready Laravel + React starter with ${featureCount} feature flags, ${planCount} billing plans, and ${testCount}+ tests. Auth, admin panel, Stripe billing, and email sequences — ready to ship.`}
         />
         <meta
           property="og:title"
@@ -191,7 +192,7 @@ const Welcome: WelcomeComponent = ({
         />
         <meta
           property="og:description"
-          content={`${featureCount} toggleable features, Redis-locked billing, production admin panel. Laravel 12 + React 18 + TypeScript. Built for indie developers and small teams.`}
+          content={`${featureCount} toggleable features, concurrent payment protection, production admin panel. Laravel 12 + React 18 + TypeScript. Built for indie developers and small teams.`}
         />
         <meta property="og:type" content="website" />
         <meta property="og:image" content={ogImageUrl} />
@@ -202,7 +203,7 @@ const Welcome: WelcomeComponent = ({
         />
         <meta
           name="twitter:description"
-          content={`${featureCount} toggleable features, Redis-locked billing, production admin panel. Laravel 12 + React 18 + TypeScript. Built for indie developers and small teams.`}
+          content={`${featureCount} toggleable features, concurrent payment protection, production admin panel. Laravel 12 + React 18 + TypeScript. Built for indie developers and small teams.`}
         />
         <meta name="twitter:image" content={ogImageUrl} />
         {faqs.length > 0 && (
@@ -251,7 +252,7 @@ const Welcome: WelcomeComponent = ({
                   The only Laravel + React SaaS starter kit
                   <br />
                   with{' '}
-                  <span className="text-primary">Redis-locked billing</span>
+                  <span className="text-primary">double-charge prevention</span>
                   <br />
                   and {featureCount} toggleable feature flags
                 </h1>
@@ -270,12 +271,12 @@ const Welcome: WelcomeComponent = ({
                     onClick={() =>
                       track(AnalyticsEvents.ENGAGEMENT_CTA_CLICKED, {
                         source: 'hero_primary',
-                        label: 'Start Building Today',
+                        label: 'Start Building Free',
                       })
                     }
                   >
                     <Link href={route('register')}>
-                      Start Building Today
+                      Start Building Free
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
@@ -464,7 +465,7 @@ const Welcome: WelcomeComponent = ({
                     <li>
                       {testCount}+ tests from day one — Pest, Vitest, Playwright
                     </li>
-                    <li>Redis-locked billing prevents double charges</li>
+                    <li>Double-charge prevention on all billing operations</li>
                     <li>Toggle features off with one env var</li>
                   </ul>
                 </div>
@@ -580,6 +581,21 @@ const Welcome: WelcomeComponent = ({
               </div>
             </div>
           </section>
+          {/* FAQ Section */}
+          {faqs.length > 0 && (
+            <section aria-labelledby="faq-heading" className="container border-t py-24">
+              <div className="mx-auto max-w-3xl">
+                <h2 id="faq-heading" className="mb-2 text-center text-3xl font-bold">
+                  Frequently asked questions
+                </h2>
+                <p className="mb-10 text-center text-muted-foreground">
+                  Common questions before buying.
+                </p>
+                <FaqAccordion faqs={faqs} />
+              </div>
+            </section>
+          )}
+
           {/* Closing CTA Section */}
           {canRegister && (
             <section className="container border-t py-24">
@@ -599,35 +615,13 @@ const Welcome: WelcomeComponent = ({
                     }
                   >
                     <Link href={route('register')}>
-                      Start Building Today
+                      Start Building Free
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                   <Button variant="outline" size="lg" asChild>
                     <Link href="/pricing">View pricing</Link>
                   </Button>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* FAQ Section */}
-          {faqs.length > 0 && (
-            <section className="container border-t py-24">
-              <div className="mx-auto max-w-3xl">
-                <h2 className="mb-8 text-center text-3xl font-bold">
-                  Frequently asked questions
-                </h2>
-                <div className="space-y-4">
-                  {faqs.map((faq) => (
-                    <div
-                      key={faq.question}
-                      className="rounded-2xl border border-border/70 bg-card p-6"
-                    >
-                      <h3 className="mb-2 font-semibold">{faq.question}</h3>
-                      <p className="text-sm text-muted-foreground">{faq.answer}</p>
-                    </div>
-                  ))}
                 </div>
               </div>
             </section>
@@ -647,12 +641,12 @@ const Welcome: WelcomeComponent = ({
             onClick={() =>
               track(AnalyticsEvents.ENGAGEMENT_CTA_CLICKED, {
                 source: 'sticky_mobile_cta',
-                label: 'Start Building Today',
+                label: 'Start Building Free',
               })
             }
           >
             <Link href={route('register')}>
-              Start Building Today
+              Start Building Free
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
