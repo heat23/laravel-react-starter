@@ -255,7 +255,7 @@ describe('Pricing Page', () => {
       render(<Pricing />);
 
       // 29*12=348, annual=290, savings = 58/348 ≈ 17%
-      expect(screen.getByText(/save 17%/i)).toBeInTheDocument();
+      expect(screen.getByText(/save 17%/i, { selector: 'div, span, [class]' })).toBeInTheDocument();
     });
 
     it('switches to annual pricing on toggle', async () => {
@@ -263,9 +263,14 @@ describe('Pricing Page', () => {
 
       render(<Pricing />);
 
+      // Default is annual; switch to monthly first, then back to annual
+      await user.click(screen.getByText('Monthly'));
       await user.click(screen.getByText('Annual'));
 
-      expect(screen.getByText('$290/year')).toBeInTheDocument();
+      // Annual mode shows monthly equivalent as headline ($290/12 = $24.17/mo)
+      expect(screen.getByText(/\$24\.17\/mo/i)).toBeInTheDocument();
+      // And shows annual total in the sublabel
+      expect(screen.getByText(/\$290\/yr/i)).toBeInTheDocument();
     });
 
     it('does not show toggle when no annual pricing available', () => {

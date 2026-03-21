@@ -1,7 +1,10 @@
 <?php
 
+use App\Exceptions\ConcurrentOperationException;
 use App\Models\User;
 use App\Services\BillingService;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -47,10 +50,19 @@ it('validates seat count rejects non-per-seat plan with quantity > 1', function 
 });
 
 it('validates seat count enforces team minimum seats', function () {
+    config(['plans.team.min_seats' => 2]);
+    $service = new BillingService;
+    $error = $service->validateSeatCount('team', 1);
+
+    expect($error)->toBe('This plan requires a minimum of 2 seats.');
+});
+
+it('validates seat count allows team minimum of 2 seats', function () {
+    config(['plans.team.min_seats' => 2]);
     $service = new BillingService;
     $error = $service->validateSeatCount('team', 2);
 
-    expect($error)->toBe('This plan requires a minimum of 3 seats.');
+    expect($error)->toBeNull();
 });
 
 it('validates seat count enforces enterprise minimum seats', function () {
@@ -112,4 +124,33 @@ it('returns comprehensive subscription status for unsubscribed user', function (
     expect($status['status'])->toBeNull();
     expect($status['on_trial'])->toBeFalse();
     expect($status['quantity'])->toBe(1);
+});
+
+it('logs a warning when billing lock cannot be acquired', function () {
+    Log::spy();
+
+    $fakeLock = new class
+    {
+        public function get(): bool
+        {
+            return false;
+        }
+
+        public function release(): void {}
+    };
+
+    Cache::shouldReceive('lock')
+        ->once()
+        ->andReturn($fakeLock);
+    Cache::shouldReceive('forget')->zeroOrMoreTimes();
+
+    $user = User::factory()->create();
+    $service = new BillingService;
+
+    expect(fn () => $service->cancelSubscription($user))
+        ->toThrow(ConcurrentOperationException::class);
+
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->with('billing_lock_failed', Mockery::on(fn ($ctx) => isset($ctx['key']) && isset($ctx['timeout'])));
 });

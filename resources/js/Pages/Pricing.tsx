@@ -80,7 +80,7 @@ const DEFAULT_FAQS: FaqItem[] = [
   {
     question: 'How does team seat billing work?',
     answer:
-      'Team plans are billed per seat per month. The Team tier requires a minimum of 3 seats ($147/mo). Add or remove seats anytime — billing adjusts automatically.',
+      'Team plans are billed per seat per month. The Team tier requires a minimum of 2 seats ($98/mo). Add or remove seats anytime — billing adjusts automatically.',
   },
   {
     question: 'What payment methods do you accept?',
@@ -95,7 +95,7 @@ const DEFAULT_FAQS: FaqItem[] = [
   {
     question: 'Do you offer annual pricing?',
     answer:
-      'Annual plans with a 20% discount are coming soon. Sign up for monthly now and we\'ll automatically apply the discount when annual billing launches.',
+      'Yes — switch to Annual in the billing toggle and save 20% (2 months free). You can switch between monthly and annual at any time from your billing settings.',
   },
 ];
 
@@ -145,8 +145,8 @@ export default function Pricing() {
       const monthlyEquivalent = (tier.price_annual / 12).toFixed(2);
       const yearlySavings = tier.price * 12 - tier.price_annual;
       return {
-        label: `$${tier.price_annual}/year`,
-        sublabel: `$${monthlyEquivalent}/mo`,
+        label: `$${monthlyEquivalent}/mo`,
+        sublabel: `billed annually ($${tier.price_annual}/yr)`,
         savings: yearlySavings > 0 ? yearlySavings : null,
       };
     }
@@ -338,12 +338,14 @@ export default function Pricing() {
                       </CardDescription>
                       {pricing.sublabel && (
                         <CardDescription className="text-sm text-muted-foreground">
-                          ({pricing.sublabel} billed annually)
+                          {pricing.sublabel}
                         </CardDescription>
                       )}
                       {tier.per_seat && tier.price != null && tier.price > 0 && tier.min_seats && (
                         <CardDescription className="text-xs text-muted-foreground">
-                          ${tier.price}/seat/mo — starts at ${tier.price * tier.min_seats}/mo for {tier.min_seats} seats
+                          {billingPeriod === 'annual' && tier.price_annual
+                            ? `$${(tier.price_annual / 12).toFixed(2)}/seat/mo — min ${tier.min_seats} seats`
+                            : `$${tier.price}/seat/mo — starts at $${tier.price * tier.min_seats}/mo for ${tier.min_seats} seats`}
                         </CardDescription>
                       )}
                       {!tier.per_seat && key === 'pro' && (

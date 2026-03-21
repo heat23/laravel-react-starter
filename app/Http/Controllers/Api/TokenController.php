@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\CreateTokenRequest;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
+use App\Services\PlanLimitService;
 use DateTimeImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ class TokenController extends Controller
     public function __construct(
         private AuditService $auditService,
         private CacheInvalidationManager $cacheManager,
+        private PlanLimitService $planLimitService,
     ) {}
 
     /**
@@ -62,14 +64,23 @@ class TokenController extends Controller
      */
     public function store(CreateTokenRequest $request): JsonResponse
     {
+        $user = $request->user();
+        $currentCount = $user->tokens()->count();
+
+        if (! $this->planLimitService->canPerform($user, 'api_tokens', $currentCount)) {
+            return response()->json([
+                'message' => 'You have reached the API token limit for your plan. Upgrade to create more tokens.',
+            ], 403);
+        }
+
         $expiresAt = $request->validated('expires_at')
             ? new DateTimeImmutable($request->validated('expires_at'))
             : null;
 
-        $token = $request->user()->createToken(
+        $token = $user->createToken(
             $request->validated('name'),
             $request->validated('abilities', ['*']),
-            $expiresAt
+            $expiresAt,
         );
 
         $this->auditService->log(AnalyticsEvent::API_TOKEN_CREATED, [
