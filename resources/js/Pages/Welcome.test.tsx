@@ -49,10 +49,10 @@ describe('Welcome', () => {
     it('renders the hero section', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getAllByText(/in hours, not weeks/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/laravel \+ react saas starter kit/i).length).toBeGreaterThan(0);
       expect(
-        screen.getByText(/a production-ready laravel \+ react starter with/i)
-      ).toBeInTheDocument();
+        screen.getAllByText(/redis-locked billing/i).length
+      ).toBeGreaterThan(0);
     });
 
     it('sets page title with app name and SaaS keyword', () => {
@@ -137,7 +137,7 @@ describe('Welcome', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
       expect(
-        screen.getAllByRole('link', { name: /get started free/i }).length
+        screen.getAllByRole('link', { name: /start building today/i }).length
       ).toBeGreaterThan(0);
     });
 
@@ -145,7 +145,7 @@ describe('Welcome', () => {
       render(<Welcome canLogin={true} canRegister={false} />);
 
       expect(
-        screen.queryByRole('link', { name: /get started free/i })
+        screen.queryByRole('link', { name: /start building today/i })
       ).not.toBeInTheDocument();
     });
 
@@ -198,7 +198,7 @@ describe('Welcome', () => {
     it('renders before vs after section', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getAllByText(/skip the boilerplate/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/skip months of setup/i).length).toBeGreaterThan(0);
       expect(screen.getAllByText(/without this starter/i).length).toBeGreaterThan(0);
       expect(screen.getAllByText(/with this starter/i).length).toBeGreaterThan(0);
     });

@@ -153,16 +153,36 @@ export default function LaravelJetstream({
               </p>
             </section>
 
+            {/* ROI framing */}
+            <section className="mt-12 rounded-2xl border border-border bg-muted/40 p-8">
+              <h2 className="text-xl font-bold">The Inertia React setup you were going to build anyway</h2>
+              <p className="mt-3 text-muted-foreground">
+                Jetstream gives you auth scaffolding. You still need to wire up billing, admin,
+                notifications, API docs, and onboarding. That&apos;s 2&ndash;3 weeks of setup.
+                We&apos;ve done it. The question is whether your time is worth more than the
+                template price.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3 text-sm">
+                <Link href="/features/billing" className="text-primary hover:underline">
+                  See the billing layer →
+                </Link>
+                <Link href="/features/admin-panel" className="text-primary hover:underline">
+                  See the admin panel →
+                </Link>
+              </div>
+            </section>
+
             {/* CTA */}
-            <section className="mt-16 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-              <h2 className="text-2xl font-bold">Ship your SaaS faster</h2>
+            <section className="mt-12 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+              <h2 className="text-2xl font-bold">Already know Jetstream? You&apos;ll be shipping in 30 minutes.</h2>
               <p className="mt-2 text-muted-foreground">
-                Auth, billing, admin panel, and 90+ tests &mdash; ready on day one.
+                Same Laravel patterns, same Inertia.js — just React instead of Vue, plus billing
+                and admin panel already wired up.
               </p>
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                 <Button asChild size="lg">
                   <Link href="/">
-                    Get started
+                    Start with React instead
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -170,7 +190,10 @@ export default function LaravelJetstream({
                   <Link href="/pricing">View pricing</Link>
                 </Button>
               </div>
-              <div className="mt-4">
+              <p className="mt-4 text-sm text-muted-foreground">
+                Trusted by developers who switched from Jetstream.
+              </p>
+              <div className="mt-2">
                 <Link href="/compare" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   ← See all comparisons
                 </Link>

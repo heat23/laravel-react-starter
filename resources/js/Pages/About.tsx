@@ -4,10 +4,11 @@ import { useEffect } from 'react';
 
 import { Head, Link } from '@inertiajs/react';
 
+import { PublicFooter } from '@/Components/marketing/PublicFooter';
+import { PublicNav } from '@/Components/marketing/PublicNav';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
-import { Logo, TextLogo } from '@/Components/branding/Logo';
 
 export default function About() {
     const { track } = useAnalytics();
@@ -25,21 +26,7 @@ export default function About() {
                 />
             </Head>
             <div className="min-h-screen bg-background">
-                {/* Navigation */}
-                <nav className="container flex items-center justify-between py-6">
-                    <Link href="/" className="flex items-center gap-2">
-                        <Logo className="h-8 w-8" />
-                        <TextLogo className="text-xl font-bold" />
-                    </Link>
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/pricing"
-                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                            Pricing
-                        </Link>
-                    </div>
-                </nav>
+                <PublicNav />
 
                 <main className="container pb-24">
                     <article className="mx-auto max-w-3xl">
@@ -142,20 +129,7 @@ export default function About() {
                     </article>
                 </main>
 
-                {/* Footer */}
-                <footer className="border-t py-8">
-                    <div className="container">
-                        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-                            <p className="text-sm text-muted-foreground">
-                                &copy; {new Date().getFullYear()} Laravel React Starter. All rights reserved.
-                            </p>
-                            <nav className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <Link href="/terms" className="transition-colors hover:text-foreground">Terms</Link>
-                                <Link href="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
-                            </nav>
-                        </div>
-                    </div>
-                </footer>
+                <PublicFooter />
             </div>
         </>
     );

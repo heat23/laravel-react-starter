@@ -140,16 +140,27 @@ export default function Wave({
               </p>
             </section>
 
+            {/* Cross-links to feature pages */}
+            <div className="mt-8 flex flex-wrap gap-3 text-sm">
+              <Link href="/features/billing" className="text-primary hover:underline">
+                See the billing feature →
+              </Link>
+              <Link href="/features/admin-panel" className="text-primary hover:underline">
+                See the admin panel →
+              </Link>
+            </div>
+
             {/* CTA */}
-            <section className="mt-16 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-              <h2 className="text-2xl font-bold">Ship your SaaS faster</h2>
+            <section className="mt-12 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+              <h2 className="text-2xl font-bold">Wave is a SaaS theme. We&apos;re a production-ready template with tests, CI, and billing wired up.</h2>
               <p className="mt-2 text-muted-foreground">
-                React + TypeScript from auth to admin panel, with Redis-locked billing.
+                React + TypeScript across auth, frontend, and admin panel — with 90+ tests
+                and Redis-locked billing from day one.
               </p>
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                 <Button asChild size="lg">
                   <Link href="/">
-                    Get started
+                    See what&apos;s included
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -157,7 +168,10 @@ export default function Wave({
                   <Link href="/pricing">View pricing</Link>
                 </Button>
               </div>
-              <div className="mt-4">
+              <p className="mt-4 text-sm text-muted-foreground">
+                Trusted by developers who switched from Wave.
+              </p>
+              <div className="mt-2">
                 <Link href="/compare" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   ← See all comparisons
                 </Link>

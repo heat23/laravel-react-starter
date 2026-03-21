@@ -75,12 +75,17 @@ export default function LaravelSpark({
                 Laravel application, Spark is a proven solution.
               </p>
               <p>
+                <strong>Pricing model:</strong> Laravel Spark is licensed at $99 per year (per project).
+                Laravel React Starter is a one-time purchase with no per-project fee — deploy to
+                any number of projects under the same license.
+              </p>
+              <p>
                 The tradeoff is scope and cost structure. Spark is a recurring subscription
-                at $99 per year, focused narrowly on billing. It does not include an admin
-                panel, feature flags, webhooks, audit logging, or a frontend opinion. Those
-                are left to you. This starter includes comparable billing infrastructure
-                &mdash; Redis-locked Stripe mutations, four plan tiers, dunning emails &mdash;
-                plus all of those additional features, as a one-time purchase.
+                focused narrowly on billing. It does not include an admin panel, feature flags,
+                webhooks, audit logging, or a frontend opinion. Those are left to you. This
+                starter includes comparable billing infrastructure &mdash; Redis-locked Stripe
+                mutations, four plan tiers, dunning emails &mdash; plus all of those additional
+                features, as a one-time purchase.
               </p>
               <p>
                 This is not a criticism of Spark&apos;s approach. Focused tools have real
@@ -148,25 +153,38 @@ export default function LaravelSpark({
               </p>
             </section>
 
+            {/* Cross-links to feature pages */}
+            <div className="mt-8 flex flex-wrap gap-3 text-sm">
+              <Link href="/features/billing" className="text-primary hover:underline">
+                See the billing feature →
+              </Link>
+              <Link href="/features/admin-panel" className="text-primary hover:underline">
+                See the admin panel →
+              </Link>
+            </div>
+
             {/* CTA */}
-            <section className="mt-16 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-              <h2 className="text-2xl font-bold">Ship your SaaS faster</h2>
+            <section className="mt-12 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+              <h2 className="text-2xl font-bold">Spark costs $99/year. Our starter template is a one-time fee.</h2>
               <p className="mt-2 text-muted-foreground">
-                Billing, admin panel, feature flags, and 90+ tests &mdash; one-time
-                purchase.
+                Billing, admin panel, feature flags, webhooks, and 90+ tests &mdash; everything
+                Spark doesn&apos;t include, included.
               </p>
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                 <Button asChild size="lg">
-                  <Link href="/">
-                    Get started
+                  <Link href="/pricing">
+                    Compare total cost
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
-                  <Link href="/pricing">View pricing</Link>
+                  <Link href="/">Get started</Link>
                 </Button>
               </div>
-              <div className="mt-4">
+              <p className="mt-4 text-sm text-muted-foreground">
+                Trusted by developers who switched from Spark.
+              </p>
+              <div className="mt-2">
                 <Link href="/compare" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                   ← See all comparisons
                 </Link>
