@@ -7,6 +7,7 @@ use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\CustomerHealthService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -14,11 +15,12 @@ use Inertia\Response;
 
 class AdminDashboardController extends Controller
 {
-    public function __invoke(): Response
+    public function __invoke(CustomerHealthService $healthService): Response
     {
         $stats = Cache::remember(AdminCacheKey::DASHBOARD_STATS->value, AdminCacheKey::DEFAULT_TTL, function () {
             $stats = [
                 'total_users' => User::count(),
+                'total_deactivated' => User::onlyTrashed()->count(),
                 'new_users_7d' => User::where('created_at', '>=', now()->subDays(7))->count(),
                 'new_users_30d' => User::where('created_at', '>=', now()->subDays(30))->count(),
                 'admin_count' => User::where('is_admin', true)->count(),
@@ -35,6 +37,11 @@ class AdminDashboardController extends Controller
 
             return $stats;
         });
+
+        $retentionStats = [
+            'd7_retention' => $healthService->getD7RetentionRate(),
+            'd30_retention' => $healthService->getD30RetentionRate(),
+        ];
 
         $signupChart = Cache::remember(AdminCacheKey::DASHBOARD_SIGNUP_CHART->value, AdminCacheKey::CHART_TTL, function () {
             return User::select(QueryHelper::dateExpression('created_at'), DB::raw('COUNT(*) as count'))
@@ -54,6 +61,7 @@ class AdminDashboardController extends Controller
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
+            'retention_stats' => $retentionStats,
             'signup_chart' => $signupChart,
             'recent_activity' => $recentActivity,
         ]);

@@ -110,6 +110,12 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         Route::delete('/failed-jobs/{id}', [AdminFailedJobsController::class, 'destroy'])
             ->middleware('throttle:10,1')
             ->name('failed-jobs.destroy');
+        Route::post('/failed-jobs/bulk-retry', [AdminFailedJobsController::class, 'bulkRetry'])
+            ->middleware('throttle:10,1')
+            ->name('failed-jobs.bulk-retry');
+        Route::delete('/failed-jobs/bulk', [AdminFailedJobsController::class, 'bulkDelete'])
+            ->middleware('throttle:10,1')
+            ->name('failed-jobs.bulk-destroy');
 
         // Data Health Checks
         Route::get('/data-health', [AdminDataHealthController::class, 'index'])->name('data-health.index');
@@ -204,6 +210,6 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
     });
 
 // Stop impersonation — outside admin middleware because impersonated user is not admin
-Route::middleware(['auth'])
+Route::middleware(['auth', 'throttle:10,1'])
     ->post('/admin/impersonate/stop', [AdminImpersonationController::class, 'stop'])
     ->name('admin.impersonation.stop');

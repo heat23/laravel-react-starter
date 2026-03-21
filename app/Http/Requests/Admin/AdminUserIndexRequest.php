@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class AdminUserIndexRequest extends FormRequest
 {
@@ -17,6 +18,7 @@ class AdminUserIndexRequest extends FormRequest
             'search' => ['nullable', 'string', 'max:100'],
             'admin' => ['nullable', 'in:0,1'],
             'verified' => ['nullable', 'in:0,1'],
+            'status' => ['nullable', 'string', Rule::in(['active', 'deactivated', 'all'])],
             'sort' => ['nullable', 'string', 'in:name,email,created_at,last_login_at,is_admin'],
             'dir' => ['nullable', 'string', 'in:asc,desc'],
             'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],

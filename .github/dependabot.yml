@@ -1,0 +1,51 @@
+version: 2
+updates:
+  # Composer (PHP) dependencies
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    groups:
+      laravel-framework:
+        patterns:
+          - "laravel/*"
+      dev-dependencies:
+        dependency-type: "development"
+    labels:
+      - "dependencies"
+      - "php"
+
+  # NPM (JavaScript/TypeScript) dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 5
+    groups:
+      react-ecosystem:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+          - "vite"
+          - "@vitejs/*"
+      dev-dependencies:
+        dependency-type: "development"
+    labels:
+      - "dependencies"
+      - "javascript"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels:
+      - "dependencies"
+      - "github-actions"

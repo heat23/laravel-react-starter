@@ -115,9 +115,9 @@ if command -v redis-cli >/dev/null 2>&1; then
     REDIS_PASSWORD=$(grep "^REDIS_PASSWORD=" "$ENV_SOURCE" | cut -d'=' -f2 | sed 's/#.*//' | tr -d '"' | tr -d "'" | xargs || echo "")
 
     # Build redis-cli command with optional auth
-    REDIS_CMD="redis-cli -h $REDIS_HOST -p $REDIS_PORT"
+    REDIS_CMD="redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT}"
     if [[ -n "$REDIS_PASSWORD" && "$REDIS_PASSWORD" != "null" ]]; then
-        REDIS_CMD="$REDIS_CMD -a $REDIS_PASSWORD"
+        REDIS_CMD="${REDIS_CMD} -a ${REDIS_PASSWORD}"
     fi
 
     REDIS_PING=$($REDIS_CMD ping 2>/dev/null || echo "FAILED")
@@ -153,7 +153,23 @@ if [[ "$DEPLOY_ENV" != "local" ]]; then
             fail "Missing required env var: $var"
         fi
     done
-pass "Required environment variables present"
+    pass "Required environment variables present"
+
+    # Validate APP_DEBUG=false in production
+    if [[ "$DEPLOY_ENV" == "production" ]]; then
+        APP_DEBUG_VAL=$(grep '^APP_DEBUG=' .env 2>/dev/null | cut -d'=' -f2 | tr -d '"' | xargs | tr '[:upper:]' '[:lower:]')
+        if [[ "$APP_DEBUG_VAL" != "false" ]]; then
+            fail "APP_DEBUG must be 'false' in production (currently: '${APP_DEBUG_VAL}'). Set APP_DEBUG=false in .env before deploying."
+        fi
+        pass "APP_DEBUG=false confirmed"
+
+        # Validate SESSION_ENCRYPT=true in production
+        SESSION_ENCRYPT_VAL=$(grep '^SESSION_ENCRYPT=' .env 2>/dev/null | cut -d'=' -f2 | tr -d '"' | xargs | tr '[:upper:]' '[:lower:]')
+        if [[ "$SESSION_ENCRYPT_VAL" != "true" ]]; then
+            fail "SESSION_ENCRYPT must be 'true' in production (currently: '${SESSION_ENCRYPT_VAL}'). Set SESSION_ENCRYPT=true in .env before deploying."
+        fi
+        pass "SESSION_ENCRYPT=true confirmed"
+    fi
 else
     warn "Skipping required env var checks for local run"
 fi

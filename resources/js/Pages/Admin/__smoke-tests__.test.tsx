@@ -101,6 +101,7 @@ describe("Admin UI Smoke Tests", () => {
                 deleted_at: null,
                 last_login_at: null,
                 tokens_count: 0,
+                engagement_score: 0,
               },
             ],
             current_page: 1,
@@ -437,6 +438,108 @@ describe("Admin UI Smoke Tests", () => {
       );
 
       expect(screen.getByText("Webhooks Overview")).toBeInTheDocument();
+    });
+  });
+
+  describe("Failed Jobs Pages", () => {
+    it("renders Failed Jobs Index", async () => {
+      const FailedJobsIndex = (await import("./FailedJobs/Index")).default;
+
+      render(
+        <FailedJobsIndex
+          jobs={{
+            data: [
+              {
+                id: 1,
+                uuid: "abc-123-uuid",
+                connection: "redis",
+                queue: "default",
+                payload_summary: "App\\Jobs\\TestJob",
+                failed_at: "2026-03-20T10:00:00Z",
+                exception_summary: "RuntimeException: Something went wrong",
+              },
+            ],
+            current_page: 1,
+            per_page: 25,
+            total: 1,
+            last_page: 1,
+            from: 1,
+            to: 1,
+          }}
+          queues={["default", "emails"]}
+          filters={{}}
+        />
+      );
+
+      expect(screen.getByRole("heading", { name: "Failed Jobs", level: 1 })).toBeInTheDocument();
+    });
+
+    it("renders Failed Jobs Show", async () => {
+      const FailedJobShow = (await import("./FailedJobs/Show")).default;
+
+      render(
+        <FailedJobShow
+          job={{
+            id: 1,
+            uuid: "abc-123-uuid",
+            connection: "redis",
+            queue: "default",
+            payload_summary: "App\\Jobs\\TestJob",
+            payload: '{"displayName":"App\\\\Jobs\\\\TestJob"}',
+            exception: "RuntimeException: Something went wrong\n  at line 1",
+            failed_at: "2026-03-20T10:00:00Z",
+          }}
+        />
+      );
+
+      expect(screen.getByText("abc-123-uuid")).toBeInTheDocument();
+    });
+  });
+
+  describe("Feature Flags Page", () => {
+    it("renders Feature Flags Index", async () => {
+      const FeatureFlagsIndex = (await import("./FeatureFlags/Index")).default;
+
+      render(
+        <FeatureFlagsIndex
+          flags={[
+            {
+              flag: "billing",
+              env_default: true,
+              global_override: null,
+              effective: true,
+              user_override_count: 0,
+            },
+            {
+              flag: "social_auth",
+              env_default: false,
+              global_override: true,
+              effective: true,
+              user_override_count: 2,
+            },
+          ]}
+        />
+      );
+
+      expect(screen.getByRole("heading", { name: "Feature Flags", level: 1 })).toBeInTheDocument();
+    });
+  });
+
+  describe("Data Health Page", () => {
+    it("renders Data Health", async () => {
+      const DataHealth = (await import("./DataHealth")).default;
+
+      render(
+        <DataHealth
+          checks={{
+            orphaned_tokens: { status: "ok", count: 0, description: "No orphaned tokens found" },
+            missing_settings: { status: "warning", count: 3, description: "Users missing default settings" },
+          }}
+          ran_at="2026-03-20T10:00:00Z"
+        />
+      );
+
+      expect(screen.getByRole("heading", { name: "Data Health", level: 1 })).toBeInTheDocument();
     });
   });
 });

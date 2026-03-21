@@ -177,6 +177,13 @@ class AdminFeatureFlagController extends Controller
             ], 422);
         }
 
+        if (strlen($query) > 100) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Search query must be at most 100 characters.',
+            ], 422);
+        }
+
         $users = $this->featureFlagService->searchUsers($query);
 
         return response()->json($users);

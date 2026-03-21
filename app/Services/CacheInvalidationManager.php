@@ -15,6 +15,7 @@ class CacheInvalidationManager
         Cache::forget(AdminCacheKey::BILLING_STATUS->value);
         Cache::forget(AdminCacheKey::BILLING_GROWTH_CHART->value);
         Cache::forget(AdminCacheKey::BILLING_TRIALS->value);
+        Cache::forget(AdminCacheKey::BILLING_COHORT_RETENTION->value);
     }
 
     public function invalidateTokens(): void

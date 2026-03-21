@@ -210,6 +210,24 @@ export default function AdminUsersIndex({
               <SelectItem value="0">Unverified</SelectItem>
             </SelectContent>
           </Select>
+          <Select
+            value={filters.status ?? 'all'}
+            onValueChange={(value) =>
+              updateFilter({ status: value === 'all' ? undefined : value })
+            }
+          >
+            <SelectTrigger
+              className="w-[140px]"
+              aria-label="Filter by account status"
+            >
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="deactivated">Deactivated</SelectItem>
+            </SelectContent>
+          </Select>
         </fieldset>
 
         {/* Bulk Action Bar */}

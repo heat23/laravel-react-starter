@@ -23,7 +23,11 @@ class SecurityHeaders
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
         if (app()->isProduction()) {
-            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+            $hsts = 'max-age=31536000; includeSubDomains';
+            if (config('security.hsts_preload')) {
+                $hsts .= '; preload';
+            }
+            $response->headers->set('Strict-Transport-Security', $hsts);
         }
 
         if (config('security.csp.enabled')) {

@@ -20,8 +20,10 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminUsersController extends Controller
 {
@@ -66,7 +68,13 @@ class AdminUsersController extends Controller
     public function index(AdminUserIndexRequest $request): Response
     {
         $validated = $request->validated();
-        $query = User::withTrashed()
+        $status = $validated['status'] ?? 'all';
+        $baseQuery = match ($status) {
+            'active' => User::query(),
+            'deactivated' => User::onlyTrashed(),
+            default => User::withTrashed(),
+        };
+        $query = $baseQuery
             ->withCount('tokens', 'settings', 'webhookEndpoints')
             ->with('settings:id,user_id,key');
 
@@ -114,7 +122,7 @@ class AdminUsersController extends Controller
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
-            'filters' => $request->only('search', 'admin', 'verified', 'sort', 'dir', 'per_page'),
+            'filters' => $request->only('search', 'admin', 'verified', 'status', 'sort', 'dir', 'per_page'),
         ]);
     }
 
@@ -282,7 +290,7 @@ class AdminUsersController extends Controller
         return back()->with('success', "Deactivated {$name}.");
     }
 
-    public function export(AdminUserExportRequest $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function export(AdminUserExportRequest $request): StreamedResponse
     {
         $this->auditService->log(AnalyticsEvent::ADMIN_USERS_EXPORTED, [
             'filters' => $request->validated(),
@@ -310,7 +318,7 @@ class AdminUsersController extends Controller
             return back()->with('error', 'User has no password (OAuth-only account).');
         }
 
-        $token = \Illuminate\Support\Facades\Password::broker()->createToken($user);
+        $token = Password::broker()->createToken($user);
         $user->sendPasswordResetNotification($token);
 
         $this->auditService->log(AnalyticsEvent::ADMIN_PASSWORD_RESET_SENT, [
@@ -323,7 +331,12 @@ class AdminUsersController extends Controller
 
     private function buildUserQuery(array $validated)
     {
-        $query = User::withTrashed();
+        $status = $validated['status'] ?? 'all';
+        $query = match ($status) {
+            'active' => User::query(),
+            'deactivated' => User::onlyTrashed(),
+            default => User::withTrashed(),
+        };
 
         if (! empty($validated['search'])) {
             $query->where(function ($q) use ($validated) {
