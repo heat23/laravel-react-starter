@@ -30,7 +30,7 @@ it('renders email 3 — account status', function () {
 
     $mail = $notification->toMail($user);
 
-    expect($mail->subject)->toContain('still active');
+    expect($mail->subject)->toContain('One thing changed since you last logged in');
 });
 
 it('includes email_number in toArray', function () {
