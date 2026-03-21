@@ -29,6 +29,7 @@ use App\Http\Controllers\Settings\WebhookPageController;
 use App\Http\Controllers\UnsubscribeController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
+use Laravel\Cashier\Http\Controllers\PaymentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -163,7 +164,7 @@ if (config('features.billing.enabled', false)) {
     });
 
     // Cashier payment confirmation page (SCA/3DS redirect target)
-    Route::get('/stripe/payment/{id}', \Laravel\Cashier\Http\Controllers\PaymentController::class . '@show')
+    Route::get('/stripe/payment/{id}', PaymentController::class.'@show')
         ->name('cashier.payment');
 
     // Stripe webhook (no auth - Cashier verifies signature)
