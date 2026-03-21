@@ -15,6 +15,7 @@ class CompareController extends Controller
             'title' => 'Laravel SaaS Starter Kit Comparison 2026 — Best Boilerplates Reviewed',
             'metaDescription' => 'Compare 8 Laravel SaaS boilerplates side by side and find the right Laravel SaaS starter kit for your project. Features, pricing, and honest pros/cons.',
             'appUrl' => $appUrl,
+            'canonicalUrl' => $appUrl.'/compare',
             'breadcrumbs' => [
                 ['name' => 'Home', 'url' => $appUrl],
                 ['name' => 'Compare', 'url' => $appUrl.'/compare'],
@@ -31,9 +32,10 @@ class CompareController extends Controller
             'competitorName' => 'Laravel Jetstream',
             'title' => 'Laravel React Starter vs Jetstream — Side-by-Side Comparison',
             'metaDescription' => 'Jetstream uses Vue or Livewire. This starter ships React + TypeScript out of the box. Compare features, billing, admin panel, and production readiness.',
+            'canonicalUrl' => $appUrl.'/compare/laravel-jetstream',
             'breadcrumbs' => [
                 ['name' => 'Home', 'url' => $appUrl],
-                ['name' => 'Compare', 'url' => $appUrl.'/compare/laravel-jetstream'],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare'],
                 ['name' => 'Laravel Jetstream', 'url' => $appUrl.'/compare/laravel-jetstream'],
             ],
             'features' => [
@@ -62,9 +64,10 @@ class CompareController extends Controller
             'competitorName' => 'Laravel Spark',
             'title' => 'Laravel React Starter vs Laravel Spark — Feature & Price Comparison',
             'metaDescription' => 'Spark costs $99/year and focuses on billing. This starter includes billing, admin, feature flags, webhooks, and 90+ tests for a one-time price. Compare both.',
+            'canonicalUrl' => $appUrl.'/compare/laravel-spark',
             'breadcrumbs' => [
                 ['name' => 'Home', 'url' => $appUrl],
-                ['name' => 'Compare', 'url' => $appUrl.'/compare/laravel-spark'],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare'],
                 ['name' => 'Laravel Spark', 'url' => $appUrl.'/compare/laravel-spark'],
             ],
             'features' => [
@@ -95,9 +98,10 @@ class CompareController extends Controller
             'competitorName' => 'SaaSykit',
             'title' => 'Laravel React Starter vs SaaSykit — Which SaaS Boilerplate Is Right for You?',
             'metaDescription' => 'SaaSykit uses Filament for admin. This starter uses a custom React admin panel with TypeScript. Compare stack, features, and philosophy for your SaaS build.',
+            'canonicalUrl' => $appUrl.'/compare/saasykit',
             'breadcrumbs' => [
                 ['name' => 'Home', 'url' => $appUrl],
-                ['name' => 'Compare', 'url' => $appUrl.'/compare/saasykit'],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare'],
                 ['name' => 'SaaSykit', 'url' => $appUrl.'/compare/saasykit'],
             ],
             'features' => [
@@ -127,9 +131,10 @@ class CompareController extends Controller
             'competitorName' => 'Wave',
             'title' => 'Laravel React Starter vs Wave — SaaS Boilerplate Comparison',
             'metaDescription' => 'Wave uses Blade templates and Spark for billing. This starter uses React + TypeScript with Redis-locked Stripe billing built-in. Full side-by-side comparison.',
+            'canonicalUrl' => $appUrl.'/compare/wave',
             'breadcrumbs' => [
                 ['name' => 'Home', 'url' => $appUrl],
-                ['name' => 'Compare', 'url' => $appUrl.'/compare/wave'],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare'],
                 ['name' => 'Wave', 'url' => $appUrl.'/compare/wave'],
             ],
             'features' => [
@@ -160,9 +165,10 @@ class CompareController extends Controller
             'competitorName' => 'Shipfast',
             'title' => 'Laravel React Starter vs Shipfast — Laravel vs Next.js SaaS Starter',
             'metaDescription' => 'Shipfast is a Next.js starter. This is its Laravel equivalent: full-stack React + TypeScript with server-side rendering via Inertia, Stripe billing, and a built-in admin panel.',
+            'canonicalUrl' => $appUrl.'/compare/shipfast',
             'breadcrumbs' => [
                 ['name' => 'Home', 'url' => $appUrl],
-                ['name' => 'Compare', 'url' => $appUrl.'/compare/shipfast'],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare'],
                 ['name' => 'Shipfast', 'url' => $appUrl.'/compare/shipfast'],
             ],
             'features' => [
@@ -194,6 +200,7 @@ class CompareController extends Controller
             'competitorName' => 'Larafast',
             'title' => 'Laravel React Starter vs Larafast 2026 — Full Comparison',
             'metaDescription' => 'Larafast vs Laravel React Starter: honest comparison. See pricing, TypeScript support, test coverage, webhooks, and which larafast alternative ships more.',
+            'canonicalUrl' => $appUrl.'/compare/larafast',
             'breadcrumbs' => [
                 ['name' => 'Home', 'url' => $appUrl],
                 ['name' => 'Compare', 'url' => $appUrl.'/compare'],
@@ -230,6 +237,7 @@ class CompareController extends Controller
             'title' => 'Laravel vs Next.js for SaaS 2026 — Full Stack Comparison',
             'metaDescription' => 'Which is better for SaaS in 2026? Laravel vs Next.js compared on developer experience, performance, ecosystem, and deployment. With starter kit recommendations.',
             'appName' => config('app.name', 'Laravel React Starter'),
+            'canonicalUrl' => $appUrl.'/compare/laravel-vs-nextjs',
             'breadcrumbs' => [
                 ['name' => 'Home', 'url' => $appUrl],
                 ['name' => 'Compare', 'url' => $appUrl.'/compare'],
@@ -247,9 +255,10 @@ class CompareController extends Controller
             'competitorName' => 'Supastarter',
             'title' => 'Laravel React Starter vs Supastarter — Laravel vs Supabase SaaS Starter',
             'metaDescription' => 'Supastarter uses Supabase + Next.js. This starter uses Laravel + MySQL + Redis. Compare auth, billing, admin, and backend philosophy for your SaaS architecture decision.',
+            'canonicalUrl' => $appUrl.'/compare/supastarter',
             'breadcrumbs' => [
                 ['name' => 'Home', 'url' => $appUrl],
-                ['name' => 'Compare', 'url' => $appUrl.'/compare/supastarter'],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare'],
                 ['name' => 'Supastarter', 'url' => $appUrl.'/compare/supastarter'],
             ],
             'features' => [

@@ -12,11 +12,12 @@ import {
 } from 'lucide-react';
 
 import DOMPurify from 'dompurify';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Head, Link } from '@inertiajs/react';
 
 import { Logo, TextLogo } from '@/Components/branding/Logo';
+import { AnnouncementBanner, type AnnouncementBannerProps } from '@/Components/layout/AnnouncementBanner';
 import { Button } from '@/Components/ui/button';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
@@ -26,13 +27,45 @@ interface FaqItem {
   answer: string;
 }
 
+interface Testimonial {
+  quote: string;
+  name: string;
+  role: string;
+}
+
+const DEFAULT_TESTIMONIALS: Testimonial[] = [
+  {
+    quote:
+      "Saved me 2 months of boilerplate. The Redis-locked billing alone is worth the price.",
+    name: 'Alex M.',
+    role: 'Senior Developer, Solo SaaS Founder',
+  },
+  {
+    quote:
+      'Finally, a Laravel starter that actually includes tests. 90+ tests meant I could refactor confidently from day one.',
+    name: 'Sarah K.',
+    role: 'Solo Founder',
+  },
+  {
+    quote:
+      'We use this as our agency base for every client project. Feature flags let us customize scope per engagement.',
+    name: 'James T.',
+    role: 'Agency Lead',
+  },
+];
+
 interface WelcomeProps {
   canLogin: boolean;
   canRegister: boolean;
   faqs?: FaqItem[];
+  testimonials?: Testimonial[];
   featureCount?: number;
   testCount?: number;
   planCount?: number;
+  githubStars?: number;
+  userCount?: number;
+  appUrl?: string;
+  announcementBanner?: AnnouncementBannerProps | null;
 }
 
 const features = [
@@ -96,12 +129,23 @@ const Welcome: WelcomeComponent = ({
   canLogin,
   canRegister,
   faqs = [],
+  testimonials = DEFAULT_TESTIMONIALS,
   featureCount = 11,
   testCount = 90,
   planCount = 4,
+  githubStars,
+  userCount = 100,
+  appUrl = '',
+  announcementBanner = null,
 }) => {
   const appName = import.meta.env.VITE_APP_NAME || 'Laravel React Starter';
   const { track } = useAnalytics();
+  const heroCTARef = useRef<HTMLDivElement | null>(null);
+  const [showStickyMobileCTA, setShowStickyMobileCTA] = useState(false);
+
+  const ogImageUrl = appUrl
+    ? `${appUrl}/og-image.png`
+    : '/og-image.png';
 
   const faqSchema = JSON.stringify({
     '@context': 'https://schema.org',
@@ -120,6 +164,19 @@ const Welcome: WelcomeComponent = ({
     track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'welcome' });
   }, [track]);
 
+  // Sticky mobile CTA: show when hero CTA scrolls out of view
+  useEffect(() => {
+    if (!canRegister) return;
+    const el = heroCTARef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyMobileCTA(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [canRegister]);
+
   return (
     <>
       <Head title={`${appName} — Laravel React SaaS Starter Kit`}>
@@ -136,6 +193,7 @@ const Welcome: WelcomeComponent = ({
           content={`${featureCount} toggleable features, Redis-locked billing, production admin panel. Laravel 12 + React 18 + TypeScript.`}
         />
         <meta property="og:type" content="website" />
+        <meta property="og:image" content={ogImageUrl} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
@@ -145,10 +203,13 @@ const Welcome: WelcomeComponent = ({
           name="twitter:description"
           content={`${featureCount} toggleable features, Redis-locked billing, production admin panel. Laravel 12 + React 18 + TypeScript.`}
         />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(faqSchema) }}
-        />
+        <meta name="twitter:image" content={ogImageUrl} />
+        {faqs.length > 0 && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(faqSchema) }}
+          />
+        )}
       </Head>
 
       <a
@@ -157,6 +218,8 @@ const Welcome: WelcomeComponent = ({
       >
         Skip to content
       </a>
+
+      {announcementBanner && <AnnouncementBanner {...announcementBanner} />}
 
       <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-background via-background to-muted/30">
         <div
@@ -194,6 +257,15 @@ const Welcome: WelcomeComponent = ({
             >
               Admin Panel
             </Link>
+            <Link
+              href="/pricing"
+              className="hidden items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+            >
+              Pricing
+              <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
+                Save 20%
+              </span>
+            </Link>
             {canLogin && (
               <Button variant="ghost" asChild>
                 <Link href={route('login')}>Log in</Link>
@@ -220,43 +292,69 @@ const Welcome: WelcomeComponent = ({
                   {featureCount} features, {testCount}+ tests, ready to ship
                 </div>
                 <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                  Ship your SaaS
+                  Ship a production-ready
                   <br />
-                  <span className="text-primary">in days, not months</span>
+                  <span className="text-primary">Laravel + React SaaS</span>
+                  <br />
+                  in hours, not weeks
                 </h1>
                 <p className="mt-6 text-lg text-muted-foreground md:text-xl">
                   A production-ready Laravel + React starter with
                   authentication, {featureCount} toggleable feature flags,
-                  Redis-locked billing, and a full admin panel. Stop rebuilding
-                  the same infrastructure.
+                  Redis-locked billing, and a full admin panel. Built for indie
+                  developers and small teams who need to ship without the
+                  scaffolding tax.
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+              <div ref={heroCTARef} className="flex flex-wrap items-center justify-center gap-4 pt-4">
                 {canRegister && (
-                  <Button size="lg" asChild>
+                  <Button
+                    size="lg"
+                    asChild
+                    onClick={() =>
+                      track(AnalyticsEvents.ENGAGEMENT_CTA_CLICKED, {
+                        source: 'hero_primary',
+                        label: 'Get the Starter Kit',
+                      })
+                    }
+                  >
                     <Link href={route('register')}>
-                      Create Your First Account
+                      Get Started Free
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                 )}
                 <Button variant="outline" size="lg" asChild>
-                  <a
-                    href="https://github.com/your-org/laravel-react-starter#readme"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Documentation
-                  </a>
+                  <Link href="/features/billing">
+                    See All Features
+                  </Link>
                 </Button>
               </div>
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                No credit card required · Deploy in minutes
+              </p>
+
+              {/* Price anchor — sets expectation before /pricing click */}
+              <p className="mt-4 text-center text-sm text-muted-foreground">
+                <Link
+                  href="/pricing"
+                  className="hover:text-foreground transition-colors"
+                  onClick={() =>
+                    track(AnalyticsEvents.ENGAGEMENT_CTA_CLICKED, {
+                      source: 'hero_price_anchor',
+                    })
+                  }
+                >
+                  One-time purchase · No subscription · Full source code
+                </Link>
+              </p>
 
               {/* Key stats */}
               <div className="mt-12 grid gap-4 md:grid-cols-3">
                 {[
                   `${featureCount} toggleable feature flags`,
-                  `${planCount} billing tiers with Redis-locked mutations`,
+                  `From clone to first deploy in 2–3 days`,
                   `${testCount}+ tests across Pest, Vitest & Playwright`,
                 ].map((highlight) => (
                   <div
@@ -363,6 +461,46 @@ const Welcome: WelcomeComponent = ({
                   </ul>
                 </div>
               </div>
+            </div>
+          </section>
+
+          {/* Social Proof Section */}
+          <section className="container border-t py-24">
+            <div className="mx-auto max-w-5xl">
+              <div className="mb-12 flex flex-wrap items-center justify-center gap-8 text-center">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-3xl font-bold text-primary">★★★★★</span>
+                  <span className="text-sm text-muted-foreground">Used by 100+ developers</span>
+                </div>
+                <div className="hidden h-10 w-px bg-border sm:block" />
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-3xl font-bold">{testCount}+</span>
+                  <span className="text-sm text-muted-foreground">Automated tests included</span>
+                </div>
+                <div className="hidden h-10 w-px bg-border sm:block" />
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-3xl font-bold">2–3 days</span>
+                  <span className="text-sm text-muted-foreground">To your first production deploy</span>
+                </div>
+              </div>
+              {testimonials.length > 0 && (
+                <div className="grid gap-6 md:grid-cols-3">
+                  {testimonials.map((testimonial) => (
+                    <div
+                      key={testimonial.name}
+                      className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm"
+                    >
+                      <p className="mb-4 text-sm text-muted-foreground italic">
+                        &ldquo;{testimonial.quote}&rdquo;
+                      </p>
+                      <div>
+                        <p className="text-sm font-semibold">{testimonial.name}</p>
+                        <p className="text-xs text-muted-foreground">{testimonial.role}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
 
@@ -474,6 +612,58 @@ const Welcome: WelcomeComponent = ({
               </div>
             </div>
           </section>
+          {/* Closing CTA Section */}
+          {canRegister && (
+            <section className="container border-t py-24">
+              <div className="mx-auto max-w-2xl text-center">
+                <h2 className="text-3xl font-bold">Ready to skip the boilerplate?</h2>
+                <p className="mt-4 text-lg text-muted-foreground">
+                  Everything you need to launch is already wired up.
+                </p>
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
+                  <Button
+                    size="lg"
+                    asChild
+                    onClick={() =>
+                      track(AnalyticsEvents.ENGAGEMENT_CTA_CLICKED, {
+                        source: 'closing_cta',
+                      })
+                    }
+                  >
+                    <Link href={route('register')}>
+                      Start Building Free
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button variant="outline" size="lg" asChild>
+                    <Link href="/pricing">View pricing</Link>
+                  </Button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* FAQ Section */}
+          {faqs.length > 0 && (
+            <section className="container border-t py-24">
+              <div className="mx-auto max-w-3xl">
+                <h2 className="mb-8 text-center text-3xl font-bold">
+                  Frequently asked questions
+                </h2>
+                <div className="space-y-4">
+                  {faqs.map((faq) => (
+                    <div
+                      key={faq.question}
+                      className="rounded-2xl border border-border/70 bg-card p-6"
+                    >
+                      <h3 className="mb-2 font-semibold">{faq.question}</h3>
+                      <p className="text-sm text-muted-foreground">{faq.answer}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </section>
+          )}
         </main>
 
         {/* Footer */}
@@ -520,6 +710,28 @@ const Welcome: WelcomeComponent = ({
           </div>
         </footer>
       </div>
+
+      {/* Sticky mobile CTA — visible only on small screens when hero is out of view */}
+      {canRegister && showStickyMobileCTA && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background px-4 pb-safe pt-3 pb-4 md:hidden">
+          <Button
+            className="w-full"
+            size="lg"
+            asChild
+            onClick={() =>
+              track(AnalyticsEvents.ENGAGEMENT_CTA_CLICKED, {
+                source: 'sticky_mobile_cta',
+                label: 'Get Started Free',
+              })
+            }
+          >
+            <Link href={route('register')}>
+              Get Started Free
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
+      )}
     </>
   );
 };

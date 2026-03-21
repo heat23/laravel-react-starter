@@ -17,6 +17,7 @@ export default function Wave({
   metaDescription,
   features,
   breadcrumbs,
+  canonicalUrl,
 }: ComparisonPageProps) {
   const { track } = useAnalytics();
 
@@ -35,6 +36,7 @@ export default function Wave({
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={metaDescription} />
         {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
+        {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
       </Head>
 
       <div className="min-h-screen bg-background">

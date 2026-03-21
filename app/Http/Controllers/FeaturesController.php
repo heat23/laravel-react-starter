@@ -17,6 +17,7 @@ class FeaturesController extends Controller
             'metaDescription' => 'Production-grade billing, feature flags, admin panel, webhooks, 2FA, and social auth. All included in one Laravel React starter kit.',
             'canonicalUrl' => $appUrl.'/features',
             'ogImage' => asset('og/features-index.png'),
+            'canRegister' => Route::has('register'),
             'breadcrumbs' => [
                 ['name' => 'Home', 'url' => $appUrl],
                 ['name' => 'Features', 'url' => $appUrl.'/features'],

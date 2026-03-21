@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cache;
 
 class SeoController extends Controller
 {
@@ -68,23 +68,31 @@ class SeoController extends Controller
             '',
             "- {$appUrl}/",
             "- {$appUrl}/pricing",
+            "- {$appUrl}/features",
             "- {$appUrl}/features/billing",
             "- {$appUrl}/features/feature-flags",
             "- {$appUrl}/features/admin-panel",
+            "- {$appUrl}/features/webhooks",
+            "- {$appUrl}/features/two-factor-auth",
+            "- {$appUrl}/features/social-auth",
+            "- {$appUrl}/compare",
             "- {$appUrl}/compare/laravel-jetstream",
             "- {$appUrl}/compare/laravel-spark",
             "- {$appUrl}/compare/saasykit",
             "- {$appUrl}/compare/wave",
             "- {$appUrl}/compare/shipfast",
             "- {$appUrl}/compare/supastarter",
+            "- {$appUrl}/compare/laravel-vs-nextjs",
+            "- {$appUrl}/guides",
             "- {$appUrl}/guides/building-saas-with-laravel-12",
             "- {$appUrl}/guides/laravel-stripe-billing-tutorial",
             "- {$appUrl}/guides/laravel-feature-flags-tutorial",
+            "- {$appUrl}/guides/saas-starter-kit-comparison-2026",
             "- {$appUrl}/guides/cost-of-building-saas-from-scratch",
             "- {$appUrl}/guides/laravel-two-factor-authentication",
             "- {$appUrl}/guides/laravel-webhook-implementation",
             "- {$appUrl}/guides/single-tenant-vs-multi-tenant-saas",
-            "- {$appUrl}/features/webhooks",
+            "- {$appUrl}/blog",
             "- {$appUrl}/changelog",
             "- {$appUrl}/roadmap",
             "- {$appUrl}/contact",
@@ -115,55 +123,79 @@ class SeoController extends Controller
 
     public function sitemap(): Response
     {
-        $now = Carbon::now()->toAtomString();
+        $xml = Cache::remember('sitemap', 86400, fn () => $this->buildSitemap());
 
+        return response($xml, 200, ['Content-Type' => 'application/xml']);
+    }
+
+    private function buildSitemap(): string
+    {
+        $base = rtrim(config('app.url'), '/');
+
+        // Static publish/update dates per URL — update when content changes
         $urls = [
-            ['loc' => config('app.url'), 'priority' => '1.0', 'changefreq' => 'weekly', 'lastmod' => $now],
-            ['loc' => config('app.url').'/about', 'priority' => '0.5', 'changefreq' => 'monthly', 'lastmod' => $now],
-            ['loc' => config('app.url').'/contact', 'priority' => '0.4', 'changefreq' => 'yearly', 'lastmod' => $now],
-            ['loc' => config('app.url').'/changelog', 'priority' => '0.5', 'changefreq' => 'monthly', 'lastmod' => $now],
-            ['loc' => config('app.url').'/roadmap', 'priority' => '0.5', 'changefreq' => 'weekly', 'lastmod' => $now],
-            ['loc' => config('app.url').'/terms', 'priority' => '0.3', 'changefreq' => 'yearly', 'lastmod' => $now],
-            ['loc' => config('app.url').'/privacy', 'priority' => '0.3', 'changefreq' => 'yearly', 'lastmod' => $now],
+            ['loc' => $base, 'priority' => '1.0', 'changefreq' => 'weekly', 'lastmod' => '2026-03-15T00:00:00+00:00'],
         ];
 
-        if (config('features.billing.enabled', false)) {
-            $urls[] = ['loc' => config('app.url').'/pricing', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
+        if (config('features.billing.enabled', true)) {
+            $urls[] = ['loc' => $base.'/pricing', 'priority' => '0.9', 'changefreq' => 'monthly', 'lastmod' => '2026-03-01T00:00:00+00:00'];
+        }
+
+        $urls = array_merge($urls, [
+            ['loc' => $base.'/about', 'priority' => '0.5', 'changefreq' => 'monthly', 'lastmod' => '2026-01-15T00:00:00+00:00'],
+            ['loc' => $base.'/contact', 'priority' => '0.4', 'changefreq' => 'yearly', 'lastmod' => '2026-01-15T00:00:00+00:00'],
+            ['loc' => $base.'/changelog', 'priority' => '0.6', 'changefreq' => 'weekly', 'lastmod' => '2026-03-15T00:00:00+00:00'],
+            ['loc' => $base.'/roadmap', 'priority' => '0.5', 'changefreq' => 'weekly', 'lastmod' => '2026-03-15T00:00:00+00:00'],
+            ['loc' => $base.'/terms', 'priority' => '0.3', 'changefreq' => 'yearly', 'lastmod' => '2026-01-15T00:00:00+00:00'],
+            ['loc' => $base.'/privacy', 'priority' => '0.3', 'changefreq' => 'yearly', 'lastmod' => '2026-01-15T00:00:00+00:00'],
+            // Features hub + individual pages
+            ['loc' => $base.'/features', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
+            ['loc' => $base.'/features/billing', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
+            ['loc' => $base.'/features/feature-flags', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
+            ['loc' => $base.'/features/admin-panel', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
+            ['loc' => $base.'/features/webhooks', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
+            ['loc' => $base.'/features/two-factor-auth', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
+            ['loc' => $base.'/features/social-auth', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
+            // Compare hub + individual pages
+            ['loc' => $base.'/compare', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
+            ['loc' => $base.'/compare/laravel-jetstream', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
+            ['loc' => $base.'/compare/laravel-spark', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
+            ['loc' => $base.'/compare/saasykit', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
+            ['loc' => $base.'/compare/wave', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
+            ['loc' => $base.'/compare/shipfast', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
+            ['loc' => $base.'/compare/supastarter', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
+            ['loc' => $base.'/compare/larafast', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
+            ['loc' => $base.'/compare/laravel-vs-nextjs', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-19T00:00:00+00:00'],
+            // Guides hub + individual pages
+            ['loc' => $base.'/guides', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => '2026-03-15T00:00:00+00:00'],
+            ['loc' => $base.'/guides/building-saas-with-laravel-12', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
+            ['loc' => $base.'/guides/laravel-stripe-billing-tutorial', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
+            ['loc' => $base.'/guides/laravel-feature-flags-tutorial', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
+            ['loc' => $base.'/guides/saas-starter-kit-comparison-2026', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
+            ['loc' => $base.'/guides/cost-of-building-saas-from-scratch', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => '2026-03-15T00:00:00+00:00'],
+            ['loc' => $base.'/guides/laravel-two-factor-authentication', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => '2026-03-19T00:00:00+00:00'],
+            ['loc' => $base.'/guides/laravel-webhook-implementation', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => '2026-03-19T00:00:00+00:00'],
+            ['loc' => $base.'/guides/single-tenant-vs-multi-tenant-saas', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => '2026-03-19T00:00:00+00:00'],
+        ]);
+
+        // Blog index
+        $urls[] = ['loc' => $base.'/blog', 'priority' => '0.7', 'changefreq' => 'weekly', 'lastmod' => '2026-03-20T00:00:00+00:00'];
+
+        // Blog posts — use file mtime when available
+        $blogPath = resource_path('content/blog');
+        if (is_dir($blogPath)) {
+            $files = glob($blogPath.'/*.md') ?: [];
+            foreach ($files as $file) {
+                $slug = pathinfo($file, PATHINFO_FILENAME);
+                $lastmod = date('Y-m-d\TH:i:sP', filemtime($file));
+                $urls[] = ['loc' => $base.'/blog/'.$slug, 'priority' => '0.6', 'changefreq' => 'monthly', 'lastmod' => $lastmod];
+            }
         }
 
         if (config('features.api_docs.enabled', false)) {
-            $urls[] = ['loc' => config('app.url').'/docs', 'priority' => '0.6', 'changefreq' => 'weekly', 'lastmod' => $now];
+            $urls[] = ['loc' => $base.'/docs', 'priority' => '0.6', 'changefreq' => 'weekly', 'lastmod' => '2026-03-01T00:00:00+00:00'];
         }
 
-        // Feature landing pages
-        $urls[] = ['loc' => config('app.url').'/features/billing', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/features/feature-flags', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/features/admin-panel', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
-
-        // Guides (pillar content + tutorials)
-        $urls[] = ['loc' => config('app.url').'/guides/building-saas-with-laravel-12', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/guides/laravel-stripe-billing-tutorial', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/guides/laravel-feature-flags-tutorial', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/guides/saas-starter-kit-comparison-2026', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/guides/cost-of-building-saas-from-scratch', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/guides/laravel-two-factor-authentication', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/guides/laravel-webhook-implementation', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/guides/single-tenant-vs-multi-tenant-saas', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
-
-        if (config('features.webhooks.enabled', false)) {
-            $urls[] = ['loc' => config('app.url').'/features/webhooks', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
-        }
-
-        // Competitor comparison pages
-        $urls[] = ['loc' => config('app.url').'/compare/laravel-jetstream', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/compare/laravel-spark', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/compare/saasykit', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/compare/wave', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/compare/shipfast', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
-        $urls[] = ['loc' => config('app.url').'/compare/supastarter', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
-
-        return response()
-            ->view('seo.sitemap', ['urls' => $urls])
-            ->header('Content-Type', 'application/xml');
+        return view('seo.sitemap', ['urls' => $urls])->render();
     }
 }

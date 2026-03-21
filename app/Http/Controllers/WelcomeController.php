@@ -13,6 +13,7 @@ class WelcomeController extends Controller
         return Inertia::render('Welcome', [
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
+            'appUrl' => rtrim(config('app.url'), '/'),
             'faqs' => [
                 [
                     'question' => 'Is this a one-time purchase?',
