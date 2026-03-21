@@ -334,14 +334,14 @@ $webhookService->dispatch('subscription.created', [
                                     }
                                 >
                                     <Link href="/register">
-                                        Get the Starter Kit
+                                        Start Building Free
                                         <ArrowRight className="ml-2 h-4 w-4" />
                                     </Link>
                                 </Button>
                             )}
                             <Button variant="outline" size="lg" asChild>
                                 <Link href="/pricing">
-                                    See pricing
+                                    View pricing
                                 </Link>
                             </Button>
                             <Button variant="ghost" size="lg" asChild>

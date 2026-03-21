@@ -51,7 +51,7 @@ describe('Welcome', () => {
 
       expect(screen.getAllByText(/laravel \+ react saas starter kit/i).length).toBeGreaterThan(0);
       expect(
-        screen.getAllByText(/redis-locked billing/i).length
+        screen.getAllByText(/double-charge prevention/i).length
       ).toBeGreaterThan(0);
     });
 
@@ -137,7 +137,7 @@ describe('Welcome', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
       expect(
-        screen.getAllByRole('link', { name: /start building today/i }).length
+        screen.getAllByRole('link', { name: /start building free/i }).length
       ).toBeGreaterThan(0);
     });
 
@@ -145,7 +145,7 @@ describe('Welcome', () => {
       render(<Welcome canLogin={true} canRegister={false} />);
 
       expect(
-        screen.queryByRole('link', { name: /start building today/i })
+        screen.queryByRole('link', { name: /start building free/i })
       ).not.toBeInTheDocument();
     });
 

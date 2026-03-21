@@ -25,7 +25,7 @@ class FeaturesController extends Controller
             'features' => [
                 [
                     'title' => 'Production-Grade Stripe Billing',
-                    'description' => 'Redis-locked mutations, 4 plan tiers, team seats, dunning emails, and incomplete payment recovery.',
+                    'description' => 'Double-charge prevention, 4 billing plans, team seats, dunning emails, and incomplete payment recovery.',
                     'href' => '/features/billing',
                 ],
                 [
@@ -63,7 +63,7 @@ class FeaturesController extends Controller
 
         return Inertia::render('Features/Billing', [
             'title' => 'Production-Grade Stripe Billing for Laravel — Feature Overview',
-            'metaDescription' => 'Redis-locked Stripe mutations, 4 plan tiers, team seats, dunning emails, and incomplete payment recovery — all included out of the box.',
+            'metaDescription' => 'Double-charge prevention, 4 billing plans, team seats, dunning emails, and incomplete payment recovery — all included out of the box.',
             'canonicalUrl' => $appUrl.'/features/billing',
             'ogImage' => asset('og/features-billing.png'),
             'canRegister' => Route::has('register'),
