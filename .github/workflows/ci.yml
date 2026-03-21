@@ -120,7 +120,7 @@ jobs:
           DB_PASSWORD: password
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: success()
         with:
           name: php-coverage
@@ -155,7 +155,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload JS coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: success()
         with:
           name: js-coverage
@@ -389,7 +389,7 @@ jobs:
           UPDATE_SNAPSHOTS: false
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
@@ -397,7 +397,7 @@ jobs:
           retention-days: 7
 
       - name: Upload screenshot diffs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: screenshot-results
