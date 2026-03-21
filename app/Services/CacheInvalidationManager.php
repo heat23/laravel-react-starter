@@ -11,6 +11,7 @@ class CacheInvalidationManager
     {
         Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
         Cache::forget(AdminCacheKey::BILLING_STATS->value);
+        Cache::forget(AdminCacheKey::BILLING_STATS->value.'_churn_breakdown');
         Cache::forget(AdminCacheKey::BILLING_TIER_DIST->value);
         Cache::forget(AdminCacheKey::BILLING_STATUS->value);
         Cache::forget(AdminCacheKey::BILLING_GROWTH_CHART->value);

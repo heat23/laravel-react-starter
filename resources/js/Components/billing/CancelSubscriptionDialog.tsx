@@ -41,6 +41,7 @@ export function CancelSubscriptionDialog({
   const [reason, setReason] = useState<string>("");
   const [feedback, setFeedback] = useState<string>("");
   const [processing, setProcessing] = useState(false);
+  const [claimingDiscount, setClaimingDiscount] = useState(false);
   const { track } = useAnalytics();
 
   const showRetentionOffer = !!reason;
@@ -76,12 +77,30 @@ export function CancelSubscriptionDialog({
     }
   };
 
+  const handleClaimDiscount = async () => {
+    setClaimingDiscount(true);
+    try {
+      await axios.post(route("billing.retention-coupon"));
+      toast.success("Discount Applied!", {
+        description: "Your 20% discount has been added for the next 3 months.",
+      });
+      onOpenChange(false);
+    } catch (error: unknown) {
+      const response = axios.isAxiosError(error) ? error.response : null;
+      const message = response?.data?.message || "Unable to apply discount. Please contact support.";
+      toast.error("Could Not Apply Discount", { description: message });
+    } finally {
+      setClaimingDiscount(false);
+    }
+  };
+
   // Reset form state when dialog closes
   useEffect(() => {
     if (!open) {
       setReason("");
       setFeedback("");
       setProcessing(false);
+      setClaimingDiscount(false);
     }
   }, [open]);
 
@@ -137,12 +156,29 @@ export function CancelSubscriptionDialog({
             <Alert className="border-primary/20 bg-primary/5 animate-in fade-in-50 duration-300">
               <Info className="h-4 w-4 text-primary" />
               <AlertTitle>Before you go...</AlertTitle>
-              <AlertDescription>
-                Did you know you can pause your subscription instead of cancelling? Or{' '}
-                <a href="/contact" className="underline underline-offset-2">
-                  talk to us
-                </a>{' '}
-                and we'll make it right.
+              <AlertDescription className="space-y-3">
+                {reason === "too_expensive" ? (
+                  <>
+                    <p>We'd hate to lose you over cost. Stay and get 20% off for the next 3 months — applied instantly, no code needed.</p>
+                    <LoadingButton
+                      size="sm"
+                      variant="default"
+                      loading={claimingDiscount}
+                      loadingText="Applying..."
+                      onClick={handleClaimDiscount}
+                    >
+                      Claim 20% Discount
+                    </LoadingButton>
+                  </>
+                ) : (
+                  <>
+                    Did you know you can pause your subscription instead of cancelling? Or{' '}
+                    <a href="/contact" className="underline underline-offset-2">
+                      talk to us
+                    </a>{' '}
+                    and we'll make it right.
+                  </>
+                )}
               </AlertDescription>
             </Alert>
           )}

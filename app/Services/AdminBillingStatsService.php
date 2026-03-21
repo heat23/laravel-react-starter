@@ -219,6 +219,38 @@ class AdminBillingStatsService
         return $query;
     }
 
+    /**
+     * @return array{voluntary: int, involuntary: int}
+     */
+    public function getChurnBreakdown(): array
+    {
+        return Cache::remember(AdminCacheKey::BILLING_STATS->value.'_churn_breakdown', AdminCacheKey::DEFAULT_TTL, function () {
+            $thirtyDaysAgo = now()->subDays(30);
+
+            $rows = DB::table('audit_logs')
+                ->whereIn('event', ['subscription.canceled', 'stripe.subscription.deleted'])
+                ->where('created_at', '>=', $thirtyDaysAgo)
+                ->select('metadata')
+                ->get();
+
+            $voluntary = 0;
+            $involuntary = 0;
+
+            foreach ($rows as $row) {
+                $meta = is_string($row->metadata) ? json_decode($row->metadata, true) : (array) $row->metadata;
+                $churnType = $meta['churn_type'] ?? null;
+
+                if ($churnType === 'voluntary') {
+                    $voluntary++;
+                } elseif ($churnType === 'involuntary') {
+                    $involuntary++;
+                }
+            }
+
+            return compact('voluntary', 'involuntary');
+        });
+    }
+
     private function calculateMrr(): float
     {
         $grouped = DB::table('subscriptions')
