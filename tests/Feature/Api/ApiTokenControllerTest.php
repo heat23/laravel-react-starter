@@ -250,12 +250,43 @@ class ApiTokenControllerTest extends TestCase
         $response->assertUnauthorized();
     }
 
+    public function test_store_enforces_free_tier_token_limit(): void
+    {
+        config(['plans.free.limits.api_tokens' => 1]);
+        $user = User::factory()->create();
+
+        // Create one token (at the free tier limit)
+        $user->createToken('Existing Token');
+
+        // Second token should be rejected by plan limit
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/tokens', ['name' => 'One Too Many']);
+
+        $response->assertForbidden()
+            ->assertJsonPath('message', 'You have reached the API token limit for your plan. Upgrade to create more tokens.');
+    }
+
+    public function test_store_allows_token_when_under_plan_limit(): void
+    {
+        config(['plans.free.limits.api_tokens' => 2]);
+        $user = User::factory()->create();
+        $user->createToken('First Token');
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/tokens', ['name' => 'Second Token']);
+
+        $response->assertOk();
+    }
+
     // ============================================
     // Rate limiting tests
     // ============================================
 
     public function test_token_creation_is_rate_limited(): void
     {
+        // Set unlimited token limit so rate limiting (not plan limits) is what triggers 429
+        config(['plans.free.limits.api_tokens' => null]);
+
         $user = User::factory()->create();
 
         // Make 20 requests (the limit)

@@ -1,6 +1,12 @@
 parameters:
 	ignoreErrors:
 		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Console/Commands/CheckExpiredTrials.php
+
+		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:notifications\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -11,6 +17,18 @@ parameters:
 			identifier: method.notFound
 			count: 1
 			path: app/Console/Commands/CheckIncompletePayments.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Console/Commands/SendTrialNudges.php
+
+		-
+			message: '#^Parameter \#2 \$trialEndsAt of class App\\Notifications\\TrialNudgeNotification constructor expects Carbon\\Carbon\|null, string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Console/Commands/SendTrialNudges.php
 
 		-
 			message: '#^Method App\\Helpers\\QueryHelper\:\:dateExpression\(\) should return Illuminate\\Database\\Query\\Expression but returns Illuminate\\Contracts\\Database\\Query\\Expression\.$#'
@@ -83,12 +101,6 @@ parameters:
 			identifier: argument.unresolvableType
 			count: 1
 			path: app/Http/Controllers/Admin/AdminDashboardController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Contracts\\Auth\\PasswordBroker\:\:createToken\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Http/Controllers/Admin/AdminUsersController.php
 
 		-
 			message: '#^Cannot call method toISOString\(\) on string\.$#'
@@ -226,6 +238,18 @@ parameters:
 			message: '#^Cannot call method toISOString\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
+			path: app/Http/Controllers/Billing/SubscriptionController.php
+
+		-
+			message: '#^Call to function method_exists\(\) with App\\Models\\User and ''subscribed'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Http/Controllers/DashboardController.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
 			path: app/Http/Middleware/HandleInertiaRequests.php
 
 		-
@@ -265,6 +289,12 @@ parameters:
 			path: app/Jobs/DispatchWebhookJob.php
 
 		-
+			message: '#^Parameter \#1 \$user of method App\\Services\\PlanLimitService\:\:startTrial\(\) expects App\\Models\\User, Illuminate\\Contracts\\Auth\\Authenticatable given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Listeners/StartUserTrial.php
+
+		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
 			identifier: property.notFound
 			count: 2
@@ -289,6 +319,30 @@ parameters:
 			path: app/Models/UserSetting.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/FeedbackReceivedNotification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/FeedbackReceivedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/FeedbackReceivedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/FeedbackReceivedNotification.php
+
+		-
 			message: '#^Using nullsafe method call on non\-nullable type Symfony\\Component\\HttpFoundation\\ParameterBag\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -299,6 +353,12 @@ parameters:
 			identifier: nullsafe.neverNull
 			count: 1
 			path: app/Services/AuditService.php
+
+		-
+			message: '#^Access to an undefined property Laravel\\Cashier\\Checkout\:\:\$url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/BillingService.php
 
 		-
 			message: '#^Cannot call method isFuture\(\) on string\.$#'
@@ -326,6 +386,12 @@ parameters:
 
 		-
 			message: '#^Cannot call method isFuture\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/PlanLimitService.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
 			path: app/Services/PlanLimitService.php
@@ -401,63 +467,3 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: routes/api.php
-
-		-
-			message: '#^Access to an undefined property Laravel\\Cashier\\Checkout\:\:\$url\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Services/BillingService.php
-
-		-
-			message: '#^Access to an undefined property Laravel\\Cashier\\Payment\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Http/Controllers/Billing/SubscriptionController.php
-
-		-
-			message: '#^Parameter \#2 \$trialEndsAt of class App\\Notifications\\TrialNudgeNotification constructor expects Carbon\\Carbon\|null, string\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Console/Commands/SendTrialNudges.php
-
-		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Console/Commands/SendTrialNudges.php
-
-		-
-			message: '#^Call to function method_exists\(\) with App\\Models\\User and .subscribed. will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: app/Http/Controllers/DashboardController.php
-
-		-
-			message: '#^Called .env. outside of the config directory which returns null when the config is cached, use .config.\.$#'
-			identifier: larastan.noEnvCallsOutsideOfConfig
-			count: 1
-			path: app/Http/Controllers/FeedbackController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model::\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Notifications/FeedbackReceivedNotification.php
-
-		-
-			message: '#^Using nullsafe property access "\?\->name" on left side of \?\? is unnecessary\. Use -> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Notifications/FeedbackReceivedNotification.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model::\$email\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Notifications/FeedbackReceivedNotification.php
-
-		-
-			message: '#^Using nullsafe property access "\?\->email" on left side of \?\? is unnecessary\. Use -> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Notifications/FeedbackReceivedNotification.php
