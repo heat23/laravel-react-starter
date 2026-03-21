@@ -1,4 +1,4 @@
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle2 } from "lucide-react";
 import { z } from "zod";
 
 import { useState, FormEventHandler } from "react";
@@ -64,9 +64,42 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
     });
   };
 
+  const leftContent = (
+    <div className="max-w-lg space-y-8">
+      <div className="space-y-4">
+        <h1 className="text-4xl font-bold leading-tight">
+          Your tools are waiting.
+        </h1>
+        <p className="text-lg text-brand-surface-foreground/70 leading-relaxed">
+          Everything you built is right where you left it.
+        </p>
+      </div>
+
+      <div className="rounded-lg bg-brand-surface-foreground/10 p-5 space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-brand-surface-foreground/50">
+          Quick tip
+        </p>
+        <p className="text-sm text-brand-surface-foreground/80 leading-relaxed">
+          Feature flags let you toggle billing, webhooks, 2FA, and more with a single env var — no code changes or redeployment needed.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4 text-sm">
+        <span className="flex items-center gap-1.5">
+          <CheckCircle2 className="h-4 w-4" />
+          90+ tests included
+        </span>
+        <span className="flex items-center gap-1.5">
+          <CheckCircle2 className="h-4 w-4" />
+          11 feature flags
+        </span>
+      </div>
+    </div>
+  );
+
   const footer = (
     <>
-      By signing in, you agree to our{" "}
+      By logging in, you agree to our{" "}
       <button
         type="button"
         onClick={() => setLegalModal("terms")}
@@ -86,9 +119,9 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
   );
 
   return (
-    <AuthLayout footer={footer}>
+    <AuthLayout leftContent={leftContent} footer={footer}>
       <Head title="Log in">
-        <meta name="description" content="Sign in to your account to access your dashboard, manage settings, and more." />
+        <meta name="description" content="Log in to your account to access your dashboard, manage settings, and more." />
       </Head>
       <div className="space-y-8">
         {/* Header */}
@@ -97,7 +130,7 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
             Welcome back
           </h2>
           <p className="mt-2 text-muted-foreground">
-            Sign in to your account to continue
+            Log in to your account to continue
           </p>
         </div>
 
@@ -203,8 +236,8 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
             </Label>
           </div>
 
-          <LoadingButton type="submit" className="w-full group" size="lg" loading={processing} loadingText="Signing in...">
-            Sign in
+          <LoadingButton type="submit" className="w-full group" size="lg" loading={processing} loadingText="Logging in...">
+            Log in
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
           </LoadingButton>
         </form>

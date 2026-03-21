@@ -5,10 +5,9 @@ import {
   Lock,
   User,
   ArrowRight,
-  Shield,
-  Zap,
-  Bell,
-  GitBranch,
+  Rocket,
+  FlaskConical,
+  ToggleLeft,
   CheckCircle2,
   LucideIcon,
 } from "lucide-react";
@@ -65,24 +64,19 @@ const passwordRequirements: PasswordRequirement[] = [
 
 const sellingPoints: Feature[] = [
   {
-    icon: Shield,
-    title: "Verified users from day one — no ghost accounts",
-    description: "Email verification and enterprise-grade 2FA are built in, ready to enable in one toggle.",
+    icon: Rocket,
+    title: "Ship in Days",
+    description: "Auth, billing, admin panel, and 11 feature flags — ready from your first login.",
   },
   {
-    icon: GitBranch,
-    title: "Stripe billing wired up — charge customers the day you launch",
-    description: "Subscriptions, trials, and invoices ship with the SaaS starter kit. No extra integration work.",
+    icon: FlaskConical,
+    title: "90+ Tests Included",
+    description: "Every feature is tested with Pest, Vitest, and Playwright. Refactor confidently from day one.",
   },
   {
-    icon: Bell,
-    title: "Full admin panel with audit logs — no extra build time",
-    description: "User management, feature flags, and activity tracking are already built.",
-  },
-  {
-    icon: Zap,
-    title: "Production-ready from signup",
-    description: "Security headers, rate limiting, and queue setup — nothing to configure before going live.",
+    icon: ToggleLeft,
+    title: "Toggle What You Need",
+    description: "11 feature flags let you enable billing, webhooks, 2FA, and more with a single env var.",
   },
 ];
 
@@ -411,7 +405,7 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
             href={route("login")}
             className="font-medium text-primary hover:text-primary/80 transition-colors"
           >
-            Sign in instead
+            Log in instead
           </Link>
         </p>
       </div>
