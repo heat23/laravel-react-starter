@@ -57,9 +57,9 @@ describe('Compare/Wave', () => {
 
     it('has CTA links to home and pricing', () => {
         render(<Wave {...defaultProps} />);
-        const homeLinks = screen.getAllByRole('link', { name: /get started/i });
-        expect(homeLinks.length).toBeGreaterThan(0);
-        expect(homeLinks[0]).toHaveAttribute('href', '/');
+        const ctaLinks = screen.getAllByRole('link', { name: /see what.s included/i });
+        expect(ctaLinks.length).toBeGreaterThan(0);
+        expect(ctaLinks[0]).toHaveAttribute('href', '/');
         const pricingLinks = screen.getAllByRole('link', { name: /view pricing/i });
         expect(pricingLinks.length).toBeGreaterThan(0);
         expect(pricingLinks[0]).toHaveAttribute('href', '/pricing');

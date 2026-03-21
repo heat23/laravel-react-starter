@@ -41,12 +41,12 @@ describe('Features/AdminPanel', () => {
         render(<AdminPanel {...defaultProps} />);
         expect(
             screen.getByRole('heading', { level: 1 })
-        ).toHaveTextContent(/Full Admin Panel/);
+        ).toHaveTextContent(/full-featured admin panel/);
     });
 
     it('has CTA link to pricing', () => {
         render(<AdminPanel {...defaultProps} />);
-        const pricingLinks = screen.getAllByRole('link', { name: /see pricing/i });
+        const pricingLinks = screen.getAllByRole('link', { name: /view pricing/i });
         expect(pricingLinks.length).toBeGreaterThan(0);
         expect(pricingLinks[0]).toHaveAttribute('href', '/pricing');
     });
