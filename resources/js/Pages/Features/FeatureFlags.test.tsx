@@ -41,7 +41,7 @@ describe('Features/FeatureFlags', () => {
         render(<FeatureFlags {...defaultProps} />);
         expect(
             screen.getByRole('heading', { level: 1 })
-        ).toHaveTextContent(/Ship Features Safely/);
+        ).toHaveTextContent(/Build Exactly the SaaS You Need/);
     });
 
     it('has CTA link to pricing', () => {

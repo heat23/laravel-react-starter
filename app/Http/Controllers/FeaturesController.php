@@ -62,7 +62,7 @@ class FeaturesController extends Controller
         $appUrl = rtrim(config('app.url'), '/');
 
         return Inertia::render('Features/Billing', [
-            'title' => 'Production-Grade Stripe Billing for Laravel — Feature Overview',
+            'title' => 'Stripe Billing for Laravel — Handles the Edge Cases',
             'metaDescription' => 'Double-charge prevention, 4 billing plans, team seats, dunning emails, and incomplete payment recovery — all included out of the box.',
             'canonicalUrl' => $appUrl.'/features/billing',
             'ogImage' => asset('og/features-billing.png'),
@@ -80,7 +80,7 @@ class FeaturesController extends Controller
         $appUrl = rtrim(config('app.url'), '/');
 
         return Inertia::render('Features/FeatureFlags', [
-            'title' => 'Feature Flags for Laravel SaaS — Toggle Features Per-User and Globally',
+            'title' => 'Build Exactly the SaaS You Need — Toggle 11 Features On or Off',
             'metaDescription' => '11 built-in feature flags with database overrides, per-user targeting, and a UI to toggle them at runtime. No feature flag service subscription required.',
             'canonicalUrl' => $appUrl.'/features/feature-flags',
             'ogImage' => asset('og/features-feature-flags.png'),
@@ -98,7 +98,7 @@ class FeaturesController extends Controller
         $appUrl = rtrim(config('app.url'), '/');
 
         return Inertia::render('Features/AdminPanel', [
-            'title' => 'Built-in Laravel Admin Panel — User Management, Billing, Health Monitoring',
+            'title' => 'Laravel Admin Panel — Users, Billing & Feature Flags',
             'metaDescription' => 'A full React + TypeScript admin panel: user management, subscription oversight, audit logs, feature flag toggles, health checks, and config viewer — no Filament required.',
             'canonicalUrl' => $appUrl.'/features/admin-panel',
             'ogImage' => asset('og/features-admin-panel.png'),

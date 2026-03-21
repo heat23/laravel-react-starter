@@ -41,7 +41,7 @@ describe('Features/AdminPanel', () => {
         render(<AdminPanel {...defaultProps} />);
         expect(
             screen.getByRole('heading', { level: 1 })
-        ).toHaveTextContent(/full-featured admin panel/);
+        ).toHaveTextContent(/Manage Users, Billing, and Feature Flags/);
     });
 
     it('has CTA link to pricing', () => {

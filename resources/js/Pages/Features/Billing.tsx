@@ -107,18 +107,11 @@ export default function Billing({ title, metaDescription, breadcrumbs, canonical
                     <article className="mx-auto max-w-4xl">
                         <header className="py-16 text-center">
                             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                                Production-Grade Stripe Billing, Without the Complexity
+                                Stripe Billing That Handles the Edge Cases Tutorials Skip
                             </h1>
                             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-                                Most Laravel billing tutorials show you how to call{' '}
-                                <code className="rounded bg-muted px-1.5 py-0.5 text-sm">
-                                    $user-&gt;newSubscription()-&gt;create()
-                                </code>
-                                . What they don&apos;t show: what happens when two requests hit
-                                that endpoint simultaneously. Or when a payment is declined at
-                                2am. Or when a customer tries to downgrade from team to solo
-                                mid-cycle. This SaaS starter kit has solved all of those problems and
-                                ships the solutions as working, tested code.
+                                Two concurrent subscribe requests. A declined payment at 2am. A team
+                                downgrade mid-cycle. This starter handles all of it.
                             </p>
                         </header>
 

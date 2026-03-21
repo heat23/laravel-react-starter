@@ -278,7 +278,7 @@ export default function AdminPanel({ title, metaDescription, breadcrumbs, canoni
                                     description: 'Full feature comparison including admin panel',
                                 },
                                 {
-                                    title: 'Production-Grade Stripe Billing',
+                                    title: 'Stripe Billing That Handles the Edge Cases',
                                     href: '/features/billing',
                                     description: 'Admin billing dashboard included',
                                 },

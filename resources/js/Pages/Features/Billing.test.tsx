@@ -41,7 +41,7 @@ describe('Features/Billing', () => {
         render(<Billing {...defaultProps} />);
         expect(
             screen.getByRole('heading', { level: 1 })
-        ).toHaveTextContent(/Production-Grade Stripe Billing/);
+        ).toHaveTextContent(/Stripe Billing That Handles the Edge Cases/);
     });
 
     it('has CTA link to pricing', () => {

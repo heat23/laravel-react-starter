@@ -80,13 +80,12 @@ export default function FeatureFlags({ title, metaDescription, breadcrumbs, cano
                     <article className="mx-auto max-w-4xl">
                         <header className="py-16 text-center">
                             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                                Ship Features Safely with Built-in Feature Flags
+                                Build Exactly the SaaS You Need &mdash; Toggle 11 Features On or Off
                             </h1>
                             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-                                Ship incomplete features safely. Toggle any feature on or off
-                                — globally or per-user — without a redeploy. Useful for
-                                gradual rollouts, A/B tests, and keeping half-finished work
-                                out of production.
+                                Every starter kit gives you everything at once. This one lets you
+                                choose. Enable billing, disable webhooks, turn on 2FA &mdash; all
+                                with one env var.
                             </p>
                         </header>
 

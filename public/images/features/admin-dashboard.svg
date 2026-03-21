@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" width="1200" height="700">
+  <defs>
+    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#818cf8" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="chartArea">
+      <rect x="268" y="298" width="530" height="142"/>
+    </clipPath>
+  </defs>
+
+  <!-- Page background -->
+  <rect width="1200" height="700" fill="#09090b"/>
+
+  <!-- Sidebar -->
+  <rect x="0" y="0" width="224" height="700" fill="#18181b"/>
+  <line x1="224" y1="0" x2="224" y2="700" stroke="#27272a" stroke-width="1"/>
+
+  <!-- Brand -->
+  <rect x="16" y="18" width="32" height="32" rx="8" fill="#818cf8"/>
+  <text x="20" y="39" font-family="system-ui,-apple-system,sans-serif" font-size="18" font-weight="700" fill="#fff">H</text>
+  <text x="56" y="38" font-family="system-ui,-apple-system,sans-serif" font-size="13" font-weight="600" fill="#fafafa">HeatWare</text>
+  <text x="56" y="52" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#71717a">Admin Panel</text>
+
+  <!-- Nav separator -->
+  <line x1="12" y1="66" x2="212" y2="66" stroke="#27272a" stroke-width="1"/>
+
+  <!-- Nav: Dashboard (active) -->
+  <rect x="8" y="74" width="208" height="34" rx="8" fill="#27272a"/>
+  <rect x="22" y="85" width="3" height="12" rx="1.5" fill="#818cf8"/>
+  <text x="32" y="96" font-family="system-ui,-apple-system,sans-serif" font-size="13" font-weight="500" fill="#fafafa">Dashboard</text>
+
+  <!-- Nav items -->
+  <text x="32" y="130" font-family="system-ui,-apple-system,sans-serif" font-size="13" fill="#71717a">Users</text>
+  <text x="32" y="162" font-family="system-ui,-apple-system,sans-serif" font-size="13" fill="#71717a">Billing</text>
+  <text x="32" y="194" font-family="system-ui,-apple-system,sans-serif" font-size="13" fill="#71717a">Audit Logs</text>
+  <text x="32" y="226" font-family="system-ui,-apple-system,sans-serif" font-size="13" fill="#71717a">Feature Flags</text>
+  <text x="32" y="258" font-family="system-ui,-apple-system,sans-serif" font-size="13" fill="#71717a">Health</text>
+  <text x="32" y="290" font-family="system-ui,-apple-system,sans-serif" font-size="13" fill="#71717a">Config</text>
+
+  <!-- Main content -->
+  <!-- Page header -->
+  <text x="248" y="42" font-family="system-ui,-apple-system,sans-serif" font-size="20" font-weight="700" fill="#fafafa">Admin Dashboard</text>
+  <text x="248" y="60" font-family="system-ui,-apple-system,sans-serif" font-size="12" fill="#71717a">System overview and metrics</text>
+  <line x1="236" y1="76" x2="1188" y2="76" stroke="#27272a" stroke-width="1"/>
+
+  <!-- Stat cards -->
+  <!-- Card 1 -->
+  <rect x="248" y="92" width="220" height="96" rx="10" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+  <text x="266" y="116" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#a1a1aa">Total Users</text>
+  <text x="266" y="152" font-family="system-ui,-apple-system,sans-serif" font-size="30" font-weight="700" fill="#fafafa">142</text>
+  <text x="266" y="172" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#71717a">All registered users</text>
+  <rect x="440" y="104" width="18" height="18" rx="5" fill="#818cf8" fill-opacity="0.15"/>
+  <circle cx="449" cy="113" r="4" fill="#818cf8"/>
+
+  <!-- Card 2 -->
+  <rect x="480" y="92" width="220" height="96" rx="10" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+  <text x="498" y="116" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#a1a1aa">New (7d)</text>
+  <text x="498" y="152" font-family="system-ui,-apple-system,sans-serif" font-size="30" font-weight="700" fill="#fafafa">23</text>
+  <text x="498" y="172" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#4ade80">↑ 18% vs last week</text>
+
+  <!-- Card 3 -->
+  <rect x="712" y="92" width="220" height="96" rx="10" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+  <text x="730" y="116" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#a1a1aa">Admins</text>
+  <text x="730" y="152" font-family="system-ui,-apple-system,sans-serif" font-size="30" font-weight="700" fill="#fafafa">3</text>
+  <text x="730" y="172" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#71717a">Admin accounts</text>
+
+  <!-- Card 4 -->
+  <rect x="944" y="92" width="232" height="96" rx="10" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+  <text x="962" y="116" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#a1a1aa">Active Subscriptions</text>
+  <text x="962" y="152" font-family="system-ui,-apple-system,sans-serif" font-size="30" font-weight="700" fill="#fafafa">87</text>
+  <text x="962" y="172" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#71717a">Paying customers</text>
+
+  <!-- Signup Chart card -->
+  <rect x="248" y="204" width="550" height="212" rx="10" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+  <text x="268" y="228" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="600" fill="#fafafa">User Signups</text>
+  <text x="268" y="244" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#71717a">New registrations over the last 30 days</text>
+
+  <!-- Y-axis grid lines -->
+  <line x1="268" y1="298" x2="778" y2="298" stroke="#27272a" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="268" y1="345" x2="778" y2="345" stroke="#27272a" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="268" y1="392" x2="778" y2="392" stroke="#27272a" stroke-width="1" stroke-dasharray="3,3"/>
+  <line x1="268" y1="440" x2="778" y2="440" stroke="#27272a" stroke-width="1"/>
+
+  <!-- Area fill -->
+  <polygon points="268,430 318,422 368,415 418,408 468,395 518,380 568,368 618,352 668,338 718,322 768,310 778,310 778,440 268,440"
+    fill="url(#areaGrad)" clip-path="url(#chartArea)"/>
+  <!-- Trend line -->
+  <polyline points="268,430 318,422 368,415 418,408 468,395 518,380 568,368 618,352 668,338 718,322 768,310"
+    fill="none" stroke="#818cf8" stroke-width="2.5" stroke-linejoin="round" clip-path="url(#chartArea)"/>
+
+  <!-- X labels -->
+  <text x="262" y="456" font-family="system-ui,-apple-system,sans-serif" font-size="9" fill="#71717a">Mar 1</text>
+  <text x="350" y="456" font-family="system-ui,-apple-system,sans-serif" font-size="9" fill="#71717a">Mar 8</text>
+  <text x="440" y="456" font-family="system-ui,-apple-system,sans-serif" font-size="9" fill="#71717a">Mar 15</text>
+  <text x="530" y="456" font-family="system-ui,-apple-system,sans-serif" font-size="9" fill="#71717a">Mar 22</text>
+  <text x="620" y="456" font-family="system-ui,-apple-system,sans-serif" font-size="9" fill="#71717a">Mar 29</text>
+  <text x="710" y="456" font-family="system-ui,-apple-system,sans-serif" font-size="9" fill="#71717a">Today</text>
+
+  <!-- Recent Activity card -->
+  <rect x="814" y="204" width="362" height="380" rx="10" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+  <text x="834" y="228" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="600" fill="#fafafa">Recent Activity</text>
+  <text x="834" y="244" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#71717a">Latest audit log entries</text>
+  <line x1="834" y1="256" x2="1156" y2="256" stroke="#27272a" stroke-width="1"/>
+
+  <!-- Activity row 1 -->
+  <circle cx="848" cy="280" r="5" fill="#4ade80" fill-opacity="0.25"/>
+  <circle cx="848" cy="280" r="2.5" fill="#4ade80"/>
+  <text x="862" y="277" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="500" fill="#fafafa">user.login</text>
+  <text x="862" y="290" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#71717a">sarah@example.com · 2m ago</text>
+
+  <!-- Activity row 2 -->
+  <circle cx="848" cy="316" r="5" fill="#818cf8" fill-opacity="0.25"/>
+  <circle cx="848" cy="316" r="2.5" fill="#818cf8"/>
+  <text x="862" y="313" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="500" fill="#fafafa">subscription.created</text>
+  <text x="862" y="326" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#71717a">john@acme.com · 15m ago</text>
+
+  <!-- Activity row 3 -->
+  <circle cx="848" cy="352" r="5" fill="#71717a" fill-opacity="0.25"/>
+  <circle cx="848" cy="352" r="2.5" fill="#a1a1aa"/>
+  <text x="862" y="349" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="500" fill="#fafafa">user.logout</text>
+  <text x="862" y="362" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#71717a">mike@example.com · 32m ago</text>
+
+  <!-- Activity row 4 -->
+  <circle cx="848" cy="388" r="5" fill="#facc15" fill-opacity="0.25"/>
+  <circle cx="848" cy="388" r="2.5" fill="#facc15"/>
+  <text x="862" y="385" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="500" fill="#fafafa">feature_flag.changed</text>
+  <text x="862" y="398" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#71717a">admin@example.com · 1h ago</text>
+
+  <!-- Activity row 5 -->
+  <circle cx="848" cy="424" r="5" fill="#4ade80" fill-opacity="0.25"/>
+  <circle cx="848" cy="424" r="2.5" fill="#4ade80"/>
+  <text x="862" y="421" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="500" fill="#fafafa">user.registered</text>
+  <text x="862" y="434" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#71717a">emma@startup.io · 2h ago</text>
+
+  <!-- Activity row 6 -->
+  <circle cx="848" cy="460" r="5" fill="#f87171" fill-opacity="0.25"/>
+  <circle cx="848" cy="460" r="2.5" fill="#f87171"/>
+  <text x="862" y="457" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="500" fill="#fafafa">payment.failed</text>
+  <text x="862" y="470" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#71717a">corp@bigco.com · 3h ago</text>
+
+  <!-- Activity row 7 -->
+  <circle cx="848" cy="496" r="5" fill="#818cf8" fill-opacity="0.25"/>
+  <circle cx="848" cy="496" r="2.5" fill="#818cf8"/>
+  <text x="862" y="493" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="500" fill="#fafafa">api_token.created</text>
+  <text x="862" y="506" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#71717a">dev@agency.com · 4h ago</text>
+
+  <line x1="834" y1="528" x2="1156" y2="528" stroke="#27272a" stroke-width="1"/>
+  <text x="834" y="548" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#818cf8">View all audit logs →</text>
+
+  <!-- System Health card -->
+  <rect x="248" y="432" width="550" height="148" rx="10" fill="#18181b" stroke="#27272a" stroke-width="1"/>
+  <text x="268" y="456" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="600" fill="#fafafa">System Health</text>
+  <line x1="268" y1="466" x2="778" y2="466" stroke="#27272a" stroke-width="1"/>
+
+  <!-- Health grid -->
+  <text x="268" y="488" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#a1a1aa">Database</text>
+  <rect x="340" y="478" width="54" height="16" rx="8" fill="#4ade80" fill-opacity="0.15"/>
+  <text x="351" y="490" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#4ade80">healthy</text>
+
+  <text x="268" y="512" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#a1a1aa">Cache (Redis)</text>
+  <rect x="358" y="502" width="54" height="16" rx="8" fill="#4ade80" fill-opacity="0.15"/>
+  <text x="369" y="514" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#4ade80">healthy</text>
+
+  <text x="268" y="536" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#a1a1aa">Queue</text>
+  <rect x="316" y="526" width="54" height="16" rx="8" fill="#4ade80" fill-opacity="0.15"/>
+  <text x="327" y="538" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#4ade80">healthy</text>
+
+  <text x="268" y="560" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#a1a1aa">Disk</text>
+  <rect x="299" y="550" width="62" height="16" rx="8" fill="#facc15" fill-opacity="0.15"/>
+  <text x="310" y="562" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#facc15">74% used</text>
+
+  <text x="440" y="488" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#a1a1aa">Queue Depth</text>
+  <text x="534" y="488" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="600" fill="#fafafa">0 jobs</text>
+
+  <text x="440" y="512" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#a1a1aa">PHP Version</text>
+  <text x="534" y="512" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="600" fill="#fafafa">8.3.4</text>
+
+  <text x="440" y="536" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#a1a1aa">Laravel</text>
+  <text x="534" y="536" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="600" fill="#fafafa">12.0.1</text>
+
+  <text x="440" y="560" font-family="system-ui,-apple-system,sans-serif" font-size="11" fill="#a1a1aa">Failed Jobs</text>
+  <text x="534" y="560" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="600" fill="#fafafa">0</text>
+
+  <!-- Pagination / footer area -->
+  <text x="248" y="598" font-family="system-ui,-apple-system,sans-serif" font-size="10" fill="#3f3f46">Cached · refreshes every 5 minutes</text>
+</svg>
