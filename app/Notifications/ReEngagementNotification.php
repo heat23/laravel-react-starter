@@ -101,16 +101,12 @@ class ReEngagementNotification extends Notification implements ShouldQueue
         $changelogItem = 'smarter activity tracking and faster load times across the board';
 
         $ctaUrl = $this->dashboardUrl('reengagement_winback', 3);
-        if (config('features.billing.enabled', false)) {
-            // Deep-link to changelog if available, otherwise dashboard
-            $ctaUrl = route('dashboard').'?utm_source=email&utm_campaign=reengagement_winback&utm_content=email_3';
-        }
 
         return (new MailMessage)
             ->subject('One thing changed since you last logged in')
             ->greeting("Hi {$notifiable->name}!")
-            ->line("Since your last visit, we shipped {$changelogItem}. A lot of {$appName} users tell us it's the thing that finally made it click.")
-            ->line('Your account and all your data are still here — nothing has been deleted.')
+            ->line("Your data is safe — come back anytime. Here's what you've been missing:")
+            ->line("Since your last visit, we shipped {$changelogItem}.")
             ->action('See What\'s New →', $ctaUrl)
             ->line('If you have questions or want to share feedback, just reply to this email. We read every response.');
     }

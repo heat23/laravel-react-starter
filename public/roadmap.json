@@ -1,17 +1,34 @@
 [
   {
-    "title": "Team Collaboration",
-    "description": "Invite team members, assign roles, and collaborate on projects together.",
+    "slug": "magic-link-authentication",
+    "title": "Magic link authentication",
+    "description": "Sign in with a one-time link sent to your email — no password required. Useful for reducing friction on low-security internal tools.",
     "status": "planned",
     "votes": 0
   },
   {
+    "slug": "csv-export-admin-tables",
+    "title": "CSV export for all admin data tables",
+    "description": "Export users, audit logs, subscriptions, and webhook deliveries to CSV directly from the admin panel. No manual database queries needed.",
+    "status": "planned",
+    "votes": 0
+  },
+  {
+    "slug": "billing-usage-metering",
+    "title": "Billing usage metering (pay-as-you-go add-ons)",
+    "description": "Track and charge for usage-based features — API calls, seats, storage — as Stripe metered billing items. Add-ons on top of base subscriptions.",
+    "status": "planned",
+    "votes": 0
+  },
+  {
+    "slug": "api-webhooks-v2",
     "title": "API Webhooks v2",
     "description": "Enhanced webhook system with retry policies, filtering, and delivery logs.",
     "status": "in_progress",
     "votes": 0
   },
   {
+    "slug": "two-factor-authentication",
     "title": "Two-Factor Authentication",
     "description": "TOTP-based two-factor authentication with recovery codes.",
     "status": "completed",

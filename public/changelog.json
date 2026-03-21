@@ -1,9 +1,23 @@
 [
   {
+    "version": "1.1.0",
+    "date": "2026-03-20",
+    "title": "Admin panel health check UI, webhook delivery log pagination",
+    "description": "Added real-time health check status display to the admin panel. Webhook delivery logs now paginate correctly for high-volume endpoints.",
+    "type": "feature"
+  },
+  {
+    "version": "1.0.1",
+    "date": "2026-03-18",
+    "title": "Fixed onboarding redirect after email verification",
+    "description": "Users who completed email verification were being redirected to the dashboard before finishing onboarding. Now correctly redirected to the onboarding flow.",
+    "type": "fix"
+  },
+  {
     "version": "1.0.0",
     "date": "2026-03-15",
-    "title": "Initial Release",
-    "description": "Launch of the application with core features including authentication, billing, and admin panel.",
+    "title": "Initial public release: auth, billing, admin, onboarding, API tokens, webhooks, 2FA",
+    "description": "Launch of the application with core features including authentication, Stripe billing with double-charge prevention, admin panel, onboarding wizard, API token management, webhooks, and two-factor authentication.",
     "type": "feature"
   }
 ]

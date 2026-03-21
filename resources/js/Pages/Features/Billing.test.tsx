@@ -28,7 +28,7 @@ vi.mock('@/Components/theme/use-theme', () => ({
 
 const defaultProps = {
     title: 'Production-Grade Stripe Billing for Laravel — Feature Overview',
-    metaDescription: 'Redis-locked Stripe mutations, 4 plan tiers, team seats, dunning emails, and incomplete payment recovery.',
+    metaDescription: 'Double-charge prevention, 4 billing plans, team seats, dunning emails, and incomplete payment recovery.',
 };
 
 describe('Features/Billing', () => {
@@ -46,7 +46,7 @@ describe('Features/Billing', () => {
 
     it('has CTA link to pricing', () => {
         render(<Billing {...defaultProps} />);
-        const pricingLinks = screen.getAllByRole('link', { name: /see pricing/i });
+        const pricingLinks = screen.getAllByRole('link', { name: /view pricing/i });
         expect(pricingLinks.length).toBeGreaterThan(0);
         expect(pricingLinks[0]).toHaveAttribute('href', '/pricing');
     });
@@ -59,8 +59,8 @@ describe('Features/Billing', () => {
 
     it('renders the 6 billing feature cards', () => {
         render(<Billing {...defaultProps} />);
-        expect(screen.getByText('Redis-locked mutations')).toBeInTheDocument();
-        expect(screen.getByText('4 plan tiers')).toBeInTheDocument();
+        expect(screen.getByText('Double-charge prevention')).toBeInTheDocument();
+        expect(screen.getByText('4 billing plans')).toBeInTheDocument();
         expect(screen.getByText('Team seat billing')).toBeInTheDocument();
         expect(screen.getByText('Dunning emails')).toBeInTheDocument();
         expect(screen.getByText('Incomplete payment recovery')).toBeInTheDocument();

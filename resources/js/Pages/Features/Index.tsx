@@ -77,7 +77,7 @@ export default function FeaturesIndex({ title, metaDescription, canonicalUrl, og
                         </Link>
                         {canRegister && (
                             <Button size="sm" asChild>
-                                <Link href="/register">Get Started</Link>
+                                <Link href="/register">Start Building Free</Link>
                             </Button>
                         )}
                     </div>
@@ -123,14 +123,14 @@ export default function FeaturesIndex({ title, metaDescription, canonicalUrl, og
                             <div className="mt-16 text-center">
                                 <Button size="lg" asChild>
                                     <Link href="/register">
-                                        Get the Starter Kit
+                                        Start Building Free
                                         <ArrowRight className="ml-2 h-4 w-4" />
                                     </Link>
                                 </Button>
                                 <p className="mt-3 text-sm text-muted-foreground">
                                     One-time purchase · Full source code ·{' '}
                                     <Link href="/pricing" className="underline hover:text-foreground transition-colors">
-                                        See pricing
+                                        View pricing
                                     </Link>
                                 </p>
                             </div>

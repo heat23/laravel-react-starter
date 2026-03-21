@@ -90,7 +90,7 @@ class WelcomeSequenceNotification extends Notification implements ShouldQueue
         };
 
         $mail = (new MailMessage)
-            ->subject("Unlock the full power of {$appName}")
+            ->subject("What you can do with {$appName}")
             ->greeting("Hi {$notifiable->name}!")
             ->line("You've been with us for a few days now. Here are some features you might not have discovered yet:");
 

@@ -191,13 +191,13 @@ GITHUB_CLIENT_SECRET=your-client-secret`}</code></pre>
                                     }
                                 >
                                     <Link href="/register">
-                                        Get the Starter Kit
+                                        Start Building Free
                                         <ArrowRight className="ml-2 h-4 w-4" />
                                     </Link>
                                 </Button>
                             )}
                             <Button variant="outline" size="lg" asChild>
-                                <Link href="/pricing">See pricing</Link>
+                                <Link href="/pricing">View pricing</Link>
                             </Button>
                             <Button variant="ghost" size="lg" asChild>
                                 <Link href="/">Back to overview</Link>
