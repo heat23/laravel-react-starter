@@ -7,21 +7,27 @@
 ## Sequence 1: Welcome (1 email)
 
 **Gate:** Always active (no feature flag — every app needs a welcome email)
-**Trigger:** `Registered` event (same as email verification, but separate notification)
-**Suppression:** None — every new user gets this
+**Trigger:** `Registered` event via `SendWelcomeNotification` listener → dispatches `WelcomeSequenceNotification(1)`
+**Suppression:** `SendWelcomeSequence` command skips email 1 if already sent by the event listener (checks `email_number=1` in notifications table)
 
 ### Email 1: Welcome
-- **Subject:** Welcome to {{ config('app.name') }}
+- **Class:** `WelcomeSequenceNotification` with `emailNumber=1`
+- **Subject:** "Welcome to {{ app.name }} — Let's Get You Started"
 - **Timing:** Immediate (on registration, via `Registered` event listener)
-- **Goal:** Orient the user — where to go first
+- **Goal:** Orient the user with specific, time-estimated activation steps
 - **CTA:** "Go to Your Dashboard" → `route('dashboard')`
 - **Body:**
   1. Greeting with user's name
-  2. One sentence: what the product helps them do (customizable)
-  3. Quick-start: 3 bullet points of first actions (customize these for your product)
-  4. CTA button to dashboard
+  2. "Your account is ready. Here's how to get set up in the next 10 minutes:"
+  3. **Always shown:** "Set up your profile (2 min)"
+  4. **Feature-gated (billing.enabled):** "Connect your Stripe account (5 min)"
+  5. **Feature-gated (api_tokens.enabled):** "Generate your first API token (1 min)"
+  6. CTA button to dashboard
+  7. Teaser for follow-up emails in the sequence
 - **Channels:** database + mail (if verified)
 - **Success metric:** Dashboard visit within 24h of signup
+
+**Note:** `WelcomeNotification` has been removed. `WelcomeSequenceNotification(1)` is the sole welcome email. Do not introduce a second welcome notification class.
 
 ---
 
@@ -118,7 +124,7 @@
 ## Implementation Notes
 
 ### Notification Classes
-- `WelcomeNotification` — triggered by `Registered` event listener
+- `WelcomeSequenceNotification` — accepts `int $emailNumber` (1, 2, 3). Email 1 is triggered immediately by `Registered` event via `SendWelcomeNotification` listener. Emails 2 and 3 are sent by the `emails:send-welcome-sequence` scheduled command.
 - `OnboardingReminderNotification` — accepts `int $emailNumber` (1, 2, 3) to control subject/body
 - `DunningReminderNotification` — accepts `int $emailNumber` (1, 2, 3) and `string $planName`
 

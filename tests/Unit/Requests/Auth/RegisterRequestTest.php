@@ -16,6 +16,9 @@ class RegisterRequestTest extends TestCase
 
     public function test_rules_requires_name(): void
     {
+        // Name is required only when onboarding is disabled (wizard collects it otherwise)
+        config(['features.onboarding.enabled' => false]);
+
         $response = $this->post('/register', [
             'email' => 'test@example.com',
             'password' => 'Password123!',
@@ -420,6 +423,9 @@ class RegisterRequestTest extends TestCase
 
     public function test_registration_with_empty_name_fails(): void
     {
+        // Name validation errors only apply when onboarding is disabled
+        config(['features.onboarding.enabled' => false]);
+
         $response = $this->post('/register', [
             'name' => '',
             'email' => 'test@example.com',

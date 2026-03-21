@@ -2,64 +2,84 @@
 
 use App\Listeners\SendWelcomeNotification;
 use App\Models\User;
-use App\Notifications\WelcomeNotification;
+use App\Notifications\WelcomeSequenceNotification;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 
-it('sends welcome notification on user registration', function () {
+it('sends welcome sequence email 1 on user registration', function () {
     Notification::fake();
 
     $user = User::factory()->create(['email_verified_at' => now()]);
 
     event(new Registered($user));
 
-    Notification::assertSentTo($user, WelcomeNotification::class);
+    Notification::assertSentTo($user, WelcomeSequenceNotification::class, function ($notification) {
+        return $notification->emailNumber === 1;
+    });
 });
 
-it('sends welcome notification via both channels for verified users', function () {
+it('sends only one welcome email per registration', function () {
     Notification::fake();
 
     $user = User::factory()->create(['email_verified_at' => now()]);
 
     event(new Registered($user));
 
-    Notification::assertSentTo($user, WelcomeNotification::class, function ($notification, $channels) {
+    Notification::assertSentToTimes($user, WelcomeSequenceNotification::class, 1);
+});
+
+it('sends welcome sequence via both channels for verified users', function () {
+    Notification::fake();
+
+    $user = User::factory()->create(['email_verified_at' => now()]);
+
+    event(new Registered($user));
+
+    Notification::assertSentTo($user, WelcomeSequenceNotification::class, function ($notification, $channels) {
         return in_array('database', $channels) && in_array('mail', $channels);
     });
 });
 
-it('sends welcome notification via database only for unverified users', function () {
+it('sends welcome sequence via database only for unverified users', function () {
     Notification::fake();
 
     $user = User::factory()->create(['email_verified_at' => null]);
 
     event(new Registered($user));
 
-    Notification::assertSentTo($user, WelcomeNotification::class, function ($notification, $channels) {
+    Notification::assertSentTo($user, WelcomeSequenceNotification::class, function ($notification, $channels) {
         return in_array('database', $channels) && ! in_array('mail', $channels);
     });
 });
 
-it('includes dashboard link in welcome notification', function () {
-    $notification = new WelcomeNotification;
+it('email 1 subject contains welcome copy', function () {
+    $notification = new WelcomeSequenceNotification(1);
     $user = User::factory()->create();
 
     $mailMessage = $notification->toMail($user);
 
-    expect($mailMessage->subject)->toBe('Welcome to '.config('app.name'));
+    expect($mailMessage->subject)->toContain('Welcome');
+});
+
+it('email 1 primary action links to dashboard', function () {
+    $notification = new WelcomeSequenceNotification(1);
+    $user = User::factory()->create();
+
+    $mailMessage = $notification->toMail($user);
+
     expect($mailMessage->actionUrl)->toBe(route('dashboard'));
 });
 
-it('includes correct database payload', function () {
-    $notification = new WelcomeNotification;
+it('includes correct database payload for email 1', function () {
+    $notification = new WelcomeSequenceNotification(1);
     $user = User::factory()->create();
 
     $data = $notification->toArray($user);
 
     expect($data)->toBe([
-        'type' => 'welcome',
-        'actionUrl' => route('dashboard'),
+        'type' => 'welcome_sequence_1',
+        'email_number' => 1,
     ]);
 });
 

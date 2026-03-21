@@ -47,7 +47,7 @@ it('shows Subscribed when price id does not match any plan config', function () 
         ->assertInertia(fn ($page) => $page->where('stats.plan_name', 'Subscribed'));
 });
 
-it('loads dashboard within the 5-query budget', function () {
+it('loads dashboard within the query budget', function () {
     $user = User::factory()->create();
 
     DB::enableQueryLog();
@@ -55,5 +55,7 @@ it('loads dashboard within the 5-query budget', function () {
     $queryCount = count(DB::getQueryLog());
     DB::disableQueryLog();
 
-    expect($queryCount)->toBeLessThanOrEqual(9);
+    // Budget updated to 12: original 9 + login_streak (AuditLog query) + limit_warnings (tokens count)
+    // + has_unread_changelog (UserSetting lookup) added by growth audit session.
+    expect($queryCount)->toBeLessThanOrEqual(12);
 });

@@ -443,7 +443,7 @@ class AdminDemoSeeder extends Seeder
         $userIds = $users->pluck('id')->toArray();
 
         $notificationTypes = [
-            'App\\Notifications\\WelcomeNotification',
+            'App\\Notifications\\WelcomeSequenceNotification',
             'App\\Notifications\\SubscriptionCreated',
             'App\\Notifications\\SubscriptionCancelled',
             'App\\Notifications\\PaymentSucceeded',
@@ -487,9 +487,9 @@ class AdminDemoSeeder extends Seeder
         $shortType = class_basename($type);
 
         return match ($shortType) {
-            'WelcomeNotification' => [
-                'title' => 'Welcome to the platform!',
-                'message' => 'Your account has been created successfully. Get started by exploring the dashboard.',
+            'WelcomeSequenceNotification' => [
+                'type' => 'welcome_sequence_1',
+                'email_number' => 1,
             ],
             'SubscriptionCreated' => [
                 'title' => 'Subscription activated',
