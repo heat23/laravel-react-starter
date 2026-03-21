@@ -1,4 +1,4 @@
-import { ArrowLeft } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 import { useEffect } from 'react';
 
@@ -7,10 +7,9 @@ import { Head, Link } from '@inertiajs/react';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
+import { Logo, TextLogo } from '@/Components/branding/Logo';
 
 export default function About() {
-    const appName = import.meta.env.VITE_APP_NAME || 'App';
     const { track } = useAnalytics();
 
     useEffect(() => {
@@ -19,51 +18,144 @@ export default function About() {
 
     return (
         <>
-            <Head title="About" />
+            <Head title="About — Laravel React Starter">
+                <meta
+                    name="description"
+                    content="The origin story behind Laravel React Starter — why it exists, what it is, and who it's built for."
+                />
+            </Head>
             <div className="min-h-screen bg-background">
-                <div className="container max-w-3xl py-12">
-                    <div className="mb-6">
-                        <Button variant="ghost" size="sm" asChild>
-                            <Link href="/">
-                                <ArrowLeft className="mr-2 h-4 w-4" />
-                                Back to Home
-                            </Link>
-                        </Button>
+                {/* Navigation */}
+                <nav className="container flex items-center justify-between py-6">
+                    <Link href="/" className="flex items-center gap-2">
+                        <Logo className="h-8 w-8" />
+                        <TextLogo className="text-xl font-bold" />
+                    </Link>
+                    <div className="flex items-center gap-4">
+                        <Link
+                            href="/pricing"
+                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                        >
+                            Pricing
+                        </Link>
                     </div>
+                </nav>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-2xl">About {appName}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
-                            <p className="text-muted-foreground text-lg mb-4">
-                                {appName} is a production-ready Laravel + React SaaS starter kit
-                                built for solo developers and small teams who want to ship fast
-                                without cutting corners.
+                <main className="container pb-24">
+                    <article className="mx-auto max-w-3xl">
+                        <header className="py-16 text-center">
+                            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+                                About Laravel React Starter
+                            </h1>
+                            <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
+                                Why this template exists, what it is, and who it&apos;s built for.
                             </p>
+                        </header>
 
-                            <h3 className="text-xl font-semibold text-foreground mt-8 mb-3">
-                                Our Mission
-                            </h3>
-                            <p className="text-muted-foreground">
-                                Every developer deserves a solid, tested foundation to build
-                                from &mdash; one that handles auth, billing, admin tooling, and
-                                DevOps so you can focus on what makes your product unique.
+                        {/* Origin story */}
+                        <section className="prose prose-neutral dark:prose-invert max-w-none">
+                            <h2>Origin story</h2>
+                            <p>
+                                I built this after the fifth time setting up the same auth + billing +
+                                admin scaffold for a new project. Every project started the same way
+                                &mdash; two weeks of wiring before any real feature work. Stripe
+                                subscriptions, user management, feature flags, an admin panel, CI
+                                configuration. The same decisions, the same bugs, the same tests.
                             </p>
+                            <p>
+                                This template is that setup, done once, tested thoroughly, so you never
+                                have to do it again. Every design decision has been made and validated
+                                against production workloads. The billing layer handles race conditions.
+                                The admin panel runs on the same TypeScript stack as the rest of the app.
+                                The test suite covers the paths that matter before you write a single line
+                                of your own product code.
+                            </p>
+                        </section>
 
-                            <h3 className="text-xl font-semibold text-foreground mt-8 mb-3">
-                                Built With
-                            </h3>
-                            <ul className="list-disc pl-5 text-muted-foreground space-y-1">
-                                <li>Laravel 12 + Inertia.js</li>
-                                <li>React 18 + TypeScript</li>
-                                <li>Tailwind CSS v4</li>
-                                <li>Stripe Cashier for billing</li>
-                                <li>Pest for testing</li>
+                        {/* What it is and is not */}
+                        <section className="prose prose-neutral dark:prose-invert max-w-none mt-10">
+                            <h2>What it is &mdash; and is not</h2>
+                            <p>
+                                <strong>This is an opinionated production template.</strong> It makes
+                                specific choices: Laravel 12, React 18, TypeScript strict mode, Inertia.js,
+                                Tailwind CSS v4, Redis-locked billing, Pest for tests. These choices are
+                                deliberate and have been validated together.
+                            </p>
+                            <p>
+                                <strong>It is not a drag-and-drop no-code tool.</strong> It assumes you
+                                know Laravel and React. You will read the code, extend it, and make it
+                                your own. The value is not that you never have to think &mdash; it&apos;s
+                                that you skip the two weeks of infrastructure work and go straight to
+                                building your product.
+                            </p>
+                            <p>
+                                <strong>It is not a framework or a library.</strong> You own the source
+                                code outright. There is no dependency on a third-party package that can
+                                break your build on a bad release day. When Stripe&apos;s API changes or
+                                Laravel releases a major version, you decide when and how to update.
+                            </p>
+                        </section>
+
+                        {/* Positioning */}
+                        <section className="prose prose-neutral dark:prose-invert max-w-none mt-10">
+                            <h2>Built for</h2>
+                            <p className="text-lg">
+                                Developers who value their time more than they value the learning
+                                experience of rebuilding auth for the fourth time.
+                            </p>
+                            <ul>
+                                <li>
+                                    <strong>Solo founders</strong> who need to ship fast and can&apos;t
+                                    afford two weeks of infrastructure work before the first user signs up.
+                                </li>
+                                <li>
+                                    <strong>Small teams</strong> who want a shared, tested foundation
+                                    instead of tribal knowledge about why the billing layer works the way
+                                    it does.
+                                </li>
+                                <li>
+                                    <strong>Freelancers</strong> who deliver Laravel + React projects and
+                                    want a production-ready starting point they can trust across every
+                                    engagement.
+                                </li>
                             </ul>
-                        </CardContent>
-                    </Card>
-                </div>
+                        </section>
+
+                        {/* CTA */}
+                        <section className="mt-16 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+                            <h2 className="text-2xl font-bold">Ready to skip the setup?</h2>
+                            <p className="mt-2 text-muted-foreground">
+                                Auth, billing, admin panel, and 90+ tests &mdash; ready on day one.
+                            </p>
+                            <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                                <Button asChild size="lg">
+                                    <Link href="/pricing">
+                                        See pricing
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                                <Button asChild variant="outline" size="lg">
+                                    <Link href="/">Read the docs</Link>
+                                </Button>
+                            </div>
+                        </section>
+                    </article>
+                </main>
+
+                {/* Footer */}
+                <footer className="border-t py-8">
+                    <div className="container">
+                        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+                            <p className="text-sm text-muted-foreground">
+                                &copy; {new Date().getFullYear()} Laravel React Starter. All rights reserved.
+                            </p>
+                            <nav className="flex items-center gap-4 text-sm text-muted-foreground">
+                                <Link href="/terms" className="transition-colors hover:text-foreground">Terms</Link>
+                                <Link href="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
+                            </nav>
+                        </div>
+                    </div>
+                </footer>
             </div>
         </>
     );

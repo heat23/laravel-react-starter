@@ -16,8 +16,9 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Head, Link } from '@inertiajs/react';
 
-import { Logo, TextLogo } from '@/Components/branding/Logo';
 import { AnnouncementBanner, type AnnouncementBannerProps } from '@/Components/layout/AnnouncementBanner';
+import { PublicFooter } from '@/Components/marketing/PublicFooter';
+import { PublicNav } from '@/Components/marketing/PublicNav';
 import { Button } from '@/Components/ui/button';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
@@ -97,7 +98,7 @@ const personas = [
     icon: Rocket,
     title: 'Solo founders',
     description:
-      'Skip 2-3 months of boilerplate. Auth, billing, admin panel, and email sequences ready on day one.',
+      'Skip 2-3 months of setup work. Auth, billing, admin panel, and email sequences ready on day one.',
   },
   {
     icon: Users,
@@ -232,58 +233,7 @@ const Welcome: WelcomeComponent = ({
         />
 
         {/* Navigation */}
-        <nav className="container relative z-10 flex items-center justify-between py-6">
-          <Link href="/" className="flex items-center gap-2">
-            <Logo className="h-8 w-8" />
-            <TextLogo className="text-xl font-bold" />
-          </Link>
-
-          <div className="flex items-center gap-4">
-            <Link
-              href="/features/billing"
-              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
-            >
-              Billing
-            </Link>
-            <Link
-              href="/features/feature-flags"
-              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
-            >
-              Feature Flags
-            </Link>
-            <Link
-              href="/features/admin-panel"
-              className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline"
-            >
-              Admin Panel
-            </Link>
-            <Link
-              href="/pricing"
-              className="hidden items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
-            >
-              Pricing
-              <span
-                className="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary"
-                aria-label="Save 20% with annual billing"
-              >
-                Save 20%
-              </span>
-            </Link>
-            {canLogin && (
-              <Button variant="ghost" asChild>
-                <Link href={route('login')}>Log in</Link>
-              </Button>
-            )}
-            {canRegister && (
-              <Button asChild>
-                <Link href={route('register')}>
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-            )}
-          </div>
-        </nav>
+        <PublicNav canLogin={canLogin} canRegister={canRegister} currentPath="/" />
 
         <main id="main-content">
           {/* Hero Section */}
@@ -294,19 +244,21 @@ const Welcome: WelcomeComponent = ({
                   <Sparkles className="h-4 w-4" />
                   {featureCount} features, {testCount}+ tests, ready to ship
                 </div>
+                {/* Primary headline — A/B test candidates:
+                    B: "90+ tests. 11 feature flags. Zero setup to write."
+                    C: "Production-grade Laravel + React — not another tutorial project" */}
                 <h1 className="mt-6 text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl">
-                  Ship a production-ready
+                  The only Laravel + React SaaS starter kit
                   <br />
-                  <span className="text-primary">Laravel + React SaaS</span>
+                  with{' '}
+                  <span className="text-primary">Redis-locked billing</span>
                   <br />
-                  in hours, not weeks
+                  and {featureCount} toggleable feature flags
                 </h1>
                 <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-                  A production-ready Laravel + React starter with
-                  authentication, {featureCount} toggleable feature flags,
-                  Redis-locked billing, and a full admin panel. Built for indie
-                  developers and small teams who need to ship without the
-                  scaffolding tax.
+                  Go from idea to paying customers in a weekend. Auth, billing,
+                  admin panel, and {featureCount} feature flags — all tested,
+                  all toggleable, all yours to customize.
                 </p>
               </div>
 
@@ -318,19 +270,19 @@ const Welcome: WelcomeComponent = ({
                     onClick={() =>
                       track(AnalyticsEvents.ENGAGEMENT_CTA_CLICKED, {
                         source: 'hero_primary',
-                        label: 'Get the Starter Kit',
+                        label: 'Start Building Today',
                       })
                     }
                   >
                     <Link href={route('register')}>
-                      Get Started Free
+                      Start Building Today
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                 )}
                 <Button variant="outline" size="lg" asChild>
-                  <Link href="/features/billing">
-                    See All Features
+                  <Link href="/guides">
+                    Browse the Guides
                   </Link>
                 </Button>
               </div>
@@ -479,7 +431,7 @@ const Welcome: WelcomeComponent = ({
           <section className="container py-24">
             <div className="mx-auto max-w-4xl">
               <h2 className="mb-12 text-center text-3xl font-bold">
-                Skip the boilerplate
+                Skip months of setup
               </h2>
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-8">
@@ -632,7 +584,7 @@ const Welcome: WelcomeComponent = ({
           {canRegister && (
             <section className="container border-t py-24">
               <div className="mx-auto max-w-2xl text-center">
-                <h2 className="text-3xl font-bold">Ready to skip the boilerplate?</h2>
+                <h2 className="text-3xl font-bold">Ready to ship your SaaS?</h2>
                 <p className="mt-4 text-lg text-muted-foreground">
                   Everything you need to launch is already wired up.
                 </p>
@@ -647,7 +599,7 @@ const Welcome: WelcomeComponent = ({
                     }
                   >
                     <Link href={route('register')}>
-                      Start Building Free
+                      Start Building Today
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
@@ -682,49 +634,7 @@ const Welcome: WelcomeComponent = ({
           )}
         </main>
 
-        {/* Footer */}
-        <footer className="border-t py-8">
-          <div className="container">
-            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-              <p className="text-sm text-muted-foreground">
-                &copy; {new Date().getFullYear()} {appName}. All rights
-                reserved.
-              </p>
-              <nav className="flex items-center gap-4 text-sm text-muted-foreground">
-                <Link
-                  href="/contact"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Contact
-                </Link>
-                <Link
-                  href="/changelog"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Changelog
-                </Link>
-                <Link
-                  href="/roadmap"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Roadmap
-                </Link>
-                <Link
-                  href="/terms"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Terms
-                </Link>
-                <Link
-                  href="/privacy"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Privacy
-                </Link>
-              </nav>
-            </div>
-          </div>
-        </footer>
+        <PublicFooter />
       </div>
 
       {/* Sticky mobile CTA — visible only on small screens when hero is out of view */}
@@ -737,12 +647,12 @@ const Welcome: WelcomeComponent = ({
             onClick={() =>
               track(AnalyticsEvents.ENGAGEMENT_CTA_CLICKED, {
                 source: 'sticky_mobile_cta',
-                label: 'Get Started Free',
+                label: 'Start Building Today',
               })
             }
           >
             <Link href={route('register')}>
-              Get Started Free
+              Start Building Today
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>

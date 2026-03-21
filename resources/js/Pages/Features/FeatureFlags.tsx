@@ -10,8 +10,11 @@ import { useEffect } from 'react';
 
 import { Head, Link } from '@inertiajs/react';
 
-import { Logo, TextLogo } from '@/Components/branding/Logo';
 import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
+import { PublicFooter } from '@/Components/marketing/PublicFooter';
+import { PublicNav } from '@/Components/marketing/PublicNav';
+import { FaqJsonLd } from '@/Components/seo/FaqJsonLd';
+import { RelatedContent } from '@/Components/seo/RelatedContent';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
@@ -31,7 +34,22 @@ const flags = [
     { flag: 'email_verification.enabled', env: 'FEATURE_EMAIL_VERIFICATION', description: 'Email verification flow' },
 ];
 
-export default function FeatureFlags({ title, metaDescription, breadcrumbs }: FeaturePageProps) {
+const featureFlagFaqs = [
+    {
+        question: 'Do I need LaunchDarkly or Unleash with this?',
+        answer: 'No. This SaaS starter kit ships a complete feature flag system with env-based toggles, database overrides, per-user targeting, and a React admin UI — all without a third-party service subscription.',
+    },
+    {
+        question: 'How do per-user overrides work?',
+        answer: 'The FeatureFlagService resolves flags in priority order: per-user database override → global database override → config/features.php default. Store overrides via the admin panel or programmatically via FeatureFlagOverride::create().',
+    },
+    {
+        question: 'Can I add my own feature flags?',
+        answer: 'Yes. Add your flag to config/features.php with an env var default, gate the route in routes/web.php, and gate the UI in your React component using the shared features prop. Three steps, no service setup.',
+    },
+];
+
+export default function FeatureFlags({ title, metaDescription, breadcrumbs, canonicalUrl, ogImage, canRegister }: FeaturePageProps) {
     const { track } = useAnalytics();
 
     useEffect(() => {
@@ -44,39 +62,18 @@ export default function FeatureFlags({ title, metaDescription, breadcrumbs }: Fe
                 <meta property="og:title" content={title} />
                 <meta property="og:description" content={metaDescription} />
                 <meta property="og:type" content="website" />
+                {ogImage && <meta property="og:image" content={ogImage} />}
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:title" content={title} />
                 <meta name="twitter:description" content={metaDescription} />
+                {ogImage && <meta name="twitter:image" content={ogImage} />}
+                {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
                 {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
+                <FaqJsonLd questions={featureFlagFaqs} />
             </Head>
 
             <div className="min-h-screen bg-background">
-                <nav className="container flex items-center justify-between py-6">
-                    <Link href="/" className="flex items-center gap-2">
-                        <Logo className="h-8 w-8" />
-                        <TextLogo className="text-xl font-bold" />
-                    </Link>
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/features/billing"
-                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                            Billing
-                        </Link>
-                        <Link
-                            href="/features/admin-panel"
-                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                            Admin Panel
-                        </Link>
-                        <Link
-                            href="/pricing"
-                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                            Pricing
-                        </Link>
-                    </div>
-                </nav>
+                <PublicNav currentPath="/features/feature-flags" />
 
                 <main className="container pb-24">
                     <article className="mx-auto max-w-4xl">
@@ -88,7 +85,7 @@ export default function FeatureFlags({ title, metaDescription, breadcrumbs }: Fe
                                 Feature flags let you deploy code before it&apos;s ready for
                                 all users, run A/B tests on pricing or onboarding flows, give
                                 beta users early access, or disable a broken feature in
-                                production without a deploy. This starter ships 11 pre-built
+                                production without a deploy. This SaaS starter kit ships 11 pre-built
                                 feature flags covering the major subsystems — billing, admin,
                                 notifications, webhooks, 2FA, social auth, onboarding, API
                                 docs, and API tokens. Add your own in minutes using the same
@@ -209,51 +206,70 @@ export default function FeatureFlags({ title, metaDescription, breadcrumbs }: Fe
                             </p>
                         </section>
 
+                        <section className="mb-16">
+                            <h2 className="mb-8 text-3xl font-bold">Common questions</h2>
+                            <div className="space-y-6">
+                                {featureFlagFaqs.map((faq) => (
+                                    <div
+                                        key={faq.question}
+                                        className="rounded-2xl border border-border/70 bg-card p-6"
+                                    >
+                                        <h3 className="mb-2 text-lg font-semibold">{faq.question}</h3>
+                                        <p className="text-sm text-muted-foreground">{faq.answer}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+
                         <section className="flex flex-wrap items-center justify-center gap-4 border-t pt-12">
-                            <Button size="lg" asChild>
-                                <Link href="/pricing">
-                                    View pricing
-                                    <ArrowRight className="ml-2 h-4 w-4" />
-                                </Link>
-                            </Button>
+                            {canRegister && (
+                                <Button
+                                    size="lg"
+                                    asChild
+                                    onClick={() =>
+                                        track(AnalyticsEvents.ENGAGEMENT_CTA_CLICKED, {
+                                            source: 'feature_page_register',
+                                            page: 'feature-flags',
+                                        })
+                                    }
+                                >
+                                    <Link href="/register">
+                                        Get the Starter Kit
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            )}
                             <Button variant="outline" size="lg" asChild>
+                                <Link href="/pricing">View pricing</Link>
+                            </Button>
+                            <Button variant="ghost" size="lg" asChild>
                                 <Link href="/">See all features</Link>
                             </Button>
                         </section>
+
+                        <RelatedContent
+                            items={[
+                                {
+                                    title: 'Laravel Feature Flags Tutorial',
+                                    href: '/guides/laravel-feature-flags-tutorial',
+                                    description: 'Runtime toggles without Unleash or LaunchDarkly',
+                                },
+                                {
+                                    title: 'Admin Panel',
+                                    href: '/features/admin-panel',
+                                    description: 'UI for toggling flags globally or per-user',
+                                },
+                                {
+                                    title: 'Building a SaaS with Laravel 12',
+                                    href: '/guides/building-saas-with-laravel-12',
+                                    description: 'Complete guide including feature flag architecture',
+                                },
+                            ]}
+                        />
                     </article>
                 </main>
 
-                <footer className="border-t py-8">
-                    <div className="container">
-                        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-                            <p className="text-sm text-muted-foreground">
-                                &copy; {new Date().getFullYear()}{' '}
-                                {import.meta.env.VITE_APP_NAME || 'Laravel React Starter'}.
-                                All rights reserved.
-                            </p>
-                            <nav className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <Link
-                                    href="/features/billing"
-                                    className="transition-colors hover:text-foreground"
-                                >
-                                    Billing
-                                </Link>
-                                <Link
-                                    href="/features/admin-panel"
-                                    className="transition-colors hover:text-foreground"
-                                >
-                                    Admin Panel
-                                </Link>
-                                <Link
-                                    href="/pricing"
-                                    className="transition-colors hover:text-foreground"
-                                >
-                                    Pricing
-                                </Link>
-                            </nav>
-                        </div>
-                    </div>
-                </footer>
+                <PublicFooter />
             </div>
         </>
     );

@@ -151,7 +151,7 @@ describe('ApiTokens Page', () => {
 
     expect(await screen.findByText(/no api tokens/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/create a token to authenticate with the api/i)
+      screen.getByText(/create a token to authenticate requests from your scripts/i)
     ).toBeInTheDocument();
   });
 

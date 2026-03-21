@@ -86,7 +86,7 @@ describe('Dashboard', () => {
       render(<Dashboard stats={defaultStats} recent_activity={defaultRecentActivity} />);
 
       expect(
-        screen.getByText(/welcome to your application dashboard/i)
+        screen.getByText(/complete setup to unlock all features/i)
       ).toBeInTheDocument();
     });
   });
@@ -187,7 +187,7 @@ describe('Dashboard', () => {
     it('shows empty state for non-new users', () => {
       render(<Dashboard stats={defaultStats} recent_activity={defaultRecentActivity} />);
 
-      expect(screen.getByText('No Recent Activity')).toBeInTheDocument();
+      expect(screen.getByText('No activity recorded yet.')).toBeInTheDocument();
     });
   });
 

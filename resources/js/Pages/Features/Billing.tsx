@@ -13,8 +13,9 @@ import { useEffect } from 'react';
 
 import { Head, Link } from '@inertiajs/react';
 
-import { Logo, TextLogo } from '@/Components/branding/Logo';
 import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
+import { PublicFooter } from '@/Components/marketing/PublicFooter';
+import { PublicNav } from '@/Components/marketing/PublicNav';
 import { FaqJsonLd } from '@/Components/seo/FaqJsonLd';
 import { RelatedContent } from '@/Components/seo/RelatedContent';
 import { useAnalytics } from '@/hooks/useAnalytics';
@@ -100,32 +101,7 @@ export default function Billing({ title, metaDescription, breadcrumbs, canonical
             </Head>
 
             <div className="min-h-screen bg-background">
-                <nav className="container flex items-center justify-between py-6">
-                    <Link href="/" className="flex items-center gap-2">
-                        <Logo className="h-8 w-8" />
-                        <TextLogo className="text-xl font-bold" />
-                    </Link>
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/features/feature-flags"
-                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                            Feature Flags
-                        </Link>
-                        <Link
-                            href="/features/admin-panel"
-                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                            Admin Panel
-                        </Link>
-                        <Link
-                            href="/pricing"
-                            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-                        >
-                            Pricing
-                        </Link>
-                    </div>
-                </nav>
+                <PublicNav currentPath="/features/billing" />
 
                 <main className="container pb-24">
                     <article className="mx-auto max-w-4xl">
@@ -170,6 +146,28 @@ export default function Billing({ title, metaDescription, breadcrumbs, canonical
                                         </p>
                                     </div>
                                 ))}
+                            </div>
+                        </section>
+
+                        {/* Persona section */}
+                        <section className="mb-16">
+                            <h2 className="mb-6 text-2xl font-bold">Who uses this</h2>
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div className="rounded-2xl border border-border/70 bg-muted/40 p-6">
+                                    <p className="font-semibold text-foreground">Solo founder launching a SaaS</p>
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                        Charge customers on day one without building a billing system from
+                                        scratch — Redis locks, dunning emails, and plan tiers are already wired up.
+                                    </p>
+                                </div>
+                                <div className="rounded-2xl border border-border/70 bg-muted/40 p-6">
+                                    <p className="font-semibold text-foreground">Freelancer delivering client projects</p>
+                                    <p className="mt-2 text-sm text-muted-foreground">
+                                        Hand off a production-ready billing setup without teaching your client
+                                        Stripe — the billing portal, incomplete payment recovery, and admin
+                                        dashboard are all included.
+                                    </p>
+                                </div>
                             </div>
                         </section>
 
@@ -288,37 +286,7 @@ export default function Billing({ title, metaDescription, breadcrumbs, canonical
                     </article>
                 </main>
 
-                <footer className="border-t py-8">
-                    <div className="container">
-                        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
-                            <p className="text-sm text-muted-foreground">
-                                &copy; {new Date().getFullYear()}{' '}
-                                {import.meta.env.VITE_APP_NAME || 'Laravel React Starter'}.
-                                All rights reserved.
-                            </p>
-                            <nav className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <Link
-                                    href="/features/feature-flags"
-                                    className="transition-colors hover:text-foreground"
-                                >
-                                    Feature Flags
-                                </Link>
-                                <Link
-                                    href="/features/admin-panel"
-                                    className="transition-colors hover:text-foreground"
-                                >
-                                    Admin Panel
-                                </Link>
-                                <Link
-                                    href="/pricing"
-                                    className="transition-colors hover:text-foreground"
-                                >
-                                    Pricing
-                                </Link>
-                            </nav>
-                        </div>
-                    </div>
-                </footer>
+                <PublicFooter />
             </div>
         </>
     );

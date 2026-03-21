@@ -106,7 +106,7 @@ describe("Onboarding", () => {
     render(<Onboarding />);
     fireEvent.click(screen.getByText("Next")); // Step 1 -> 2
     fireEvent.click(screen.getByText("Next")); // Step 2 -> 3
-    expect(screen.getByText(/you're all set/i)).toBeInTheDocument();
+    expect(screen.getByText(/you're ready to ship/i)).toBeInTheDocument();
   });
 
   it("shows feature cards in step 3", () => {

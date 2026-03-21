@@ -133,7 +133,7 @@ describe("NotificationDropdown", () => {
     await user.click(screen.getByLabelText("Notifications"));
 
     await waitFor(() => {
-      expect(screen.getByText("No notifications yet")).toBeInTheDocument();
+      expect(screen.getByText("You're all caught up.")).toBeInTheDocument();
     });
   });
 

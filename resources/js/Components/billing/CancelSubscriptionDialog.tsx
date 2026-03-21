@@ -43,7 +43,7 @@ export function CancelSubscriptionDialog({
   const [processing, setProcessing] = useState(false);
   const { track } = useAnalytics();
 
-  const showRetentionOffer = reason === "too_expensive";
+  const showRetentionOffer = !!reason;
   const showFeedbackField = ["missing_features", "other", "switching_tools"].includes(reason);
 
   const handleSubmit = async () => {
@@ -138,7 +138,11 @@ export function CancelSubscriptionDialog({
               <Info className="h-4 w-4 text-primary" />
               <AlertTitle>Before you go...</AlertTitle>
               <AlertDescription>
-                We'd love to keep you! Contact us and we may be able to offer a discount.
+                Did you know you can pause your subscription instead of cancelling? Or{' '}
+                <a href="/contact" className="underline underline-offset-2">
+                  talk to us
+                </a>{' '}
+                and we'll make it right.
               </AlertDescription>
             </Alert>
           )}

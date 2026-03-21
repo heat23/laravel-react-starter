@@ -50,6 +50,7 @@ interface Feature {
 interface RegisterProps {
   error?: string;
   rememberDays?: number;
+  onboardingEnabled?: boolean;
   features?: {
     socialAuth?: boolean;
   };
@@ -65,30 +66,31 @@ const passwordRequirements: PasswordRequirement[] = [
 const sellingPoints: Feature[] = [
   {
     icon: Shield,
-    title: "Secure by Default",
-    description: "Built with security best practices including encryption and secure authentication.",
+    title: "Verified users from day one — no ghost accounts",
+    description: "Email verification and enterprise-grade 2FA are built in, ready to enable in one toggle.",
   },
   {
     icon: GitBranch,
-    title: "Modern Stack",
-    description: "Powered by Laravel, React, and TypeScript for a great developer experience.",
+    title: "Stripe billing wired up — charge customers the day you launch",
+    description: "Subscriptions, trials, and invoices ship with the SaaS starter kit. No extra integration work.",
   },
   {
     icon: Bell,
-    title: "Stay Informed",
-    description: "Real-time notifications keep you updated on what matters most.",
+    title: "Full admin panel with audit logs — no extra build time",
+    description: "User management, feature flags, and activity tracking are already built.",
   },
   {
     icon: Zap,
-    title: "Lightning Fast",
-    description: "Optimized for performance with instant page loads and smooth interactions.",
+    title: "Production-ready from signup",
+    description: "Security headers, rate limiting, and queue setup — nothing to configure before going live.",
   },
 ];
 
-export default function Register({ error, rememberDays = 30, features }: RegisterProps) {
+export default function Register({ error, rememberDays = 30, onboardingEnabled = false, features }: RegisterProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
+  const [weakPasswordWarning, setWeakPasswordWarning] = useState(false);
   const { errors: clientErrors, validateField, validateAll, clearError, setErrors: setClientErrors } = useFormValidation(registerSchema);
   const { track } = useAnalytics();
 
@@ -109,7 +111,18 @@ export default function Register({ error, rememberDays = 30, features }: Registe
   const handleSubmit: FormEventHandler = (e) => {
     e.preventDefault();
 
-    if (!validateAll(data)) return;
+    // When onboarding is enabled, name is collected in the wizard — skip name validation
+    if (onboardingEnabled) {
+      const dataWithPlaceholder = { ...data, name: data.name || 'User' };
+      if (!validateAll(dataWithPlaceholder)) return;
+    } else {
+      if (!validateAll(data)) return;
+    }
+
+    // Show a soft warning for weak passwords but don't block submission
+    if (passwordStrength < 100) {
+      setWeakPasswordWarning(true);
+    }
 
     post(route("register"), {
       onFinish: () => reset("password", "password_confirmation"),
@@ -125,12 +138,12 @@ export default function Register({ error, rememberDays = 30, features }: Registe
     <div className="max-w-lg space-y-8">
       <div className="space-y-4">
         <h1 className="text-4xl font-bold leading-tight">
-          Welcome to {appName}.
+          Ship your SaaS,
           <br />
-          <span className="text-brand-surface-foreground/80">Get started today.</span>
+          <span className="text-brand-surface-foreground/80">not the setup work.</span>
         </h1>
         <p className="text-lg text-brand-surface-foreground/70 leading-relaxed">
-          Create your account to access all features and start building something amazing.
+          Everything you need to go from signup to paying customers — auth, billing, admin, and APIs included.
         </p>
       </div>
 
@@ -211,29 +224,32 @@ export default function Register({ error, rememberDays = 30, features }: Registe
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="space-y-2">
-            <Label htmlFor="name">Full name</Label>
-            <div className="relative flex items-center">
-              <User className="absolute left-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="name"
-                type="text"
-                placeholder="John Doe"
-                value={data.name}
-                onChange={(e) => {
-                  setData("name", e.target.value);
-                  if (clientErrors.name) clearError("name");
-                }}
-                onBlur={(e) => validateField("name", e.target.value)}
-                className="pl-10"
-                autoComplete="name"
-                required
-                aria-describedby={(clientErrors.name || errors.name) ? "register-name-error" : undefined}
-                aria-invalid={!!(clientErrors.name || errors.name)}
-              />
+          {/* Name field is skipped when onboarding is enabled — the wizard collects it in step 1 */}
+          {!onboardingEnabled && (
+            <div className="space-y-2">
+              <Label htmlFor="name">Full name</Label>
+              <div className="relative flex items-center">
+                <User className="absolute left-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={data.name}
+                  onChange={(e) => {
+                    setData("name", e.target.value);
+                    if (clientErrors.name) clearError("name");
+                  }}
+                  onBlur={(e) => validateField("name", e.target.value)}
+                  className="pl-10"
+                  autoComplete="name"
+                  required
+                  aria-describedby={(clientErrors.name || errors.name) ? "register-name-error" : undefined}
+                  aria-invalid={!!(clientErrors.name || errors.name)}
+                />
+              </div>
+              <InputError id="register-name-error" message={clientErrors.name || errors.name} className="text-xs" />
             </div>
-            <InputError id="register-name-error" message={clientErrors.name || errors.name} className="text-xs" />
-          </div>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="email">Email address</Label>
@@ -369,13 +385,19 @@ export default function Register({ error, rememberDays = 30, features }: Registe
             </Label>
           </div>
 
+          {weakPasswordWarning && passwordStrength < 100 && (
+            <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+              Your password doesn&apos;t meet all requirements. Consider strengthening it, or continue if you&apos;re sure.
+            </div>
+          )}
+
           <LoadingButton
             type="submit"
             className="w-full group"
             size="lg"
             loading={processing}
             loadingText="Creating account..."
-            disabled={!acceptTerms || passwordStrength < 100}
+            disabled={!acceptTerms}
           >
             Create account
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
