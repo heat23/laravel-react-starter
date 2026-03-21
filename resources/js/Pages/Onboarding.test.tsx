@@ -118,12 +118,11 @@ describe("Onboarding", () => {
     expect(screen.getByText("API Tokens")).toBeInTheDocument();
   });
 
-  it("shows Get Started button on last step", () => {
+  it("shows Go to Dashboard button on last step", () => {
     render(<Onboarding />);
     fireEvent.click(screen.getByText("Next"));
     fireEvent.click(screen.getByText("Next"));
-    // "Get Started" appears in both step label and finish button
-    expect(screen.getByRole("button", { name: "Get Started" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Go to Dashboard" })).toBeInTheDocument();
   });
 
   it("has Skip button on all steps", () => {

@@ -24,7 +24,7 @@ it('allows upgrade from pro to team', function () {
         'price_id' => 'price_team_monthly',
     ]);
 
-    $response->assertRedirect(route('billing.index', ['swapped' => 'true']));
+    $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'team', 'swapped' => 'true']));
     $response->assertSessionHas('success');
 });
 
@@ -40,7 +40,7 @@ it('allows upgrade from team to enterprise', function () {
         'price_id' => 'price_enterprise_monthly',
     ]);
 
-    $response->assertRedirect(route('billing.index', ['swapped' => 'true']));
+    $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'enterprise', 'swapped' => 'true']));
 });
 
 it('allows downgrade from enterprise to team', function () {
@@ -55,7 +55,7 @@ it('allows downgrade from enterprise to team', function () {
         'price_id' => 'price_team_monthly',
     ]);
 
-    $response->assertRedirect(route('billing.index', ['swapped' => 'true']));
+    $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'team', 'swapped' => 'true']));
 });
 
 it('allows downgrade from team to pro', function () {
@@ -70,7 +70,7 @@ it('allows downgrade from team to pro', function () {
         'price_id' => 'price_pro_monthly',
     ]);
 
-    $response->assertRedirect(route('billing.index', ['swapped' => 'true']));
+    $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'pro', 'swapped' => 'true']));
 });
 
 it('allows swap from monthly to annual within same tier', function () {
@@ -88,7 +88,7 @@ it('allows swap from monthly to annual within same tier', function () {
         'price_id' => 'price_pro_annual',
     ]);
 
-    $response->assertRedirect(route('billing.index', ['swapped' => 'true']));
+    $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'pro', 'swapped' => 'true']));
 });
 
 it('validates price_id is required for swap', function () {
@@ -151,8 +151,8 @@ it('handles IncompletePayment on swap requiring SCA', function () {
         'price_id' => 'price_team_monthly',
     ]);
 
-    $response->assertRedirect();
-    $response->assertSessionHas('error');
+    $response->assertRedirect(route('billing.index'));
+    $response->assertSessionHas('info');
 });
 
 it('handles Stripe API error during swap', function () {

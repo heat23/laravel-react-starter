@@ -1,9 +1,11 @@
-import { CheckCircle2, Sparkles } from 'lucide-react';
+import { CheckCircle2, Lock, RefreshCcw, ShieldCheck, Sparkles } from 'lucide-react';
 
 import { useEffect, useMemo, useState } from 'react';
 
 import { Head, Link, router, usePage } from '@inertiajs/react';
 
+import { AnnouncementBanner, type AnnouncementBannerProps } from '@/Components/layout/AnnouncementBanner';
+import { MarketingNav } from '@/Components/layout/MarketingNav';
 import PageHeader from '@/Components/layout/PageHeader';
 import { Alert, AlertDescription } from '@/Components/ui/alert';
 import { Badge } from '@/Components/ui/badge';
@@ -32,8 +34,14 @@ interface TierConfig {
   per_seat?: boolean;
   min_seats?: number | null;
   coming_soon?: boolean;
+  popular?: boolean;
   limits?: Record<string, number | null>;
   features?: string[];
+}
+
+interface FaqItem {
+  question: string;
+  answer: string;
 }
 
 interface PricingPageProps extends PageProps {
@@ -46,10 +54,40 @@ interface PricingPageProps extends PageProps {
   } | null;
   trialEnabled?: boolean;
   trialDays?: number;
+  faqs?: FaqItem[];
+  announcementBanner?: AnnouncementBannerProps | null;
 }
 
+const DEFAULT_FAQS: FaqItem[] = [
+  {
+    question: 'Can I change plans?',
+    answer:
+      'Yes. You can upgrade or downgrade your plan at any time. Changes take effect immediately and billing is prorated automatically.',
+  },
+  {
+    question: 'What happens when I cancel?',
+    answer:
+      'Your subscription remains active until the end of the billing period. After that, your account reverts to the Free plan — your data is never deleted.',
+  },
+  {
+    question: 'Is billing automatic?',
+    answer:
+      'Yes. Subscriptions renew automatically each billing cycle. You\'ll receive an email receipt before each renewal. Cancel anytime from your billing dashboard.',
+  },
+  {
+    question: 'Do you offer refunds?',
+    answer:
+      'We offer a 30-day money-back guarantee. If you\'re not satisfied, contact us within 30 days of your first payment for a full refund.',
+  },
+  {
+    question: 'How do team seats work?',
+    answer:
+      'The Team plan includes a minimum of 3 seats and supports up to 50. You can adjust the seat count at any time and billing is prorated accordingly.',
+  },
+];
+
 export default function Pricing() {
-  const { tiers, currentPlan, trial, trialEnabled, trialDays, auth } =
+  const { tiers, currentPlan, trial, trialEnabled, trialDays, auth, faqs, announcementBanner } =
     usePage<PricingPageProps>().props;
   const { track } = useAnalytics();
   const tierEntries = useMemo(() => Object.entries(tiers), [tiers]);
@@ -59,16 +97,19 @@ export default function Pricing() {
       user_type: auth.user ? 'authenticated' : 'anonymous',
     });
   }, [track]); // eslint-disable-line react-hooks/exhaustive-deps
-  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>(
-    'monthly'
-  );
-  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
-
   const hasAnnualPricing = useMemo(() => {
     return tierEntries.some(
       ([, tier]) => tier.price_annual && tier.price_annual > 0
     );
   }, [tierEntries]);
+
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>(
+    () =>
+      Object.values(tiers).some((t) => t.price_annual && t.price_annual > 0)
+        ? 'annual'
+        : 'monthly'
+  );
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
   const annualSavingsPercent = useMemo(() => {
     const proTier = tiers.pro;
@@ -128,8 +169,10 @@ export default function Pricing() {
         { onFinish: () => setCheckoutLoading(null) }
       );
     } else {
+      // New subscribers go through Stripe Checkout hosted page for card collection.
+      // Server creates a Checkout session and redirects via Inertia::location().
       router.post(
-        route('billing.subscribe'),
+        route('billing.checkout'),
         {
           price_id: priceId,
           quantity: tier.per_seat && tier.min_seats ? tier.min_seats : 1,
@@ -144,12 +187,12 @@ export default function Pricing() {
       <Head title="Pricing">
         <meta
           name="description"
-          content="Choose the plan that fits your needs. Start free and upgrade as you grow with flexible pricing options."
+          content="One-time purchase. Free, Pro, Team, and Enterprise plans — no recurring subscription fees. Full source code included."
         />
       </Head>
       <PageHeader
         title="Pricing"
-        subtitle="Simple, transparent pricing that grows with you"
+        subtitle="One-time purchase. Full source code. No subscriptions."
       />
       <div className="container py-12">
         <div className="max-w-5xl mx-auto space-y-10">
@@ -159,9 +202,15 @@ export default function Pricing() {
                 <ToggleGroup
                   type="single"
                   value={billingPeriod}
-                  onValueChange={(value) =>
-                    value && setBillingPeriod(value as 'monthly' | 'annual')
-                  }
+                  onValueChange={(value) => {
+                    if (!value) return;
+                    const next = value as 'monthly' | 'annual';
+                    track(AnalyticsEvents.BILLING_PERIOD_TOGGLED, {
+                      from: billingPeriod as BillingPeriod,
+                      to: next as BillingPeriod,
+                    });
+                    setBillingPeriod(next);
+                  }}
                 >
                   <ToggleGroupItem value="monthly" className="px-4">
                     Monthly
@@ -212,7 +261,13 @@ export default function Pricing() {
               return (
                 <Card
                   key={key}
-                  className={isCurrent ? 'border-primary shadow-md' : ''}
+                  className={
+                    isCurrent
+                      ? 'border-primary shadow-md'
+                      : tier.popular
+                        ? 'ring-2 ring-primary shadow-md'
+                        : ''
+                  }
                   onMouseEnter={() => {
                     if (!isCurrent && !isEnterprise && key !== 'free') {
                       track(AnalyticsEvents.BILLING_PLAN_SELECTED, {
@@ -228,6 +283,9 @@ export default function Pricing() {
                       <div className="flex items-center gap-2">
                         {tier.coming_soon && (
                           <Badge variant="outline">Coming Soon</Badge>
+                        )}
+                        {tier.popular && !isCurrent && !tier.coming_soon && (
+                          <Badge variant="default">Most Popular</Badge>
                         )}
                         {pricing.savings &&
                           billingPeriod === 'annual' &&
@@ -318,7 +376,8 @@ export default function Pricing() {
                       {auth.user &&
                         !isEnterprise &&
                         !isCurrent &&
-                        key === 'free' && (
+                        key === 'free' &&
+                        currentPlan !== 'free' && (
                           <Button asChild className="w-full" variant="outline">
                             <Link href="/dashboard">Go to Dashboard</Link>
                           </Button>
@@ -343,6 +402,60 @@ export default function Pricing() {
               );
             })}
           </div>
+
+          {/* Trust strip */}
+          <div className="flex flex-wrap items-center justify-center gap-6 rounded-2xl border border-border/60 bg-muted/40 px-6 py-4 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <RefreshCcw className="h-4 w-4 text-success" />
+              Cancel anytime
+            </span>
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4 text-success" />
+              Secure payments via Stripe
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Lock className="h-4 w-4 text-success" />
+              30-day money-back guarantee
+            </span>
+          </div>
+
+          {/* Compare links */}
+          <p className="mt-2 text-center text-sm text-muted-foreground">
+            Evaluating alternatives?{' '}
+            <Link href="/compare/laravel-spark" className="underline hover:text-foreground transition-colors">
+              Laravel Spark
+            </Link>
+            {', '}
+            <Link href="/compare/laravel-jetstream" className="underline hover:text-foreground transition-colors">
+              Jetstream
+            </Link>
+            {', '}
+            <Link href="/compare/saasykit" className="underline hover:text-foreground transition-colors">
+              SaaSykit
+            </Link>
+            {', and '}
+            <Link href="/compare" className="underline hover:text-foreground transition-colors">
+              more comparisons →
+            </Link>
+          </p>
+
+          {/* FAQ */}
+          <div className="pt-6">
+            <h2 className="mb-6 text-center text-2xl font-bold">
+              Frequently asked questions
+            </h2>
+            <div className="space-y-4">
+              {(faqs ?? DEFAULT_FAQS).map((faq) => (
+                <div
+                  key={faq.question}
+                  className="rounded-2xl border border-border/70 bg-card p-5"
+                >
+                  <h3 className="mb-1.5 font-semibold">{faq.question}</h3>
+                  <p className="text-sm text-muted-foreground">{faq.answer}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </>
@@ -350,8 +463,19 @@ export default function Pricing() {
 
   // Use DashboardLayout for authenticated users, plain layout for guests
   if (auth.user) {
-    return <DashboardLayout>{content}</DashboardLayout>;
+    return (
+      <DashboardLayout>
+        {announcementBanner && <AnnouncementBanner {...announcementBanner} />}
+        {content}
+      </DashboardLayout>
+    );
   }
 
-  return <div className="min-h-screen bg-background">{content}</div>;
+  return (
+    <div className="min-h-screen bg-background">
+      {announcementBanner && <AnnouncementBanner {...announcementBanner} />}
+      <MarketingNav canLogin canRegister currentPath="/pricing" />
+      {content}
+    </div>
+  );
 }

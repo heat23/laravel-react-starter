@@ -35,6 +35,7 @@ class PricingController extends Controller
                 'per_seat' => $tierConfig['per_seat'] ?? false,
                 'min_seats' => $tierConfig['min_seats'] ?? null,
                 'coming_soon' => $tierConfig['coming_soon'] ?? false,
+                'popular' => $tierConfig['popular'] ?? false,
                 'limits' => $tierConfig['limits'] ?? [],
                 'features' => $tierConfig['features'] ?? [],
             ];

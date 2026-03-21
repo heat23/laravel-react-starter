@@ -28,7 +28,7 @@ return [
     */
     'free' => [
         'name' => 'Free',
-        'description' => 'For individuals getting started',
+        'description' => 'Start building — no credit card required',
         'price_monthly' => 0,
         'price_annual' => 0,
         'per_seat' => false,
@@ -40,8 +40,10 @@ return [
             'seats' => 1,
         ],
         'features' => [
-            'Manual operations',
+            'Up to 3 projects',
+            '30-day activity history',
             'Basic export (CSV)',
+            '1 API token',
             'Community support',
         ],
     ],
@@ -53,7 +55,8 @@ return [
     */
     'pro' => [
         'name' => 'Pro',
-        'description' => 'For professionals',
+        'description' => 'Everything you need to ship faster',
+        'popular' => true,
         'stripe_price_monthly' => env('STRIPE_PRICE_PRO'),
         'stripe_price_annual' => env('STRIPE_PRICE_PRO_ANNUAL'),
         'price_monthly' => env('PLAN_PRO_PRICE_MONTHLY', 19),
@@ -67,12 +70,13 @@ return [
             'seats' => 1,
         ],
         'features' => [
-            'Unlimited projects',
-            'Scheduled operations',
+            'Unlimited projects — never hit a cap',
+            '1-year activity history',
+            'Scheduled & automated operations',
             'Advanced export (JSON, CSV)',
+            'Full REST API (10 tokens)',
             'Email notifications',
             'Priority support',
-            'API access',
         ],
     ],
 
@@ -83,7 +87,7 @@ return [
     */
     'team' => [
         'name' => 'Team',
-        'description' => 'For growing teams',
+        'description' => 'Collaborate across your whole team',
         'stripe_price_monthly' => env('STRIPE_PRICE_TEAM'),
         'stripe_price_annual' => env('STRIPE_PRICE_TEAM_ANNUAL'),
         'price_monthly' => env('PLAN_TEAM_PRICE_MONTHLY', 49),
@@ -99,11 +103,11 @@ return [
         ],
         'features' => [
             'Everything in Pro',
-            'Team member management',
-            'Per-seat billing',
-            'Shared projects',
-            'Audit log',
-            'Priority email support',
+            'Team member management (3–50 seats)',
+            'Shared projects with role-based access',
+            'Full audit log & compliance exports',
+            'Unlimited activity history',
+            'Dedicated onboarding',
         ],
     ],
 
@@ -114,7 +118,7 @@ return [
     */
     'enterprise' => [
         'name' => 'Enterprise',
-        'description' => 'For large organizations',
+        'description' => 'Custom scale with SLA & dedicated support',
         'stripe_price_monthly' => env('STRIPE_PRICE_ENTERPRISE'),
         'stripe_price_annual' => env('STRIPE_PRICE_ENTERPRISE_ANNUAL'),
         'price_monthly' => env('PLAN_ENTERPRISE_PRICE_MONTHLY', 99),

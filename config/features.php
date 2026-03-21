@@ -19,7 +19,9 @@ return [
     */
     'billing' => [
         'enabled' => env('FEATURE_BILLING', false),
-        'coming_soon' => env('PRO_TIER_COMING_SOON', true),
+        // Set to true before enabling FEATURE_BILLING if you want to soft-launch the pricing page
+        // before payment processing goes live. Defaults false so billing works immediately on launch.
+        'coming_soon' => env('PRO_TIER_COMING_SOON', false),
         // Trial config is in config/plans.php (plans.trial.days, plans.trial.enabled)
     ],
 
@@ -33,7 +35,10 @@ return [
     |
     */
     'social_auth' => [
-        'enabled' => env('FEATURE_SOCIAL_AUTH', false),
+        // Defaults to true: auto-detection of providers by CLIENT_ID presence means no buttons
+        // render unless GOOGLE_CLIENT_ID / GITHUB_CLIENT_ID are actually set — safe default.
+        // Set FEATURE_SOCIAL_AUTH=false to suppress the feature-flag config entirely.
+        'enabled' => env('FEATURE_SOCIAL_AUTH', true),
         'providers' => array_filter([
             env('GOOGLE_CLIENT_ID') ? 'google' : null,
             env('GITHUB_CLIENT_ID') ? 'github' : null,
@@ -104,7 +109,10 @@ return [
     |
     */
     'onboarding' => [
-        'enabled' => env('FEATURE_ONBOARDING', false),
+        // Defaults to true so new users are guided through setup.
+        // Set FEATURE_ONBOARDING=false for API-only or headless deployments
+        // where no frontend onboarding wizard is needed.
+        'enabled' => env('FEATURE_ONBOARDING', true),
     ],
 
     /*

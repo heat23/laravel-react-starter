@@ -154,5 +154,5 @@ it('handles IncompletePayment on quantity update', function () {
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHas('error');
+    $response->assertSessionHas('info');
 });

@@ -12,7 +12,8 @@ class OnboardingReminderNotification extends Notification implements ShouldQueue
     use Queueable;
 
     public function __construct(
-        public readonly int $emailNumber
+        public readonly int $emailNumber,
+        public readonly ?string $ctaUrl = null,
     ) {}
 
     /**
@@ -36,6 +37,7 @@ class OnboardingReminderNotification extends Notification implements ShouldQueue
     private function gettingStartedEmail(object $notifiable): MailMessage
     {
         $appName = config('app.name');
+        $url = $this->ctaUrl ?? route('dashboard');
 
         return (new MailMessage)
             ->subject('3 things to set up in your first 5 minutes')
@@ -44,7 +46,7 @@ class OnboardingReminderNotification extends Notification implements ShouldQueue
             ->line('**1. Complete your profile** — add your name and preferences')
             ->line('**2. Configure your settings** — set your timezone and theme')
             ->line('**3. Explore the dashboard** — see everything at a glance')
-            ->action('Complete Your Setup', route('onboarding'))
+            ->action('Complete Your Setup', $url)
             ->line('Takes about 5 minutes. You\'ll be glad you did.');
     }
 

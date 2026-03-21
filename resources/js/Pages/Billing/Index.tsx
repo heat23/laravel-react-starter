@@ -210,24 +210,45 @@ export default function BillingIndex() {
             </Alert>
           )}
 
-          {platformTrial && (
-            <Alert className="border-primary/20 bg-primary/5">
-              <Info className="h-4 w-4 text-primary" />
-              <AlertTitle>Pro Trial Active</AlertTitle>
-              <AlertDescription>
-                You have <strong>{platformTrial.daysRemaining} days</strong>{' '}
-                remaining to explore all Pro features. Trial expires on{' '}
-                <strong>{formatDate(platformTrial.endsAt)}</strong>.{' '}
-                <Link
-                  href="/pricing"
-                  className="underline font-medium rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  Upgrade now
-                </Link>{' '}
-                to keep access after your trial ends.
-              </AlertDescription>
-            </Alert>
-          )}
+          {platformTrial && (() => {
+            const isUrgent = platformTrial.daysRemaining <= 2;
+            const isWarning = !isUrgent && platformTrial.daysRemaining <= 7;
+            return (
+              <Alert
+                className={
+                  isUrgent
+                    ? 'border-destructive/30 bg-destructive/5'
+                    : isWarning
+                      ? 'border-warning/30 bg-warning/5'
+                      : 'border-primary/20 bg-primary/5'
+                }
+              >
+                <Info
+                  className={`h-4 w-4 ${isUrgent ? 'text-destructive' : isWarning ? 'text-warning' : 'text-primary'}`}
+                />
+                <AlertTitle>
+                  {isUrgent
+                    ? 'Trial expires soon — upgrade today to keep access'
+                    : 'Pro Trial Active'}
+                </AlertTitle>
+                <AlertDescription>
+                  You have <strong>{platformTrial.daysRemaining} day{platformTrial.daysRemaining !== 1 ? 's' : ''}</strong>{' '}
+                  remaining{isUrgent ? '' : ` to explore all Pro features`}. Trial expires on{' '}
+                  <strong>{formatDate(platformTrial.endsAt)}</strong>.{' '}
+                  {isUrgent && (
+                    <>Pro is $19/mo — {' '}</>
+                  )}
+                  <Link
+                    href="/pricing"
+                    className="underline font-medium rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    Upgrade now
+                  </Link>{' '}
+                  to keep access after your trial ends.
+                </AlertDescription>
+              </Alert>
+            );
+          })()}
 
           {incompletePayment && (
             <Alert variant="destructive">

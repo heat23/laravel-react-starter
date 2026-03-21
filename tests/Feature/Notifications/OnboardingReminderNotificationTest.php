@@ -11,7 +11,7 @@ it('sends onboarding email 1 with correct subject', function () {
     $mailMessage = $notification->toMail($user);
 
     expect($mailMessage->subject)->toBe('3 things to set up in your first 5 minutes');
-    expect($mailMessage->actionUrl)->toBe(route('onboarding'));
+    expect($mailMessage->actionUrl)->toBe(route('dashboard'));
 });
 
 it('sends onboarding email 2 with feature highlight', function () {
@@ -74,11 +74,11 @@ it('sends onboarding reminders via the artisan command', function () {
     });
 });
 
-it('does not send onboarding reminders when feature is disabled', function () {
+it('sends onboarding reminders with dashboard CTA when feature is disabled', function () {
     Notification::fake();
     config(['features.onboarding.enabled' => false]);
 
-    User::factory()->create([
+    $user = User::factory()->onboardingIncomplete()->create([
         'email_verified_at' => now()->subHours(25),
         'created_at' => now()->subHours(25),
     ]);
@@ -86,7 +86,9 @@ it('does not send onboarding reminders when feature is disabled', function () {
     $this->artisan('notifications:send-onboarding')
         ->assertSuccessful();
 
-    Notification::assertNothingSent();
+    Notification::assertSentTo($user, OnboardingReminderNotification::class, function ($notification) {
+        return $notification->ctaUrl === route('dashboard');
+    });
 });
 
 it('does not send duplicate onboarding reminders', function () {

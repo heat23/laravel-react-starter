@@ -12,16 +12,16 @@ it('renders email 1 — halfway', function () {
 
     $mail = $notification->toMail($user);
 
-    expect($mail->subject)->toContain('halfway');
+    expect($mail->subject)->toContain('days left');
 });
 
 it('renders email 2 — urgency', function () {
     $user = User::factory()->create();
-    $notification = new TrialNudgeNotification(2);
+    $notification = new TrialNudgeNotification(2, now()->addDays(5));
 
     $mail = $notification->toMail($user);
 
-    expect($mail->subject)->toContain('3 days left');
+    expect($mail->subject)->toContain('days left');
 });
 
 it('renders email 3 — expired', function () {

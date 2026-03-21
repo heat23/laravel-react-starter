@@ -25,7 +25,7 @@ it('allows authenticated user to subscribe to pro plan', function () {
         'payment_method' => 'pm_card_visa',
     ]);
 
-    $response->assertRedirect(route('billing.index', ['checkout' => 'success']));
+    $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'pro']));
     $response->assertSessionHas('success');
 });
 
@@ -45,7 +45,7 @@ it('allows subscribing to team plan with seat count', function () {
         'quantity' => 5,
     ]);
 
-    $response->assertRedirect(route('billing.index', ['checkout' => 'success']));
+    $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'team']));
 });
 
 it('allows subscribing to enterprise plan with seat count', function () {
@@ -63,7 +63,7 @@ it('allows subscribing to enterprise plan with seat count', function () {
         'quantity' => 15,
     ]);
 
-    $response->assertRedirect(route('billing.index', ['checkout' => 'success']));
+    $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'enterprise']));
 });
 
 it('rejects subscription when billing feature is disabled', function () {
@@ -125,8 +125,8 @@ it('handles card declined during subscription creation', function () {
         'payment_method' => 'pm_card_declined',
     ]);
 
-    $response->assertRedirect();
-    $response->assertSessionHas('error');
+    $response->assertRedirect(route('billing.index'));
+    $response->assertSessionHas('info');
 });
 
 it('handles subscription with coupon', function () {
@@ -145,7 +145,7 @@ it('handles subscription with coupon', function () {
         'coupon' => 'SAVE20',
     ]);
 
-    $response->assertRedirect(route('billing.index', ['checkout' => 'success']));
+    $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'pro']));
 });
 
 it('creates subscription with trial period status', function () {
@@ -250,7 +250,7 @@ it('allows checkout when coming_soon feature flag is false', function () {
         'payment_method' => 'pm_card_visa',
     ]);
 
-    $response->assertRedirect(route('billing.index', ['checkout' => 'success']));
+    $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'pro']));
     $response->assertSessionHas('success');
 });
 

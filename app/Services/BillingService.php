@@ -31,6 +31,28 @@ class BillingService
     }
 
     /**
+     * Create a Stripe Checkout session for a new subscriber.
+     * Returns the hosted Checkout URL to redirect the user to.
+     * Use this for first-time subscribers who have no stored payment method.
+     */
+    public function createCheckoutSession(
+        User $user,
+        string $priceId,
+        int $quantity,
+        string $successUrl,
+        string $cancelUrl,
+    ): string {
+        $builder = $user->newSubscription('default', $priceId)->quantity($quantity);
+
+        $checkout = $builder->checkout([
+            'success_url' => $successUrl,
+            'cancel_url' => $cancelUrl,
+        ]);
+
+        return $checkout->url;
+    }
+
+    /**
      * Create a new subscription for the user.
      */
     public function createSubscription(

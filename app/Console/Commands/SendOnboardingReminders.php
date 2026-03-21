@@ -22,16 +22,14 @@ class SendOnboardingReminders extends Command
 
     public function handle(): int
     {
-        if (! config('features.onboarding.enabled')) {
-            $this->info('Onboarding feature is disabled.');
-
-            return self::SUCCESS;
-        }
+        // Onboarding reminder emails are sent regardless of whether the wizard UI is enabled.
+        // When the feature is disabled we still send but use the dashboard URL as the CTA.
+        $onboardingEnabled = (bool) config('features.onboarding.enabled');
 
         $totalSent = 0;
 
         foreach (self::EMAIL_SCHEDULE as $emailNumber => $schedule) {
-            $sent = $this->sendEmailNumber($emailNumber, $schedule['days'], $schedule['maxDays']);
+            $sent = $this->sendEmailNumber($emailNumber, $schedule['days'], $schedule['maxDays'], $onboardingEnabled);
             $totalSent += $sent;
         }
 
@@ -40,7 +38,7 @@ class SendOnboardingReminders extends Command
         return self::SUCCESS;
     }
 
-    private function sendEmailNumber(int $emailNumber, int $minDays, int $maxDays): int
+    private function sendEmailNumber(int $emailNumber, int $minDays, int $maxDays, bool $onboardingEnabled = true): int
     {
         $users = User::query()
             ->where('created_at', '<=', now()->subDays($minDays))
@@ -50,7 +48,14 @@ class SendOnboardingReminders extends Command
 
         $sent = 0;
 
+        // CTA URL: use onboarding route only when the wizard UI is enabled
+        $ctaUrl = $onboardingEnabled ? route('onboarding') : route('dashboard');
+
         foreach ($users as $user) {
+            if ($this->hasOptedOut($user)) {
+                continue;
+            }
+
             if ($this->hasCompletedOnboarding($user)) {
                 continue;
             }
@@ -64,7 +69,7 @@ class SendOnboardingReminders extends Command
             }
 
             try {
-                $user->notify(new OnboardingReminderNotification($emailNumber));
+                $user->notify(new OnboardingReminderNotification($emailNumber, $ctaUrl));
                 $sent++;
 
                 Log::info('Onboarding reminder sent', [
@@ -81,6 +86,13 @@ class SendOnboardingReminders extends Command
         }
 
         return $sent;
+    }
+
+    private function hasOptedOut(User $user): bool
+    {
+        $value = \App\Models\UserSetting::getValue($user->id, 'marketing_emails', true);
+
+        return $value === false || $value === '0' || $value === 0;
     }
 
     private function hasCompletedOnboarding(User $user): bool
@@ -115,9 +127,24 @@ class SendOnboardingReminders extends Command
 
     private function alreadySentEmail(User $user, int $emailNumber): bool
     {
-        return $user->notifications()
+        $reminderSent = $user->notifications()
             ->where('type', OnboardingReminderNotification::class)
             ->where('data', 'like', '%"email_number":'.$emailNumber.'%')
             ->exists();
+
+        if ($reminderSent) {
+            return true;
+        }
+
+        // Skip email_number=1 if welcome sequence email #2 (day-1 tips) already sent
+        // to avoid duplicate '3 things to do' message
+        if ($emailNumber === 1) {
+            return $user->notifications()
+                ->where('type', \App\Notifications\WelcomeSequenceNotification::class)
+                ->where('data', 'like', '%"email_number":2%')
+                ->exists();
+        }
+
+        return false;
     }
 }

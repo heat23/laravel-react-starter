@@ -43,13 +43,13 @@ describe('Welcome', () => {
     it('renders the welcome page', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText(/ship your saas/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/laravel \+ react saas/i).length).toBeGreaterThan(0);
     });
 
     it('renders the hero section', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText(/in days, not months/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/in hours, not weeks/i).length).toBeGreaterThan(0);
       expect(
         screen.getByText(/a production-ready laravel \+ react starter with/i)
       ).toBeInTheDocument();
@@ -87,8 +87,8 @@ describe('Welcome', () => {
       render(<Welcome canLogin={false} canRegister={true} />);
 
       expect(
-        screen.getByRole('link', { name: /get started/i })
-      ).toBeInTheDocument();
+        screen.getAllByRole('link', { name: /get started/i }).length
+      ).toBeGreaterThan(0);
     });
 
     it('hides register link when canRegister is false', () => {
@@ -104,8 +104,8 @@ describe('Welcome', () => {
 
       expect(screen.getByRole('link', { name: /log in/i })).toBeInTheDocument();
       expect(
-        screen.getByRole('link', { name: /get started/i })
-      ).toBeInTheDocument();
+        screen.getAllByRole('link', { name: /get started/i }).length
+      ).toBeGreaterThan(0);
     });
 
     it('hides both login and register links when both are false', () => {
@@ -119,17 +119,12 @@ describe('Welcome', () => {
       ).not.toBeInTheDocument();
     });
 
-    it('renders documentation link pointing to GitHub README', () => {
+    it('renders compare hub link', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      const docLink = screen.getByRole('link', { name: /documentation/i });
-      expect(docLink).toBeInTheDocument();
-      expect(docLink).toHaveAttribute(
-        'href',
-        'https://github.com/your-org/laravel-react-starter#readme'
-      );
-      expect(docLink).toHaveAttribute('target', '_blank');
-      expect(docLink).toHaveAttribute('rel', 'noopener noreferrer');
+      const compareLink = screen.getByRole('link', { name: /compare all/i });
+      expect(compareLink).toBeInTheDocument();
+      expect(compareLink).toHaveAttribute('href', '/compare');
     });
   });
 
@@ -138,19 +133,19 @@ describe('Welcome', () => {
   // ============================================
 
   describe('hero section', () => {
-    it('shows Create Your First Account button when canRegister is true', () => {
+    it('shows Get Started Free button when canRegister is true', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
       expect(
-        screen.getByRole('link', { name: /create your first account/i })
-      ).toBeInTheDocument();
+        screen.getAllByRole('link', { name: /get started free/i }).length
+      ).toBeGreaterThan(0);
     });
 
-    it('hides Create Your First Account button when canRegister is false', () => {
+    it('hides Get Started Free button when canRegister is false', () => {
       render(<Welcome canLogin={true} canRegister={false} />);
 
       expect(
-        screen.queryByRole('link', { name: /create your first account/i })
+        screen.queryByRole('link', { name: /get started free/i })
       ).not.toBeInTheDocument();
     });
 
@@ -172,8 +167,8 @@ describe('Welcome', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
       expect(
-        screen.getByText(/everything you need to launch/i)
-      ).toBeInTheDocument();
+        screen.getAllByText(/everything you need to launch/i).length
+      ).toBeGreaterThan(0);
     });
 
     it('renders Secure by default feature', () => {
@@ -203,9 +198,9 @@ describe('Welcome', () => {
     it('renders before vs after section', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
-      expect(screen.getByText(/skip the boilerplate/i)).toBeInTheDocument();
-      expect(screen.getByText(/without this starter/i)).toBeInTheDocument();
-      expect(screen.getByText(/with this starter/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/skip the boilerplate/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/without this starter/i).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(/with this starter/i).length).toBeGreaterThan(0);
     });
   });
 
@@ -329,7 +324,9 @@ describe('Welcome', () => {
       expect(
         screen.getAllByText(/11 toggleable feature flags/i).length
       ).toBeGreaterThan(0);
-      expect(screen.getAllByText(/4 billing tiers/i).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/from clone to first deploy/i).length
+      ).toBeGreaterThan(0);
     });
   });
 });

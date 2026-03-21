@@ -24,6 +24,7 @@ use App\Http\Controllers\SeoController;
 use App\Http\Controllers\Settings\ApiTokenPageController;
 use App\Http\Controllers\Settings\TwoFactorController;
 use App\Http\Controllers\Settings\WebhookPageController;
+use App\Http\Controllers\UnsubscribeController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
@@ -45,7 +46,9 @@ Route::get('/about', [LegalController::class, 'about'])->name('about');
 Route::get('/contact', [ContactController::class, 'show'])->middleware('throttle:10,1')->name('contact.show');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contact.store');
 Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
+Route::post('/changelog/acknowledge', [ChangelogController::class, 'acknowledge'])->middleware(['auth', 'throttle:10,1'])->name('changelog.acknowledge');
 Route::get('/roadmap', [RoadmapController::class, 'index'])->name('roadmap');
+Route::post('/roadmap/{slug}/vote', [RoadmapController::class, 'vote'])->middleware(['auth', 'throttle:60,1'])->name('roadmap.vote');
 
 // Competitor comparison pages (SEO landing pages)
 Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
@@ -84,6 +87,17 @@ Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show')->
 
 // Feedback (authenticated users only)
 Route::post('/feedback', [FeedbackController::class, 'store'])->middleware(['auth', 'throttle:10,1'])->name('feedback.store');
+
+// NPS Survey
+Route::middleware(['auth'])->group(function () {
+    Route::get('/nps/eligible', [\App\Http\Controllers\NpsSurveyController::class, 'eligible'])->name('nps.eligible');
+    Route::post('/nps', [\App\Http\Controllers\NpsSurveyController::class, 'store'])->middleware('throttle:5,1')->name('nps.store');
+});
+
+// Email unsubscribe (no auth — signed URL provides security)
+Route::get('/unsubscribe/{userId}', [UnsubscribeController::class, 'unsubscribe'])
+    ->middleware('throttle:10,1')
+    ->name('unsubscribe');
 
 // Onboarding (route always registered; middleware checks feature flag)
 Route::middleware('auth')->group(function () {
@@ -132,6 +146,7 @@ if (config('features.billing.enabled', false)) {
 
     Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+        Route::post('/billing/checkout', [SubscriptionController::class, 'checkout'])->middleware('throttle:5,1')->name('billing.checkout');
         Route::post('/billing/subscribe', [SubscriptionController::class, 'subscribe'])->middleware('throttle:5,1')->name('billing.subscribe');
         Route::post('/billing/cancel', [SubscriptionController::class, 'cancel'])->middleware('throttle:5,1')->name('billing.cancel');
         Route::post('/billing/resume', [SubscriptionController::class, 'resume'])->middleware('throttle:5,1')->name('billing.resume');

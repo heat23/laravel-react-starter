@@ -50,7 +50,7 @@ export function CancelSubscriptionDialog({
     setProcessing(true);
     try {
       const response = await axios.post(route("billing.cancel"), {
-        reason: reason || undefined,
+        reason: reason,
         feedback: feedback || undefined,
       });
       const message = response.data?.message || "Subscription canceled successfully";
@@ -111,7 +111,7 @@ export function CancelSubscriptionDialog({
 
           <div className="space-y-2">
             <Label htmlFor="reason">
-              Why are you canceling? <span className="text-muted-foreground">(Optional)</span>
+              Why are you canceling? <span className="text-destructive">*</span>
             </Label>
             <Select value={reason} onValueChange={setReason}>
               <SelectTrigger id="reason">
@@ -176,6 +176,7 @@ export function CancelSubscriptionDialog({
             onClick={handleSubmit}
             loading={processing}
             loadingText="Canceling..."
+            disabled={!reason || processing}
           >
             Confirm Cancellation
           </LoadingButton>
