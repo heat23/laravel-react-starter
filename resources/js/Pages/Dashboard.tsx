@@ -226,7 +226,9 @@ export default function Dashboard({ stats, recent_activity }: DashboardProps) {
 
       <PageHeader
         title="Dashboard"
-        subtitle="Welcome to your application dashboard"
+        subtitle={allSetupDone
+          ? "Here's what's happening in your app today."
+          : "Your app is ready. Complete setup to unlock all features."}
       />
 
       <div className="container py-8">
@@ -394,8 +396,8 @@ export default function Dashboard({ stats, recent_activity }: DashboardProps) {
                   ) : (
                     <EmptyState
                       icon={Activity}
-                      title="No Recent Activity"
-                      description="Your recent actions will appear here as you use the app."
+                      title="No activity recorded yet."
+                      description="Actions like logins, setting changes, and billing events will appear here automatically."
                       size="sm"
                       animated={false}
                     />

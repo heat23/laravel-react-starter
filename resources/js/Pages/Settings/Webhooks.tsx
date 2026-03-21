@@ -139,8 +139,8 @@ export default function Webhooks({ available_events }: WebhooksProps) {
               <CardContent>
                 <EmptyState
                   icon={Radio}
-                  title="No webhook endpoints"
-                  description="Create your first endpoint to start receiving event notifications."
+                  title="No webhook endpoints configured."
+                  description="Add an endpoint to receive real-time events when things happen in your app."
                   action={
                     <Button onClick={() => setShowCreate(true)}>
                       <Plus className="mr-2 h-4 w-4" />

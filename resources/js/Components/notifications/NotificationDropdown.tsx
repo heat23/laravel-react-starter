@@ -152,10 +152,13 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
               </Button>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8">
+            <div className="flex flex-col items-center justify-center px-4 py-8 text-center">
               <BellOff className="mb-2 h-8 w-8 text-muted-foreground/50" />
-              <p className="text-sm text-muted-foreground">
-                No notifications yet
+              <p className="text-sm font-medium text-muted-foreground">
+                You're all caught up.
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground/70">
+                We'll notify you about billing events, security alerts, and team activity.
               </p>
             </div>
           ) : (

@@ -104,8 +104,8 @@ export default function ApiTokens() {
               <CardContent>
                 <EmptyState
                   icon={Key}
-                  title="No API tokens"
-                  description="Create a token to authenticate with the API."
+                  title="No API tokens yet."
+                  description="Create a token to authenticate requests from your scripts, CI pipelines, or integrations."
                   action={
                     <Button onClick={() => setShowCreate(true)}>
                       <Plus className="mr-2 h-4 w-4" />

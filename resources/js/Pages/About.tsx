@@ -37,7 +37,7 @@ export default function About() {
                         </CardHeader>
                         <CardContent className="prose prose-neutral dark:prose-invert max-w-none">
                             <p className="text-muted-foreground text-lg mb-4">
-                                {appName} is a production-ready Laravel + React starter template
+                                {appName} is a production-ready Laravel + React SaaS starter kit
                                 built for solo developers and small teams who want to ship fast
                                 without cutting corners.
                             </p>

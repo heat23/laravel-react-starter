@@ -141,7 +141,7 @@ export default function Billing({ title, metaDescription, breadcrumbs, canonical
                                 . What they don&apos;t show: what happens when two requests hit
                                 that endpoint simultaneously. Or when a payment is declined at
                                 2am. Or when a customer tries to downgrade from team to solo
-                                mid-cycle. This starter has solved all of those problems and
+                                mid-cycle. This SaaS starter kit has solved all of those problems and
                                 ships the solutions as working, tested code.
                             </p>
                         </header>

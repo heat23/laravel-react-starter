@@ -148,7 +148,7 @@ describe('Pricing Page', () => {
     it('displays Custom for null price tier', () => {
       render(<Pricing />);
 
-      expect(screen.getByText('Custom')).toBeInTheDocument();
+      expect(screen.getByText('Custom pricing')).toBeInTheDocument();
     });
   });
 

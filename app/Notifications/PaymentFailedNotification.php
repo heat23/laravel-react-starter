@@ -32,12 +32,16 @@ class PaymentFailedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        $firstName = explode(' ', $notifiable->name)[0] ?: $notifiable->name;
+        $appName = config('app.name');
+
         return (new MailMessage)
-            ->subject('Payment Failed - Action Required')
-            ->line('We were unable to process your recent payment for your '.config('app.name').' subscription.')
-            ->line('Please update your payment method to continue using your subscription without interruption.')
-            ->action('Update Payment Method', route('billing.index'))
-            ->line('If you have any questions, please contact our support team.');
+            ->subject('Action required: payment failed for your '.$appName.' subscription')
+            ->greeting("Hi {$firstName},")
+            ->line("We weren't able to process your last payment for your {$appName} subscription. Your account remains active for now, but we'll pause your subscription in 3 days if we can't collect payment.")
+            ->line('To keep your access uninterrupted, update your payment method using the button below.')
+            ->action('Update Payment Method →', route('billing.index'))
+            ->line("If you think this is a mistake or your card was recently updated, reply to this email and we'll sort it out.");
     }
 
     /**
