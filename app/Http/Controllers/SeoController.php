@@ -78,6 +78,9 @@ class SeoController extends Controller
             "- {$appUrl}/compare/shipfast",
             "- {$appUrl}/compare/supastarter",
             "- {$appUrl}/guides/building-saas-with-laravel-12",
+            "- {$appUrl}/guides/laravel-stripe-billing-tutorial",
+            "- {$appUrl}/guides/laravel-feature-flags-tutorial",
+            "- {$appUrl}/guides/cost-of-building-saas-from-scratch",
             "- {$appUrl}/changelog",
             "- {$appUrl}/roadmap",
             "- {$appUrl}/contact",
@@ -137,6 +140,8 @@ class SeoController extends Controller
         $urls[] = ['loc' => config('app.url').'/guides/building-saas-with-laravel-12', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => $now];
         $urls[] = ['loc' => config('app.url').'/guides/laravel-stripe-billing-tutorial', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
         $urls[] = ['loc' => config('app.url').'/guides/laravel-feature-flags-tutorial', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
+        $urls[] = ['loc' => config('app.url').'/guides/saas-starter-kit-comparison-2026', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
+        $urls[] = ['loc' => config('app.url').'/guides/cost-of-building-saas-from-scratch', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => $now];
 
         // Competitor comparison pages
         $urls[] = ['loc' => config('app.url').'/compare/laravel-jetstream', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];

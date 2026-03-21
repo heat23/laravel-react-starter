@@ -47,12 +47,15 @@ Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog
 Route::get('/roadmap', [RoadmapController::class, 'index'])->name('roadmap');
 
 // Competitor comparison pages (SEO landing pages)
+Route::get('/compare', [CompareController::class, 'index'])->name('compare.index');
 Route::get('/compare/laravel-jetstream', [CompareController::class, 'jetstream'])->name('compare.jetstream');
 Route::get('/compare/laravel-spark', [CompareController::class, 'spark'])->name('compare.spark');
 Route::get('/compare/saasykit', [CompareController::class, 'saasykit'])->name('compare.saasykit');
 Route::get('/compare/wave', [CompareController::class, 'wave'])->name('compare.wave');
 Route::get('/compare/shipfast', [CompareController::class, 'shipfast'])->name('compare.shipfast');
 Route::get('/compare/supastarter', [CompareController::class, 'supastarter'])->name('compare.supastarter');
+Route::get('/compare/larafast', [CompareController::class, 'larafast'])->name('compare.larafast');
+Route::get('/compare/laravel-vs-nextjs', [CompareController::class, 'nextjsSaas'])->name('compare.nextjs-saas');
 
 // Feature landing pages (SEO)
 Route::get('/features/billing', [FeaturesController::class, 'billing'])->name('features.billing');
@@ -63,6 +66,8 @@ Route::get('/features/admin-panel', [FeaturesController::class, 'adminPanel'])->
 Route::get('/guides/building-saas-with-laravel-12', [GuidesController::class, 'laravelSaasGuide'])->name('guides.laravel-saas');
 Route::get('/guides/laravel-stripe-billing-tutorial', [GuidesController::class, 'stripeGuide'])->name('guides.stripe-guide');
 Route::get('/guides/laravel-feature-flags-tutorial', [GuidesController::class, 'featureFlagsGuide'])->name('guides.feature-flags-guide');
+Route::get('/guides/saas-starter-kit-comparison-2026', [GuidesController::class, 'saasStarterKitComparison'])->name('guides.saas-starter-kit-comparison');
+Route::get('/guides/cost-of-building-saas-from-scratch', [GuidesController::class, 'buildVsBuyGuide'])->name('guides.build-vs-buy');
 
 // Feedback (authenticated users only)
 Route::post('/feedback', [FeedbackController::class, 'store'])->middleware(['auth', 'throttle:10,1'])->name('feedback.store');

@@ -60,4 +60,40 @@ class GuidesController extends Controller
             ],
         ]);
     }
+
+    public function saasStarterKitComparison(): Response
+    {
+        $appName = config('app.name', 'Laravel React Starter');
+        $appUrl = rtrim(config('app.url'), '/');
+
+        return Inertia::render('Guides/SaasStarterKitComparison', [
+            'title' => 'Best Laravel SaaS Starter Kits 2026 — Ranked & Reviewed',
+            'metaDescription' => 'Comparison of 8 Laravel SaaS boilerplates with feature matrix, pricing, and honest pros/cons. Updated March 2026.',
+            'appName' => $appName,
+            'appUrl' => $appUrl,
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => $appUrl],
+                ['name' => 'Guides', 'url' => $appUrl.'/guides'],
+                ['name' => 'SaaS Starter Kit Comparison 2026', 'url' => $appUrl.'/guides/saas-starter-kit-comparison-2026'],
+            ],
+        ]);
+    }
+
+    public function buildVsBuyGuide(): Response
+    {
+        $appName = config('app.name', 'Laravel React Starter');
+        $appUrl = rtrim(config('app.url'), '/');
+
+        return Inertia::render('Guides/BuildVsBuyGuide', [
+            'title' => 'True Cost of Building SaaS from Scratch in 2026',
+            'metaDescription' => 'Building a SaaS from scratch costs 200–400 developer hours before you write a line of business logic. See the full breakdown vs using a starter kit.',
+            'appName' => $appName,
+            'appUrl' => $appUrl,
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => $appUrl],
+                ['name' => 'Guides', 'url' => $appUrl.'/guides'],
+                ['name' => 'True Cost of Building SaaS from Scratch', 'url' => $appUrl.'/guides/cost-of-building-saas-from-scratch'],
+            ],
+        ]);
+    }
 }

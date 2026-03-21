@@ -7,6 +7,21 @@ use Inertia\Response;
 
 class CompareController extends Controller
 {
+    public function index(): Response
+    {
+        $appUrl = rtrim(config('app.url'), '/');
+
+        return Inertia::render('Compare/Index', [
+            'title' => 'Laravel SaaS Starter Kit Comparison 2026 — Best Boilerplates Reviewed',
+            'metaDescription' => 'Compare 8 Laravel SaaS boilerplates side by side and find the right Laravel SaaS starter kit for your project. Features, pricing, and honest pros/cons.',
+            'appUrl' => $appUrl,
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => $appUrl],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare'],
+            ],
+        ]);
+    }
+
     public function jetstream(): Response
     {
         $appUrl = rtrim(config('app.url'), '/');
@@ -166,6 +181,59 @@ class CompareController extends Controller
                 ['feature' => 'Test coverage', 'us' => '90+ Pest + Vitest', 'them' => 'Varies'],
                 ['feature' => 'Deployment', 'us' => 'VPS (nginx + supervisor)', 'them' => 'Vercel / serverless'],
                 ['feature' => 'License', 'us' => 'Commercial', 'them' => 'Commercial'],
+            ],
+        ]);
+    }
+
+    public function larafast(): Response
+    {
+        $appUrl = rtrim(config('app.url'), '/');
+
+        return Inertia::render('Compare/Larafast', [
+            'competitor' => 'larafast',
+            'competitorName' => 'Larafast',
+            'title' => 'Laravel React Starter vs Larafast 2026 — Full Comparison',
+            'metaDescription' => 'Larafast vs Laravel React Starter: honest comparison. See pricing, TypeScript support, test coverage, webhooks, and which larafast alternative ships more.',
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => $appUrl],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare'],
+                ['name' => 'Larafast vs Laravel React Starter', 'url' => $appUrl.'/compare/larafast'],
+            ],
+            'features' => [
+                ['feature' => 'Price', 'us' => 'One-time purchase', 'them' => 'One-time purchase'],
+                ['feature' => 'Frontend stack', 'us' => 'React 18 + TypeScript', 'them' => 'Blade / Livewire (React add-on)'],
+                ['feature' => 'Admin panel', 'us' => 'Custom React + TypeScript', 'them' => 'Filament (Livewire/PHP)'],
+                ['feature' => 'Stripe billing', 'us' => 'Yes (Redis-locked, 4 tiers)', 'them' => 'Yes'],
+                ['feature' => 'TypeScript', 'us' => 'Full (frontend + admin)', 'them' => 'No (PHP/Blade default)'],
+                ['feature' => 'Pest test suite', 'us' => '90+ tests', 'them' => 'Limited'],
+                ['feature' => 'PHPStan / static analysis', 'us' => 'Yes (Larastan, level 8)', 'them' => 'Not standard'],
+                ['feature' => 'Vitest frontend tests', 'us' => true, 'them' => false],
+                ['feature' => 'Open source', 'us' => 'Commercial (full source)', 'them' => 'Commercial (full source)'],
+                ['feature' => 'Feature flags (11)', 'us' => 'Yes (DB overrides)', 'them' => false],
+                ['feature' => 'Webhooks (in + out)', 'us' => 'Yes (HMAC-signed)', 'them' => false],
+                ['feature' => 'Audit logging', 'us' => true, 'them' => false],
+                ['feature' => 'Two-factor auth (TOTP)', 'us' => true, 'them' => true],
+                ['feature' => 'Social auth', 'us' => 'Yes (Google + GitHub)', 'them' => true],
+                ['feature' => 'API tokens', 'us' => true, 'them' => 'Varies'],
+                ['feature' => 'Onboarding flow', 'us' => true, 'them' => 'Limited'],
+                ['feature' => 'Accessibility (WCAG 2.1 AA)', 'us' => true, 'them' => 'Not specified'],
+                ['feature' => 'Deployment config', 'us' => 'nginx + supervisor (VPS)', 'them' => 'VPS / cloud'],
+            ],
+        ]);
+    }
+
+    public function nextjsSaas(): Response
+    {
+        $appUrl = rtrim(config('app.url'), '/');
+
+        return Inertia::render('Compare/NextjsSaas', [
+            'title' => 'Laravel vs Next.js for SaaS 2026 — Full Stack Comparison',
+            'metaDescription' => 'Which is better for SaaS in 2026? Laravel vs Next.js compared on developer experience, performance, ecosystem, and deployment. With starter kit recommendations.',
+            'appName' => config('app.name', 'Laravel React Starter'),
+            'breadcrumbs' => [
+                ['name' => 'Home', 'url' => $appUrl],
+                ['name' => 'Compare', 'url' => $appUrl.'/compare'],
+                ['name' => 'Laravel vs Next.js for SaaS', 'url' => $appUrl.'/compare/laravel-vs-nextjs'],
             ],
         ]);
     }
