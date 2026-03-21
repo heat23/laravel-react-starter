@@ -134,12 +134,20 @@ export interface BreadcrumbItem {
   url: string;
 }
 
+export interface RelatedComparison {
+  name: string;
+  slug: string;
+  tagline: string;
+}
+
 export interface ComparisonPageProps {
   competitor: string;
   competitorName: string;
   title: string;
   metaDescription: string;
   features: ComparisonFeature[];
+  lastVerified?: string;
+  relatedComparisons?: RelatedComparison[];
   breadcrumbs?: BreadcrumbItem[];
   canonicalUrl?: string;
   ogImage?: string;
