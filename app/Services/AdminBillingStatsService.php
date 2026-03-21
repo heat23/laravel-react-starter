@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AdminCacheKey;
 use App\Helpers\QueryHelper;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -155,7 +156,7 @@ class AdminBillingStatsService
     /**
      * @param  array{search?: string, status?: string, tier?: string, sort?: string, dir?: string}  $validated
      */
-    public function buildSubscriptionQuery(array $validated): \Illuminate\Database\Query\Builder
+    public function buildSubscriptionQuery(array $validated): Builder
     {
         $firstItem = DB::table('subscription_items as si')
             ->select('si.subscription_id', 'si.stripe_price')

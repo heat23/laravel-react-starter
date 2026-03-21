@@ -2,6 +2,10 @@
 
 use App\Models\User;
 use App\Services\BillingService;
+use Laravel\Cashier\Exceptions\IncompletePayment;
+use Laravel\Cashier\Payment;
+use Stripe\Exception\ApiConnectionException;
+use Stripe\PaymentIntent;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -140,11 +144,11 @@ it('handles IncompletePayment on swap requiring SCA', function () {
     createSubscription($user);
 
     $mock = Mockery::mock(BillingService::class)->makePartial();
-    $paymentIntent = \Stripe\PaymentIntent::constructFrom(['id' => 'pi_swap_sca', 'status' => 'requires_action']);
-    $payment = new \Laravel\Cashier\Payment($paymentIntent);
+    $paymentIntent = PaymentIntent::constructFrom(['id' => 'pi_swap_sca', 'status' => 'requires_action']);
+    $payment = new Payment($paymentIntent);
     $mock->shouldReceive('swapPlan')
         ->once()
-        ->andThrow(new \Laravel\Cashier\Exceptions\IncompletePayment($payment));
+        ->andThrow(new IncompletePayment($payment));
     app()->instance(BillingService::class, $mock);
 
     $response = $this->actingAs($user)->post('/billing/swap', [
@@ -162,7 +166,7 @@ it('handles Stripe API error during swap', function () {
     $mock = Mockery::mock(BillingService::class)->makePartial();
     $mock->shouldReceive('swapPlan')
         ->once()
-        ->andThrow(new \Stripe\Exception\ApiConnectionException('Stripe API unavailable'));
+        ->andThrow(new ApiConnectionException('Stripe API unavailable'));
     app()->instance(BillingService::class, $mock);
 
     $response = $this->actingAs($user)->post('/billing/swap', [

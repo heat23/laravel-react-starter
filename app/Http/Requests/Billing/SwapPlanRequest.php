@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Billing;
 
 use App\Http\Requests\Billing\Concerns\HasPriceValidation;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,12 +17,13 @@ class SwapPlanRequest extends FormRequest
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
         return [
             'price_id' => ['required', 'string', Rule::in($this->allowedPriceIds())],
+            'coupon' => ['nullable', 'string', 'max:50'],
         ];
     }
 }

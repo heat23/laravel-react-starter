@@ -5,6 +5,7 @@ use App\Notifications\AdminHealthAlertNotification;
 use App\Services\HealthCheckService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 it('sends no alerts when all thresholds are within limits', function () {
     Notification::fake();
@@ -24,7 +25,7 @@ it('sends alert when failed jobs exceed threshold', function () {
     // Seed failed jobs above threshold (default 10)
     for ($i = 0; $i < 11; $i++) {
         DB::table('failed_jobs')->insert([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'connection' => 'database',
             'queue' => 'default',
             'payload' => json_encode(['displayName' => 'TestJob']),
@@ -70,7 +71,7 @@ it('does not send to non-admin users', function () {
     // Trigger alert
     for ($i = 0; $i < 11; $i++) {
         DB::table('failed_jobs')->insert([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'connection' => 'database',
             'queue' => 'default',
             'payload' => json_encode(['displayName' => 'TestJob']),
@@ -94,7 +95,7 @@ it('respects custom threshold from config', function () {
 
     for ($i = 0; $i < 11; $i++) {
         DB::table('failed_jobs')->insert([
-            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'uuid' => (string) Str::uuid(),
             'connection' => 'database',
             'queue' => 'default',
             'payload' => json_encode(['displayName' => 'TestJob']),

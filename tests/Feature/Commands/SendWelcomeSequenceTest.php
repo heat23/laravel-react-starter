@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Notifications\WelcomeSequenceNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -73,7 +74,7 @@ it('does not send duplicate emails', function () {
 
     // Insert a real notification record in the DB for dedup check
     $user->notifications()->create([
-        'id' => \Illuminate\Support\Str::uuid(),
+        'id' => Str::uuid(),
         'type' => WelcomeSequenceNotification::class,
         'data' => ['type' => 'welcome_sequence_2', 'email_number' => 2],
         'read_at' => null,

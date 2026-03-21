@@ -2,7 +2,9 @@
 
 use App\Models\User;
 use App\Notifications\RefundProcessedNotification;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Testing\TestResponse;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -11,7 +13,7 @@ beforeEach(function () {
     registerBillingRoutes();
 });
 
-function postRefundWebhook(array $payload): \Illuminate\Testing\TestResponse
+function postRefundWebhook(array $payload): TestResponse
 {
     $secret = config('cashier.webhook.secret', 'whsec_test');
     $timestamp = time();
@@ -221,5 +223,5 @@ it('queues refund notification for async processing', function () {
 
     // Verify notification implements ShouldQueue
     $reflection = new ReflectionClass(RefundProcessedNotification::class);
-    expect($reflection->implementsInterface(\Illuminate\Contracts\Queue\ShouldQueue::class))->toBeTrue();
+    expect($reflection->implementsInterface(ShouldQueue::class))->toBeTrue();
 });

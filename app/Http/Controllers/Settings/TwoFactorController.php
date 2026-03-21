@@ -8,6 +8,7 @@ use App\Http\Requests\TwoFactor\ConfirmTwoFactorRequest;
 use App\Http\Requests\TwoFactor\DisableTwoFactorRequest;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -80,7 +81,7 @@ class TwoFactorController extends Controller
         return back()->with('success', 'Two-factor authentication has been disabled.');
     }
 
-    public function recoveryCodes(Request $request): \Illuminate\Http\JsonResponse
+    public function recoveryCodes(Request $request): JsonResponse
     {
         $user = $request->user();
 

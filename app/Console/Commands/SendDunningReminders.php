@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\User;
 use App\Notifications\DunningReminderNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -51,7 +52,7 @@ class SendDunningReminders extends Command
         $sent = 0;
 
         foreach ($subscriptions as $subscription) {
-            /** @var \App\Models\User|null $user */
+            /** @var User|null $user */
             $user = $subscription->user;
 
             if (! $user) {
@@ -86,7 +87,7 @@ class SendDunningReminders extends Command
         return $sent;
     }
 
-    private function alreadySentEmail(\App\Models\User $user, int $emailNumber): bool
+    private function alreadySentEmail(User $user, int $emailNumber): bool
     {
         return $user->notifications()
             ->where('type', DunningReminderNotification::class)

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -53,7 +54,7 @@ it('accepts all 10 recovery codes', function () {
         auth()->logout();
         session()->flush();
 
-        $response = $this->withoutMiddleware(\Illuminate\Routing\Middleware\ThrottleRequests::class)
+        $response = $this->withoutMiddleware(ThrottleRequests::class)
             ->withSession(['login.id' => $user->id, 'login.remember' => false])
             ->post('/two-factor-challenge', ['recovery_code' => $code]);
 

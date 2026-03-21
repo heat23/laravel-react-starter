@@ -7,17 +7,19 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminSubscriptionIndexRequest;
 use App\Models\AuditLog;
 use App\Services\AdminBillingStatsService;
+use App\Services\AuditService;
 use App\Services\BillingService;
 use Inertia\Inertia;
 use Inertia\Response;
 use Laravel\Cashier\Subscription;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminBillingController extends Controller
 {
     public function __construct(
         private BillingService $billingService,
         private AdminBillingStatsService $statsService,
-        private \App\Services\AuditService $auditService,
+        private AuditService $auditService,
     ) {}
 
     public function dashboard(): Response
@@ -108,7 +110,7 @@ class AdminBillingController extends Controller
         ]);
     }
 
-    public function export(AdminSubscriptionIndexRequest $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    public function export(AdminSubscriptionIndexRequest $request): StreamedResponse
     {
         $this->auditService->log(AnalyticsEvent::ADMIN_SUBSCRIPTIONS_EXPORTED, [
             'filters' => $request->validated(),

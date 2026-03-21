@@ -62,6 +62,7 @@ class PricingController extends Controller
             'trial' => $trial,
             'trialEnabled' => $this->planLimitService->isTrialEnabled(),
             'trialDays' => config('plans.trial.days', 14),
+            'contactEmail' => config('mail.from.address', 'hello@example.com'),
         ]);
     }
 }

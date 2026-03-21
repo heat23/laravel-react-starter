@@ -4,6 +4,7 @@ use App\Jobs\PersistAuditLog;
 use App\Models\User;
 use App\Services\BillingService;
 use Illuminate\Support\Facades\Queue;
+use Stripe\Exception\ApiConnectionException;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -262,7 +263,7 @@ it('handles Stripe API error during cancellation', function () {
     $mock = Mockery::mock(BillingService::class)->makePartial();
     $mock->shouldReceive('cancelSubscription')
         ->once()
-        ->andThrow(new \Stripe\Exception\ApiConnectionException('Stripe timeout'));
+        ->andThrow(new ApiConnectionException('Stripe timeout'));
     app()->instance(BillingService::class, $mock);
 
     $response = $this->actingAs($user)->post('/billing/cancel');
@@ -278,7 +279,7 @@ it('handles Stripe API error during resume', function () {
     $mock = Mockery::mock(BillingService::class)->makePartial();
     $mock->shouldReceive('resumeSubscription')
         ->once()
-        ->andThrow(new \Stripe\Exception\ApiConnectionException('Stripe timeout'));
+        ->andThrow(new ApiConnectionException('Stripe timeout'));
     app()->instance(BillingService::class, $mock);
 
     $response = $this->actingAs($user)->post('/billing/resume');

@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Models\FeatureFlagOverride;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 
 enum AdminCacheKey: string
@@ -65,14 +67,14 @@ enum AdminCacheKey: string
 
         // Flush per-user feature flag caches
         try {
-            $userIds = \App\Models\FeatureFlagOverride::distinct()
+            $userIds = FeatureFlagOverride::distinct()
                 ->whereNotNull('user_id')
                 ->pluck('user_id');
 
             foreach ($userIds as $userId) {
                 Cache::forget(self::featureFlagsUser($userId));
             }
-        } catch (\Illuminate\Database\QueryException) {
+        } catch (QueryException) {
             // Table doesn't exist yet (fresh install) — nothing to flush
         }
     }

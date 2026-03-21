@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Notifications\IncompletePaymentReminder;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -85,7 +86,7 @@ it('does not send duplicate reminders within 30 minutes', function () {
 
     // Simulate a previously sent notification
     $user->notifications()->create([
-        'id' => \Illuminate\Support\Str::uuid(),
+        'id' => Str::uuid(),
         'type' => IncompletePaymentReminder::class,
         'data' => ['type' => 'incomplete_payment_reminder'],
         'created_at' => now()->subMinutes(10),

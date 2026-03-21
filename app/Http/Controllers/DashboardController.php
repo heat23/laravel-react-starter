@@ -12,6 +12,7 @@ class DashboardController extends Controller
 {
     public function __invoke(CustomerHealthService $healthService): Response
     {
+        /** @var User $user */
         $user = auth()->user();
         $user->loadCount(['settings', 'tokens']);
         // Eager load subscriptions to avoid N+1 from subscribed(), subscription(), onTrial(), billingStatusScore()
@@ -25,6 +26,7 @@ class DashboardController extends Controller
             'plan_name' => $this->getPlanName($user),
             'settings_count' => $user->settings_count,
             'tokens_count' => $user->tokens_count,
+            'login_streak' => $this->getLoginStreak($user),
         ];
 
         $recentActivity = AuditLog::where('user_id', $user->id)
@@ -41,6 +43,49 @@ class DashboardController extends Controller
             'stats' => $stats,
             'recent_activity' => $recentActivity,
         ]);
+    }
+
+    /**
+     * Count consecutive days the user has logged in (via audit_logs), up to 30 days back.
+     */
+    private function getLoginStreak(User $user): int
+    {
+        if (! class_exists(AuditLog::class)) {
+            return 0;
+        }
+
+        // Get distinct login dates for the past 30 days
+        $loginDates = AuditLog::where('user_id', $user->id)
+            ->where('event', 'auth.login')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->orderBy('created_at', 'desc')
+            ->pluck('created_at')
+            ->map(fn ($dt) => $dt->toDateString())
+            ->unique()
+            ->values();
+
+        if ($loginDates->isEmpty()) {
+            return 0;
+        }
+
+        $streak = 0;
+        $checkDate = now()->toDateString();
+
+        // Allow today or yesterday as the streak start (user may not have logged in today yet)
+        if ($loginDates->first() !== $checkDate) {
+            $checkDate = now()->subDay()->toDateString();
+        }
+
+        foreach ($loginDates as $date) {
+            if ($date === $checkDate) {
+                $streak++;
+                $checkDate = now()->subDays($streak)->toDateString();
+            } else {
+                break;
+            }
+        }
+
+        return $streak;
     }
 
     private function getPlanName(User $user): string

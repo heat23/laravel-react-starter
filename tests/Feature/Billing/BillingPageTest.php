@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Billing\BillingController;
 use App\Models\User;
 use App\Services\BillingService;
+use App\Services\PlanLimitService;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -94,9 +96,9 @@ it('requires authentication to access billing page', function () {
 });
 
 it('sanitizes invoice URLs to only allow stripe.com https links', function () {
-    $service = new \App\Http\Controllers\Billing\BillingController(
+    $service = new BillingController(
         app(BillingService::class),
-        app(\App\Services\PlanLimitService::class),
+        app(PlanLimitService::class),
     );
 
     $method = new ReflectionMethod($service, 'sanitizeInvoiceUrl');

@@ -34,6 +34,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'template_price' => env('TEMPLATE_PRICE', '$[YOUR_PRICE]'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

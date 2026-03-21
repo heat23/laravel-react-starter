@@ -132,7 +132,7 @@ it('reports unhealthy when custom check has error', function () {
 
 it('timed check catches exceptions and returns error', function () {
     $service = app(HealthCheckService::class);
-    $result = $service->timedCheck(fn () => throw new \RuntimeException('Test failure'));
+    $result = $service->timedCheck(fn () => throw new RuntimeException('Test failure'));
 
     expect($result['status'])->toBe('error');
     expect($result['message'])->toBe('Check failed');

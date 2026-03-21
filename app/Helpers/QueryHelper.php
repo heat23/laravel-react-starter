@@ -2,6 +2,8 @@
 
 namespace App\Helpers;
 
+use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Facades\DB;
 
 class QueryHelper
@@ -19,7 +21,7 @@ class QueryHelper
      * Apply a LIKE condition with properly escaped wildcards.
      * Works with both MySQL and SQLite by using pipe as the ESCAPE character.
      */
-    public static function whereLike(\Illuminate\Database\Query\Builder|\Illuminate\Database\Eloquent\Builder $query, string $column, string $value, string $boolean = 'and'): void
+    public static function whereLike(Builder|\Illuminate\Database\Eloquent\Builder $query, string $column, string $value, string $boolean = 'and'): void
     {
         $escaped = self::escapeLike($value);
         $query->whereRaw("{$column} LIKE ? ESCAPE '|'", ["%{$escaped}%"], $boolean);
@@ -31,7 +33,7 @@ class QueryHelper
      *
      * @param  string  $column  Must be a valid column identifier (letters, digits, underscores, dots only).
      */
-    public static function dateExpression(string $column): \Illuminate\Database\Query\Expression
+    public static function dateExpression(string $column): Expression
     {
         if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_.]*$/', $column)) {
             throw new \InvalidArgumentException("Invalid column name: {$column}");

@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\User;
+
 it('returns Disallow: / in robots.txt for non-production environment', function () {
     config(['app.env' => 'local']);
 
@@ -134,7 +136,7 @@ it('includes llms.txt reference in production robots.txt', function () {
 });
 
 it('adds X-Robots-Tag header for authenticated requests', function () {
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
 
     $response = $this->actingAs($user)->get('/dashboard');
 

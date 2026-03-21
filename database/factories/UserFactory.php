@@ -2,12 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @extends Factory<User>
  */
 class UserFactory extends Factory
 {
@@ -37,7 +38,7 @@ class UserFactory extends Factory
      */
     public function configure(): static
     {
-        return $this->afterCreating(function (\App\Models\User $user) {
+        return $this->afterCreating(function (User $user) {
             // Mark onboarding as completed by default for test users
             // Tests can explicitly create incomplete onboarding users via onboardingIncomplete()
             if (config('features.onboarding.enabled') && config('features.user_settings.enabled', true)) {
@@ -82,7 +83,7 @@ class UserFactory extends Factory
      */
     public function withTwoFactor(): static
     {
-        return $this->afterCreating(function (\App\Models\User $user) {
+        return $this->afterCreating(function (User $user) {
             $user->createTwoFactorAuth();
             // Directly enable to avoid caching the TOTP code as "used"
             // (confirmTwoFactorAuth validates the code which marks it used in cache)
@@ -96,7 +97,7 @@ class UserFactory extends Factory
      */
     public function onboardingIncomplete(): static
     {
-        return $this->afterCreating(function (\App\Models\User $user) {
+        return $this->afterCreating(function (User $user) {
             // Delete the onboarding_completed setting if it was created
             $user->settings()->where('key', 'onboarding_completed')->delete();
         });

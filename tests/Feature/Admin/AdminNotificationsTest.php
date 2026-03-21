@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     config(['features.notifications.enabled' => true]);
@@ -39,7 +40,7 @@ it('counts notifications correctly', function () {
     $admin = User::factory()->admin()->create();
 
     DB::table('notifications')->insert([
-        'id' => Illuminate\Support\Str::uuid(),
+        'id' => Str::uuid(),
         'type' => 'App\\Notifications\\TestNotification',
         'notifiable_type' => 'App\\Models\\User',
         'notifiable_id' => $admin->id,
@@ -64,7 +65,7 @@ it('calculates read rate', function () {
     $admin = User::factory()->admin()->create();
 
     DB::table('notifications')->insert([
-        'id' => Illuminate\Support\Str::uuid(),
+        'id' => Str::uuid(),
         'type' => 'App\\Notifications\\TestNotification',
         'notifiable_type' => 'App\\Models\\User',
         'notifiable_id' => $admin->id,

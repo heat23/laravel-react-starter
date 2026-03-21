@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
@@ -80,15 +81,15 @@ Route::middleware('auth')->group(function () {
 // Social authentication routes (optional feature)
 if (config('features.social_auth.enabled', false)) {
     Route::middleware('guest')->group(function () {
-        Route::get('auth/{provider}/redirect', [\App\Http\Controllers\Auth\SocialAuthController::class, 'redirect'])
+        Route::get('auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])
             ->name('social.redirect');
 
-        Route::get('auth/{provider}/callback', [\App\Http\Controllers\Auth\SocialAuthController::class, 'callback'])
+        Route::get('auth/{provider}/callback', [SocialAuthController::class, 'callback'])
             ->name('social.callback');
     });
 
     Route::middleware('auth')->group(function () {
-        Route::delete('auth/{provider}/disconnect', [\App\Http\Controllers\Auth\SocialAuthController::class, 'disconnect'])
+        Route::delete('auth/{provider}/disconnect', [SocialAuthController::class, 'disconnect'])
             ->name('social.disconnect');
     });
 }

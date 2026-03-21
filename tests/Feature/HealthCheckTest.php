@@ -91,7 +91,7 @@ test('returns unhealthy on db failure', function () {
     DB::shouldReceive('select')
         ->once()
         ->with('SELECT 1')
-        ->andThrow(new \RuntimeException('Connection refused'));
+        ->andThrow(new RuntimeException('Connection refused'));
 
     $response = $this->getJson('/health');
 

@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -101,7 +102,7 @@ it('does not duplicate subscriptions with multiple items', function () {
 
     // Add a second item to the same subscription (e.g., an add-on)
     $sub->items()->create([
-        'stripe_id' => 'si_'.Illuminate\Support\Str::random(14),
+        'stripe_id' => 'si_'.Str::random(14),
         'stripe_product' => 'prod_addon',
         'stripe_price' => 'price_addon_monthly',
         'quantity' => 1,

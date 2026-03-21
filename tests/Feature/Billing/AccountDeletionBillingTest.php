@@ -1,7 +1,9 @@
 <?php
 
+use App\Jobs\CancelOrphanedStripeSubscription;
 use App\Models\User;
 use App\Services\BillingService;
+use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -59,7 +61,7 @@ it('handles grace period subscription on account deletion', function () {
 });
 
 it('still deletes account when subscription cancellation fails and dispatches cleanup job', function () {
-    Illuminate\Support\Facades\Queue::fake();
+    Queue::fake();
 
     $user = User::factory()->create([
         'password' => bcrypt('password'),
@@ -70,7 +72,7 @@ it('still deletes account when subscription cancellation fails and dispatches cl
     $mock = Mockery::mock(BillingService::class)->makePartial();
     $mock->shouldReceive('cancelSubscription')
         ->once()
-        ->andThrow(new \RuntimeException('Stripe API error'));
+        ->andThrow(new RuntimeException('Stripe API error'));
     app()->instance(BillingService::class, $mock);
 
     $response = $this->actingAs($user)->delete('/profile', [
@@ -80,8 +82,8 @@ it('still deletes account when subscription cancellation fails and dispatches cl
     $response->assertRedirect('/');
     expect(User::withTrashed()->find($user->id))->toBeNull();
 
-    Illuminate\Support\Facades\Queue::assertPushed(
-        \App\Jobs\CancelOrphanedStripeSubscription::class,
+    Queue::assertPushed(
+        CancelOrphanedStripeSubscription::class,
         fn ($job) => true,
     );
 });

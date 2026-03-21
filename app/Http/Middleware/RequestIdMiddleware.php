@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Sentry\State\Scope;
 use Symfony\Component\HttpFoundation\Response;
 
 class RequestIdMiddleware
@@ -22,7 +23,7 @@ class RequestIdMiddleware
         Log::shareContext(['request_id' => $requestId]);
 
         if (class_exists('\Sentry\SentrySdk')) {
-            \Sentry\configureScope(fn (\Sentry\State\Scope $scope) => $scope->setTag('request_id', $requestId));
+            \Sentry\configureScope(fn (Scope $scope) => $scope->setTag('request_id', $requestId));
         }
 
         $response = $next($request);

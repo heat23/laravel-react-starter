@@ -2,6 +2,8 @@
 
 use App\Http\Middleware\VerifyWebhookSignature;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 beforeEach(function () {
     config([
@@ -33,7 +35,7 @@ it('verifies stripe signature using timestamp.payload format', function () {
     $request = Request::create('/api/webhooks/incoming/stripe', 'POST', [], [], [], [], $payload);
     $request->headers->set('Stripe-Signature', $signatureHeader);
     $request->setRouteResolver(function () {
-        $route = new \Illuminate\Routing\Route('POST', '/api/webhooks/incoming/{provider}', []);
+        $route = new Route('POST', '/api/webhooks/incoming/{provider}', []);
         $route->bind(Request::create('/api/webhooks/incoming/stripe'));
         $route->setParameter('provider', 'stripe');
 
@@ -59,7 +61,7 @@ it('rejects stripe signature computed without timestamp', function () {
     $request = Request::create('/api/webhooks/incoming/stripe', 'POST', [], [], [], [], $payload);
     $request->headers->set('Stripe-Signature', $signatureHeader);
     $request->setRouteResolver(function () {
-        $route = new \Illuminate\Routing\Route('POST', '/api/webhooks/incoming/{provider}', []);
+        $route = new Route('POST', '/api/webhooks/incoming/{provider}', []);
         $route->bind(Request::create('/api/webhooks/incoming/stripe'));
         $route->setParameter('provider', 'stripe');
 
@@ -67,7 +69,7 @@ it('rejects stripe signature computed without timestamp', function () {
     });
 
     $middleware->handle($request, fn ($req) => response('OK'));
-})->throws(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+})->throws(HttpException::class);
 
 it('rejects stripe webhook with expired timestamp', function () {
     $middleware = new VerifyWebhookSignature;
@@ -82,7 +84,7 @@ it('rejects stripe webhook with expired timestamp', function () {
     $request = Request::create('/api/webhooks/incoming/stripe', 'POST', [], [], [], [], $payload);
     $request->headers->set('Stripe-Signature', $signatureHeader);
     $request->setRouteResolver(function () {
-        $route = new \Illuminate\Routing\Route('POST', '/api/webhooks/incoming/{provider}', []);
+        $route = new Route('POST', '/api/webhooks/incoming/{provider}', []);
         $route->bind(Request::create('/api/webhooks/incoming/stripe'));
         $route->setParameter('provider', 'stripe');
 
@@ -90,7 +92,7 @@ it('rejects stripe webhook with expired timestamp', function () {
     });
 
     $middleware->handle($request, fn ($req) => response('OK'));
-})->throws(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+})->throws(HttpException::class);
 
 it('verifies github signature using payload-only hmac', function () {
     $middleware = new VerifyWebhookSignature;
@@ -104,7 +106,7 @@ it('verifies github signature using payload-only hmac', function () {
     $request = Request::create('/api/webhooks/incoming/github', 'POST', [], [], [], [], $payload);
     $request->headers->set('X-Hub-Signature-256', 'sha256='.$signature);
     $request->setRouteResolver(function () {
-        $route = new \Illuminate\Routing\Route('POST', '/api/webhooks/incoming/{provider}', []);
+        $route = new Route('POST', '/api/webhooks/incoming/{provider}', []);
         $route->bind(Request::create('/api/webhooks/incoming/github'));
         $route->setParameter('provider', 'github');
 
@@ -121,7 +123,7 @@ it('rejects missing signature header', function () {
 
     $request = Request::create('/api/webhooks/incoming/stripe', 'POST', [], [], [], [], '{}');
     $request->setRouteResolver(function () {
-        $route = new \Illuminate\Routing\Route('POST', '/api/webhooks/incoming/{provider}', []);
+        $route = new Route('POST', '/api/webhooks/incoming/{provider}', []);
         $route->bind(Request::create('/api/webhooks/incoming/stripe'));
         $route->setParameter('provider', 'stripe');
 
@@ -129,14 +131,14 @@ it('rejects missing signature header', function () {
     });
 
     $middleware->handle($request, fn ($req) => response('OK'));
-})->throws(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+})->throws(HttpException::class);
 
 it('does not leak configuration details for unconfigured provider', function () {
     $middleware = new VerifyWebhookSignature;
 
     $request = Request::create('/api/webhooks/incoming/unknown_provider', 'POST', [], [], [], [], '{}');
     $request->setRouteResolver(function () {
-        $route = new \Illuminate\Routing\Route('POST', '/api/webhooks/incoming/{provider}', []);
+        $route = new Route('POST', '/api/webhooks/incoming/{provider}', []);
         $route->bind(Request::create('/api/webhooks/incoming/unknown_provider'));
         $route->setParameter('provider', 'unknown_provider');
 
@@ -146,7 +148,7 @@ it('does not leak configuration details for unconfigured provider', function () 
     try {
         $middleware->handle($request, fn ($req) => response('OK'));
         $this->fail('Expected HttpException was not thrown');
-    } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+    } catch (HttpException $e) {
         expect($e->getStatusCode())->toBe(403);
         expect($e->getMessage())->not->toContain('not configured');
         expect($e->getMessage())->not->toContain('provider');

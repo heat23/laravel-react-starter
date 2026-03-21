@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Testing\TestResponse;
 use Laravel\Cashier\Subscription;
 
 beforeEach(function () {
@@ -11,7 +12,7 @@ beforeEach(function () {
     registerBillingRoutes();
 });
 
-function postStripeWebhook(array $payload): \Illuminate\Testing\TestResponse
+function postStripeWebhook(array $payload): TestResponse
 {
     $secret = config('cashier.webhook.secret', 'whsec_test');
     $timestamp = time();

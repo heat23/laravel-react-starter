@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Models\UserSetting;
 use App\Notifications\ReEngagementNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class SendReEngagementEmails extends Command
         1 => ['days' => 7, 'maxDays' => 9],
         2 => ['days' => 14, 'maxDays' => 16],
         3 => ['days' => 30, 'maxDays' => 35],
+        4 => ['days' => 21, 'maxDays' => 23],
     ];
 
     public function handle(): int
@@ -134,7 +136,7 @@ class SendReEngagementEmails extends Command
 
     private function hasOptedOut(User $user): bool
     {
-        $value = \App\Models\UserSetting::getValue($user->id, 'marketing_emails', true);
+        $value = UserSetting::getValue($user->id, 'marketing_emails', true);
 
         return $value === false || $value === '0' || $value === 0;
     }

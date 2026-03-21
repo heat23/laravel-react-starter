@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Models\UserSetting;
 use App\Models\WebhookEndpoint;
@@ -9,8 +10,8 @@ beforeEach(function () {
     Queue::fake();
     config(['features.two_factor.enabled' => true]);
 
-    if (! \Schema::hasTable('two_factor_authentications')) {
-        \Schema::create('two_factor_authentications', function ($table) {
+    if (! Schema::hasTable('two_factor_authentications')) {
+        Schema::create('two_factor_authentications', function ($table) {
             $table->id();
             $table->morphs('authenticatable');
             $table->text('shared_secret');
@@ -34,7 +35,7 @@ it('hard deletes user and all personal data on account deletion', function () {
     $user->createToken('test-token');
     UserSetting::setValue($user->id, 'theme', 'dark');
 
-    if (\Schema::hasTable('webhook_endpoints')) {
+    if (Schema::hasTable('webhook_endpoints')) {
         WebhookEndpoint::create([
             'user_id' => $user->id,
             'url' => 'https://example.com/webhook',
@@ -63,7 +64,7 @@ it('hard deletes user and all personal data on account deletion', function () {
     ]);
     $this->assertDatabaseMissing('user_settings', ['user_id' => $userId]);
 
-    if (\Schema::hasTable('webhook_endpoints')) {
+    if (Schema::hasTable('webhook_endpoints')) {
         $this->assertDatabaseMissing('webhook_endpoints', ['user_id' => $userId]);
     }
 });
@@ -73,7 +74,7 @@ it('preserves audit log entries with null user_id after hard delete', function (
     $userId = $user->id;
 
     // Insert audit log directly to avoid queue faking
-    \App\Models\AuditLog::create([
+    AuditLog::create([
         'event' => 'test.event',
         'user_id' => $userId,
         'ip' => '127.0.0.1',

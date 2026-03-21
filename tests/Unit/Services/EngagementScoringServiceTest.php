@@ -2,12 +2,13 @@
 
 use App\Models\User;
 use App\Services\EngagementScoringService;
+use Illuminate\Support\Facades\DB;
 
 it('awards onboarding bonus when value is an ISO timestamp (DASH-003)', function () {
     $user = User::factory()->onboardingIncomplete()->create();
 
     // Onboarding.tsx stores ISO timestamp as value, not '1'
-    \Illuminate\Support\Facades\DB::table('user_settings')->insert([
+    DB::table('user_settings')->insert([
         'user_id' => $user->id,
         'key' => 'onboarding_completed',
         'value' => '2026-03-15T10:30:00.000Z',
@@ -38,7 +39,7 @@ it('does not award onboarding bonus when setting is absent', function () {
 it('scoreBatch awards onboarding bonus when value is ISO timestamp', function () {
     $user = User::factory()->onboardingIncomplete()->create();
 
-    \Illuminate\Support\Facades\DB::table('user_settings')->insert([
+    DB::table('user_settings')->insert([
         'user_id' => $user->id,
         'key' => 'onboarding_completed',
         'value' => '2026-03-15T10:30:00.000Z',

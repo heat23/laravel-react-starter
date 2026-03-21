@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Models\UserSetting;
 use App\Notifications\WelcomeSequenceNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -77,7 +78,7 @@ class SendWelcomeSequence extends Command
 
     private function hasOptedOut(User $user): bool
     {
-        $value = \App\Models\UserSetting::getValue($user->id, 'marketing_emails', true);
+        $value = UserSetting::getValue($user->id, 'marketing_emails', true);
 
         return $value === false || $value === '0' || $value === 0;
     }

@@ -25,7 +25,7 @@ test('checkDatabase returns ok status', function () {
 test('checkDatabase returns error when connection fails', function () {
     DB::shouldReceive('select')
         ->once()
-        ->andThrow(new \RuntimeException('Connection refused'));
+        ->andThrow(new RuntimeException('Connection refused'));
 
     $result = $this->service->checkDatabase();
 
@@ -166,7 +166,7 @@ test('custom check exception is caught', function () {
     Queue::shouldReceive('size')->once()->andReturn(0);
 
     $this->service->registerCheck('broken', function () {
-        throw new \RuntimeException('Unexpected error');
+        throw new RuntimeException('Unexpected error');
     });
 
     $result = $this->service->runAllChecks();
@@ -188,7 +188,7 @@ test('timedCheck adds response_time_ms to result', function () {
 
 test('timedCheck catches exceptions', function () {
     $result = $this->service->timedCheck(function () {
-        throw new \Exception('Test failure');
+        throw new Exception('Test failure');
     });
 
     expect($result['status'])->toBe('error');

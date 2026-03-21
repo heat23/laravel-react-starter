@@ -3,6 +3,9 @@
 use App\Models\User;
 use App\Services\BillingService;
 use Laravel\Cashier\Exceptions\IncompletePayment;
+use Laravel\Cashier\Payment;
+use Stripe\Exception\ApiConnectionException;
+use Stripe\PaymentIntent;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -113,8 +116,8 @@ it('handles card declined during subscription creation', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
 
     $mock = Mockery::mock(BillingService::class)->makePartial();
-    $paymentIntent = \Stripe\PaymentIntent::constructFrom(['id' => 'pi_test_123', 'status' => 'requires_payment_method']);
-    $payment = new \Laravel\Cashier\Payment($paymentIntent);
+    $paymentIntent = PaymentIntent::constructFrom(['id' => 'pi_test_123', 'status' => 'requires_payment_method']);
+    $payment = new Payment($paymentIntent);
     $mock->shouldReceive('createSubscription')
         ->once()
         ->andThrow(new IncompletePayment($payment));
@@ -260,7 +263,7 @@ it('handles Stripe API error during subscription creation', function () {
     $mock = Mockery::mock(BillingService::class)->makePartial();
     $mock->shouldReceive('createSubscription')
         ->once()
-        ->andThrow(new \Stripe\Exception\ApiConnectionException('Stripe API unavailable'));
+        ->andThrow(new ApiConnectionException('Stripe API unavailable'));
     app()->instance(BillingService::class, $mock);
 
     $response = $this->actingAs($user)->post('/billing/subscribe', [

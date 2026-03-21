@@ -5,8 +5,8 @@ use App\Services\IncomingWebhookService;
 
 beforeEach(function () {
     // Create incoming webhooks table for testing
-    if (! \Schema::hasTable('incoming_webhooks')) {
-        \Schema::create('incoming_webhooks', function ($table) {
+    if (! Schema::hasTable('incoming_webhooks')) {
+        Schema::create('incoming_webhooks', function ($table) {
             $table->id();
             $table->string('provider', 32);
             $table->string('external_id')->nullable();

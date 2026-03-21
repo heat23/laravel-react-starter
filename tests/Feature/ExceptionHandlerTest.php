@@ -3,6 +3,7 @@
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 beforeEach(function () {
@@ -10,8 +11,8 @@ beforeEach(function () {
     Route::middleware('api')->prefix('api')->group(function () {
         Route::get('/test-404-model', fn () => throw new ModelNotFoundException('User'));
         Route::get('/test-403', fn () => throw new AuthorizationException('Forbidden'));
-        Route::get('/test-500', fn () => throw new \RuntimeException('Something broke'));
-        Route::post('/test-validation', function (\Illuminate\Http\Request $request) {
+        Route::get('/test-500', fn () => throw new RuntimeException('Something broke'));
+        Route::post('/test-validation', function (Request $request) {
             $request->validate(['name' => 'required|string|min:1']);
 
             return response()->json(['ok' => true]);

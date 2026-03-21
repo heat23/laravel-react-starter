@@ -7,8 +7,8 @@ use Illuminate\Support\Facades\Cache;
 beforeEach(function () {
     config(['features.two_factor.enabled' => true]);
 
-    if (! \Schema::hasTable('two_factor_authentications')) {
-        \Schema::create('two_factor_authentications', function ($table) {
+    if (! Schema::hasTable('two_factor_authentications')) {
+        Schema::create('two_factor_authentications', function ($table) {
             $table->id();
             $table->morphs('authenticatable');
             $table->text('shared_secret');

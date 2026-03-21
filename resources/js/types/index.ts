@@ -38,6 +38,12 @@ export interface Features {
   admin: boolean;
 }
 
+export interface UpgradePromptData {
+  limit: string;
+  plan: string;
+  cta_url: string;
+}
+
 export interface PageProps {
   auth: Auth;
   flash: {
@@ -47,6 +53,7 @@ export interface PageProps {
     info?: string;
     new_registration?: boolean;
     social_provider?: string;
+    upgrade_prompt?: UpgradePromptData | null;
   };
   errors: Record<string, string>;
   features: Features;
@@ -55,6 +62,11 @@ export interface PageProps {
   experiments?: Record<string, string>;
   /** Whether the changelog has entries newer than the user last acknowledged. */
   has_unread_changelog?: boolean;
+  /**
+   * Billing status for the authenticated user's default subscription.
+   * 'past_due' or 'incomplete' when action is needed; null otherwise.
+   */
+  billing_status?: 'past_due' | 'incomplete' | null;
   /**
    * PQL limit warnings — resources where the user is at ≥80% of their plan limit.
    * Only present when billing is enabled and the user is authenticated.

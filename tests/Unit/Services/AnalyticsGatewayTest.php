@@ -129,7 +129,7 @@ test('send does not throw when HTTP request fails with exception', function () {
         'services.ga4.api_secret' => 'secret',
     ]);
 
-    Http::fake(fn () => throw new \Exception('Connection refused'));
+    Http::fake(fn () => throw new Exception('Connection refused'));
 
     Log::shouldReceive('warning')
         ->once()
@@ -182,7 +182,7 @@ test('send logs warning on HTTP failure', function () {
         'services.ga4.api_secret' => 'secret',
     ]);
 
-    Http::fake(fn () => throw new \RuntimeException('timeout'));
+    Http::fake(fn () => throw new RuntimeException('timeout'));
 
     Log::shouldReceive('warning')
         ->once()

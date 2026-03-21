@@ -1,5 +1,15 @@
 <?php
 
+use App\Http\Middleware\EnsureIsAdmin;
+use App\Http\Middleware\EnsureIsSuperAdmin;
+use App\Http\Middleware\EnsureOnboardingCompleted;
+use App\Http\Middleware\EnsureSubscribed;
+use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RateLimitHeaders;
+use App\Http\Middleware\RequestIdMiddleware;
+use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\TrackLastActivity;
+use App\Http\Middleware\VerifyWebhookSignature;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -7,6 +17,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -21,7 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->prepend(\App\Http\Middleware\RequestIdMiddleware::class);
+        $middleware->prepend(RequestIdMiddleware::class);
 
         $proxies = $_SERVER['TRUSTED_PROXIES'] ?? $_ENV['TRUSTED_PROXIES'] ?? '';
         if ($proxies !== '') {
@@ -42,22 +53,22 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: ['stripe/webhook']);
 
         $middleware->web(append: [
-            \App\Http\Middleware\SecurityHeaders::class,
-            \App\Http\Middleware\TrackLastActivity::class,
-            \App\Http\Middleware\HandleInertiaRequests::class,
-            \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+            SecurityHeaders::class,
+            TrackLastActivity::class,
+            HandleInertiaRequests::class,
+            AddLinkHeadersForPreloadedAssets::class,
         ]);
 
         $middleware->api(append: [
-            \App\Http\Middleware\RateLimitHeaders::class,
+            RateLimitHeaders::class,
         ]);
 
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EnsureIsAdmin::class,
-            'super_admin' => \App\Http\Middleware\EnsureIsSuperAdmin::class,
-            'onboarding' => \App\Http\Middleware\EnsureOnboardingCompleted::class,
-            'subscribed' => \App\Http\Middleware\EnsureSubscribed::class,
-            'verify-webhook' => \App\Http\Middleware\VerifyWebhookSignature::class,
+            'admin' => EnsureIsAdmin::class,
+            'super_admin' => EnsureIsSuperAdmin::class,
+            'onboarding' => EnsureOnboardingCompleted::class,
+            'subscribed' => EnsureSubscribed::class,
+            'verify-webhook' => VerifyWebhookSignature::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
@@ -66,7 +77,7 @@ return Application::configure(basePath: dirname(__DIR__))
             try {
                 $request = request();
                 $userId = auth()->id();
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 $request = null;
                 $userId = null;
             }

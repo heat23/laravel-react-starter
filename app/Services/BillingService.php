@@ -264,7 +264,12 @@ class BillingService
         $lock = Cache::lock($key, self::LOCK_TIMEOUT);
 
         if (! $lock->get()) {
-            throw new ConcurrentOperationException;
+            Log::warning('billing_lock_failed', [
+                'key' => $key,
+                'timeout' => self::LOCK_TIMEOUT,
+                'user_id' => auth()->id(),
+            ]);
+            throw new ConcurrentOperationException('A subscription operation is already in progress. Please try again.');
         }
 
         try {

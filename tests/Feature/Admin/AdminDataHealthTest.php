@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Services\DataHealthService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     registerAdminRoutes();
@@ -96,7 +97,7 @@ it('detects stale webhook deliveries', function () {
 
     DB::table('webhook_deliveries')->insert([
         'webhook_endpoint_id' => DB::table('webhook_endpoints')->first()->id,
-        'uuid' => (string) \Illuminate\Support\Str::uuid(),
+        'uuid' => (string) Str::uuid(),
         'event_type' => 'test.event',
         'payload' => '{}',
         'status' => 'pending',

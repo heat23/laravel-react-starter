@@ -1,4 +1,5 @@
 import {
+  Bell,
   FileText,
   Key,
   LogOut,
@@ -13,12 +14,15 @@ import { PropsWithChildren } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 
 import { ImpersonationBanner } from '@/Components/admin/ImpersonationBanner';
+import { BillingAlertBanner } from '@/Components/billing/BillingAlertBanner';
+import { UpgradePrompt } from '@/Components/UpgradePrompt';
 import { Logo, TextLogo } from '@/Components/branding/Logo';
 import {
   CommandPalette,
   useCommandPalette,
 } from '@/Components/command-palette';
 import { FeedbackWidget } from '@/Components/feedback/FeedbackWidget';
+import { NpsBanner } from '@/Components/feedback/NpsBanner';
 import { NotificationDropdown } from '@/Components/notifications/NotificationDropdown';
 import { ThemeToggle } from '@/Components/theme';
 import { Button } from '@/Components/ui/button';
@@ -53,14 +57,29 @@ function isNavActive(url: string | undefined, href: string): boolean {
 
 export default function DashboardLayout({ children }: PropsWithChildren) {
   const page = usePage<PageProps>();
-  const { auth, features } = page.props;
+  const { auth, features, has_unread_changelog, billing_status, flash } = page.props;
   const currentUrl = page.url;
   const navItems = getVisibleNavItems(features);
   const { open, setOpen } = useCommandPalette();
 
+  const handleChangelogClick = () => {
+    if (has_unread_changelog) {
+      // Fire and forget — no loading state needed for this background action
+      fetch('/changelog/acknowledge', {
+        method: 'POST',
+        headers: {
+          'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content ?? '',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <ImpersonationBanner />
+      {billing_status && <BillingAlertBanner status={billing_status} />}
+      {flash?.upgrade_prompt && <UpgradePrompt prompt={flash.upgrade_prompt} />}
       <a
         href="#main-content"
         className="sr-only focus-visible:not-sr-only focus-visible:absolute focus-visible:z-100 focus-visible:bg-background focus-visible:px-4 focus-visible:py-2 focus-visible:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -111,6 +130,19 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
           {/* Right side - Theme toggle and User menu */}
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            {/* What's New / Changelog indicator */}
+            <Link
+              href="/changelog"
+              onClick={handleChangelogClick}
+              aria-label="What's new"
+              className="relative hidden md:flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-accent"
+            >
+              <Bell className="h-4 w-4" />
+              <span className="hidden lg:block">What's New</span>
+              {has_unread_changelog && (
+                <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-primary" aria-label="Unread changelog" />
+              )}
+            </Link>
             {features.notifications && <NotificationDropdown />}
 
             {/* User Menu */}
@@ -267,6 +299,7 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
 
       <CommandPalette open={open} onOpenChange={setOpen} />
       <FeedbackWidget />
+      <NpsBanner />
     </div>
   );
 }

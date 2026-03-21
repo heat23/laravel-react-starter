@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
 use App\Models\SocialAccount;
+use App\Models\User;
 use App\Models\UserSetting;
 use App\Models\WebhookEndpoint;
 use Illuminate\Http\JsonResponse;
@@ -14,7 +15,7 @@ class PersonalDataExportController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = $request->user();
         $user->loadMissing(['settings', 'socialAccounts', 'webhookEndpoints', 'tokens']);
 

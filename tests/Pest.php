@@ -1,5 +1,36 @@
 <?php
 
+use App\Enums\AdminCacheKey;
+use App\Http\Controllers\Admin\AdminAuditLogController;
+use App\Http\Controllers\Admin\AdminBillingController;
+use App\Http\Controllers\Admin\AdminConfigController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminDataHealthController;
+use App\Http\Controllers\Admin\AdminFailedJobsController;
+use App\Http\Controllers\Admin\AdminFeatureFlagController;
+use App\Http\Controllers\Admin\AdminHealthController;
+use App\Http\Controllers\Admin\AdminImpersonationController;
+use App\Http\Controllers\Admin\AdminNotificationsController;
+use App\Http\Controllers\Admin\AdminSocialAuthController;
+use App\Http\Controllers\Admin\AdminSystemController;
+use App\Http\Controllers\Admin\AdminTokensController;
+use App\Http\Controllers\Admin\AdminTwoFactorController;
+use App\Http\Controllers\Admin\AdminUsersController;
+use App\Http\Controllers\Admin\AdminWebhooksController;
+use App\Http\Controllers\Billing\BillingController;
+use App\Http\Controllers\Billing\PricingController;
+use App\Http\Controllers\Billing\StripeWebhookController;
+use App\Http\Controllers\Billing\SubscriptionController;
+use App\Models\FeatureFlagOverride;
+use App\Models\User;
+use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
+use Laravel\Cashier\Subscription;
+use Tests\TestCase;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -11,8 +42,8 @@
 |
 */
 
-pest()->extend(Tests\TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+pest()->extend(TestCase::class)
+    ->use(RefreshDatabase::class)
     ->in('Feature', 'Unit');
 
 /*
@@ -56,7 +87,7 @@ function ensureCashierTablesExist(): void
                     Schema::table('subscription_items', function ($table) {
                         $table->dropForeign(['subscription_id']);
                     });
-                } catch (\Illuminate\Database\QueryException $e) {
+                } catch (QueryException $e) {
                     // Foreign key may not exist — safe to ignore
                 }
                 Schema::dropIfExists('subscription_items');
@@ -130,16 +161,16 @@ function ensureCashierTablesExist(): void
 /**
  * Create a subscription record directly in the database.
  */
-function createSubscription(\App\Models\User $user, array $overrides = []): \Laravel\Cashier\Subscription
+function createSubscription(User $user, array $overrides = []): Subscription
 {
     ensureCashierTablesExist();
 
-    $subscription = \Laravel\Cashier\Subscription::create(array_merge([
-        'billable_type' => \App\Models\User::class,
+    $subscription = Subscription::create(array_merge([
+        'billable_type' => User::class,
         'billable_id' => $user->id,
         'user_id' => $user->id,
         'type' => 'default',
-        'stripe_id' => 'sub_'.Illuminate\Support\Str::random(14),
+        'stripe_id' => 'sub_'.Str::random(14),
         'stripe_status' => 'active',
         'stripe_price' => 'price_pro_monthly',
         'quantity' => 1,
@@ -148,8 +179,8 @@ function createSubscription(\App\Models\User $user, array $overrides = []): \Lar
     ], $overrides));
 
     $subscription->items()->create([
-        'stripe_id' => 'si_'.Illuminate\Support\Str::random(14),
-        'stripe_product' => 'prod_'.Illuminate\Support\Str::random(14),
+        'stripe_id' => 'si_'.Str::random(14),
+        'stripe_product' => 'prod_'.Str::random(14),
         'stripe_price' => $overrides['stripe_price'] ?? 'price_pro_monthly',
         'quantity' => $overrides['quantity'] ?? 1,
     ]);
@@ -160,7 +191,7 @@ function createSubscription(\App\Models\User $user, array $overrides = []): \Lar
 /**
  * Create a team-tier subscription.
  */
-function createTeamSubscription(\App\Models\User $user, int $seats = 5, array $overrides = []): \Laravel\Cashier\Subscription
+function createTeamSubscription(User $user, int $seats = 5, array $overrides = []): Subscription
 {
     return createSubscription($user, array_merge([
         'stripe_price' => 'price_team_monthly',
@@ -171,7 +202,7 @@ function createTeamSubscription(\App\Models\User $user, int $seats = 5, array $o
 /**
  * Create an enterprise-tier subscription.
  */
-function createEnterpriseSubscription(\App\Models\User $user, int $seats = 10, array $overrides = []): \Laravel\Cashier\Subscription
+function createEnterpriseSubscription(User $user, int $seats = 10, array $overrides = []): Subscription
 {
     return createSubscription($user, array_merge([
         'stripe_price' => 'price_enterprise_monthly',
@@ -191,23 +222,23 @@ function registerBillingRoutes(): void
     $router = app('router');
 
     // Public pricing page
-    $router->get('/pricing', [\App\Http\Controllers\Billing\PricingController::class, '__invoke'])
+    $router->get('/pricing', [PricingController::class, '__invoke'])
         ->middleware('web')
         ->name('pricing');
 
     $router->middleware(['web', 'auth', 'verified'])->group(function () use ($router) {
-        $router->get('/billing', [\App\Http\Controllers\Billing\BillingController::class, 'index'])->name('billing.index');
-        $router->post('/billing/subscribe', [\App\Http\Controllers\Billing\SubscriptionController::class, 'subscribe'])->name('billing.subscribe');
-        $router->post('/billing/cancel', [\App\Http\Controllers\Billing\SubscriptionController::class, 'cancel'])->name('billing.cancel');
-        $router->post('/billing/resume', [\App\Http\Controllers\Billing\SubscriptionController::class, 'resume'])->name('billing.resume');
-        $router->post('/billing/swap', [\App\Http\Controllers\Billing\SubscriptionController::class, 'swap'])->name('billing.swap');
-        $router->post('/billing/quantity', [\App\Http\Controllers\Billing\SubscriptionController::class, 'updateQuantity'])->name('billing.quantity');
-        $router->post('/billing/payment-method', [\App\Http\Controllers\Billing\SubscriptionController::class, 'updatePaymentMethod'])->name('billing.payment-method');
-        $router->get('/billing/portal', [\App\Http\Controllers\Billing\SubscriptionController::class, 'portal'])->name('billing.portal');
+        $router->get('/billing', [BillingController::class, 'index'])->name('billing.index');
+        $router->post('/billing/subscribe', [SubscriptionController::class, 'subscribe'])->name('billing.subscribe');
+        $router->post('/billing/cancel', [SubscriptionController::class, 'cancel'])->name('billing.cancel');
+        $router->post('/billing/resume', [SubscriptionController::class, 'resume'])->name('billing.resume');
+        $router->post('/billing/swap', [SubscriptionController::class, 'swap'])->name('billing.swap');
+        $router->post('/billing/quantity', [SubscriptionController::class, 'updateQuantity'])->name('billing.quantity');
+        $router->post('/billing/payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('billing.payment-method');
+        $router->get('/billing/portal', [SubscriptionController::class, 'portal'])->name('billing.portal');
     });
 
     // Stripe webhook (no auth - Cashier verifies signature)
-    $router->post('/stripe/webhook', [\App\Http\Controllers\Billing\StripeWebhookController::class, 'handleWebhook'])
+    $router->post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
         ->middleware(['web', 'throttle:120,1'])
         ->name('cashier.webhook');
 
@@ -246,36 +277,36 @@ function registerAdminRoutes(): void
             ->prefix('admin')
             ->name('admin.')
             ->group(function () use ($router) {
-                $router->get('/', [\App\Http\Controllers\Admin\AdminDashboardController::class, '__invoke'])->name('dashboard');
+                $router->get('/', [AdminDashboardController::class, '__invoke'])->name('dashboard');
 
-                $router->get('/users', [\App\Http\Controllers\Admin\AdminUsersController::class, 'index'])->name('users.index');
-                $router->get('/users/{user}', [\App\Http\Controllers\Admin\AdminUsersController::class, 'show'])->withTrashed()->name('users.show');
-                $router->patch('/users/{user}/toggle-admin', [\App\Http\Controllers\Admin\AdminUsersController::class, 'toggleAdmin'])->name('users.toggle-admin');
-                $router->patch('/users/{user}/toggle-active', [\App\Http\Controllers\Admin\AdminUsersController::class, 'toggleActive'])->withTrashed()->name('users.toggle-active');
-                $router->post('/users/bulk-deactivate', [\App\Http\Controllers\Admin\AdminUsersController::class, 'bulkDeactivate'])->name('users.bulk-deactivate');
+                $router->get('/users', [AdminUsersController::class, 'index'])->name('users.index');
+                $router->get('/users/{user}', [AdminUsersController::class, 'show'])->withTrashed()->name('users.show');
+                $router->patch('/users/{user}/toggle-admin', [AdminUsersController::class, 'toggleAdmin'])->name('users.toggle-admin');
+                $router->patch('/users/{user}/toggle-active', [AdminUsersController::class, 'toggleActive'])->withTrashed()->name('users.toggle-active');
+                $router->post('/users/bulk-deactivate', [AdminUsersController::class, 'bulkDeactivate'])->name('users.bulk-deactivate');
 
-                $router->post('/users/{user}/impersonate', [\App\Http\Controllers\Admin\AdminImpersonationController::class, 'start'])->withTrashed()->name('users.impersonate');
+                $router->post('/users/{user}/impersonate', [AdminImpersonationController::class, 'start'])->withTrashed()->name('users.impersonate');
 
-                $router->get('/health', [\App\Http\Controllers\Admin\AdminHealthController::class, '__invoke'])->name('health');
-                $router->get('/config', [\App\Http\Controllers\Admin\AdminConfigController::class, '__invoke'])->name('config');
+                $router->get('/health', [AdminHealthController::class, '__invoke'])->name('health');
+                $router->get('/config', [AdminConfigController::class, '__invoke'])->name('config');
 
-                $router->get('/audit-logs', [\App\Http\Controllers\Admin\AdminAuditLogController::class, 'index'])->name('audit-logs.index');
-                $router->get('/audit-logs/export', [\App\Http\Controllers\Admin\AdminAuditLogController::class, 'export'])->name('audit-logs.export');
-                $router->get('/audit-logs/{auditLog}', [\App\Http\Controllers\Admin\AdminAuditLogController::class, 'show'])->name('audit-logs.show');
+                $router->get('/audit-logs', [AdminAuditLogController::class, 'index'])->name('audit-logs.index');
+                $router->get('/audit-logs/export', [AdminAuditLogController::class, 'export'])->name('audit-logs.export');
+                $router->get('/audit-logs/{auditLog}', [AdminAuditLogController::class, 'show'])->name('audit-logs.show');
 
-                $router->get('/system', [\App\Http\Controllers\Admin\AdminSystemController::class, '__invoke'])->name('system');
+                $router->get('/system', [AdminSystemController::class, '__invoke'])->name('system');
 
-                $router->get('/failed-jobs', [\App\Http\Controllers\Admin\AdminFailedJobsController::class, 'index'])->name('failed-jobs.index');
-                $router->get('/failed-jobs/{id}', [\App\Http\Controllers\Admin\AdminFailedJobsController::class, 'show'])->name('failed-jobs.show');
-                $router->post('/failed-jobs/{id}/retry', [\App\Http\Controllers\Admin\AdminFailedJobsController::class, 'retry'])->name('failed-jobs.retry');
-                $router->delete('/failed-jobs/{id}', [\App\Http\Controllers\Admin\AdminFailedJobsController::class, 'destroy'])->name('failed-jobs.destroy');
+                $router->get('/failed-jobs', [AdminFailedJobsController::class, 'index'])->name('failed-jobs.index');
+                $router->get('/failed-jobs/{id}', [AdminFailedJobsController::class, 'show'])->name('failed-jobs.show');
+                $router->post('/failed-jobs/{id}/retry', [AdminFailedJobsController::class, 'retry'])->name('failed-jobs.retry');
+                $router->delete('/failed-jobs/{id}', [AdminFailedJobsController::class, 'destroy'])->name('failed-jobs.destroy');
 
-                $router->get('/data-health', [\App\Http\Controllers\Admin\AdminDataHealthController::class, 'index'])->name('data-health.index');
+                $router->get('/data-health', [AdminDataHealthController::class, 'index'])->name('data-health.index');
             });
 
         // Stop impersonation — outside admin middleware
         $router->middleware(['web', 'auth'])
-            ->post('/admin/impersonate/stop', [\App\Http\Controllers\Admin\AdminImpersonationController::class, 'stop'])
+            ->post('/admin/impersonate/stop', [AdminImpersonationController::class, 'stop'])
             ->name('admin.impersonation.stop');
 
         $needsRefresh = true;
@@ -288,9 +319,9 @@ function registerAdminRoutes(): void
             ->prefix('admin')
             ->name('admin.')
             ->group(function () use ($router) {
-                $router->get('/billing', [\App\Http\Controllers\Admin\AdminBillingController::class, 'dashboard'])->name('billing.dashboard');
-                $router->get('/billing/subscriptions', [\App\Http\Controllers\Admin\AdminBillingController::class, 'subscriptions'])->name('billing.subscriptions');
-                $router->get('/billing/subscriptions/{subscription}', [\App\Http\Controllers\Admin\AdminBillingController::class, 'show'])->name('billing.show');
+                $router->get('/billing', [AdminBillingController::class, 'dashboard'])->name('billing.dashboard');
+                $router->get('/billing/subscriptions', [AdminBillingController::class, 'subscriptions'])->name('billing.subscriptions');
+                $router->get('/billing/subscriptions/{subscription}', [AdminBillingController::class, 'show'])->name('billing.show');
             });
         $needsRefresh = true;
     }
@@ -300,7 +331,7 @@ function registerAdminRoutes(): void
             ->prefix('admin')
             ->name('admin.')
             ->group(function () use ($router) {
-                $router->get('/webhooks', [\App\Http\Controllers\Admin\AdminWebhooksController::class, '__invoke'])->name('webhooks');
+                $router->get('/webhooks', [AdminWebhooksController::class, '__invoke'])->name('webhooks');
             });
         $needsRefresh = true;
     }
@@ -310,7 +341,7 @@ function registerAdminRoutes(): void
             ->prefix('admin')
             ->name('admin.')
             ->group(function () use ($router) {
-                $router->get('/tokens', [\App\Http\Controllers\Admin\AdminTokensController::class, '__invoke'])->name('tokens');
+                $router->get('/tokens', [AdminTokensController::class, '__invoke'])->name('tokens');
             });
         $needsRefresh = true;
     }
@@ -320,7 +351,7 @@ function registerAdminRoutes(): void
             ->prefix('admin')
             ->name('admin.')
             ->group(function () use ($router) {
-                $router->get('/social-auth', [\App\Http\Controllers\Admin\AdminSocialAuthController::class, '__invoke'])->name('social-auth');
+                $router->get('/social-auth', [AdminSocialAuthController::class, '__invoke'])->name('social-auth');
             });
         $needsRefresh = true;
     }
@@ -330,7 +361,7 @@ function registerAdminRoutes(): void
             ->prefix('admin')
             ->name('admin.')
             ->group(function () use ($router) {
-                $router->get('/notifications', [\App\Http\Controllers\Admin\AdminNotificationsController::class, '__invoke'])->name('notifications');
+                $router->get('/notifications', [AdminNotificationsController::class, '__invoke'])->name('notifications');
             });
         $needsRefresh = true;
     }
@@ -340,7 +371,7 @@ function registerAdminRoutes(): void
             ->prefix('admin')
             ->name('admin.')
             ->group(function () use ($router) {
-                $router->get('/two-factor', [\App\Http\Controllers\Admin\AdminTwoFactorController::class, '__invoke'])->name('two-factor');
+                $router->get('/two-factor', [AdminTwoFactorController::class, '__invoke'])->name('two-factor');
             });
         $needsRefresh = true;
     }
@@ -351,14 +382,14 @@ function registerAdminRoutes(): void
             ->prefix('admin')
             ->name('admin.')
             ->group(function () use ($router) {
-                $router->get('/feature-flags', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'index'])->name('feature-flags.index');
-                $router->patch('/feature-flags/{flag}', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'updateGlobal'])->name('feature-flags.update-global');
-                $router->delete('/feature-flags/{flag}', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'removeGlobal'])->name('feature-flags.remove-global');
-                $router->get('/feature-flags/{flag}/users', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'getTargetedUsers'])->name('feature-flags.users');
-                $router->post('/feature-flags/{flag}/users', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'addUserOverride'])->name('feature-flags.add-user');
-                $router->delete('/feature-flags/{flag}/users/{user}', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'removeUserOverride'])->name('feature-flags.remove-user');
-                $router->delete('/feature-flags/{flag}/users', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'removeAllUserOverrides'])->name('feature-flags.remove-all-users');
-                $router->get('/feature-flags/search-users', [\App\Http\Controllers\Admin\AdminFeatureFlagController::class, 'searchUsers'])->name('feature-flags.search-users');
+                $router->get('/feature-flags', [AdminFeatureFlagController::class, 'index'])->name('feature-flags.index');
+                $router->patch('/feature-flags/{flag}', [AdminFeatureFlagController::class, 'updateGlobal'])->name('feature-flags.update-global');
+                $router->delete('/feature-flags/{flag}', [AdminFeatureFlagController::class, 'removeGlobal'])->name('feature-flags.remove-global');
+                $router->get('/feature-flags/{flag}/users', [AdminFeatureFlagController::class, 'getTargetedUsers'])->name('feature-flags.users');
+                $router->post('/feature-flags/{flag}/users', [AdminFeatureFlagController::class, 'addUserOverride'])->name('feature-flags.add-user');
+                $router->delete('/feature-flags/{flag}/users/{user}', [AdminFeatureFlagController::class, 'removeUserOverride'])->name('feature-flags.remove-user');
+                $router->delete('/feature-flags/{flag}/users', [AdminFeatureFlagController::class, 'removeAllUserOverrides'])->name('feature-flags.remove-all-users');
+                $router->get('/feature-flags/search-users', [AdminFeatureFlagController::class, 'searchUsers'])->name('feature-flags.search-users');
             });
         $needsRefresh = true;
     }
@@ -372,10 +403,10 @@ function registerAdminRoutes(): void
 /**
  * Make a GET request as an admin user with admin routes registered.
  */
-function adminGet(string $uri, array $params = [], ?\App\Models\User $admin = null): \Illuminate\Testing\TestResponse
+function adminGet(string $uri, array $params = [], ?User $admin = null): TestResponse
 {
     registerAdminRoutes();
-    $admin ??= \App\Models\User::factory()->admin()->create();
+    $admin ??= User::factory()->admin()->create();
 
     $query = $params ? '?'.http_build_query($params) : '';
 
@@ -385,10 +416,10 @@ function adminGet(string $uri, array $params = [], ?\App\Models\User $admin = nu
 /**
  * Make a PATCH request as an admin user with admin routes registered.
  */
-function adminPatch(string $uri, array $data = [], ?\App\Models\User $admin = null): \Illuminate\Testing\TestResponse
+function adminPatch(string $uri, array $data = [], ?User $admin = null): TestResponse
 {
     registerAdminRoutes();
-    $admin ??= \App\Models\User::factory()->admin()->create();
+    $admin ??= User::factory()->admin()->create();
 
     return test()->actingAs($admin)->patch($uri, $data);
 }
@@ -396,10 +427,10 @@ function adminPatch(string $uri, array $data = [], ?\App\Models\User $admin = nu
 /**
  * Make a POST request as an admin user with admin routes registered.
  */
-function adminPost(string $uri, array $data = [], ?\App\Models\User $admin = null): \Illuminate\Testing\TestResponse
+function adminPost(string $uri, array $data = [], ?User $admin = null): TestResponse
 {
     registerAdminRoutes();
-    $admin ??= \App\Models\User::factory()->admin()->create();
+    $admin ??= User::factory()->admin()->create();
 
     return test()->actingAs($admin)->post($uri, $data);
 }
@@ -407,10 +438,10 @@ function adminPost(string $uri, array $data = [], ?\App\Models\User $admin = nul
 /**
  * Make a DELETE request as an admin user with admin routes registered.
  */
-function adminDelete(string $uri, ?\App\Models\User $admin = null): \Illuminate\Testing\TestResponse
+function adminDelete(string $uri, ?User $admin = null): TestResponse
 {
     registerAdminRoutes();
-    $admin ??= \App\Models\User::factory()->admin()->create();
+    $admin ??= User::factory()->admin()->create();
 
     return test()->actingAs($admin)->delete($uri);
 }
@@ -421,7 +452,7 @@ function adminDelete(string $uri, ?\App\Models\User $admin = null): \Illuminate\
 function impersonationSession(int $adminId, string $adminName = 'Admin'): array
 {
     return [
-        'admin_impersonating_from' => \Illuminate\Support\Facades\Crypt::encryptString((string) $adminId),
+        'admin_impersonating_from' => Crypt::encryptString((string) $adminId),
         'admin_impersonating_name' => $adminName,
     ];
 }
@@ -432,7 +463,7 @@ function impersonationSession(int $adminId, string $adminName = 'Admin'): array
 function createStripeWebhookPayload(string $eventType, array $objectData = [], ?string $eventId = null): array
 {
     return [
-        'id' => $eventId ?? 'evt_'.Illuminate\Support\Str::random(14),
+        'id' => $eventId ?? 'evt_'.Str::random(14),
         'type' => $eventType,
         'data' => [
             'object' => $objectData,
@@ -481,15 +512,15 @@ function setFeatureFlagOverride(string $flag, bool $enabled, ?int $userId = null
 {
     ensureFeatureFlagOverridesTableExists();
 
-    \App\Models\FeatureFlagOverride::updateOrCreate(
+    FeatureFlagOverride::updateOrCreate(
         ['flag' => $flag, 'user_id' => $userId],
         ['enabled' => $enabled]
     );
 
     // Clear cache
-    Cache::forget(\App\Enums\AdminCacheKey::FEATURE_FLAGS_GLOBAL->value);
+    Cache::forget(AdminCacheKey::FEATURE_FLAGS_GLOBAL->value);
     if ($userId !== null) {
-        Cache::forget(\App\Enums\AdminCacheKey::featureFlagsUser($userId));
+        Cache::forget(AdminCacheKey::featureFlagsUser($userId));
     }
 }
 
@@ -499,7 +530,7 @@ function setFeatureFlagOverride(string $flag, bool $enabled, ?int $userId = null
 function clearFeatureFlagOverrides(): void
 {
     if (Schema::hasTable('feature_flag_overrides')) {
-        \App\Models\FeatureFlagOverride::query()->delete();
+        FeatureFlagOverride::query()->delete();
     }
-    Cache::forget(\App\Enums\AdminCacheKey::FEATURE_FLAGS_GLOBAL->value);
+    Cache::forget(AdminCacheKey::FEATURE_FLAGS_GLOBAL->value);
 }

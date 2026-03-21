@@ -18,7 +18,7 @@ class EnsureOnboardingCompleted
             return $next($request);
         }
 
-        if ($request->routeIs('onboarding')) {
+        if ($request->routeIs('onboarding', 'onboarding.complete')) {
             return $next($request);
         }
 

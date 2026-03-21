@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
@@ -21,7 +22,7 @@ return new class extends Migration
                     ->references('id')->on('subscriptions')
                     ->cascadeOnDelete();
             });
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             // Foreign key already exists — safe to ignore
             if (! str_contains($e->getMessage(), 'already exists')) {
                 throw $e;
@@ -42,7 +43,7 @@ return new class extends Migration
             Schema::table('subscription_items', function (Blueprint $table) {
                 $table->dropForeign(['subscription_id']);
             });
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             // Foreign key may not exist (SQLite or already dropped) — safe to ignore
             if (! str_contains($e->getMessage(), 'foreign key')) {
                 throw $e;

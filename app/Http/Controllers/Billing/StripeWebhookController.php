@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Models\User;
+use App\Notifications\PaymentFailedNotification;
+use App\Notifications\RefundProcessedNotification;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
 use App\Services\PlanLimitService;
@@ -98,9 +101,9 @@ class StripeWebhookController extends WebhookController
 
         $customerId = $payload['data']['object']['customer'] ?? null;
         if ($customerId) {
-            $user = \App\Models\User::where('stripe_id', $customerId)->first();
+            $user = User::where('stripe_id', $customerId)->first();
             if ($user) {
-                $user->notify(new \App\Notifications\PaymentFailedNotification(
+                $user->notify(new PaymentFailedNotification(
                     invoiceId: $payload['data']['object']['id'] ?? '',
                     subscriptionId: $payload['data']['object']['subscription'] ?? '',
                 ));
@@ -130,9 +133,9 @@ class StripeWebhookController extends WebhookController
 
         $customerId = $payload['data']['object']['customer'] ?? null;
         if ($customerId) {
-            $user = \App\Models\User::where('stripe_id', $customerId)->first();
+            $user = User::where('stripe_id', $customerId)->first();
             if ($user) {
-                $user->notify(new \App\Notifications\RefundProcessedNotification(
+                $user->notify(new RefundProcessedNotification(
                     chargeId: $payload['data']['object']['id'] ?? '',
                     amountRefunded: $payload['data']['object']['amount_refunded'] ?? 0,
                     currency: $payload['data']['object']['currency'] ?? 'usd',
@@ -152,7 +155,7 @@ class StripeWebhookController extends WebhookController
                 ?? null;
 
             if ($customerId) {
-                $user = \App\Models\User::where('stripe_id', $customerId)->first();
+                $user = User::where('stripe_id', $customerId)->first();
                 if ($user) {
                     app(PlanLimitService::class)->invalidateUserPlanCache($user);
                 }

@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class EngagementScoringService
@@ -43,7 +45,7 @@ class EngagementScoringService
      *
      * @return array<int, int> Keyed by user ID
      */
-    public function scoreBatch(\Illuminate\Support\Collection $users): array
+    public function scoreBatch(Collection $users): array
     {
         $userIds = $users->pluck('id');
 
@@ -67,7 +69,7 @@ class EngagementScoringService
                 ->groupBy('user_id')
                 ->select('user_id', DB::raw('count(*) as cnt'))
                 ->pluck('cnt', 'user_id');
-        } catch (\Illuminate\Database\QueryException) {
+        } catch (QueryException) {
             // Table doesn't exist
         }
 
@@ -158,7 +160,7 @@ class EngagementScoringService
             return (int) DB::table('webhook_endpoints')
                 ->where('user_id', $userId)
                 ->count();
-        } catch (\Illuminate\Database\QueryException) {
+        } catch (QueryException) {
             return 0;
         }
     }

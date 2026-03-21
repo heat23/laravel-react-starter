@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Models\WebhookDelivery;
 use App\Models\WebhookEndpoint;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     $user = User::factory()->create();
@@ -19,7 +20,7 @@ it('marks stale pending deliveries as abandoned', function () {
     // Create a stale delivery (2 hours old, still pending)
     $stale = WebhookDelivery::create([
         'webhook_endpoint_id' => $this->endpoint->id,
-        'uuid' => (string) \Illuminate\Support\Str::uuid(),
+        'uuid' => (string) Str::uuid(),
         'event_type' => 'user.created',
         'payload' => ['test' => true],
         'status' => 'pending',
@@ -31,7 +32,7 @@ it('marks stale pending deliveries as abandoned', function () {
     // Create a recent pending delivery (should not be affected)
     $recent = WebhookDelivery::create([
         'webhook_endpoint_id' => $this->endpoint->id,
-        'uuid' => (string) \Illuminate\Support\Str::uuid(),
+        'uuid' => (string) Str::uuid(),
         'event_type' => 'user.created',
         'payload' => ['test' => true],
         'status' => 'pending',
@@ -47,7 +48,7 @@ it('marks stale pending deliveries as abandoned', function () {
 it('does not affect successful or failed deliveries', function () {
     $success = WebhookDelivery::create([
         'webhook_endpoint_id' => $this->endpoint->id,
-        'uuid' => (string) \Illuminate\Support\Str::uuid(),
+        'uuid' => (string) Str::uuid(),
         'event_type' => 'user.created',
         'payload' => ['test' => true],
         'status' => 'success',
@@ -57,7 +58,7 @@ it('does not affect successful or failed deliveries', function () {
 
     $failed = WebhookDelivery::create([
         'webhook_endpoint_id' => $this->endpoint->id,
-        'uuid' => (string) \Illuminate\Support\Str::uuid(),
+        'uuid' => (string) Str::uuid(),
         'event_type' => 'user.created',
         'payload' => ['test' => true],
         'status' => 'failed',

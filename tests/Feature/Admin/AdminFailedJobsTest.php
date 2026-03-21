@@ -4,6 +4,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     registerAdminRoutes();
@@ -12,7 +13,7 @@ beforeEach(function () {
 function seedFailedJob(array $overrides = []): int
 {
     return DB::table('failed_jobs')->insertGetId(array_merge([
-        'uuid' => (string) \Illuminate\Support\Str::uuid(),
+        'uuid' => (string) Str::uuid(),
         'connection' => 'database',
         'queue' => 'default',
         'payload' => json_encode([
@@ -88,7 +89,7 @@ it('retries a failed job', function () {
 
     Artisan::shouldReceive('call')
         ->once()
-        ->with('queue:retry', \Mockery::on(fn ($args) => isset($args['id'])));
+        ->with('queue:retry', Mockery::on(fn ($args) => isset($args['id'])));
 
     $response = $this->actingAs($admin)->post("/admin/failed-jobs/{$id}/retry");
 

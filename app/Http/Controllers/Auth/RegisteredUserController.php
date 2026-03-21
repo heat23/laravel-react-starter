@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -47,21 +48,29 @@ class RegisteredUserController extends Controller
                 'socialAuth' => config('features.social_auth.enabled', false),
             ],
             'rememberDays' => config('auth.remember.duration', 30),
+            'onboardingEnabled' => config('features.onboarding.enabled', true),
         ]);
     }
 
     /**
      * Handle an incoming registration request.
      *
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function store(RegisterRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
         $user = DB::transaction(function () use ($validated) {
+            // When onboarding is enabled, name may be omitted from the form.
+            // Default to the email's local part; the wizard lets the user update it.
+            $name = $validated['name'] ?? null;
+            if (empty($name)) {
+                $name = ucfirst(explode('@', $validated['email'])[0]);
+            }
+
             $user = User::create([
-                'name' => $validated['name'],
+                'name' => $name,
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
             ]);

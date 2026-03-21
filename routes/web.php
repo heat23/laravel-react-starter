@@ -5,6 +5,7 @@ use App\Http\Controllers\Billing\PricingController;
 use App\Http\Controllers\Billing\StripeWebhookController;
 use App\Http\Controllers\Billing\SubscriptionController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\BuyController;
 use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\ChartsController;
 use App\Http\Controllers\CompareController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\GuidesController;
 use App\Http\Controllers\HealthCheckController;
 use App\Http\Controllers\LegalController;
+use App\Http\Controllers\NpsSurveyController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PersonalDataExportController;
 use App\Http\Controllers\ProfileController;
@@ -40,6 +42,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::get('/', WelcomeController::class)->name('welcome');
+Route::get('/buy', [BuyController::class, 'show'])->name('buy');
 Route::get('/terms', [LegalController::class, 'terms'])->name('legal.terms');
 Route::get('/privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
 Route::get('/about', [LegalController::class, 'about'])->name('about');
@@ -59,6 +62,7 @@ Route::get('/compare/wave', [CompareController::class, 'wave'])->name('compare.w
 Route::get('/compare/shipfast', [CompareController::class, 'shipfast'])->name('compare.shipfast');
 Route::get('/compare/supastarter', [CompareController::class, 'supastarter'])->name('compare.supastarter');
 Route::get('/compare/larafast', [CompareController::class, 'larafast'])->name('compare.larafast');
+Route::get('/compare/makerkit', [CompareController::class, 'makerkit'])->name('compare.makerkit');
 Route::get('/compare/laravel-vs-nextjs', [CompareController::class, 'nextjsSaas'])->name('compare.nextjs-saas');
 
 // Feature landing pages (SEO) — always registered regardless of feature flags
@@ -90,12 +94,13 @@ Route::post('/feedback', [FeedbackController::class, 'store'])->middleware(['aut
 
 // NPS Survey
 Route::middleware(['auth'])->group(function () {
-    Route::get('/nps/eligible', [\App\Http\Controllers\NpsSurveyController::class, 'eligible'])->name('nps.eligible');
-    Route::post('/nps', [\App\Http\Controllers\NpsSurveyController::class, 'store'])->middleware('throttle:5,1')->name('nps.store');
+    Route::get('/nps/eligible', [NpsSurveyController::class, 'eligible'])->name('nps.eligible');
+    Route::post('/nps', [NpsSurveyController::class, 'store'])->middleware('throttle:5,1')->name('nps.store');
 });
 
 // Email unsubscribe (no auth — signed URL provides security)
 Route::get('/unsubscribe/{userId}', [UnsubscribeController::class, 'unsubscribe'])
+    ->whereNumber('userId')
     ->middleware('throttle:10,1')
     ->name('unsubscribe');
 

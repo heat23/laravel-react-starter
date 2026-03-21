@@ -5,6 +5,8 @@ namespace Tests\Feature\Auth;
 use App\Models\SocialAccount;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Socialite\Contracts\Provider;
+use Laravel\Socialite\Facades\Socialite;
 use Mockery;
 use Tests\TestCase;
 
@@ -90,7 +92,7 @@ class SocialAuthTest extends TestCase
     {
         $this->skipIfRoutesNotRegistered();
 
-        if (! class_exists(\Laravel\Socialite\Facades\Socialite::class)) {
+        if (! class_exists(Socialite::class)) {
             $this->markTestSkipped('Socialite package not installed.');
         }
 
@@ -102,10 +104,10 @@ class SocialAuthTest extends TestCase
         $socialUser->shouldReceive('getName')->andReturn($user->name);
         $socialUser->shouldReceive('getAvatar')->andReturn(null);
 
-        $driver = Mockery::mock(\Laravel\Socialite\Contracts\Provider::class);
+        $driver = Mockery::mock(Provider::class);
         $driver->shouldReceive('user')->andReturn($socialUser);
 
-        \Laravel\Socialite\Facades\Socialite::shouldReceive('driver')
+        Socialite::shouldReceive('driver')
             ->with('google')
             ->andReturn($driver);
 

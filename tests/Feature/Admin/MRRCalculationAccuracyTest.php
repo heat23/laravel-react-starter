@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use App\Services\AdminBillingStatsService;
 use App\Services\BillingService;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +23,7 @@ it('returns null for unknown stripe price IDs', function () {
 
 it('does not count unknown prices in MRR calculation', function () {
     // Create a known subscription
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
 
     DB::table('subscriptions')->insert([
         'user_id' => $user->id,

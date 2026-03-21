@@ -12,8 +12,8 @@ beforeEach(function () {
     RateLimiter::clear('127.0.0.1');
     RateLimiter::clear('webhook-test:127.0.0.1');
 
-    if (! \Schema::hasTable('webhook_endpoints')) {
-        \Schema::create('webhook_endpoints', function ($table) {
+    if (! Schema::hasTable('webhook_endpoints')) {
+        Schema::create('webhook_endpoints', function ($table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('url');
@@ -26,8 +26,8 @@ beforeEach(function () {
             $table->index(['user_id', 'active']);
         });
     }
-    if (! \Schema::hasTable('webhook_deliveries')) {
-        \Schema::create('webhook_deliveries', function ($table) {
+    if (! Schema::hasTable('webhook_deliveries')) {
+        Schema::create('webhook_deliveries', function ($table) {
             $table->id();
             $table->foreignId('webhook_endpoint_id')->constrained()->cascadeOnDelete();
             $table->uuid('uuid')->unique();

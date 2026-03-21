@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\WebhookDelivery;
 use App\Models\WebhookEndpoint;
 use Illuminate\Support\Facades\Queue;
 
@@ -9,8 +10,8 @@ beforeEach(function () {
     Queue::fake();
 
     // Manually create webhook tables for testing since feature-gated migration skips them
-    if (! \Schema::hasTable('webhook_endpoints')) {
-        \Schema::create('webhook_endpoints', function ($table) {
+    if (! Schema::hasTable('webhook_endpoints')) {
+        Schema::create('webhook_endpoints', function ($table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('url');
@@ -23,8 +24,8 @@ beforeEach(function () {
             $table->index(['user_id', 'active']);
         });
     }
-    if (! \Schema::hasTable('webhook_deliveries')) {
-        \Schema::create('webhook_deliveries', function ($table) {
+    if (! Schema::hasTable('webhook_deliveries')) {
+        Schema::create('webhook_deliveries', function ($table) {
             $table->id();
             $table->foreignId('webhook_endpoint_id')->constrained()->cascadeOnDelete();
             $table->uuid('uuid')->unique();
@@ -172,7 +173,7 @@ it('cannot update another users endpoint', function () {
 it('returns deliveries for an endpoint', function () {
     $user = User::factory()->create();
     $endpoint = WebhookEndpoint::factory()->for($user)->create();
-    \App\Models\WebhookDelivery::factory()->for($endpoint, 'endpoint')->count(3)->create();
+    WebhookDelivery::factory()->for($endpoint, 'endpoint')->count(3)->create();
 
     $response = $this->actingAs($user, 'sanctum')->getJson("/api/webhooks/{$endpoint->id}/deliveries");
 

@@ -4,9 +4,11 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use App\Notifications\AdminHealthAlertNotification;
+use App\Services\CustomerHealthService;
 use App\Services\HealthCheckService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 class AdminHealthAlertCommand extends Command
@@ -15,7 +17,7 @@ class AdminHealthAlertCommand extends Command
 
     protected $description = 'Check system health and alert admins if thresholds are breached';
 
-    public function handle(HealthCheckService $healthCheck): int
+    public function handle(HealthCheckService $healthCheck, CustomerHealthService $customerHealth): int
     {
         $alerts = [];
 
@@ -75,6 +77,28 @@ class AdminHealthAlertCommand extends Command
             }
         }
 
+        // Check D7 retention rate
+        $d7Threshold = (int) config('health.alert_thresholds.d7_retention', 35);
+        $d7Rate = $customerHealth->getD7RetentionRate();
+        if ($d7Rate > 0 && $d7Rate < $d7Threshold) {
+            $alerts['d7_retention'] = [
+                'rate' => $d7Rate,
+                'threshold' => $d7Threshold,
+                'message' => "D7 retention ({$d7Rate}%) is below threshold ({$d7Threshold}%)",
+            ];
+        }
+
+        // Check D30 retention rate
+        $d30Threshold = (int) config('health.alert_thresholds.d30_retention', 15);
+        $d30Rate = $customerHealth->getD30RetentionRate();
+        if ($d30Rate > 0 && $d30Rate < $d30Threshold) {
+            $alerts['d30_retention'] = [
+                'rate' => $d30Rate,
+                'threshold' => $d30Threshold,
+                'message' => "D30 retention ({$d30Rate}%) is below threshold ({$d30Threshold}%)",
+            ];
+        }
+
         if (empty($alerts)) {
             $this->info('No alerts — all thresholds within limits.');
 
@@ -85,7 +109,14 @@ class AdminHealthAlertCommand extends Command
         $admins = User::where('is_admin', true)->get();
 
         foreach ($admins as $admin) {
-            $admin->notify(new AdminHealthAlertNotification($alerts));
+            try {
+                $admin->notify(new AdminHealthAlertNotification($alerts));
+            } catch (\Exception $e) {
+                Log::error('Failed to send health alert to admin', [
+                    'admin_id' => $admin->id,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         $this->warn('Alert sent to '.count($admins).' admin(s): '.implode(', ', array_keys($alerts)));

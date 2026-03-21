@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Notifications\OnboardingReminderNotification;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 it('sends onboarding email 1 with correct subject', function () {
     $notification = new OnboardingReminderNotification(emailNumber: 1);
@@ -101,7 +102,7 @@ it('does not send duplicate onboarding reminders', function () {
 
     // Insert a notification record directly to simulate having already received this
     $user->notifications()->create([
-        'id' => \Illuminate\Support\Str::uuid(),
+        'id' => Str::uuid(),
         'type' => OnboardingReminderNotification::class,
         'data' => ['type' => 'onboarding_reminder_1', 'email_number' => 1],
     ]);

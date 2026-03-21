@@ -3,9 +3,12 @@
 namespace App\Services;
 
 use App\Enums\AdminCacheKey;
+use App\Models\AuditLog;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Laravel\Cashier\Subscription;
 
 class CustomerHealthService
 {
@@ -81,6 +84,59 @@ class CustomerHealthService
                 ->count('users.id');
 
             return round(($convertedUsers / $trialUsers) * 100, 1);
+        });
+    }
+
+    /**
+     * D7 retention rate: % of users registered 7–10 days ago who were active by day 7.
+     * Cohort window of 3 days reduces noise on low-volume installs.
+     */
+    public function getD7RetentionRate(): float
+    {
+        return Cache::remember('metrics:retention_d7', 3600, function () {
+            $cohortUsers = User::where('created_at', '>=', now()->subDays(10))
+                ->where('created_at', '<', now()->subDays(7))
+                ->whereNotNull('email_verified_at')
+                ->get(['id', 'created_at', 'last_active_at', 'last_login_at']);
+
+            if ($cohortUsers->isEmpty()) {
+                return 0.0;
+            }
+
+            $retained = $cohortUsers->filter(function (User $user) {
+                $daySevenMark = $user->created_at->addDays(6);
+                $lastSeen = $user->last_active_at ?? $user->last_login_at;
+
+                return $lastSeen !== null && $lastSeen >= $daySevenMark;
+            })->count();
+
+            return round(($retained / $cohortUsers->count()) * 100, 1);
+        });
+    }
+
+    /**
+     * D30 retention rate: % of users registered 30–33 days ago who were active by day 30.
+     */
+    public function getD30RetentionRate(): float
+    {
+        return Cache::remember('metrics:retention_d30', 3600, function () {
+            $cohortUsers = User::where('created_at', '>=', now()->subDays(33))
+                ->where('created_at', '<', now()->subDays(30))
+                ->whereNotNull('email_verified_at')
+                ->get(['id', 'created_at', 'last_active_at', 'last_login_at']);
+
+            if ($cohortUsers->isEmpty()) {
+                return 0.0;
+            }
+
+            $retained = $cohortUsers->filter(function (User $user) {
+                $dayThirtyMark = $user->created_at->addDays(29);
+                $lastSeen = $user->last_active_at ?? $user->last_login_at;
+
+                return $lastSeen !== null && $lastSeen >= $dayThirtyMark;
+            })->count();
+
+            return round(($retained / $cohortUsers->count()) * 100, 1);
         });
     }
 
@@ -161,11 +217,11 @@ class CustomerHealthService
      */
     private function primeLoginCountCache(array $userIds): void
     {
-        if (! class_exists(\App\Models\AuditLog::class) || empty($userIds)) {
+        if (! class_exists(AuditLog::class) || empty($userIds)) {
             return;
         }
 
-        $counts = \App\Models\AuditLog::whereIn('user_id', $userIds)
+        $counts = AuditLog::whereIn('user_id', $userIds)
             ->where('event', 'login')
             ->where('created_at', '>=', now()->subDays(30))
             ->groupBy('user_id')
@@ -188,8 +244,8 @@ class CustomerHealthService
 
         if (isset($this->loginCountCache[$user->id])) {
             $loginCount = $this->loginCountCache[$user->id];
-        } elseif (class_exists(\App\Models\AuditLog::class)) {
-            $loginCount = \App\Models\AuditLog::where('user_id', $user->id)
+        } elseif (class_exists(AuditLog::class)) {
+            $loginCount = AuditLog::where('user_id', $user->id)
                 ->where('event', 'login')
                 ->where('created_at', '>=', now()->subDays(30))
                 ->count();
@@ -239,7 +295,7 @@ class CustomerHealthService
         }
         // 2. Use eager-loaded subscriptions relationship if available
         elseif ($user->relationLoaded('subscriptions')) {
-            /** @var \Laravel\Cashier\Subscription|null $subscription */
+            /** @var Subscription|null $subscription */
             $subscription = $user->subscriptions
                 ->where('type', 'default')
                 ->sortByDesc('created_at')
@@ -264,7 +320,7 @@ class CustomerHealthService
 
         if ($stripeStatus === null) {
             // Check if on trial (trial_ends_at on user)
-            /** @var \Carbon\Carbon|null $trialEndsAt */
+            /** @var Carbon|null $trialEndsAt */
             $trialEndsAt = $user->trial_ends_at;
             if ($trialEndsAt !== null && $trialEndsAt->isFuture()) {
                 return 20;

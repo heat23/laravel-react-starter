@@ -6,6 +6,7 @@ use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AuditService;
+use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -62,7 +63,7 @@ class AdminImpersonationController extends Controller
 
         try {
             $adminId = (int) Crypt::decryptString($encryptedAdminId);
-        } catch (\Illuminate\Contracts\Encryption\DecryptException) {
+        } catch (DecryptException) {
             $request->session()->forget(['admin_impersonating_from', 'admin_impersonating_name']);
             Auth::logout();
 

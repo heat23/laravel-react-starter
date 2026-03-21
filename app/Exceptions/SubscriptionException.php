@@ -2,6 +2,7 @@
 
 namespace App\Exceptions;
 
+use Illuminate\Http\JsonResponse;
 use RuntimeException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -14,7 +15,7 @@ class SubscriptionException extends RuntimeException
         parent::__construct($message);
     }
 
-    public function render(): \Illuminate\Http\JsonResponse
+    public function render(): JsonResponse
     {
         return response()->json(['message' => $this->getMessage()], $this->statusCode);
     }

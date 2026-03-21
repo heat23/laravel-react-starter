@@ -459,6 +459,26 @@ class FeatureFlagService
     }
 
     /**
+     * Deterministically assign a user to an experiment variant.
+     *
+     * Assignment is based on a stable hash of (user_id + experiment_key) so the same
+     * user always receives the same variant across sessions. No randomness per-request.
+     *
+     * @param  string[]  $variants  e.g. ['control', 'treatment']
+     */
+    public function getExperimentVariant(string $experimentKey, User $user, array $variants = ['control', 'treatment']): string
+    {
+        if (empty($variants)) {
+            return 'control';
+        }
+
+        $hash = abs(crc32($user->id.$experimentKey));
+        $index = $hash % count($variants);
+
+        return $variants[$index];
+    }
+
+    /**
      * Invalidate global overrides cache.
      */
     private function invalidateGlobalCache(): void

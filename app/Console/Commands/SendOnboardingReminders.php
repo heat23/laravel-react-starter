@@ -2,8 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AuditLog;
 use App\Models\User;
+use App\Models\UserSetting;
 use App\Notifications\OnboardingReminderNotification;
+use App\Notifications\WelcomeSequenceNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -90,18 +93,18 @@ class SendOnboardingReminders extends Command
 
     private function hasOptedOut(User $user): bool
     {
-        $value = \App\Models\UserSetting::getValue($user->id, 'marketing_emails', true);
+        $value = UserSetting::getValue($user->id, 'marketing_emails', true);
 
         return $value === false || $value === '0' || $value === 0;
     }
 
     private function hasCompletedOnboarding(User $user): bool
     {
-        if (! class_exists(\App\Models\UserSetting::class)) {
+        if (! class_exists(UserSetting::class)) {
             return false;
         }
 
-        $setting = \App\Models\UserSetting::where('user_id', $user->id)
+        $setting = UserSetting::where('user_id', $user->id)
             ->where('key', 'onboarding_completed')
             ->first();
 
@@ -116,11 +119,11 @@ class SendOnboardingReminders extends Command
 
     private function hasRecentActivity(User $user): bool
     {
-        if (! class_exists(\App\Models\AuditLog::class)) {
+        if (! class_exists(AuditLog::class)) {
             return false;
         }
 
-        return \App\Models\AuditLog::where('user_id', $user->id)
+        return AuditLog::where('user_id', $user->id)
             ->where('created_at', '>', now()->subDays(3))
             ->exists();
     }
@@ -140,7 +143,7 @@ class SendOnboardingReminders extends Command
         // to avoid duplicate '3 things to do' message
         if ($emailNumber === 1) {
             return $user->notifications()
-                ->where('type', \App\Notifications\WelcomeSequenceNotification::class)
+                ->where('type', WelcomeSequenceNotification::class)
                 ->where('data', 'like', '%"email_number":2%')
                 ->exists();
         }

@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\User;
+use Faker\Generator;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
@@ -19,7 +21,7 @@ use Illuminate\Support\Str;
  */
 class AdminDemoSeeder extends Seeder
 {
-    private \Faker\Generator $faker;
+    private Generator $faker;
 
     private static ?string $hashedPassword = null;
 
@@ -49,9 +51,9 @@ class AdminDemoSeeder extends Seeder
     /**
      * Create 100 users with a realistic mix of admin/regular, verified/unverified.
      *
-     * @return \Illuminate\Support\Collection<int, User>
+     * @return Collection<int, User>
      */
-    private function seedUsers(): \Illuminate\Support\Collection
+    private function seedUsers(): Collection
     {
         $this->command?->info('  Creating 100 users...');
 
@@ -100,9 +102,9 @@ class AdminDemoSeeder extends Seeder
     /**
      * Create 500 audit log entries spread across the last 60 days.
      *
-     * @param  \Illuminate\Support\Collection<int, User>  $users
+     * @param  Collection<int, User>  $users
      */
-    private function seedAuditLogs(\Illuminate\Support\Collection $users): void
+    private function seedAuditLogs(Collection $users): void
     {
         if (! Schema::hasTable('audit_logs')) {
             $this->command?->warn('  Skipping audit logs: table does not exist.');
@@ -209,9 +211,9 @@ class AdminDemoSeeder extends Seeder
     /**
      * Create webhook endpoints and deliveries.
      *
-     * @param  \Illuminate\Support\Collection<int, User>  $users
+     * @param  Collection<int, User>  $users
      */
-    private function seedWebhooks(\Illuminate\Support\Collection $users): void
+    private function seedWebhooks(Collection $users): void
     {
         $hasEndpoints = Schema::hasTable('webhook_endpoints');
         $hasDeliveries = Schema::hasTable('webhook_deliveries');
@@ -428,9 +430,9 @@ class AdminDemoSeeder extends Seeder
     /**
      * Create 50 notifications (mix of read and unread).
      *
-     * @param  \Illuminate\Support\Collection<int, User>  $users
+     * @param  Collection<int, User>  $users
      */
-    private function seedNotifications(\Illuminate\Support\Collection $users): void
+    private function seedNotifications(Collection $users): void
     {
         if (! Schema::hasTable('notifications')) {
             $this->command?->warn('  Skipping notifications: table does not exist.');
@@ -548,9 +550,9 @@ class AdminDemoSeeder extends Seeder
     /**
      * Create 30 personal access tokens.
      *
-     * @param  \Illuminate\Support\Collection<int, User>  $users
+     * @param  Collection<int, User>  $users
      */
-    private function seedPersonalAccessTokens(\Illuminate\Support\Collection $users): void
+    private function seedPersonalAccessTokens(Collection $users): void
     {
         if (! Schema::hasTable('personal_access_tokens')) {
             $this->command?->warn('  Skipping personal access tokens: table does not exist.');
@@ -622,9 +624,9 @@ class AdminDemoSeeder extends Seeder
     /**
      * Create 10 social accounts if the table exists.
      *
-     * @param  \Illuminate\Support\Collection<int, User>  $users
+     * @param  Collection<int, User>  $users
      */
-    private function seedSocialAccounts(\Illuminate\Support\Collection $users): void
+    private function seedSocialAccounts(Collection $users): void
     {
         if (! Schema::hasTable('social_accounts')) {
             $this->command?->info('  Skipping social accounts: table does not exist.');
@@ -664,9 +666,9 @@ class AdminDemoSeeder extends Seeder
     /**
      * Create 15 two_factor_authentications records if the table exists.
      *
-     * @param  \Illuminate\Support\Collection<int, User>  $users
+     * @param  Collection<int, User>  $users
      */
-    private function seedTwoFactorAuthentications(\Illuminate\Support\Collection $users): void
+    private function seedTwoFactorAuthentications(Collection $users): void
     {
         if (! Schema::hasTable('two_factor_authentications')) {
             $this->command?->info('  Skipping two-factor authentications: table does not exist.');

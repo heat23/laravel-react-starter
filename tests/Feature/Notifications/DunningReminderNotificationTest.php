@@ -3,6 +3,7 @@
 use App\Models\User;
 use App\Notifications\DunningReminderNotification;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -115,7 +116,7 @@ it('does not send duplicate dunning reminders', function () {
 
     // Insert a notification record directly to simulate having already received this
     $user->notifications()->create([
-        'id' => \Illuminate\Support\Str::uuid(),
+        'id' => Str::uuid(),
         'type' => DunningReminderNotification::class,
         'data' => ['type' => 'dunning_reminder_1', 'email_number' => 1, 'plan_name' => 'Pro', 'actionUrl' => route('billing.index')],
     ]);

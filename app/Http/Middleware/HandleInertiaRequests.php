@@ -100,6 +100,32 @@ class HandleInertiaRequests extends Middleware
      *
      * @return array<string, mixed>
      */
+    /**
+     * Returns the billing status string for the authenticated user's default subscription.
+     * Returns 'past_due' or 'incomplete' when action is needed; null otherwise.
+     */
+    private function getBillingStatus(Request $request): ?string
+    {
+        $user = $request->user();
+
+        if (! $user || ! config('features.billing.enabled', false)) {
+            return null;
+        }
+
+        $user->loadMissing('subscriptions');
+        $subscription = $user->subscription('default');
+
+        if (! $subscription) {
+            return null;
+        }
+
+        return match ($subscription->stripe_status) {
+            'past_due' => 'past_due',
+            'incomplete' => 'incomplete',
+            default => null,
+        };
+    }
+
     public function share(Request $request): array
     {
         $user = $request->user();
@@ -138,6 +164,7 @@ class HandleInertiaRequests extends Middleware
                     ]
                     : null,
             ],
+            'billing_status' => fn () => $this->getBillingStatus($request),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
@@ -145,6 +172,7 @@ class HandleInertiaRequests extends Middleware
                 'info' => fn () => $request->session()->get('info'),
                 'new_registration' => fn () => $request->session()->get('new_registration'),
                 'social_provider' => fn () => $request->session()->get('social_provider'),
+                'upgrade_prompt' => fn () => $request->session()->get('upgrade_prompt'),
             ],
             'features' => [
                 'billing' => $features['billing'],

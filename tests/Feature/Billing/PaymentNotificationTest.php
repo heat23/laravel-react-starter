@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Notifications\PaymentFailedNotification;
 use App\Notifications\RefundProcessedNotification;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Testing\TestResponse;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -13,7 +14,7 @@ beforeEach(function () {
     registerBillingRoutes();
 });
 
-function postSignedWebhook(array $payload): \Illuminate\Testing\TestResponse
+function postSignedWebhook(array $payload): TestResponse
 {
     $secret = config('cashier.webhook.secret', 'whsec_test');
     $timestamp = time();

@@ -1,7 +1,9 @@
 <?php
 
+use App\Models\User;
 use App\Services\AdminBillingStatsService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -17,7 +19,7 @@ it('calculates MRR from active subscriptions', function () {
         'plans.pro.price_monthly' => 29,
     ]);
 
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     createSubscription($user, ['stripe_price' => 'price_pro_monthly']);
 
     $stats = $service->getDashboardStats();
@@ -33,7 +35,7 @@ it('calculates MRR with annual pricing divided by 12', function () {
         'plans.pro.price_annual' => 240,
     ]);
 
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     createSubscription($user, ['stripe_price' => 'price_pro_annual']);
 
     $stats = $service->getDashboardStats();
@@ -48,7 +50,7 @@ it('calculates MRR with quantity multiplier', function () {
         'plans.team.price_monthly' => 15,
     ]);
 
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     createSubscription($user, ['stripe_price' => 'price_team_monthly', 'quantity' => 5]);
 
     $stats = $service->getDashboardStats();
@@ -70,7 +72,7 @@ it('excludes canceled subscriptions from MRR', function () {
         'plans.pro.price_monthly' => 29,
     ]);
 
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     createSubscription($user, [
         'stripe_price' => 'price_pro_monthly',
         'ends_at' => now()->addDays(5),
@@ -84,7 +86,7 @@ it('calculates churn rate over 30 days', function () {
     $service = app(AdminBillingStatsService::class);
 
     // Create a subscription that was active 30 days ago, now canceled
-    $user1 = \App\Models\User::factory()->create();
+    $user1 = User::factory()->create();
     $sub1 = createSubscription($user1);
     $sub1->forceFill([
         'created_at' => now()->subDays(60),
@@ -92,7 +94,7 @@ it('calculates churn rate over 30 days', function () {
     ])->saveQuietly();
 
     // Create a subscription still active (created before the period)
-    $user2 = \App\Models\User::factory()->create();
+    $user2 = User::factory()->create();
     $sub2 = createSubscription($user2);
     $sub2->forceFill(['created_at' => now()->subDays(60)])->saveQuietly();
 
@@ -112,14 +114,14 @@ it('calculates trial conversion rate', function () {
     $service = app(AdminBillingStatsService::class);
 
     // Converted trial (now active)
-    $user1 = \App\Models\User::factory()->create();
+    $user1 = User::factory()->create();
     createSubscription($user1, [
         'stripe_status' => 'active',
         'trial_ends_at' => now()->subDays(5),
     ]);
 
     // Unconverted trial (canceled before billing started — no ends_at)
-    $user2 = \App\Models\User::factory()->create();
+    $user2 = User::factory()->create();
     createSubscription($user2, [
         'stripe_status' => 'canceled',
         'trial_ends_at' => now()->subDays(3),
@@ -140,7 +142,7 @@ it('returns zero trial conversion with no trials', function () {
 it('returns dashboard stats with all metrics', function () {
     $service = app(AdminBillingStatsService::class);
 
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     createSubscription($user);
 
     $stats = $service->getDashboardStats();
@@ -164,13 +166,13 @@ it('computes activation_rate as ratio of activated to total users', function () 
 
     $service = app(AdminBillingStatsService::class);
 
-    $totalUsersBefore = \Illuminate\Support\Facades\DB::table('users')->whereNull('deleted_at')->count();
-    $activatedBefore = \Illuminate\Support\Facades\DB::table('user_settings')
+    $totalUsersBefore = DB::table('users')->whereNull('deleted_at')->count();
+    $activatedBefore = DB::table('user_settings')
         ->where('key', 'onboarding_completed')->distinct('user_id')->count('user_id');
 
     // 2 users without onboarding (unactivated) + 2 with onboarding (activated by factory default)
-    \App\Models\User::factory()->count(2)->onboardingIncomplete()->create();
-    \App\Models\User::factory()->count(2)->create(); // activated by default
+    User::factory()->count(2)->onboardingIncomplete()->create();
+    User::factory()->count(2)->create(); // activated by default
 
     $stats = $service->getDashboardStats();
 
@@ -208,7 +210,7 @@ it('caches dashboard stats', function () {
     $stats1 = $service->getDashboardStats();
 
     // Create another subscription — should not appear due to cache
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     createSubscription($user);
 
     $stats2 = $service->getDashboardStats();
@@ -225,21 +227,21 @@ it('churn rate denominator excludes trialing subscriptions (KPI-002)', function 
 
     // 50 active (paying) subscribers created > 30 days ago
     for ($i = 0; $i < 50; $i++) {
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $sub = createSubscription($user, ['stripe_status' => 'active']);
         $sub->forceFill(['created_at' => $thirtyOneDaysAgo])->saveQuietly();
     }
 
     // 200 trialing subscribers created > 30 days ago — must NOT inflate the denominator
     for ($i = 0; $i < 200; $i++) {
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $sub = createSubscription($user, ['stripe_status' => 'trialing', 'trial_ends_at' => now()->addDays(7)]);
         $sub->forceFill(['created_at' => $thirtyOneDaysAgo])->saveQuietly();
     }
 
     // 5 cancellations within the period (active → canceled)
     for ($i = 0; $i < 5; $i++) {
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         $sub = createSubscription($user, ['stripe_status' => 'canceled', 'ends_at' => now()->subDays(5)]);
         $sub->forceFill(['created_at' => $thirtyOneDaysAgo])->saveQuietly();
     }
@@ -255,7 +257,7 @@ it('canceled count excludes scheduled cancellations with future ends_at (KPI-006
 
     // 3 truly canceled (ends_at in the past)
     for ($i = 0; $i < 3; $i++) {
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         createSubscription($user, [
             'stripe_status' => 'canceled',
             'ends_at' => now()->subDay(),
@@ -264,7 +266,7 @@ it('canceled count excludes scheduled cancellations with future ends_at (KPI-006
 
     // 2 scheduled cancellations (still active, ends_at in the future)
     for ($i = 0; $i < 2; $i++) {
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         createSubscription($user, [
             'stripe_status' => 'active',
             'ends_at' => now()->addDays(10),
@@ -282,7 +284,7 @@ it('trial conversion counts historical conversions not current survivors (KPI-00
 
     // 60 subscriptions that never converted (still trialing or canceled without ever paying)
     for ($i = 0; $i < 60; $i++) {
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         createSubscription($user, [
             'stripe_status' => 'canceled',
             'trial_ends_at' => now()->subDays(10),
@@ -292,7 +294,7 @@ it('trial conversion counts historical conversions not current survivors (KPI-00
 
     // 30 subscriptions currently active (converted and still paying)
     for ($i = 0; $i < 30; $i++) {
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         createSubscription($user, [
             'stripe_status' => 'active',
             'trial_ends_at' => now()->subDays(10),
@@ -301,7 +303,7 @@ it('trial conversion counts historical conversions not current survivors (KPI-00
 
     // 10 subscriptions that converted then later churned — must count as converted
     for ($i = 0; $i < 10; $i++) {
-        $user = \App\Models\User::factory()->create();
+        $user = User::factory()->create();
         createSubscription($user, [
             'stripe_status' => 'canceled',
             'trial_ends_at' => now()->subDays(10),
@@ -321,7 +323,7 @@ it('rolling 90-day activation rate ignores pre-onboarding cohorts (KPI-005)', fu
     $service = app(AdminBillingStatsService::class);
 
     // 10 users created 120 days ago (outside 90-day window), 5 activated
-    $oldUsers = \App\Models\User::factory()->count(10)->create();
+    $oldUsers = User::factory()->count(10)->create();
     foreach ($oldUsers as $idx => $user) {
         $user->forceFill(['created_at' => now()->subDays(120)])->saveQuietly();
         if ($idx >= 5) {
@@ -331,7 +333,7 @@ it('rolling 90-day activation rate ignores pre-onboarding cohorts (KPI-005)', fu
     }
 
     // 10 users created within last 30 days (inside 90-day window), 8 activated
-    $newUsers = \App\Models\User::factory()->count(10)->create();
+    $newUsers = User::factory()->count(10)->create();
     foreach ($newUsers as $idx => $user) {
         if ($idx >= 8) {
             $user->settings()->where('key', 'onboarding_completed')->delete();
@@ -354,7 +356,7 @@ it('cohort retention counts API users active via last_active_at (KPI-004)', func
     // User created 2 weeks ago with no login but recent API activity (within week 1 window)
     // week_1 checkDate ≈ now()->subWeeks(2)->startOfWeek() + 1 week ≈ 7 days ago
     // last_active_at must be >= checkDate to show retention
-    $apiUser = \App\Models\User::factory()->create([
+    $apiUser = User::factory()->create([
         'last_login_at' => null,
         'last_active_at' => now()->subDays(3),
         'created_at' => now()->subWeeks(2),

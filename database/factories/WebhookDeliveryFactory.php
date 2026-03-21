@@ -2,12 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\WebhookDelivery;
 use App\Models\WebhookEndpoint;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\WebhookDelivery>
+ * @extends Factory<WebhookDelivery>
  */
 class WebhookDeliveryFactory extends Factory
 {
