@@ -125,11 +125,11 @@ export default function SaasStarterKitComparison({
         {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: articleSchema }}
+          dangerouslySetInnerHTML={{ __html: articleSchema.replace(/<\/script>/gi, '<\\/script>') }}
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: faqSchema }}
+          dangerouslySetInnerHTML={{ __html: faqSchema.replace(/<\/script>/gi, '<\\/script>') }}
         />
       </Head>
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ConsentController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserSettingsController;
@@ -76,6 +77,9 @@ Route::middleware(['auth:sanctum', 'throttle:30,1'])->prefix('webhooks')->group(
 Route::middleware(['auth:sanctum', 'throttle:webhook-test'])->prefix('webhooks')->group(function () {
     Route::post('/{endpointId}/test', [WebhookEndpointController::class, 'test']);
 });
+
+// Cookie consent recording — no auth required (must work for guests, GDPR audit trail)
+Route::post('/consent', [ConsentController::class, 'store'])->middleware('throttle:10,1')->name('consent.store');
 
 // Incoming webhooks (signature-verified, no auth required)
 Route::prefix('webhooks/incoming')->group(function () {

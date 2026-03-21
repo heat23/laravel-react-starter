@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminFailedJobIndexRequest;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -103,6 +104,41 @@ class AdminFailedJobsController extends Controller
 
         return redirect()->route('admin.failed-jobs.index')
             ->with('success', 'Failed job deleted.');
+    }
+
+    public function bulkRetry(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'max:100'],
+            'ids.*' => ['required', 'string'],
+        ]);
+
+        $retried = 0;
+        foreach ($validated['ids'] as $uuid) {
+            try {
+                if (Artisan::call('queue:retry', ['id' => [$uuid]]) === 0) {
+                    $retried++;
+                }
+            } catch (\Throwable) {
+                // Skip UUIDs that no longer exist or cause errors
+            }
+        }
+
+        return redirect()->route('admin.failed-jobs.index')
+            ->with('success', "{$retried} job(s) queued for retry.");
+    }
+
+    public function bulkDelete(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'max:100'],
+            'ids.*' => ['required', 'string'],
+        ]);
+
+        $deleted = DB::table('failed_jobs')->whereIn('uuid', $validated['ids'])->delete();
+
+        return redirect()->route('admin.failed-jobs.index')
+            ->with('success', "{$deleted} failed job(s) deleted.");
     }
 
     private function extractJobName(string $payload): string

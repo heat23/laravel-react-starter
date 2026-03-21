@@ -40,9 +40,13 @@ export default function AdminAuditLogsIndex({
 }: AdminAuditLogsIndexProps) {
   const userIdInputRef = useRef<HTMLInputElement>(null);
   const userIdTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const ipTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const searchTimeout = useRef<ReturnType<typeof setTimeout>>();
   const [from, setFrom] = useState(filters.from ?? '');
   const [to, setTo] = useState(filters.to ?? '');
   const [userId, setUserId] = useState(filters.user_id ?? '');
+  const [ip, setIp] = useState(filters.ip ?? '');
+  const [search, setSearch] = useState(filters.search ?? '');
   const {
     updateFilter,
     handlePage,
@@ -55,9 +59,13 @@ export default function AdminAuditLogsIndex({
 
   const clearFilters = () => {
     clearTimeout(userIdTimeout.current);
+    clearTimeout(ipTimeout.current);
+    clearTimeout(searchTimeout.current);
     setFrom('');
     setTo('');
     setUserId('');
+    setIp('');
+    setSearch('');
     baseClearFilters();
   };
   const isNavigating = useNavigationState();
@@ -76,6 +84,8 @@ export default function AdminAuditLogsIndex({
   if (filters.user_id) exportParams.user_id = filters.user_id;
   if (filters.from) exportParams.from = filters.from;
   if (filters.to) exportParams.to = filters.to;
+  if (filters.ip) exportParams.ip = filters.ip;
+  if (filters.search) exportParams.search = filters.search;
 
   return (
     <AdminLayout>
@@ -163,6 +173,36 @@ export default function AdminAuditLogsIndex({
             className="w-[160px]"
             aria-label="Filter to date"
           />
+          <Input
+            type="text"
+            placeholder="Filter by IP"
+            value={ip}
+            onChange={(e) => {
+              const val = e.target.value;
+              setIp(val);
+              clearTimeout(ipTimeout.current);
+              ipTimeout.current = setTimeout(() => {
+                updateFilter({ ip: val || undefined });
+              }, 400);
+            }}
+            className="w-[160px]"
+            aria-label="Filter by IP address"
+          />
+          <Input
+            type="text"
+            placeholder="Search metadata..."
+            value={search}
+            onChange={(e) => {
+              const val = e.target.value;
+              setSearch(val);
+              clearTimeout(searchTimeout.current);
+              searchTimeout.current = setTimeout(() => {
+                updateFilter({ search: val || undefined });
+              }, 400);
+            }}
+            className="w-[200px]"
+            aria-label="Search event or metadata"
+          />
         </fieldset>
 
         <AdminDataTable
@@ -178,12 +218,12 @@ export default function AdminAuditLogsIndex({
           emptyIcon={FileText}
           emptyTitle="No audit logs found"
           emptyDescription={
-            filters.event || filters.user_id || filters.from || filters.to
+            filters.event || filters.user_id || filters.from || filters.to || filters.ip || filters.search
               ? 'No logs match your current filters. Try clearing them.'
               : 'No audit activity recorded yet.'
           }
           emptyAction={
-            filters.event || filters.user_id || filters.from || filters.to ? (
+            filters.event || filters.user_id || filters.from || filters.to || filters.ip || filters.search ? (
               <Button variant="outline" size="sm" onClick={clearFilters}>
                 Clear filters
               </Button>

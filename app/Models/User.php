@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laragear\TwoFactor\Contracts\TwoFactorAuthenticatable;
 use Laragear\TwoFactor\TwoFactorAuthentication;
 use Laravel\Cashier\Billable;
@@ -21,7 +24,7 @@ use Laravel\Sanctum\HasApiTokens;
  */
 class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use Billable, HasApiTokens, HasFactory, Notifiable, SoftDeletes, TwoFactorAuthentication;
 
     /**
@@ -37,7 +40,6 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
         'last_active_at',
         'signup_source',
         'trial_ends_at',
-        'email_verified_at',
         'is_admin',
         'super_admin',
     ];
@@ -110,7 +112,7 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
      * Get the social accounts for the user.
      * (Only used when social_auth feature is enabled)
      */
-    public function socialAccounts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function socialAccounts(): HasMany
     {
         return $this->hasMany(SocialAccount::class);
     }
@@ -119,7 +121,7 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
      * Get the webhook endpoints for the user.
      * (Only used when webhooks feature is enabled)
      */
-    public function webhookEndpoints(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function webhookEndpoints(): HasMany
     {
         return $this->hasMany(WebhookEndpoint::class);
     }
@@ -128,7 +130,7 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
      * Get the settings for the user.
      * (Only used when user_settings feature is enabled)
      */
-    public function settings(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function settings(): HasMany
     {
         return $this->hasMany(UserSetting::class);
     }
@@ -167,12 +169,21 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
      */
     public function purgePersonalData(): void
     {
-        // Morph relations without FK constraints
-        $this->tokens()->delete();
-        $this->twoFactorAuth()->delete();
-        $this->notifications()->delete();
+        DB::transaction(function () {
+            // Scrub PII from audit logs atomically with deletion (GDPR right to erasure).
+            // If forceDelete() fails, the transaction rolls back and no PII is lost.
+            AuditLog::where('user_id', $this->id)->update([
+                'ip' => null,
+                'user_agent' => null,
+            ]);
 
-        // Force delete bypasses SoftDeletes and triggers FK cascades
-        $this->forceDelete();
+            // Morph relations without FK constraints
+            $this->tokens()->delete();
+            $this->twoFactorAuth()->delete();
+            $this->notifications()->delete();
+
+            // Force delete bypasses SoftDeletes and triggers FK cascades
+            $this->forceDelete();
+        });
     }
 }

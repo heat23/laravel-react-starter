@@ -3,6 +3,7 @@
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Models\UserSetting;
+use Illuminate\Support\Facades\DB;
 
 it('exports all personal data categories as JSON', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
@@ -93,4 +94,29 @@ it('only exports data for the authenticated user', function () {
 
     $data = $response->json();
     expect($data['audit_logs'])->toHaveCount(0);
+});
+
+it('truncates audit logs at 1000 records and sets truncation flags', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+
+    // Insert 1050 rows via bulk insert for speed
+    $rows = [];
+    for ($i = 0; $i < 1050; $i++) {
+        $rows[] = [
+            'event' => 'auth.login',
+            'user_id' => $user->id,
+            'ip' => '127.0.0.1',
+            'user_agent' => null,
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+        ];
+    }
+    DB::table('audit_logs')->insert($rows);
+
+    $response = $this->actingAs($user)->get('/export/personal-data');
+
+    $data = $response->json();
+    expect(count($data['audit_logs']))->toBeLessThanOrEqual(1000);
+    expect($data['audit_logs_truncated'])->toBeTrue();
+    expect($data['audit_logs_total_count'])->toBe(1050);
 });

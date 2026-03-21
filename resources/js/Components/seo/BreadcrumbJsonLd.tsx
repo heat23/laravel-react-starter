@@ -1,5 +1,3 @@
-import DOMPurify from 'dompurify';
-
 import type { BreadcrumbItem } from '@/types/index';
 
 interface BreadcrumbJsonLdProps {
@@ -18,10 +16,13 @@ export function BreadcrumbJsonLd({ breadcrumbs }: BreadcrumbJsonLdProps) {
     })),
   });
 
+  // Prevent </script> injection; DOMPurify is omitted — it corrupts valid JSON (URLs with < >)
+  const safeSchema = schema.replace(/<\/script>/gi, '<\\/script>');
+
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(schema) }}
+      dangerouslySetInnerHTML={{ __html: safeSchema }}
     />
   );
 }

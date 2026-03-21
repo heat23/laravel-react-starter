@@ -17,8 +17,6 @@ import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
 import type { GuidePageProps } from '@/types/index';
 
-import DOMPurify from 'dompurify';
-
 const sections: TocSection[] = [
     { id: 'frontend-architecture', title: '1. Choosing Your Frontend Architecture', level: 2 },
     { id: 'inertia-react', title: 'Inertia.js + React', level: 3 },
@@ -74,7 +72,7 @@ export default function LaravelSaasGuide({ title, metaDescription, appName, brea
                 {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
                 <script
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(articleSchema) }}
+                    dangerouslySetInnerHTML={{ __html: articleSchema.replace(/<\/script>/gi, '<\\/script>') }}
                 />
             </Head>
 

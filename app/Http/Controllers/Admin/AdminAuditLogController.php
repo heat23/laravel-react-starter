@@ -41,7 +41,7 @@ class AdminAuditLogController extends Controller
         return Inertia::render('Admin/AuditLogs/Index', [
             'logs' => $logs,
             'eventTypes' => $eventTypes,
-            'filters' => $request->only('event', 'user_id', 'from', 'to', 'sort', 'dir', 'per_page'),
+            'filters' => $request->only('event', 'user_id', 'from', 'to', 'ip', 'search', 'sort', 'dir', 'per_page'),
         ]);
     }
 
@@ -111,6 +111,18 @@ class AdminAuditLogController extends Controller
 
         if (! empty($filters['to'])) {
             $query->where('created_at', '<=', Carbon::parse($filters['to'])->endOfDay());
+        }
+
+        if (! empty($filters['ip'])) {
+            $query->where('ip', $filters['ip']);
+        }
+
+        if (! empty($filters['search'])) {
+            $term = '%'.str_replace('%', '\\%', $filters['search']).'%';
+            $query->where(function ($q) use ($term) {
+                $q->where('metadata', 'like', $term)
+                    ->orWhere('event', 'like', $term);
+            });
         }
 
         return $query;

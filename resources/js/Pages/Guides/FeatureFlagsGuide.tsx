@@ -12,8 +12,6 @@ import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
 import type { GuidePageProps } from '@/types/index';
 
-import DOMPurify from 'dompurify';
-
 const sections: TocSection[] = [
     { id: 'two-level-design', title: '1. The Two-Level Design', level: 2 },
     { id: 'database-schema', title: '2. Database Schema', level: 2 },
@@ -57,7 +55,7 @@ export default function FeatureFlagsGuide({ title, metaDescription, appName, bre
                 {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
                 <script
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(articleSchema) }}
+                    dangerouslySetInnerHTML={{ __html: articleSchema.replace(/<\/script>/gi, '<\\/script>') }}
                 />
             </Head>
 

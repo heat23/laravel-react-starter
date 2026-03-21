@@ -35,7 +35,12 @@
                 <script nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">
                     (function() {
                         try {
-                            if (localStorage.getItem('cookie_consent') === 'accepted') {
+                            var cats = {};
+                            try { cats = JSON.parse(localStorage.getItem('cookie_consent_categories') || '{}'); } catch(e) {}
+                            // Backward compat: honour old binary consent if new categories not yet stored
+                            var analyticsOk = cats.analytics === true ||
+                                (!localStorage.getItem('cookie_consent_categories') && localStorage.getItem('cookie_consent') === 'accepted');
+                            if (analyticsOk) {
                                 var id = '{{ config('services.google.analytics_id') }}';
                                 var s = document.createElement('script');
                                 s.async = true;

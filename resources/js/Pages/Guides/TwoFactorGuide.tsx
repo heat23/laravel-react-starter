@@ -83,8 +83,8 @@ export default function TwoFactorGuide({ title, metaDescription, appName, appUrl
                 <meta name="twitter:title" content={title} />
                 <meta name="twitter:description" content={metaDescription} />
                 {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
-                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleSchema }} />
-                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: howToSchema }} />
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleSchema.replace(/<\/script>/gi, '<\\/script>') }} />
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: howToSchema.replace(/<\/script>/gi, '<\\/script>') }} />
             </Head>
 
             <div className="min-h-screen bg-background">

@@ -72,7 +72,7 @@ export default function Larafast({
         {/* FAQPage JSON-LD — emitted from component only, not from app.blade.php (SD001) */}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: faqSchema }}
+          dangerouslySetInnerHTML={{ __html: faqSchema.replace(/<\/script>/gi, '<\\/script>') }}
         />
         <script
           type="application/ld+json"
@@ -83,7 +83,7 @@ export default function Larafast({
               headline: title,
               datePublished: DATE_PUBLISHED,
               dateModified: DATE_PUBLISHED,
-            }),
+            }).replace(/<\/script>/gi, '<\\/script>'),
           }}
         />
         {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}

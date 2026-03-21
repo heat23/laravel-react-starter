@@ -1,11 +1,14 @@
 import { AlertCircle } from 'lucide-react';
 
-import { Head, Link } from '@inertiajs/react';
+import { useState, useCallback, useEffect } from 'react';
+
+import { Head, Link, router } from '@inertiajs/react';
 
 import { AdminDataTable } from '@/Components/admin/AdminDataTable';
 import PageHeader from '@/Components/layout/PageHeader';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
+import { Checkbox } from '@/Components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -37,6 +40,50 @@ export default function AdminFailedJobsIndex({
     filters,
   });
   const isNavigating = useNavigationState();
+  const [selectedUuids, setSelectedUuids] = useState<Set<string>>(new Set());
+
+  // Clear selection on page navigation
+  useEffect(() => {
+    setSelectedUuids(new Set());
+  }, [jobs.current_page]);
+
+  const allSelected =
+    jobs.data.length > 0 && jobs.data.every((j) => selectedUuids.has(j.uuid));
+  const someSelected = selectedUuids.size > 0;
+
+  const toggleJob = useCallback((uuid: string) => {
+    setSelectedUuids((prev) => {
+      const next = new Set(prev);
+      if (next.has(uuid)) next.delete(uuid);
+      else next.add(uuid);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedUuids(new Set());
+    } else {
+      setSelectedUuids(new Set(jobs.data.map((j) => j.uuid)));
+    }
+  }, [allSelected, jobs.data]);
+
+  const bulkRetry = useCallback(() => {
+    const ids = Array.from(selectedUuids);
+    router.post(
+      '/admin/failed-jobs/bulk-retry',
+      { ids },
+      { onSuccess: () => setSelectedUuids(new Set()) },
+    );
+  }, [selectedUuids]);
+
+  const bulkDelete = useCallback(() => {
+    const ids = Array.from(selectedUuids);
+    router.delete('/admin/failed-jobs/bulk', {
+      data: { ids },
+      onSuccess: () => setSelectedUuids(new Set()),
+    });
+  }, [selectedUuids]);
 
   return (
     <AdminLayout>
@@ -69,6 +116,20 @@ export default function AdminFailedJobsIndex({
           </Select>
         </fieldset>
 
+        {someSelected && (
+          <div className="flex items-center gap-3 p-3 bg-muted rounded-md">
+            <span className="text-sm text-muted-foreground">
+              {selectedUuids.size} selected
+            </span>
+            <Button size="sm" variant="outline" onClick={bulkRetry}>
+              Retry Selected
+            </Button>
+            <Button size="sm" variant="destructive" onClick={bulkDelete}>
+              Delete Selected
+            </Button>
+          </div>
+        )}
+
         <AdminDataTable
           isEmpty={jobs.data.length === 0}
           isNavigating={isNavigating}
@@ -93,6 +154,13 @@ export default function AdminFailedJobsIndex({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={toggleAll}
+                    aria-label="Select all jobs"
+                  />
+                </TableHead>
                 <TableHead>Job</TableHead>
                 <TableHead>Queue</TableHead>
                 <TableHead>Failed At</TableHead>
@@ -103,6 +171,13 @@ export default function AdminFailedJobsIndex({
             <TableBody>
               {jobs.data.map((job) => (
                 <TableRow key={job.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedUuids.has(job.uuid)}
+                      onCheckedChange={() => toggleJob(job.uuid)}
+                      aria-label={`Select job ${job.id}`}
+                    />
+                  </TableCell>
                   <TableCell>
                     <Badge variant="secondary">{job.payload_summary}</Badge>
                   </TableCell>

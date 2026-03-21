@@ -200,7 +200,7 @@ export default function CompareIndex({ title, metaDescription, appUrl, breadcrum
         {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: itemListSchema }}
+          dangerouslySetInnerHTML={{ __html: itemListSchema.replace(/<\/script>/gi, '<\\/script>') }}
         />
       </Head>
 

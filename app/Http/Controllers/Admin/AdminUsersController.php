@@ -16,6 +16,7 @@ use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
 use App\Services\EngagementScoringService;
 use App\Support\CsvExport;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -68,39 +69,10 @@ class AdminUsersController extends Controller
     public function index(AdminUserIndexRequest $request): Response
     {
         $validated = $request->validated();
-        $status = $validated['status'] ?? 'all';
-        $baseQuery = match ($status) {
-            'active' => User::query(),
-            'deactivated' => User::onlyTrashed(),
-            default => User::withTrashed(),
-        };
-        $query = $baseQuery
+
+        $query = $this->buildUserQuery($validated)
             ->withCount('tokens', 'settings', 'webhookEndpoints')
             ->with('settings:id,user_id,key');
-
-        if (! empty($validated['search'])) {
-            $query->where(function ($q) use ($validated) {
-                QueryHelper::whereLike($q, 'name', $validated['search']);
-                QueryHelper::whereLike($q, 'email', $validated['search'], 'or');
-            });
-        }
-
-        if (isset($validated['admin']) && $validated['admin'] !== '') {
-            $query->where('is_admin', (bool) $validated['admin']);
-        }
-
-        if (isset($validated['verified']) && $validated['verified'] !== '') {
-            if ((int) $validated['verified'] === 1) {
-                $query->whereNotNull('email_verified_at');
-            } else {
-                $query->whereNull('email_verified_at');
-            }
-        }
-
-        $allowedSorts = ['name', 'email', 'created_at', 'last_login_at', 'is_admin'];
-        $sort = in_array($validated['sort'] ?? null, $allowedSorts, true) ? $validated['sort'] : 'created_at';
-        $dir = ($validated['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
-        $query->orderBy($sort, $dir);
 
         $perPage = (int) ($validated['per_page'] ?? config('pagination.admin.users', 25));
         $users = $query->paginate($perPage);
@@ -329,7 +301,8 @@ class AdminUsersController extends Controller
         return back()->with('success', 'Password reset email sent.');
     }
 
-    private function buildUserQuery(array $validated)
+    /** @return Builder<User> */
+    private function buildUserQuery(array $validated): Builder
     {
         $status = $validated['status'] ?? 'all';
         $query = match ($status) {
@@ -347,6 +320,14 @@ class AdminUsersController extends Controller
 
         if (isset($validated['admin']) && $validated['admin'] !== '') {
             $query->where('is_admin', (bool) $validated['admin']);
+        }
+
+        if (isset($validated['verified']) && $validated['verified'] !== '') {
+            if ((int) $validated['verified'] === 1) {
+                $query->whereNotNull('email_verified_at');
+            } else {
+                $query->whereNull('email_verified_at');
+            }
         }
 
         $allowedSorts = ['name', 'email', 'created_at', 'last_login_at', 'is_admin'];

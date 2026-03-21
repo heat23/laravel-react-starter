@@ -12,8 +12,6 @@ import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
 import type { GuidePageProps } from '@/types/index';
 
-import DOMPurify from 'dompurify';
-
 const sections: TocSection[] = [
     { id: 'install-cashier', title: '1. Install and Configure Laravel Cashier', level: 2 },
     { id: 'plan-configuration', title: '2. Plan Configuration — Don\u2019t Hardcode Prices', level: 2 },
@@ -59,7 +57,7 @@ export default function StripeBillingGuide({ title, metaDescription, appName, br
                 {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
                 <script
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(articleSchema) }}
+                    dangerouslySetInnerHTML={{ __html: articleSchema.replace(/<\/script>/gi, '<\\/script>') }}
                 />
             </Head>
 

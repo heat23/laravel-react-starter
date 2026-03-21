@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\SocialAccount;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Laravel\Socialite\Contracts\User as SocialUser;
 
 /**
@@ -39,14 +40,20 @@ class SocialAuthService
             return $user;
         }
 
-        // Create new user
-        return User::create([
-            'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
-            'email' => $socialUser->getEmail(),
-            'password' => null, // No password for OAuth-only users
-            'email_verified_at' => now(), // OAuth users are considered verified
-            'signup_source' => $provider,
-        ]);
+        // Create new user — wrapped in transaction so INSERT + UPDATE are atomic
+        return DB::transaction(function () use ($socialUser, $provider): User {
+            $user = User::create([
+                'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
+                'email' => $socialUser->getEmail(),
+                'password' => null, // No password for OAuth-only users
+                'signup_source' => $provider,
+            ]);
+
+            // email_verified_at is not fillable; forceFill bypasses guard (OAuth users are verified)
+            $user->forceFill(['email_verified_at' => now()])->save();
+
+            return $user;
+        });
     }
 
     /**

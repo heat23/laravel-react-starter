@@ -20,6 +20,18 @@ const legalLinks = [
   { href: '/privacy', label: 'Privacy' },
 ];
 
+function resetCookieConsent() {
+  try {
+    localStorage.removeItem('cookie_consent');
+    localStorage.removeItem('cookie_consent_categories');
+    localStorage.removeItem('cookie_consent_version');
+    localStorage.removeItem('cookie_consent_date');
+  } catch {
+    // localStorage unavailable
+  }
+  window.location.reload();
+}
+
 export function PublicFooter() {
   const appName = import.meta.env.VITE_APP_NAME || 'Laravel React Starter';
 
@@ -97,6 +109,15 @@ export function PublicFooter() {
                     </Link>
                   </li>
                 ))}
+                <li>
+                  <button
+                    type="button"
+                    onClick={resetCookieConsent}
+                    className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Cookie Preferences
+                  </button>
+                </li>
               </ul>
             </nav>
           </div>

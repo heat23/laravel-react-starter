@@ -92,10 +92,9 @@ export default function TenancyArchitectureGuide({ title, metaDescription, appNa
                 {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
                 {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
                 <FaqJsonLd questions={faqItems} />
-                {/* Article JSON-LD: static hardcoded values only — no user input */}
                 <script
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: articleSchema }}
+                    dangerouslySetInnerHTML={{ __html: articleSchema.replace(/<\/script>/gi, '<\\/script>') }}
                 />
             </Head>
 

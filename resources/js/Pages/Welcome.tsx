@@ -12,7 +12,6 @@ import {
   Zap,
 } from 'lucide-react';
 
-import DOMPurify from 'dompurify';
 import { useEffect, useRef, useState } from 'react';
 
 import { Head, Link } from '@inertiajs/react';
@@ -199,19 +198,6 @@ const Welcome: WelcomeComponent = ({
     ? `${appUrl}/og-image.png`
     : '/og-image.png';
 
-  const faqSchema = JSON.stringify({
-    '@context': 'https://schema.org',
-    '@type': 'FAQPage',
-    mainEntity: faqs.map((faq) => ({
-      '@type': 'Question',
-      name: faq.question,
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: faq.answer,
-      },
-    })),
-  });
-
   useEffect(() => {
     track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'welcome' });
   }, [track]);
@@ -256,12 +242,7 @@ const Welcome: WelcomeComponent = ({
           content={`${featureCount} toggleable features, concurrent payment protection, production admin panel. Laravel 12 + React 18 + TypeScript. Built for indie developers and small teams.`}
         />
         <meta name="twitter:image" content={ogImageUrl} />
-        {faqs.length > 0 && (
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(faqSchema) }}
-          />
-        )}
+        {/* FAQ JSON-LD is rendered server-side by app.blade.php for crawler reliability */}
       </Head>
 
       <a

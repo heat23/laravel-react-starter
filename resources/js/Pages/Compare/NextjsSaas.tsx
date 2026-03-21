@@ -116,8 +116,8 @@ export default function NextjsSaas({ title, metaDescription, appName, breadcrumb
                     content="Which is better for SaaS in 2026? Laravel vs Next.js compared on developer experience, performance, ecosystem, and deployment. With starter kit recommendations."
                 />
                 {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
-                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleSchema }} />
-                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchema }} />
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleSchema.replace(/<\/script>/gi, '<\\/script>') }} />
+                <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchema.replace(/<\/script>/gi, '<\\/script>') }} />
             </Head>
 
             <div className="min-h-screen bg-background">

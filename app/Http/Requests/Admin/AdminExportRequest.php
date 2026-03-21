@@ -18,6 +18,8 @@ class AdminExportRequest extends FormRequest
             'user_id' => ['nullable', 'integer', 'min:1'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
+            'ip' => ['nullable', 'string', 'max:45'],
+            'search' => ['nullable', 'string', 'max:100'],
         ];
     }
 }

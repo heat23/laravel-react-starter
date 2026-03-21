@@ -125,14 +125,14 @@ export default function BuildVsBuyGuide({ title, metaDescription, appName, appUr
                 <meta name="twitter:title" content={title} />
                 <meta name="twitter:description" content={metaDescription} />
                 {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
-                {/* JSON-LD: do NOT sanitize with DOMPurify — it corrupts @context and type values (SD009) */}
+                {/* JSON-LD: escape </script> only — DOMPurify corrupts JSON with special chars */}
                 <script
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: articleSchema }}
+                    dangerouslySetInnerHTML={{ __html: articleSchema.replace(/<\/script>/gi, '<\\/script>') }}
                 />
                 <script
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: faqSchema }}
+                    dangerouslySetInnerHTML={{ __html: faqSchema.replace(/<\/script>/gi, '<\\/script>') }}
                 />
             </Head>
 

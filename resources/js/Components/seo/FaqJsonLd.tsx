@@ -1,5 +1,3 @@
-import DOMPurify from 'dompurify';
-
 interface FaqItem {
   question: string;
   answer: string;
@@ -25,10 +23,11 @@ export function FaqJsonLd({ questions }: FaqJsonLdProps) {
     })),
   });
 
+  // Prevent </script> injection; DOMPurify omitted — it corrupts JSON with special chars
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(schema) }}
+      dangerouslySetInnerHTML={{ __html: schema.replace(/<\/script>/gi, '<\\/script>') }}
     />
   );
 }
