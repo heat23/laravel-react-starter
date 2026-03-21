@@ -101,8 +101,14 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         // System Info
         Route::get('/system', AdminSystemController::class)->name('system');
 
-        // Failed Jobs Management
+        // Failed Jobs Management — bulk routes first to avoid {id} wildcard capture
         Route::get('/failed-jobs', [AdminFailedJobsController::class, 'index'])->name('failed-jobs.index');
+        Route::post('/failed-jobs/bulk-retry', [AdminFailedJobsController::class, 'bulkRetry'])
+            ->middleware('throttle:10,1')
+            ->name('failed-jobs.bulk-retry');
+        Route::delete('/failed-jobs/bulk', [AdminFailedJobsController::class, 'bulkDelete'])
+            ->middleware('throttle:10,1')
+            ->name('failed-jobs.bulk-destroy');
         Route::get('/failed-jobs/{id}', [AdminFailedJobsController::class, 'show'])->name('failed-jobs.show');
         Route::post('/failed-jobs/{id}/retry', [AdminFailedJobsController::class, 'retry'])
             ->middleware('throttle:10,1')
@@ -110,12 +116,6 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         Route::delete('/failed-jobs/{id}', [AdminFailedJobsController::class, 'destroy'])
             ->middleware('throttle:10,1')
             ->name('failed-jobs.destroy');
-        Route::post('/failed-jobs/bulk-retry', [AdminFailedJobsController::class, 'bulkRetry'])
-            ->middleware('throttle:10,1')
-            ->name('failed-jobs.bulk-retry');
-        Route::delete('/failed-jobs/bulk', [AdminFailedJobsController::class, 'bulkDelete'])
-            ->middleware('throttle:10,1')
-            ->name('failed-jobs.bulk-destroy');
 
         // Data Health Checks
         Route::get('/data-health', [AdminDataHealthController::class, 'index'])->name('data-health.index');
