@@ -114,6 +114,9 @@ class SubscriptionController extends Controller
         }
 
         try {
+            $wasOnTrial = $this->planLimitService->isOnTrial($user);
+            $trialEndsAt = $user->trial_ends_at;
+
             $this->billingService->createSubscription(
                 $user,
                 $priceId,
@@ -132,7 +135,19 @@ class SubscriptionController extends Controller
                 'amount' => $amount,
             ]);
 
-            // Log trial start if the new subscription is in trialing state
+            // Emit TRIAL_CONVERTED if the user was on our local trial when they subscribed.
+            // Clear trial_ends_at so CheckExpiredTrials never fires TRIAL_EXPIRED for them.
+            if ($wasOnTrial) {
+                $user->update(['trial_ends_at' => null]);
+                $this->planLimitService->invalidateUserPlanCache($user);
+
+                $this->auditService->logProductEvent(AnalyticsEvent::TRIAL_CONVERTED, $user, [
+                    'tier' => $tier,
+                    'trial_ends_at' => $trialEndsAt?->toISOString(),
+                ]);
+            }
+
+            // Log trial start if the new Cashier subscription is in Stripe trialing state
             $user->loadMissing('subscriptions');
             $newSubscription = $user->subscription('default');
             if ($newSubscription && $newSubscription->onTrial()) {

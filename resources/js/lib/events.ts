@@ -57,7 +57,9 @@ export const AnalyticsEvents = {
   LIMIT_THRESHOLD_100: 'limit.threshold_100',
 
   // Trial
-  BILLING_TRIAL_STARTED: 'billing.trial_started',
+  TRIAL_STARTED: 'trial.started',
+  TRIAL_CONVERTED: 'trial.converted',
+  TRIAL_EXPIRED: 'trial.expired',
 
   // Account lifecycle
   ACCOUNT_DELETED: 'account.deleted',
@@ -127,7 +129,9 @@ export type EventPropertyMap = {
   [AnalyticsEvents.BILLING_PERIOD_TOGGLED]: { from: BillingPeriod; to: BillingPeriod };
   [AnalyticsEvents.AUTH_2FA_ENABLED]: undefined;
   [AnalyticsEvents.SUBSCRIPTION_CANCELED]: { plan?: PlanKey; reason?: string; grace_period_ends?: string } | undefined;
-  [AnalyticsEvents.BILLING_TRIAL_STARTED]: { plan: string; trial_days: number };
+  [AnalyticsEvents.TRIAL_STARTED]: { tier: string; trial_days: number };
+  [AnalyticsEvents.TRIAL_CONVERTED]: { tier: string } | undefined;
+  [AnalyticsEvents.TRIAL_EXPIRED]: Record<string, never> | undefined;
   [AnalyticsEvents.ACCOUNT_DELETED]: { reason?: string } | undefined;
   [AnalyticsEvents.FEATURE_USED]: { feature_name: string; is_first_use?: boolean };
   [AnalyticsEvents.FEATURE_SETTINGS_UPDATED]: { setting_key?: string } | undefined;

@@ -30,9 +30,27 @@ class PlanLimitService
     public function startTrial(User $user): void
     {
         $trialDays = config('plans.trial.days', 14);
+        $tier = config('plans.trial.tier', 'pro');
+        $trialEndsAt = Carbon::now()->addDays($trialDays);
 
-        $user->update([
-            'trial_ends_at' => Carbon::now()->addDays($trialDays),
+        // Atomic write: only set if trial hasn't already been started.
+        // Uses a WHERE NULL guard so concurrent calls are safe without a separate lock.
+        $affected = User::where('id', $user->id)
+            ->whereNull('trial_ends_at')
+            ->update(['trial_ends_at' => $trialEndsAt]);
+
+        if ($affected === 0) {
+            // Another process already started the trial — skip audit to avoid duplicates.
+            return;
+        }
+
+        $user->trial_ends_at = $trialEndsAt;
+
+        $auditService = app(AuditService::class);
+        $auditService->logProductEvent(AnalyticsEvent::TRIAL_STARTED, $user, [
+            'tier' => $tier,
+            'trial_days' => $trialDays,
+            'trial_ends_at' => $trialEndsAt->toISOString(),
         ]);
     }
 

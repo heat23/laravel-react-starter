@@ -28,7 +28,7 @@ return [
     */
     'free' => [
         'name' => 'Free',
-        'description' => 'Start building — no credit card required',
+        'description' => 'Evaluate the stack before you commit — all features unlocked, limited quotas.',
         'price_monthly' => 0,
         'price_annual' => 0,
         'per_seat' => false,
@@ -55,12 +55,12 @@ return [
     */
     'pro' => [
         'name' => 'Pro',
-        'description' => 'Everything you need to ship faster',
+        'description' => 'For solo founders shipping a real product — unlimited projects, API access, and priority support.',
         'popular' => true,
         'stripe_price_monthly' => env('STRIPE_PRICE_PRO'),
         'stripe_price_annual' => env('STRIPE_PRICE_PRO_ANNUAL'),
         'price_monthly' => env('PLAN_PRO_PRICE_MONTHLY', 19),
-        'price_annual' => env('PLAN_PRO_PRICE_ANNUAL', 190),
+        'price_annual' => env('PLAN_PRO_PRICE_ANNUAL', 182), // $182/yr = 20.2% off ($19 × 12 = $228)
         'per_seat' => false,
         'limits' => [
             'projects' => null, // unlimited
@@ -72,9 +72,8 @@ return [
         'features' => [
             'Unlimited projects — never hit a cap',
             '1-year activity history',
-            'Scheduled & automated operations',
             'Advanced export (JSON, CSV)',
-            'Full REST API (10 tokens)',
+            '10 API tokens (1 on Free)',
             'Email notifications',
             'Priority support',
         ],
@@ -87,13 +86,13 @@ return [
     */
     'team' => [
         'name' => 'Team',
-        'description' => 'Collaborate across your whole team',
+        'description' => 'For small teams that need shared projects and per-seat billing without enterprise overhead.',
         'stripe_price_monthly' => env('STRIPE_PRICE_TEAM'),
         'stripe_price_annual' => env('STRIPE_PRICE_TEAM_ANNUAL'),
         'price_monthly' => env('PLAN_TEAM_PRICE_MONTHLY', 49),
-        'price_annual' => env('PLAN_TEAM_PRICE_ANNUAL', 490),
+        'price_annual' => env('PLAN_TEAM_PRICE_ANNUAL', 470), // $470/seat/yr = 20.1% off ($49 × 12 = $588)
         'per_seat' => true,
-        'min_seats' => 3,
+        'min_seats' => (int) env('PLAN_TEAM_MIN_SEATS', 2),
         'limits' => [
             'projects' => null, // unlimited
             'items_per_project' => null, // unlimited
@@ -103,7 +102,7 @@ return [
         ],
         'features' => [
             'Everything in Pro',
-            'Team member management (3–50 seats)',
+            'Team member management (2–50 seats)',
             'Shared projects with role-based access',
             'Full audit log & compliance exports',
             'Unlimited activity history',
@@ -118,11 +117,11 @@ return [
     */
     'enterprise' => [
         'name' => 'Enterprise',
-        'description' => 'Custom scale with SLA & dedicated support',
+        'description' => 'For organizations that need SSO, SLAs, and a dedicated support line.',
         'stripe_price_monthly' => env('STRIPE_PRICE_ENTERPRISE'),
         'stripe_price_annual' => env('STRIPE_PRICE_ENTERPRISE_ANNUAL'),
-        'price_monthly' => env('PLAN_ENTERPRISE_PRICE_MONTHLY', 99),
-        'price_annual' => env('PLAN_ENTERPRISE_PRICE_ANNUAL', 990),
+        'price_monthly' => env('PLAN_ENTERPRISE_PRICE_MONTHLY'),
+        'price_annual' => env('PLAN_ENTERPRISE_PRICE_ANNUAL'),
         'per_seat' => true,
         'min_seats' => 10,
         'limits' => [
@@ -135,10 +134,10 @@ return [
         'features' => [
             'Everything in Team',
             'Unlimited seats',
-            'SSO/SAML (when available)',
+            'Enterprise SSO (SAML 2.0)',
             'Custom integrations',
             'Dedicated support',
-            'SLA guarantee',
+            'Uptime SLA with credits',
         ],
     ],
 
@@ -159,7 +158,7 @@ return [
     |--------------------------------------------------------------------------
     */
     'trial' => [
-        'enabled' => env('TRIAL_ENABLED', false),
+        'enabled' => env('TRIAL_ENABLED', true),
         'days' => env('TRIAL_DAYS', 14),
         'tier' => 'pro', // which tier to grant during trial
     ],

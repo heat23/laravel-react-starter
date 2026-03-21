@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Listeners\SendEmailVerificationNotification;
+use App\Listeners\StartUserTrial;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -15,6 +16,7 @@ class EventServiceProvider extends ServiceProvider
         // command from ever delivering the mail channel copy to newly-verified users.
         Registered::class => [
             SendEmailVerificationNotification::class,
+            StartUserTrial::class,
         ],
     ];
 

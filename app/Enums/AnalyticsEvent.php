@@ -23,6 +23,7 @@ enum AnalyticsEvent: string
     // Trial
     case TRIAL_STARTED = 'trial.started';
     case TRIAL_CONVERTED = 'trial.converted';
+    case TRIAL_EXPIRED = 'trial.expired';
 
     // Billing
     case SUBSCRIPTION_CREATED = 'subscription.created';
