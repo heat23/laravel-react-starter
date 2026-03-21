@@ -418,6 +418,26 @@ print_header "Initialization Complete!"
 
 echo -e "${GREEN}Your project '$APP_NAME' is ready!${NC}"
 echo ""
+echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${YELLOW}  ⚠  IMPORTANT: Legal Content${NC}"
+echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+echo "  The Terms of Service and Privacy Policy pages contain TEMPLATE PLACEHOLDER TEXT."
+echo "  Before deploying to production:"
+echo "  1. Replace resources/js/Components/legal/LegalContent.tsx with your actual legal content"
+echo "  2. Consult a lawyer to draft terms appropriate for your SaaS"
+echo "  3. Remove the TemplateDisclaimer component from LegalContent.tsx"
+echo "  4. Replace public/images/og-default.png with your actual Open Graph image (1200x630px)"
+echo ""
+
+echo -ne "${BOLD}Have you acknowledged the legal content requirement?${NC} [y/N]: "
+read -r legal_ack
+legal_ack=${legal_ack:-n}
+if [ "$legal_ack" != "y" ] && [ "$legal_ack" != "Y" ]; then
+    print_warning "Reminder noted. You can continue but MUST replace legal content before going live."
+fi
+echo ""
+
 echo "Next steps:"
 echo ""
 echo -e "  ${BOLD}1. Start development server:${NC}"

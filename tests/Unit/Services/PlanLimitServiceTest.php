@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\PersistAuditLog;
 use App\Models\User;
 use App\Services\PlanLimitService;
 use Carbon\Carbon;
@@ -63,15 +64,17 @@ it('uses default 14 days when trial days not configured', function () {
     Carbon::setTestNow();
 });
 
-it('overwrites existing trial_ends_at', function () {
+it('does not overwrite existing trial_ends_at (idempotent guard)', function () {
     Carbon::setTestNow('2024-06-01 00:00:00');
     config(['plans.trial.days' => 30]);
-    $user = User::factory()->create(['trial_ends_at' => now()->subDays(10)]);
+    $existingEndsAt = now()->subDays(10);
+    $user = User::factory()->create(['trial_ends_at' => $existingEndsAt]);
 
     $this->service->startTrial($user);
 
     $user->refresh();
-    expect($user->trial_ends_at->format('Y-m-d H:i:s'))->toBe('2024-07-01 00:00:00');
+    // whereNull guard prevents overwriting an already-started trial
+    expect($user->trial_ends_at->format('Y-m-d H:i:s'))->toBe($existingEndsAt->format('Y-m-d H:i:s'));
 
     Carbon::setTestNow();
 });
@@ -367,8 +370,8 @@ it('emits approaching_limit event at 80% usage', function () {
     Queue::fake();
     $this->service->canPerform($user, 'api_tokens', 8);
 
-    Queue::assertPushed(\App\Jobs\PersistAuditLog::class, function ($job) {
-        $reflection = new \ReflectionClass($job);
+    Queue::assertPushed(PersistAuditLog::class, function ($job) {
+        $reflection = new ReflectionClass($job);
         $eventProp = $reflection->getProperty('event');
         $eventProp->setAccessible(true);
 
@@ -383,8 +386,8 @@ it('emits threshold_100 event at 100% usage', function () {
     Queue::fake();
     $this->service->canPerform($user, 'api_tokens', 5);
 
-    Queue::assertPushed(\App\Jobs\PersistAuditLog::class, function ($job) {
-        $reflection = new \ReflectionClass($job);
+    Queue::assertPushed(PersistAuditLog::class, function ($job) {
+        $reflection = new ReflectionClass($job);
         $eventProp = $reflection->getProperty('event');
         $eventProp->setAccessible(true);
 
@@ -399,8 +402,8 @@ it('emits threshold_50 event at 50% usage', function () {
     Queue::fake();
     $this->service->canPerform($user, 'api_tokens', 5);
 
-    Queue::assertPushed(\App\Jobs\PersistAuditLog::class, function ($job) {
-        $reflection = new \ReflectionClass($job);
+    Queue::assertPushed(PersistAuditLog::class, function ($job) {
+        $reflection = new ReflectionClass($job);
         $eventProp = $reflection->getProperty('event');
         $eventProp->setAccessible(true);
 
@@ -415,7 +418,7 @@ it('does not emit threshold events when under 50%', function () {
     Queue::fake();
     $this->service->canPerform($user, 'api_tokens', 4);
 
-    Queue::assertNotPushed(\App\Jobs\PersistAuditLog::class);
+    Queue::assertNotPushed(PersistAuditLog::class);
 });
 
 it('gives team subscription user team tier limits', function () {

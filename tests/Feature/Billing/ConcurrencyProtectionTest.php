@@ -122,7 +122,7 @@ it('billing service throws ConcurrentOperationException when lock is held', func
         $service->cancelSubscription($user);
         $this->fail('Expected ConcurrentOperationException was not thrown');
     } catch (ConcurrentOperationException $e) {
-        expect($e->getMessage())->toBe('Another operation is already in progress. Please try again.');
+        expect($e->getMessage())->toBe('A subscription operation is already in progress. Please try again.');
     } finally {
         $lock->release();
     }
