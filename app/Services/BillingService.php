@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\LifecycleStage;
 use App\Exceptions\ConcurrentOperationException;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
@@ -63,7 +64,7 @@ class BillingService
         int $quantity = 1,
     ): Subscription {
         return $this->withLock("subscription:create:{$user->id}", function () use ($user, $priceId, $paymentMethod, $coupon, $quantity) {
-            return DB::transaction(function () use ($user, $priceId, $paymentMethod, $coupon, $quantity) {
+            $subscription = DB::transaction(function () use ($user, $priceId, $paymentMethod, $coupon, $quantity) {
                 $builder = $user->newSubscription('default', $priceId)->quantity($quantity);
 
                 if ($coupon) {
@@ -76,6 +77,14 @@ class BillingService
 
                 return $builder->create();
             });
+
+            // After subscription creation, transition user to paying stage
+            try {
+                app(LifecycleService::class)->transition($user, LifecycleStage::PAYING, 'subscription_created');
+            } catch (\Throwable) {
+            }
+
+            return $subscription;
         });
     }
 
@@ -85,7 +94,7 @@ class BillingService
     public function cancelSubscription(User $user, bool $immediately = false): Subscription
     {
         return $this->withLock("subscription:cancel:{$user->id}", function () use ($user, $immediately) {
-            return DB::transaction(function () use ($user, $immediately) {
+            $subscription = DB::transaction(function () use ($user, $immediately) {
                 $subscription = $user->subscription('default');
                 $subscription->setRelation('owner', $user);
                 $subscription->loadMissing('items');
@@ -97,6 +106,14 @@ class BillingService
 
                 return $subscription->cancel();
             });
+
+            // Transition user to churned stage
+            try {
+                app(LifecycleService::class)->transition($user, LifecycleStage::CHURNED, 'subscription_cancelled');
+            } catch (\Throwable) {
+            }
+
+            return $subscription;
         });
     }
 
@@ -120,16 +137,18 @@ class BillingService
     /**
      * Swap the subscription to a new plan/price.
      */
-    public function swapPlan(User $user, string $newPriceId): Subscription
+    public function swapPlan(User $user, string $newPriceId, ?string $coupon = null): Subscription
     {
-        return $this->withLock("subscription:swap:{$user->id}", function () use ($user, $newPriceId) {
-            return DB::transaction(function () use ($user, $newPriceId) {
+        return $this->withLock("subscription:swap:{$user->id}", function () use ($user, $newPriceId, $coupon) {
+            return DB::transaction(function () use ($user, $newPriceId, $coupon) {
                 $subscription = $user->subscription('default');
                 $subscription->setRelation('owner', $user);
                 $subscription->loadMissing('items');
                 $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
 
-                return $subscription->swap($newPriceId);
+                $builder = $coupon ? $subscription->withCoupon($coupon) : $subscription;
+
+                return $builder->swap($newPriceId);
             });
         });
     }

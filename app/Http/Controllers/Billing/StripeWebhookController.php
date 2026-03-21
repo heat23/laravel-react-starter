@@ -2,15 +2,21 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Enums\LifecycleStage;
+use App\Models\EmailSendLog;
+use App\Models\Subscription;
 use App\Models\User;
+use App\Notifications\InvoluntaryChurnWinBackNotification;
+use App\Notifications\PaymentActionRequiredNotification;
 use App\Notifications\PaymentFailedNotification;
+use App\Notifications\PaymentRecoveredNotification;
 use App\Notifications\RefundProcessedNotification;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
+use App\Services\LifecycleService;
 use App\Services\PlanLimitService;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Http\Controllers\WebhookController;
-use Laravel\Cashier\Subscription;
 use Symfony\Component\HttpFoundation\Response;
 
 class StripeWebhookController extends WebhookController
@@ -75,8 +81,25 @@ class StripeWebhookController extends WebhookController
     {
         $response = parent::handleCustomerSubscriptionDeleted($payload);
 
-        $this->logWebhookEvent('subscription.deleted', $payload);
+        $cancellationReason = $payload['data']['object']['cancellation_details']['reason'] ?? null;
+        $churnType = $cancellationReason === 'payment_failed' ? 'involuntary' : 'voluntary';
+
+        $this->logWebhookEvent('subscription.deleted', $payload, [
+            'churn_type' => $churnType,
+        ]);
         $this->invalidatePlanCache($payload);
+
+        // Dispatch win-back notification for involuntary churn (payment failure exhaustion)
+        if ($cancellationReason === 'payment_failed') {
+            $customerId = $payload['data']['object']['customer'] ?? null;
+            if ($customerId) {
+                $user = User::where('stripe_id', $customerId)->first();
+                if ($user && ! EmailSendLog::alreadySent($user->id, 'involuntary_churn_win_back', 1)) {
+                    $user->notify((new InvoluntaryChurnWinBackNotification)->delay(now()->addDays(3)));
+                    EmailSendLog::record($user->id, 'involuntary_churn_win_back', 1);
+                }
+            }
+        }
 
         return $response;
     }
@@ -91,6 +114,25 @@ class StripeWebhookController extends WebhookController
     protected function handleInvoicePaymentSucceeded(array $payload): Response
     {
         $this->logWebhookEvent('invoice.payment_succeeded', $payload);
+
+        $customerId = $payload['data']['object']['customer'] ?? null;
+        $subscriptionId = $payload['data']['object']['subscription'] ?? null;
+        $invoiceId = $payload['data']['object']['id'] ?? '';
+
+        if ($customerId && $subscriptionId) {
+            $user = User::where('stripe_id', $customerId)->first();
+            if ($user) {
+                // Clear past_due_since to stop dunning sequence
+                $subscription = Subscription::where('stripe_id', $subscriptionId)->first();
+                if ($subscription && $subscription->past_due_since !== null) {
+                    $subscription->past_due_since = null;
+                    $subscription->save();
+
+                    // Only notify when recovering from a past-due state
+                    $user->notify(new PaymentRecoveredNotification(invoiceId: $invoiceId));
+                }
+            }
+        }
 
         return $this->successMethod();
     }
@@ -107,6 +149,22 @@ class StripeWebhookController extends WebhookController
                     invoiceId: $payload['data']['object']['id'] ?? '',
                     subscriptionId: $payload['data']['object']['subscription'] ?? '',
                 ));
+
+                // Transition to at_risk lifecycle stage
+                try {
+                    app(LifecycleService::class)->transition($user, LifecycleStage::AT_RISK, 'invoice_payment_failed');
+                } catch (\Throwable) {
+                }
+
+                // Stamp past_due_since on the subscription so dunning uses reliable timing
+                $stripeSubscriptionId = $payload['data']['object']['subscription'] ?? null;
+                if ($stripeSubscriptionId) {
+                    $subscription = Subscription::where('stripe_id', $stripeSubscriptionId)->first();
+                    if ($subscription && $subscription->past_due_since === null) {
+                        $subscription->past_due_since = now();
+                        $subscription->save();
+                    }
+                }
             }
         }
 
@@ -116,6 +174,20 @@ class StripeWebhookController extends WebhookController
     protected function handleInvoicePaymentActionRequired(array $payload): Response
     {
         $this->logWebhookEvent('invoice.payment_action_required', $payload);
+
+        $customerId = $payload['data']['object']['customer'] ?? null;
+        $hostedInvoiceUrl = $payload['data']['object']['hosted_invoice_url'] ?? null;
+        $invoiceId = $payload['data']['object']['id'] ?? '';
+
+        if ($customerId && $hostedInvoiceUrl) {
+            $user = User::where('stripe_id', $customerId)->first();
+            if ($user) {
+                $user->notify(new PaymentActionRequiredNotification(
+                    hostedInvoiceUrl: $hostedInvoiceUrl,
+                    invoiceId: $invoiceId,
+                ));
+            }
+        }
 
         return $this->successMethod();
     }
@@ -167,7 +239,10 @@ class StripeWebhookController extends WebhookController
         }
     }
 
-    private function logWebhookEvent(string $action, array $payload): void
+    /**
+     * @param  array<string, mixed>  $extraMeta
+     */
+    private function logWebhookEvent(string $action, array $payload, array $extraMeta = []): void
     {
         $stripeCustomerId = $payload['data']['object']['customer']
             ?? $payload['data']['object']['id']
@@ -179,11 +254,11 @@ class StripeWebhookController extends WebhookController
         ]);
 
         try {
-            app(AuditService::class)->log("stripe.{$action}", [
+            app(AuditService::class)->log("stripe.{$action}", array_merge([
                 'event_id' => $payload['id'] ?? null,
                 'event_type' => $payload['type'] ?? null,
                 'stripe_customer' => $stripeCustomerId,
-            ]);
+            ], $extraMeta));
         } catch (\Throwable) {
             // Audit logging should never break webhook processing
         }

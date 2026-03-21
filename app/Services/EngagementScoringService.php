@@ -140,15 +140,18 @@ class EngagementScoringService
         $score = 0;
 
         if ($settingsCount > 0) {
-            $score += 8;
+            $score += 3;
         }
 
         if ($tokenCount > 0) {
-            $score += 9;
+            $score += 10;
+            if ($tokenCount > 4) {
+                $score += 3;
+            }
         }
 
         if ($webhookCount > 0) {
-            $score += 8;
+            $score += 12;
         }
 
         return min(25, $score);

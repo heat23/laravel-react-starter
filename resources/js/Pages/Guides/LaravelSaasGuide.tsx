@@ -15,6 +15,7 @@ import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
+import { GuideCta } from '@/Components/marketing/GuideCta';
 import type { GuidePageProps } from '@/types/index';
 
 const sections: TocSection[] = [
@@ -151,7 +152,7 @@ export default function LaravelSaasGuide({ title, metaDescription, appName, brea
                                 </p>
                                 <p>
                                     Full disclosure: the author built a{' '}
-                                    <Link href="/" className="text-primary hover:underline">
+                                    <Link href="/pricing" className="text-primary hover:underline">
                                         production-ready Laravel SaaS starter kit
                                     </Link>{' '}
                                     that implements every pattern described in this guide. This article explains the decisions
@@ -353,6 +354,11 @@ export default function LaravelSaasGuide({ title, metaDescription, appName, brea
                                     into your UI and webhook handling.
                                 </p>
 
+                                <GuideCta
+                                  headline="Production-grade billing without the 2-week implementation"
+                                  description="Laravel React Starter ships with Redis-locked subscription mutations, concurrent payment protection, and dunning emails — already integrated and tested."
+                                />
+
                                 {/* Section 4: Feature Flags */}
                                 <h2 id="feature-flags">4. Feature Flags</h2>
                                 <p>
@@ -436,6 +442,13 @@ export default function LaravelSaasGuide({ title, metaDescription, appName, brea
                                     charts, A/B test results. Those come later, when you have enough data to make them useful.
                                     Start with the operational tools that help you support customers and keep the lights on.
                                 </p>
+
+                                <GuideCta
+                                  headline="Admin panel included — user management, health monitoring, audit logs"
+                                  description="The admin panel in this starter is React + TypeScript throughout — no Filament context switch. Ships with 90+ tests covering the admin layer."
+                                  linkText="See the admin panel"
+                                  href="/features/admin-panel"
+                                />
 
                                 {/* Section 6: Testing Strategy */}
                                 <h2 id="testing-strategy">6. Testing Strategy for a SaaS Codebase</h2>

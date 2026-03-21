@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Models\EmailSendLog;
 use App\Models\User;
 use App\Models\UserSetting;
 use App\Notifications\ReEngagementNotification;
+use App\Services\EngagementScoringService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -15,12 +17,18 @@ class SendReEngagementEmails extends Command
 
     protected $description = 'Send re-engagement emails to inactive users (7, 14, 21, 30 days)';
 
+    public function __construct(
+        private EngagementScoringService $engagementService,
+    ) {
+        parent::__construct();
+    }
+
     /** @var array<int, array{days: int, maxDays: int}> */
     private const EMAIL_SCHEDULE = [
         1 => ['days' => 7, 'maxDays' => 9],
         2 => ['days' => 14, 'maxDays' => 16],
-        3 => ['days' => 30, 'maxDays' => 35],
-        4 => ['days' => 21, 'maxDays' => 23],
+        3 => ['days' => 21, 'maxDays' => 23],
+        4 => ['days' => 30, 'maxDays' => 35],
     ];
 
     public function handle(): int
@@ -60,7 +68,10 @@ class SendReEngagementEmails extends Command
                         ->where('created_at', '>', now()->subDays($maxDays));
                 });
             })
+            ->with('subscriptions')
             ->get();
+
+        $scores = $this->engagementService->scoreBatch($users);
 
         $sent = 0;
 
@@ -79,15 +90,23 @@ class SendReEngagementEmails extends Command
             }
 
             $isPaidUser = $this->hasPaidSubscription($user);
+            $score = $scores[$user->id] ?? 0;
+
+            // Email 3 is reserved for paid users only; skip free users entirely
+            if ($emailNumber === 3 && ! $isPaidUser) {
+                continue;
+            }
 
             try {
-                $user->notify(new ReEngagementNotification($emailNumber, $isPaidUser));
+                $user->notify(new ReEngagementNotification($emailNumber, $isPaidUser, $score));
+                EmailSendLog::record($user->id, 're_engagement', $emailNumber);
                 $sent++;
 
                 Log::info('Re-engagement email sent', [
                     'user_id' => $user->id,
                     'email_number' => $emailNumber,
                     'is_paid' => $isPaidUser,
+                    'score' => $score,
                 ]);
             } catch (\Exception $e) {
                 Log::error('Failed to send re-engagement email', [
@@ -108,10 +127,10 @@ class SendReEngagementEmails extends Command
     private function hasReengaged(User $user, int $emailNumber): bool
     {
         $priorEmailNumber = $emailNumber - 1;
-        $priorEmailSentAt = $user->notifications()
-            ->where('type', ReEngagementNotification::class)
-            ->where('data', 'like', '%"email_number":'.$priorEmailNumber.'%')
-            ->value('created_at');
+        $priorEmailSentAt = EmailSendLog::where('user_id', $user->id)
+            ->where('sequence_type', 're_engagement')
+            ->where('email_number', $priorEmailNumber)
+            ->value('sent_at');
 
         if (! $priorEmailSentAt) {
             return false;
@@ -126,6 +145,10 @@ class SendReEngagementEmails extends Command
     {
         if (! config('features.billing.enabled', false)) {
             return false;
+        }
+
+        if ($user->relationLoaded('subscriptions')) {
+            return $user->subscriptions->whereIn('stripe_status', ['active', 'trialing'])->isNotEmpty();
         }
 
         return DB::table('subscriptions')
@@ -143,9 +166,6 @@ class SendReEngagementEmails extends Command
 
     private function alreadySentEmail(User $user, int $emailNumber): bool
     {
-        return $user->notifications()
-            ->where('type', ReEngagementNotification::class)
-            ->where('data', 'like', '%"email_number":'.$emailNumber.'%')
-            ->exists();
+        return EmailSendLog::alreadySent($user->id, 're_engagement', $emailNumber);
     }
 }

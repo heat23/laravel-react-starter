@@ -165,7 +165,7 @@ describe('Pricing Page', () => {
 
       const links = screen.getAllByRole('link', { name: /get started/i });
       links.forEach((link) => {
-        expect(link).toHaveAttribute('href', '/register');
+        expect(link).toHaveAttribute('href', expect.stringContaining('/register'));
       });
     });
 

@@ -2,7 +2,11 @@
 
 namespace App\Providers;
 
+use App\Events\LeadQualifiedEvent;
+use App\Events\PqlThresholdReached;
+use App\Listeners\LeadQualifiedListener;
 use App\Listeners\SendEmailVerificationNotification;
+use App\Listeners\SendPqlUpgradeNudge;
 use App\Listeners\StartUserTrial;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -17,6 +21,12 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
             StartUserTrial::class,
+        ],
+        PqlThresholdReached::class => [
+            SendPqlUpgradeNudge::class,
+        ],
+        LeadQualifiedEvent::class => [
+            LeadQualifiedListener::class,
         ],
     ];
 

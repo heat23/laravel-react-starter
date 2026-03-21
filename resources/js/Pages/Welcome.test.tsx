@@ -215,7 +215,7 @@ describe('Welcome', () => {
       expect(screen.getByText(/built for builders/i)).toBeInTheDocument();
       expect(screen.getByText('Solo founders')).toBeInTheDocument();
       expect(screen.getByText('Small teams')).toBeInTheDocument();
-      expect(screen.getByText('Agencies')).toBeInTheDocument();
+      expect(screen.getByText('Agencies & freelancers')).toBeInTheDocument();
     });
   });
 

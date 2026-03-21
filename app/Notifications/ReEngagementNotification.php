@@ -14,6 +14,7 @@ class ReEngagementNotification extends Notification implements ShouldQueue
     public function __construct(
         public readonly int $emailNumber,
         public readonly bool $isPaidUser = false,
+        public readonly int $userScore = 0,
     ) {}
 
     /**
@@ -32,6 +33,11 @@ class ReEngagementNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        // High-intent users (score ≥60) get upgrade-CTA variant for email 1 and 2
+        if ($this->userScore >= 60 && in_array($this->emailNumber, [1, 2], true)) {
+            return $this->upgradeCtaVariant($notifiable);
+        }
+
         return match ($this->emailNumber) {
             1 => $this->gentleCheckIn($notifiable),
             2 => $this->feedbackRequest($notifiable),
@@ -39,6 +45,20 @@ class ReEngagementNotification extends Notification implements ShouldQueue
             4 => $this->valueTip($notifiable),
             default => $this->gentleCheckIn($notifiable),
         };
+    }
+
+    private function upgradeCtaVariant(object $notifiable): MailMessage
+    {
+        $appName = config('app.name');
+        $pricingUrl = route('pricing').'?utm_source=email&utm_campaign=reengagement_upgrade&utm_content=email_'.$this->emailNumber;
+
+        return (new MailMessage)
+            ->subject("You were close — here's what you were building")
+            ->greeting("Hi {$notifiable->name}!")
+            ->line("It's been a while since you visited {$appName}. You were building something real — your activity shows it.")
+            ->line("You're using more of {$appName} than most free users. A Pro upgrade would remove the limits you've hit.")
+            ->action('See what Pro unlocks', $pricingUrl)
+            ->line('Questions? Reply to this email — we read every response.');
     }
 
     private function dashboardUrl(string $campaign, int $emailNumber): string

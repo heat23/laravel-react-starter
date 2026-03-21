@@ -158,6 +158,7 @@ if (config('features.billing.enabled', false)) {
         Route::post('/billing/swap', [SubscriptionController::class, 'swap'])->middleware('throttle:5,1')->name('billing.swap');
         Route::post('/billing/quantity', [SubscriptionController::class, 'updateQuantity'])->middleware('throttle:5,1')->name('billing.quantity');
         Route::post('/billing/payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->middleware('throttle:5,1')->name('billing.payment-method');
+        Route::post('/billing/retention-coupon', [SubscriptionController::class, 'applyRetentionCoupon'])->middleware('throttle:3,60')->name('billing.retention-coupon');
         Route::get('/billing/portal', [SubscriptionController::class, 'portal'])->name('billing.portal');
     });
 

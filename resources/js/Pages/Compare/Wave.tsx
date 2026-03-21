@@ -18,6 +18,8 @@ export default function Wave({
   features,
   breadcrumbs,
   canonicalUrl,
+  lastVerified,
+  relatedComparisons,
 }: ComparisonPageProps) {
   const { track } = useAnalytics();
 
@@ -99,6 +101,12 @@ export default function Wave({
                   themName="Wave"
                 />
               </div>
+              {lastVerified && (
+                <p className="mt-3 text-center text-xs text-muted-foreground">
+                  Comparison data verified {lastVerified === '2026-03' ? 'March 2026' : lastVerified}.
+                  Verify at source before purchasing — competitor features change frequently.
+                </p>
+              )}
             </section>
 
             {/* When to choose Wave */}
@@ -149,6 +157,25 @@ export default function Wave({
                 See the admin panel →
               </Link>
             </div>
+
+            {/* Also compare */}
+            {relatedComparisons && relatedComparisons.length > 0 && (
+              <section className="mt-12">
+                <h2 className="text-lg font-semibold">Also compare</h2>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {relatedComparisons.slice(0, 6).map((comp) => (
+                    <Link
+                      key={comp.slug}
+                      href={`/compare/${comp.slug}`}
+                      className="rounded-xl border border-border/70 bg-card p-4 text-sm hover:border-primary/30 transition-colors"
+                    >
+                      <p className="font-medium">{comp.name}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{comp.tagline}</p>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* CTA */}
             <section className="mt-12 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AnalyticsEvent;
+use App\Events\PqlThresholdReached;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
@@ -130,7 +131,42 @@ class PlanLimitService
 
         $this->checkThresholds($user, $limitKey, $currentCount, $limit);
 
-        return $currentCount < $limit;
+        $allowed = $currentCount < $limit;
+
+        if (! $allowed && app()->bound('session.store')) {
+            try {
+                session()->flash('upgrade_prompt', [
+                    'limit' => $limitKey,
+                    'plan' => 'pro',
+                    'cta_url' => config('features.billing.enabled', false) ? route('pricing') : '/pricing',
+                ]);
+            } catch (\Throwable) {
+                // Session may not be available in CLI/queue contexts
+            }
+        }
+
+        return $allowed;
+    }
+
+    /**
+     * Get the current usage percentage for a limit key (0–100), or null if unlimited.
+     */
+    public function getUsagePercent(User $user, string $limitKey): ?int
+    {
+        $limit = $this->getLimit($user, $limitKey);
+
+        if ($limit === null || $limit <= 0) {
+            return null;
+        }
+
+        // Determine current count based on limit key
+        $currentCount = match ($limitKey) {
+            'api_tokens' => $user->tokens()->count(),
+            'webhook_endpoints' => $user->webhookEndpoints()->count(),
+            default => 0,
+        };
+
+        return (int) min(100, round(($currentCount / $limit) * 100));
     }
 
     /**
@@ -166,6 +202,8 @@ class PlanLimitService
                     'current' => $currentCount,
                     'max' => $limit,
                 ]);
+
+                PqlThresholdReached::dispatch($user, $limitKey, $percentage, $threshold);
 
                 break;
             }

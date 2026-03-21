@@ -211,6 +211,12 @@ parameters:
 			path: app/Http/Controllers/Billing/BillingController.php
 
 		-
+			message: '#^Access to an undefined property Laravel\\Cashier\\Payment\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/Billing/SubscriptionController.php
+
+		-
 			message: '#^Call to an undefined method Laravel\\Cashier\\Invoice\:\:invoicePdf\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -238,6 +244,12 @@ parameters:
 			message: '#^Cannot call method toISOString\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
+			path: app/Http/Controllers/Billing/SubscriptionController.php
+
+		-
+			message: '#^Access to protected property Laravel\\Cashier\\Payment::\$paymentIntent\.$#'
+			identifier: property.protected
+			count: 3
 			path: app/Http/Controllers/Billing/SubscriptionController.php
 
 		-

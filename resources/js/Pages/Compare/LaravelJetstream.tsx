@@ -18,6 +18,8 @@ export default function LaravelJetstream({
   features,
   breadcrumbs,
   canonicalUrl,
+  lastVerified,
+  relatedComparisons,
 }: ComparisonPageProps) {
   const { track } = useAnalytics();
 
@@ -104,6 +106,12 @@ export default function LaravelJetstream({
                   themName="Laravel Jetstream"
                 />
               </div>
+              {lastVerified && (
+                <p className="mt-3 text-center text-xs text-muted-foreground">
+                  Comparison data verified {lastVerified === '2026-03' ? 'March 2026' : lastVerified}.
+                  Verify at source before purchasing — competitor features change frequently.
+                </p>
+              )}
             </section>
 
             {/* When to choose Jetstream */}
@@ -153,12 +161,32 @@ export default function LaravelJetstream({
               </p>
             </section>
 
+            {/* Also compare */}
+            {relatedComparisons && relatedComparisons.length > 0 && (
+              <section className="mt-12">
+                <h2 className="text-lg font-semibold">Also compare</h2>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {relatedComparisons.slice(0, 6).map((comp) => (
+                    <Link
+                      key={comp.slug}
+                      href={`/compare/${comp.slug}`}
+                      className="rounded-xl border border-border/70 bg-card p-4 text-sm hover:border-primary/30 transition-colors"
+                    >
+                      <p className="font-medium">{comp.name}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{comp.tagline}</p>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* ROI framing */}
             <section className="mt-12 rounded-2xl border border-border bg-muted/40 p-8">
               <h2 className="text-xl font-bold">The Inertia React setup you were going to build anyway</h2>
               <p className="mt-3 text-muted-foreground">
                 Jetstream gives you auth scaffolding. You still need to wire up billing, admin,
-                notifications, API docs, and onboarding. That&apos;s 2&ndash;3 weeks of setup.
+                notifications, API docs, and onboarding. That&apos;s 2&ndash;3 weeks of setup
+                (~$12,000–$24,000 at $75/hr, or weeks of your own time).
                 We&apos;ve done it. The question is whether your time is worth more than the
                 template price.
               </p>

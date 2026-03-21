@@ -10,6 +10,7 @@ import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
+import { GuideCta } from '@/Components/marketing/GuideCta';
 import type { GuidePageProps } from '@/types/index';
 
 const sections: TocSection[] = [
@@ -381,6 +382,11 @@ public function cancel(User $user): void
                                     </em>
                                 </p>
 
+                                <GuideCta
+                                  headline="Billing wired up and tested — out of the box"
+                                  description="Laravel React Starter ships with Redis-locked subscription mutations, concurrent payment protection, and 90+ tests covering the billing layer."
+                                />
+
                                 {/* Section 5 */}
                                 <h2 id="webhook-handling">5. Webhook Handling &mdash; The Events That Matter</h2>
                                 <p>
@@ -508,6 +514,13 @@ $subscriptions = Subscription::whereIn('stripe_status', ['incomplete', 'past_due
 foreach ($subscriptions as $subscription) {
     $subscription->owner->notify(new IncompletePaymentReminder($subscription));
 }`}</code></pre>
+
+                                <GuideCta
+                                  headline="Skip the dunning boilerplate"
+                                  description="Incomplete payment reminders at 1h and 12h, retry logic, and dunning emails are already built and tested in this starter."
+                                  linkText="See what's included"
+                                  href="/"
+                                />
 
                                 {/* Section 7 */}
                                 <h2 id="testing-billing">7. Testing Billing Code</h2>

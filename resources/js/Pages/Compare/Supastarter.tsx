@@ -18,6 +18,8 @@ export default function Supastarter({
   features,
   breadcrumbs,
   canonicalUrl,
+  lastVerified,
+  relatedComparisons,
 }: ComparisonPageProps) {
   const { track } = useAnalytics();
 
@@ -100,6 +102,12 @@ export default function Supastarter({
                   themName="Supastarter"
                 />
               </div>
+              {lastVerified && (
+                <p className="mt-3 text-center text-xs text-muted-foreground">
+                  Comparison data verified {lastVerified === '2026-03' ? 'March 2026' : lastVerified}.
+                  Verify at source before purchasing — competitor features change frequently.
+                </p>
+              )}
             </section>
 
             {/* When to choose Supastarter */}
@@ -142,21 +150,40 @@ export default function Supastarter({
               </p>
             </section>
 
+            {/* Also compare */}
+            {relatedComparisons && relatedComparisons.length > 0 && (
+              <section className="mt-12">
+                <h2 className="text-lg font-semibold">Also compare</h2>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {relatedComparisons.slice(0, 6).map((comp) => (
+                    <Link
+                      key={comp.slug}
+                      href={`/compare/${comp.slug}`}
+                      className="rounded-xl border border-border/70 bg-card p-4 text-sm hover:border-primary/30 transition-colors"
+                    >
+                      <p className="font-medium">{comp.name}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{comp.tagline}</p>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+
             {/* CTA */}
             <section className="mt-16 rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-              <h2 className="text-2xl font-bold">Ship your SaaS faster</h2>
+              <h2 className="text-2xl font-bold">Supastarter is ~$299. This starter is a one-time fee.</h2>
               <p className="mt-2 text-muted-foreground">
-                Own your backend. React + TypeScript + Laravel &mdash; no vendor lock-in.
+                Own your backend. React + TypeScript + Laravel &mdash; no Supabase vendor lock-in.
               </p>
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                 <Button asChild size="lg">
-                  <Link href="/">
-                    Get started
+                  <Link href="/pricing">
+                    View pricing
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
-                  <Link href="/pricing">View pricing</Link>
+                  <Link href="/">Get started</Link>
                 </Button>
               </div>
               <div className="mt-4">

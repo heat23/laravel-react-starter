@@ -17,12 +17,17 @@ Schedule::command('prune-read-notifications')->daily()->onOneServer();
 Schedule::command('emails:send-welcome-sequence')->dailyAt('09:00');
 Schedule::command('notifications:send-onboarding')->dailyAt('11:00');
 Schedule::command('emails:send-re-engagement')->weekly()->mondays()->at('09:00');
+Schedule::command('emails:qualify-leads')->dailyAt('07:00')->onOneServer();
 
 if (config('features.billing.enabled', false)) {
     Schedule::command('subscriptions:check-incomplete')->hourly();
     Schedule::command('emails:send-trial-nudges')->dailyAt('10:00');
     Schedule::command('notifications:send-dunning')->daily();
+    Schedule::command('emails:send-win-back')->dailyAt('10:30');
+    Schedule::command('trial:send-reminders')->dailyAt('09:30');
 }
+
+Schedule::command('users:compute-scores')->dailyAt('02:00');
 
 if (config('features.admin.enabled', false)) {
     Schedule::command('admin:health-alert')->everyFifteenMinutes();

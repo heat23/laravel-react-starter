@@ -50,6 +50,11 @@ enum AdminCacheKey: string
     case PRODUCT_ANALYTICS_ONBOARDING_FUNNEL = 'admin:product_analytics:onboarding_funnel';
     case PRODUCT_ANALYTICS_FEATURE_ADOPTION = 'admin:product_analytics:feature_adoption';
 
+    // Lifecycle / CRM
+    case STAGE_FUNNEL = 'admin:lifecycle:stage_funnel';
+    case STAGE_VELOCITY = 'admin:lifecycle:stage_velocity';
+    case LEAD_SCORES = 'admin:lifecycle:lead_scores';
+
     /** Default TTL in seconds for most admin caches. */
     public const DEFAULT_TTL = 300;
 

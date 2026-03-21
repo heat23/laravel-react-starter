@@ -167,9 +167,8 @@ class SubscriptionController extends Controller
             return back()->with('error', 'A subscription request is already in progress. Please try again.');
         } catch (IncompletePayment $e) {
             // Subscription created in incomplete state (3DS/SCA required).
-            // Redirect to billing.index which surfaces the incompletePayment UI with the confirm URL.
-            return redirect()->route('billing.index')
-                ->with('info', 'Your payment requires additional verification. Please complete the confirmation below.');
+            // Redirect to Cashier's hosted payment confirmation page for the user to authenticate.
+            return redirect()->route('cashier.payment', ['id' => $e->payment->id]);
         } catch (ApiErrorException $e) {
             Log::error('Stripe API error during subscription creation', [
                 'user_id' => $user->id,
@@ -203,6 +202,7 @@ class SubscriptionController extends Controller
                 'immediately' => $immediately,
                 'reason' => $request->validated('reason'),
                 'feedback' => $request->validated('feedback'),
+                'churn_type' => 'voluntary',
             ], fn ($v) => $v !== null));
 
             $this->planLimitService->invalidateUserPlanCache($user);
@@ -296,9 +296,10 @@ class SubscriptionController extends Controller
         }
 
         $newPriceId = $request->validated('price_id');
+        $coupon = $request->validated('coupon');
 
         try {
-            $this->billingService->swapPlan($user, $newPriceId);
+            $this->billingService->swapPlan($user, $newPriceId, $coupon);
 
             $newTier = $this->billingService->resolveTierFromPrice($newPriceId) ?? 'unknown';
 
@@ -315,9 +316,8 @@ class SubscriptionController extends Controller
         } catch (ConcurrentOperationException) {
             return back()->with('error', 'A plan change is already in progress. Please try again.');
         } catch (IncompletePayment $e) {
-            // Subscription requires 3DS/SCA — redirect to billing page which surfaces the incomplete payment UI.
-            return redirect()->route('billing.index')
-                ->with('info', 'Your payment requires additional verification. Please complete the confirmation below.');
+            // Subscription requires 3DS/SCA — redirect to Cashier's hosted payment confirmation page.
+            return redirect()->route('cashier.payment', ['id' => $e->payment->id]);
         } catch (ApiErrorException $e) {
             Log::error('Stripe API error during plan swap', [
                 'user_id' => $user->id,
@@ -361,9 +361,8 @@ class SubscriptionController extends Controller
         } catch (ConcurrentOperationException) {
             return back()->with('error', 'A quantity update is already in progress. Please try again.');
         } catch (IncompletePayment $e) {
-            // Subscription requires 3DS/SCA — redirect to billing page which surfaces the incomplete payment UI.
-            return redirect()->route('billing.index')
-                ->with('info', 'Your payment requires additional verification. Please complete the confirmation below.');
+            // Subscription requires 3DS/SCA — redirect to Cashier's hosted payment confirmation page.
+            return redirect()->route('cashier.payment', ['id' => $e->payment->id]);
         } catch (ApiErrorException $e) {
             Log::error('Stripe API error during quantity update', [
                 'user_id' => $user->id,
@@ -399,6 +398,58 @@ class SubscriptionController extends Controller
             ]);
 
             return back()->with('error', $this->friendlyStripeError($e));
+        }
+    }
+
+    public function applyRetentionCoupon(Request $request): RedirectResponse|JsonResponse
+    {
+        $user = $request->user();
+        $user->loadMissing('subscriptions.items');
+
+        $couponId = config('plans.retention_coupon_id');
+
+        if (! $couponId) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Retention coupon is not configured.'], 422);
+            }
+
+            return back()->with('error', 'Retention coupon is not configured.');
+        }
+
+        $subscription = $user->subscription('default');
+
+        if (! $subscription || ! $subscription->active()) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'No active subscription found.'], 400);
+            }
+
+            return back()->with('error', 'No active subscription found.');
+        }
+
+        try {
+            $subscription->applyCoupon($couponId);
+
+            $this->auditService->log('retention_coupon_applied', [
+                'user_id' => $user->id,
+                'coupon_id' => $couponId,
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Discount applied! Your 20% discount has been added to your subscription.']);
+            }
+
+            return back()->with('success', 'Discount applied successfully.');
+        } catch (ApiErrorException $e) {
+            Log::error('Stripe API error applying retention coupon', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Unable to apply discount. Please contact support.'], 500);
+            }
+
+            return back()->with('error', 'Unable to apply discount. Please try again or contact support.');
         }
     }
 

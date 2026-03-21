@@ -3,6 +3,7 @@ import { Activity, CreditCard, Shield, TrendingUp, Users } from "lucide-react";
 import { Head, Link } from "@inertiajs/react";
 
 import { AdminAreaChart } from "@/Components/admin/AdminCharts";
+import { AdminFunnelChart } from "@/Components/admin/AdminFunnelChart";
 import { AdminStatsGrid, type StatCard } from "@/Components/admin/AdminStatsGrid";
 import PageHeader from "@/Components/layout/PageHeader";
 import { Badge } from "@/Components/ui/badge";
@@ -13,7 +14,7 @@ import AdminLayout from "@/Layouts/AdminLayout";
 import { formatRelativeTime } from "@/lib/format";
 import type { AdminDashboardProps } from "@/types/admin";
 
-export default function AdminDashboard({ stats, signup_chart, recent_activity }: AdminDashboardProps) {
+export default function AdminDashboard({ stats, signup_chart, recent_activity, stage_funnel }: AdminDashboardProps) {
   const statCards: StatCard[] = [
     { title: "Total Users", value: stats.total_users, icon: Users, description: "All registered users", href: "/admin/users" },
     { title: "New (7d)", value: stats.new_users_7d, icon: TrendingUp, description: "Signups this week", href: "/admin/users?sort=created_at&dir=desc" },
@@ -57,6 +58,19 @@ export default function AdminDashboard({ stats, signup_chart, recent_activity }:
             />
           </CardContent>
         </Card>
+
+        {/* Lifecycle Funnel */}
+        {stage_funnel && stage_funnel.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>User Lifecycle Funnel</CardTitle>
+              <CardDescription>Distribution of users across lifecycle stages</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AdminFunnelChart stages={stage_funnel} />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Recent Activity */}
         <Card>

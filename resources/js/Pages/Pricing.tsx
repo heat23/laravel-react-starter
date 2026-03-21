@@ -1,9 +1,10 @@
-import { CheckCircle2, Lock, RefreshCcw, ShieldCheck, Sparkles } from 'lucide-react';
+import { CheckCircle2, ChevronDown, Lock, RefreshCcw, ShieldCheck, Sparkles, Tag } from 'lucide-react';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { Head, Link, router, usePage } from '@inertiajs/react';
 
+import { SwapConfirmDialog } from '@/Components/billing/SwapConfirmDialog';
 import { AnnouncementBanner, type AnnouncementBannerProps } from '@/Components/layout/AnnouncementBanner';
 import PageHeader from '@/Components/layout/PageHeader';
 import { FaqAccordion } from '@/Components/marketing/FaqAccordion';
@@ -33,6 +34,7 @@ interface TierConfig {
   price_annual?: number | null;
   stripe_price_id?: string | null;
   stripe_price_id_annual?: string | null;
+  self_serve?: boolean;
   per_seat?: boolean;
   min_seats?: number | null;
   coming_soon?: boolean;
@@ -116,13 +118,40 @@ export default function Pricing() {
     );
   }, [tierEntries]);
 
+  const urlParams = typeof window !== 'undefined'
+    ? new URLSearchParams(window.location.search)
+    : new URLSearchParams();
+  const urlPlan = urlParams.get('plan');
+  const urlBilling = urlParams.get('billing') as 'monthly' | 'annual' | null;
+
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>(
-    () =>
-      Object.values(tiers).some((t) => t.price_annual && t.price_annual > 0)
+    () => {
+      if (urlBilling && ['monthly', 'annual'].includes(urlBilling)) return urlBilling;
+      return Object.values(tiers).some((t) => t.price_annual && t.price_annual > 0)
         ? 'annual'
-        : 'monthly'
+        : 'monthly';
+    }
   );
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+  const [couponCode, setCouponCode] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('coupon') ?? '';
+    }
+    return '';
+  });
+  const [couponVisible, setCouponVisible] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!new URLSearchParams(window.location.search).get('coupon');
+    }
+    return false;
+  });
+  const couponInputRef = useRef<HTMLInputElement>(null);
+  const [swapTarget, setSwapTarget] = useState<{
+    planKey: string;
+    tierName: string;
+    priceId: string | null | undefined;
+    priceLabel: string;
+  } | null>(null);
 
   const annualSavingsPercent = useMemo(() => {
     const proTier = tiers.pro;
@@ -173,29 +202,83 @@ export default function Pricing() {
       billing_period: billingPeriod as BillingPeriod,
     });
 
+    if (isSubscribed) {
+      // Open confirmation dialog before swapping to prevent accidental proration charges
+      const pricing = getPrice(tier);
+      setSwapTarget({
+        planKey,
+        tierName: tier.name,
+        priceId,
+        priceLabel: pricing.label,
+      });
+      return;
+    }
+
     setCheckoutLoading(planKey);
 
-    if (isSubscribed) {
-      router.post(
-        route('billing.swap'),
-        { price_id: priceId },
-        { onFinish: () => setCheckoutLoading(null) }
-      );
-    } else {
-      // New subscribers go through Stripe Checkout hosted page for card collection.
-      // Server creates a Checkout session and redirects via Inertia::location().
-      router.post(
-        route('billing.checkout'),
-        {
-          price_id: priceId,
-          quantity: tier.per_seat && tier.min_seats ? tier.min_seats : 1,
-        },
-        { onFinish: () => setCheckoutLoading(null) }
-      );
-    }
+    // New subscribers go through Stripe Checkout hosted page for card collection.
+    // Server creates a Checkout session and redirects via Inertia::location().
+    router.post(
+      route('billing.checkout'),
+      {
+        price_id: priceId,
+        quantity: tier.per_seat && tier.min_seats ? tier.min_seats : 1,
+        coupon: couponCode.trim() || undefined,
+      },
+      { onFinish: () => setCheckoutLoading(null) }
+    );
   };
 
   const salesEmail = contactEmail ?? 'hello@example.com';
+
+  const licenseFaqSchema = JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'Can I use this for client projects?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Yes. A single license covers one production deployment — your own SaaS or a client project.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'How many projects can I deploy with one license?',
+        acceptedAnswer: { '@type': 'Answer', text: 'One license = one production domain.' },
+      },
+      {
+        '@type': 'Question',
+        name: 'Is there a special agency license?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Not yet — agencies typically buy one license per client project at the standard price.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Can I white-label it for a client?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: "Yes. You can replace the branding and ship it under your client's brand.",
+        },
+      },
+    ],
+  }).replace(/<\/script>/gi, '<\\/script>');
+
+  const swapDialog = swapTarget && (
+    <SwapConfirmDialog
+      open={!!swapTarget}
+      onOpenChange={(open) => { if (!open) setSwapTarget(null); }}
+      targetPlanKey={swapTarget.planKey}
+      targetTierName={swapTarget.tierName}
+      priceId={swapTarget.priceId}
+      priceLabel={swapTarget.priceLabel}
+      currentPlanName={currentPlan ? tiers[currentPlan]?.name : undefined}
+      couponCode={couponCode}
+    />
+  );
 
   const content = (
     <>
@@ -203,6 +286,10 @@ export default function Pricing() {
         <meta
           name="description"
           content="Start free, upgrade when you're ready. Simple per-seat pricing for Laravel React Starter — no credit card required to begin."
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: licenseFaqSchema }}
         />
       </Head>
       <PageHeader
@@ -281,21 +368,63 @@ export default function Pricing() {
             </Alert>
           )}
 
+          {/* Promo code input — collapsible, pre-filled from ?coupon= URL param */}
+          <div className="flex justify-center">
+            <div className="w-full max-w-sm">
+              <button
+                type="button"
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => {
+                  setCouponVisible((v) => !v);
+                  setTimeout(() => couponInputRef.current?.focus(), 50);
+                }}
+              >
+                <Tag className="h-3.5 w-3.5" />
+                {couponCode ? `Promo code: ${couponCode}` : 'Have a promo code?'}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${couponVisible ? 'rotate-180' : ''}`} />
+              </button>
+              {couponVisible && (
+                <div className="mt-2 flex gap-2">
+                  <input
+                    ref={couponInputRef}
+                    type="text"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value)}
+                    placeholder="Enter promo code"
+                    className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                    aria-label="Promo code"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCouponVisible(false)}
+                    className="rounded-md border border-input px-3 py-1.5 text-sm hover:bg-muted transition-colors"
+                  >
+                    Apply
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {tierEntries.map(([key, tier]) => {
               const isCurrent = currentPlan === key;
               const isEnterprise = tier.price === null || tier.price === undefined;
+              const isIntendedPlan = auth.user && urlPlan === key && !isCurrent;
               const pricing = getPrice(tier);
 
               return (
                 <Card
                   key={key}
+                  id={`plan-${key}`}
                   className={
                     isCurrent
                       ? 'border-primary shadow-md'
-                      : tier.popular
-                        ? 'ring-2 ring-primary shadow-lg md:scale-[1.02] md:z-10'
-                        : ''
+                      : isIntendedPlan
+                        ? 'ring-2 ring-success shadow-lg md:scale-[1.02] md:z-10'
+                        : tier.popular
+                          ? 'ring-2 ring-primary shadow-lg md:scale-[1.02] md:z-10'
+                          : ''
                   }
                   onMouseEnter={() => {
                     if (!isCurrent && !isEnterprise && key !== 'free') {
@@ -307,7 +436,14 @@ export default function Pricing() {
                   }}
                 >
                   <CardHeader>
-                    {tier.popular && !isCurrent && !tier.coming_soon && (
+                    {isIntendedPlan && (
+                      <div className="mb-2">
+                        <Badge variant="success" className="bg-success text-success-foreground">
+                          Complete your upgrade
+                        </Badge>
+                      </div>
+                    )}
+                    {!isIntendedPlan && tier.popular && !isCurrent && !tier.coming_soon && (
                       <div className="mb-2">
                         <Badge variant="default" className="bg-primary text-primary-foreground">
                           Most Popular
@@ -375,7 +511,24 @@ export default function Pricing() {
                     </ul>
 
                     <div className="pt-2">
-                      {isEnterprise ? (
+                      {isEnterprise && tier.self_serve && auth.user ? (
+                        // Enterprise self-serve: show checkout button + contact sales as secondary
+                        <div className="space-y-2">
+                          <LoadingButton
+                            className="w-full"
+                            onClick={() => handleCheckout(key)}
+                            loading={checkoutLoading === key}
+                            loadingText="Processing..."
+                          >
+                            Self-Serve Checkout ({tier.min_seats}+ seats)
+                          </LoadingButton>
+                          <Button asChild className="w-full" variant="ghost" size="sm">
+                            <a href={`mailto:${salesEmail}`} className="text-muted-foreground">
+                              Contact Sales instead
+                            </a>
+                          </Button>
+                        </div>
+                      ) : isEnterprise ? (
                         <Button asChild className="w-full" variant="outline">
                           <a href={`mailto:${salesEmail}`}>Contact Sales</a>
                         </Button>
@@ -383,7 +536,13 @@ export default function Pricing() {
                         <>
                           {!auth.user && (
                             <Button asChild className="w-full">
-                              <Link href="/register">
+                              <Link
+                                href={
+                                  key !== 'free'
+                                    ? `/register?plan=${key}&billing=${billingPeriod}`
+                                    : '/register'
+                                }
+                              >
                                 {key === 'pro' && trialEnabled
                                   ? `Start ${trialDays}-Day Free Trial`
                                   : 'Get Started'}
@@ -479,6 +638,37 @@ export default function Pricing() {
             </Link>
           </p>
 
+          {/* License FAQ */}
+          <div className="pt-6">
+            <h2 className="mb-6 text-center text-2xl font-bold">
+              License &amp; usage questions
+            </h2>
+            <FaqAccordion
+              faqs={[
+                {
+                  question: 'Can I use this for client projects?',
+                  answer:
+                    'Yes. A single license covers one production deployment — your own SaaS or a client project. Each additional deployment for a separate client requires its own license.',
+                },
+                {
+                  question: 'How many projects can I deploy with one license?',
+                  answer:
+                    'One license = one production domain. There is no limit on staging or development environments. If you build and hand off a project to a client, that client takes over the license — you need a new license to start your next project.',
+                },
+                {
+                  question: 'Is there a special agency license?',
+                  answer:
+                    'Not yet — agencies typically buy one license per client project at the standard price. If you deploy more than three projects per year, reach out and we can discuss volume pricing.',
+                },
+                {
+                  question: 'Can I white-label it for a client?',
+                  answer:
+                    'Yes. You can replace the branding, rename the project, and ship it under your client\'s brand. Attribution in the source code is not required. The code you deliver becomes part of your client\'s codebase — they do not need their own license.',
+                },
+              ]}
+            />
+          </div>
+
           {/* FAQ */}
           <div className="pt-6">
             <h2 className="mb-6 text-center text-2xl font-bold">
@@ -497,6 +687,7 @@ export default function Pricing() {
       <DashboardLayout>
         {announcementBanner && <AnnouncementBanner {...announcementBanner} />}
         {content}
+        {swapDialog}
       </DashboardLayout>
     );
   }

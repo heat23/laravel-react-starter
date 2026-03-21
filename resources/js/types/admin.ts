@@ -395,10 +395,21 @@ export interface AdminDashboardStats {
 // Page Props (one per admin page)
 // ---------------------------------------------------------------------------
 
+export interface LifecycleFunnelStage {
+  stage: string;
+  label: string;
+  count: number;
+}
+
 export interface AdminDashboardProps {
   stats: AdminDashboardStats;
   signup_chart: ChartDataPoint[];
   recent_activity: AuditLogSummary[];
+  stage_funnel?: LifecycleFunnelStage[];
+  retention_stats?: {
+    d7_retention: number;
+    d30_retention: number;
+  };
 }
 
 export interface AdminUsersIndexProps {

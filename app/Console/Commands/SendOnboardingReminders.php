@@ -3,10 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Models\AuditLog;
+use App\Models\EmailSendLog;
 use App\Models\User;
 use App\Models\UserSetting;
 use App\Notifications\OnboardingReminderNotification;
-use App\Notifications\WelcomeSequenceNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
@@ -73,6 +73,7 @@ class SendOnboardingReminders extends Command
 
             try {
                 $user->notify(new OnboardingReminderNotification($emailNumber, $ctaUrl));
+                EmailSendLog::record($user->id, 'onboarding_reminder', $emailNumber);
                 $sent++;
 
                 Log::info('Onboarding reminder sent', [
@@ -130,22 +131,13 @@ class SendOnboardingReminders extends Command
 
     private function alreadySentEmail(User $user, int $emailNumber): bool
     {
-        $reminderSent = $user->notifications()
-            ->where('type', OnboardingReminderNotification::class)
-            ->where('data', 'like', '%"email_number":'.$emailNumber.'%')
-            ->exists();
-
-        if ($reminderSent) {
+        if (EmailSendLog::alreadySent($user->id, 'onboarding_reminder', $emailNumber)) {
             return true;
         }
 
-        // Skip email_number=1 if welcome sequence email #2 (day-1 tips) already sent
-        // to avoid duplicate '3 things to do' message
+        // Skip onboarding email 1 if welcome sequence email 2 was already sent (cross-sequence dedup)
         if ($emailNumber === 1) {
-            return $user->notifications()
-                ->where('type', WelcomeSequenceNotification::class)
-                ->where('data', 'like', '%"email_number":2%')
-                ->exists();
+            return EmailSendLog::alreadySent($user->id, 'welcome_sequence', 2);
         }
 
         return false;

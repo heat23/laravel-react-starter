@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\EmailSendLog;
 use App\Models\User;
 use App\Models\UserSetting;
 use App\Notifications\TrialNudgeNotification;
@@ -60,6 +61,7 @@ class SendTrialNudges extends Command
 
             try {
                 $user->notify(new TrialNudgeNotification($emailNumber, $user->trial_ends_at));
+                EmailSendLog::record($user->id, 'trial_nudge', $emailNumber);
                 $sent++;
 
                 Log::info('Trial nudge email sent', [
@@ -93,9 +95,6 @@ class SendTrialNudges extends Command
 
     private function alreadySentEmail(User $user, int $emailNumber): bool
     {
-        return $user->notifications()
-            ->where('type', TrialNudgeNotification::class)
-            ->where('data', 'like', '%"email_number":'.$emailNumber.'%')
-            ->exists();
+        return EmailSendLog::alreadySent($user->id, 'trial_nudge', $emailNumber);
     }
 }

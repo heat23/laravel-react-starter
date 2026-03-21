@@ -2,11 +2,12 @@
 
 namespace App\Console\Commands;
 
+use App\Models\EmailSendLog;
+use App\Models\Subscription;
 use App\Models\User;
 use App\Notifications\DunningReminderNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use Laravel\Cashier\Subscription;
 
 class SendDunningReminders extends Command
 {
@@ -44,8 +45,9 @@ class SendDunningReminders extends Command
     private function sendEmailNumber(int $emailNumber, int $minDays, int $maxDays): int
     {
         $subscriptions = Subscription::where('stripe_status', 'past_due')
-            ->where('updated_at', '<=', now()->subDays($minDays))
-            ->where('updated_at', '>', now()->subDays($maxDays))
+            ->whereNotNull('past_due_since')
+            ->where('past_due_since', '<=', now()->subDays($minDays))
+            ->where('past_due_since', '>', now()->subDays($maxDays))
             ->with('user')
             ->get();
 
@@ -67,6 +69,7 @@ class SendDunningReminders extends Command
 
             try {
                 $user->notify(new DunningReminderNotification($emailNumber, $planName));
+                EmailSendLog::record($user->id, 'dunning_reminder', $emailNumber);
                 $sent++;
 
                 Log::info('Dunning reminder sent', [
@@ -89,10 +92,7 @@ class SendDunningReminders extends Command
 
     private function alreadySentEmail(User $user, int $emailNumber): bool
     {
-        return $user->notifications()
-            ->where('type', DunningReminderNotification::class)
-            ->where('data', 'like', '%"email_number":'.$emailNumber.'%')
-            ->exists();
+        return EmailSendLog::alreadySent($user->id, 'dunning_reminder', $emailNumber);
     }
 
     private function resolvePlanName(Subscription $subscription): string

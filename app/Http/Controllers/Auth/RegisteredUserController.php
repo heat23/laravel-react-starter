@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\LifecycleStage;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
+use App\Models\UserSetting;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
+use App\Services\LifecycleService;
 use App\Services\PlanLimitService;
 use App\Services\SessionDataMigrationService;
 use Illuminate\Auth\Events\Registered;
@@ -115,8 +118,43 @@ class RegisteredUserController extends Controller
 
         Auth::login($user, $request->boolean('remember', false));
 
-        $this->auditService->logRegistration($user);
+        // Lifecycle stage assignment
+        try {
+            $stage = $this->planLimitService->isTrialEnabled() && $user->trial_ends_at
+                ? LifecycleStage::TRIAL
+                : LifecycleStage::VISITOR;
+            app(LifecycleService::class)->transition($user, $stage, 'registration');
+        } catch (\Throwable $e) {
+            Log::error('lifecycle_transition_failed_on_registration', ['user_id' => $user->id, 'error' => $e->getMessage()]);
+        }
+
+        // Persist first-touch UTM attribution captured by CaptureUtmParameters middleware
+        $utmData = session('utm_data');
+        if (is_array($utmData)) {
+            foreach ($utmData as $key => $value) {
+                UserSetting::setValue($user->id, $key, $value);
+            }
+        }
+
+        $this->auditService->logRegistration($user, array_merge(
+            ['plan_intent' => $request->query('plan')],
+            is_array($utmData) ? $utmData : []
+        ));
         $this->cacheInvalidation->invalidateOnRegistration();
+
+        // Preserve plan intent: if user came from a pricing page plan CTA, redirect
+        // back to pricing with that plan pre-selected so they can complete checkout.
+        $plan = $request->query('plan');
+        $billing = $request->query('billing');
+
+        if ($plan && in_array($plan, ['pro', 'team', 'enterprise'], true)) {
+            $params = ['plan' => $plan];
+            if ($billing && in_array($billing, ['monthly', 'annual'], true)) {
+                $params['billing'] = $billing;
+            }
+
+            return redirect()->route('pricing', $params);
+        }
 
         return redirect(route('dashboard', absolute: false));
     }

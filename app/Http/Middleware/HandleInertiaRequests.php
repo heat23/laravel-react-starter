@@ -74,6 +74,17 @@ class HandleInertiaRequests extends Middleware
         });
     }
 
+    private function getPqlThreshold(User $user): ?int
+    {
+        $warnings = $this->getLimitWarnings($user);
+        if (empty($warnings)) {
+            return null;
+        }
+        $maxThreshold = max(array_column($warnings, 'threshold'));
+
+        return $maxThreshold >= 80 ? $maxThreshold : null;
+    }
+
     private function hasUnreadChangelog(object $user): bool
     {
         $latestVersion = ChangelogController::latestVersion();
@@ -201,6 +212,9 @@ class HandleInertiaRequests extends Middleware
             // PQL limit warnings — only computed when billing is enabled and user is authenticated.
             // Cached per-user with a 60-second TTL to avoid query overhead on every request.
             'limit_warnings' => $user && $features['billing'] ? fn () => $this->getLimitWarnings($user) : null,
+            // Highest PQL threshold percentage (80 or 100) for any limit nearing its cap.
+            // Used by frontend to surface upgrade prompts. Null when billing is off or no warnings.
+            'pql_threshold' => $user && $features['billing'] ? fn () => $this->getPqlThreshold($user) : null,
         ];
     }
 }

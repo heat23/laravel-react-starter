@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\EmailSendLog;
 use App\Models\User;
 use App\Models\UserSetting;
 use App\Notifications\WelcomeSequenceNotification;
@@ -36,6 +37,11 @@ class SendWelcomeSequence extends Command
 
     private function sendEmailNumber(int $emailNumber, int $minDays, int $maxDays): int
     {
+        // When onboarding feature is enabled, emails 2 & 3 overlap with onboarding reminders — skip
+        if ($emailNumber > 1 && config('features.onboarding.enabled', false)) {
+            return 0;
+        }
+
         $query = User::query()
             ->whereNotNull('email_verified_at');
 
@@ -58,6 +64,7 @@ class SendWelcomeSequence extends Command
 
             try {
                 $user->notify(new WelcomeSequenceNotification($emailNumber));
+                EmailSendLog::record($user->id, 'welcome_sequence', $emailNumber);
                 $sent++;
 
                 Log::info('Welcome sequence email sent', [
@@ -85,9 +92,6 @@ class SendWelcomeSequence extends Command
 
     private function alreadySentEmail(User $user, int $emailNumber): bool
     {
-        return $user->notifications()
-            ->where('type', WelcomeSequenceNotification::class)
-            ->where('data->email_number', $emailNumber)
-            ->exists();
+        return EmailSendLog::alreadySent($user->id, 'welcome_sequence', $emailNumber);
     }
 }

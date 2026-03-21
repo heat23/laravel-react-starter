@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminCacheKey;
+use App\Enums\LifecycleStage;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
@@ -59,11 +60,26 @@ class AdminDashboardController extends Controller
             ->get()
             ->map(fn (AuditLog $log) => $log->toSummaryArray());
 
+        $stageFunnel = Cache::remember(AdminCacheKey::STAGE_FUNNEL->value, AdminCacheKey::DEFAULT_TTL, function () {
+            $stages = LifecycleStage::funnelOrder();
+            $counts = User::whereNull('deleted_at')
+                ->selectRaw('lifecycle_stage, COUNT(*) as count')
+                ->groupBy('lifecycle_stage')
+                ->pluck('count', 'lifecycle_stage');
+
+            return collect($stages)->map(fn ($stage) => [
+                'stage' => $stage->value,
+                'label' => $stage->label(),
+                'count' => (int) ($counts[$stage->value] ?? 0),
+            ])->values()->all();
+        });
+
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
             'retention_stats' => $retentionStats,
             'signup_chart' => $signupChart,
             'recent_activity' => $recentActivity,
+            'stage_funnel' => $stageFunnel,
         ]);
     }
 }

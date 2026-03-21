@@ -6,6 +6,7 @@ use App\Enums\AdminCacheKey;
 use App\Models\AuditLog;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Laravel\Cashier\Subscription;
@@ -39,6 +40,17 @@ class CustomerHealthService
             + $this->featureAdoptionScore($user)
             + $this->billingStatusScore($user)
             + $this->profileCompletionScore($user);
+    }
+
+    /**
+     * Warm internal caches for a batch of users before calling calculateHealthScore.
+     * This pre-populates login counts and billing status to avoid N+1 queries.
+     */
+    public function primeHealthScoreCaches(Collection $users): void
+    {
+        $userIds = $users->pluck('id')->all();
+        $this->primeLoginCountCache($userIds);
+        $this->primeBillingCache($userIds);
     }
 
     /**
@@ -260,23 +272,30 @@ class CustomerHealthService
     }
 
     /**
-     * Feature adoption score (0-25 points).
-     * Based on breadth of feature usage.
+     * Feature adoption score (0–25 points).
+     *
+     * Weights mirror EngagementScoringService::featureAdoptionScoreFromCounts()
+     * to maintain consistent score-to-conversion correlation across both services.
+     * Updated 2026-03: webhooks 12 pts, tokens 10 pts base (+3 depth ≥5), settings 3 pts.
      */
     private function featureAdoptionScore(User $user): int
     {
         $score = 0;
 
-        if ($user->settings_count > 0) {
-            $score += 8;
+        if ($user->webhook_endpoints_count > 0) {
+            $score += 12;
         }
 
         if ($user->tokens_count > 0) {
-            $score += 8;
+            $score += 10;
         }
 
-        if ($user->webhook_endpoints_count > 0) {
-            $score += 9;
+        if ($user->tokens_count >= 5) {
+            $score += 3; // depth signal
+        }
+
+        if ($user->settings_count > 0) {
+            $score += 3;
         }
 
         return min($score, 25);

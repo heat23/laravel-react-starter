@@ -119,6 +119,17 @@ const kits: KitCard[] = [
     link: '/compare/supastarter',
     linkLabel: 'Full comparison',
   },
+  {
+    name: 'MakerKit',
+    isUs: false,
+    price: 'Subscription',
+    stack: 'Next.js + React + Supabase/Firebase',
+    billing: true,
+    tests: 'Yes',
+    openSource: false,
+    link: '/compare/makerkit',
+    linkLabel: 'Full comparison',
+  },
 ];
 
 const criteria = [
@@ -183,6 +194,7 @@ export default function CompareIndex({ title, metaDescription, appUrl, breadcrum
       { '@type': 'ListItem', position: 5, url: `${appUrl}/compare/laravel-jetstream`, name: 'Laravel React Starter vs Laravel Jetstream' },
       { '@type': 'ListItem', position: 6, url: `${appUrl}/compare/shipfast`, name: 'Laravel React Starter vs ShipFast' },
       { '@type': 'ListItem', position: 7, url: `${appUrl}/compare/supastarter`, name: 'Laravel React Starter vs SupaStarter' },
+      { '@type': 'ListItem', position: 8, url: `${appUrl}/compare/makerkit`, name: 'Laravel React Starter vs MakerKit' },
     ],
   });
 
@@ -228,7 +240,7 @@ export default function CompareIndex({ title, metaDescription, appUrl, breadcrum
               Laravel SaaS Starter Kit Comparison 2026
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-              Eight Laravel (and Laravel-adjacent) SaaS boilerplates, compared side by side.
+              Nine Laravel (and Laravel-adjacent) SaaS boilerplates, compared side by side.
               Find the right starting point for your stack, budget, and production requirements.
             </p>
             <div className="mt-6">

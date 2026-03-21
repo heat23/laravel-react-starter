@@ -109,9 +109,9 @@ const personas = [
   },
   {
     icon: Code2,
-    title: 'Agencies',
+    title: 'Agencies & freelancers',
     description:
-      'Start every client project from a tested, documented base. Feature flags let you customize scope per engagement.',
+      'Start every client deployment from a tested, documented base. Feature flags let you turn subsystems on or off per deployment — ship only what each client actually needs.',
   },
 ];
 
@@ -603,7 +603,7 @@ const Welcome: WelcomeComponent = ({
                     Without this starter
                   </div>
                   <ul className="space-y-3 text-sm text-muted-foreground">
-                    <li>2-3 months building auth, billing, admin</li>
+                    <li>2-3 months building auth, billing, admin (~$12,000–$24,000 at $75/hr)</li>
                     <li>Rolling your own rate limiting and security headers</li>
                     <li>No tests until &ldquo;later&rdquo; (never)</li>
                     <li>Race conditions in billing on day one of launch</li>
@@ -630,6 +630,60 @@ const Welcome: WelcomeComponent = ({
                     <li>Double-charge prevention on all billing operations</li>
                     <li>Toggle features off with one env var</li>
                   </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Is this right for you? */}
+          <section className="container border-t py-16">
+            <div className="mx-auto max-w-4xl">
+              <h2 className="mb-4 text-center text-2xl font-bold">
+                Is this right for you?
+              </h2>
+              <p className="mb-8 text-center text-muted-foreground">
+                This template is built for a specific type of developer. It's great for some situations and a poor fit for others.
+              </p>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="rounded-2xl border border-success/30 bg-success/5 p-6">
+                  <h3 className="mb-3 font-semibold text-success">Good fit if you…</h3>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                      Know Laravel and have shipped at least one Laravel project
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                      Are building a product that will charge users (billing matters to you)
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success" aria-hidden="true" />
+                      Want to own and deploy your own infrastructure (VPS or cloud)
+                    </li>
+                  </ul>
+                </div>
+                <div className="rounded-2xl border border-muted bg-muted/20 p-6">
+                  <h3 className="mb-3 font-semibold text-muted-foreground">Not for you if you…</h3>
+                  <ul className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <Minus className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden="true" />
+                      Prefer Livewire or Vue — the admin panel is React + TypeScript throughout
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Minus className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden="true" />
+                      Are deploying to serverless/edge (Vercel, Cloudflare Workers) — requires long-running PHP processes
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Minus className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden="true" />
+                      Need a no-code builder or a managed SaaS platform — this is source code you own and maintain
+                    </li>
+                  </ul>
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Using a different stack?{' '}
+                    <Link href="/compare" className="underline hover:text-foreground transition-colors">
+                      See alternatives →
+                    </Link>
+                  </p>
                 </div>
               </div>
             </div>

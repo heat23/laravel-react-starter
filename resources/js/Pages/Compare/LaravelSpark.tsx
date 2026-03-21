@@ -18,6 +18,8 @@ export default function LaravelSpark({
   features,
   breadcrumbs,
   canonicalUrl,
+  lastVerified,
+  relatedComparisons,
 }: ComparisonPageProps) {
   const { track } = useAnalytics();
 
@@ -104,6 +106,12 @@ export default function LaravelSpark({
                   themName="Laravel Spark"
                 />
               </div>
+              {lastVerified && (
+                <p className="mt-3 text-center text-xs text-muted-foreground">
+                  Comparison data verified {lastVerified === '2026-03' ? 'March 2026' : lastVerified}.
+                  Verify at source before purchasing — competitor features change frequently.
+                </p>
+              )}
             </section>
 
             {/* When to choose Spark */}
@@ -133,9 +141,10 @@ export default function LaravelSpark({
               <h2>When to choose Laravel React Starter</h2>
               <p>
                 Starting from zero? The one-time price versus $99 per year recurring matters
-                at early stage. After two years, the recurring cost exceeds the one-time
-                purchase &mdash; and you still need to build the admin panel, feature flags,
-                and webhooks yourself.
+                at early stage. After two years, Spark&apos;s recurring cost ($198+) exceeds the
+                one-time template purchase &mdash; and you still need to build the admin panel,
+                feature flags, and webhooks yourself (~$12,000–$24,000 at $75/hr, or 4–8 weeks
+                of your own time).
               </p>
               <p>
                 More importantly, Spark does not include an admin panel for user management,
@@ -152,6 +161,25 @@ export default function LaravelSpark({
                 Inertia props, accessible components, and dark mode support from day one.
               </p>
             </section>
+
+            {/* Also compare */}
+            {relatedComparisons && relatedComparisons.length > 0 && (
+              <section className="mt-12">
+                <h2 className="text-lg font-semibold">Also compare</h2>
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  {relatedComparisons.slice(0, 6).map((comp) => (
+                    <Link
+                      key={comp.slug}
+                      href={`/compare/${comp.slug}`}
+                      className="rounded-xl border border-border/70 bg-card p-4 text-sm hover:border-primary/30 transition-colors"
+                    >
+                      <p className="font-medium">{comp.name}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{comp.tagline}</p>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Cross-links to feature pages */}
             <div className="mt-8 flex flex-wrap gap-3 text-sm">

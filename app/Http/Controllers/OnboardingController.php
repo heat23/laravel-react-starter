@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AnalyticsEvent;
+use App\Enums\LifecycleStage;
 use App\Services\AuditService;
+use App\Services\LifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -32,6 +35,19 @@ class OnboardingController extends Controller
 
         if ($user && config('features.user_settings.enabled', true)) {
             $user->setSetting('onboarding_completed', now()->toISOString());
+        }
+
+        // Transition to activated lifecycle stage
+        if ($user) {
+            try {
+                app(LifecycleService::class)->transition(
+                    $user,
+                    LifecycleStage::ACTIVATED,
+                    'onboarding_completed'
+                );
+            } catch (\Throwable $e) {
+                Log::warning('lifecycle_transition_failed', ['user_id' => $user->id]);
+            }
         }
 
         if ($user) {
