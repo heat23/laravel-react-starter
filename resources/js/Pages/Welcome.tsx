@@ -4,6 +4,7 @@ import {
   Clock,
   Code2,
   Layers3,
+  Minus,
   Rocket,
   Shield,
   Sparkles,
@@ -121,6 +122,55 @@ const techStack = [
   'TypeScript',
   'Tailwind CSS v4',
   'Inertia.js',
+];
+
+// Comparison table data — factual and verifiable, no disparaging language
+const comparisonAlternatives = [
+  'Laravel Breeze',
+  'Jetstream',
+  'Filament Starter',
+  'SaaSyKit',
+] as const;
+
+type CellValue = 'yes' | 'no' | string;
+
+interface ComparisonRow {
+  feature: string;
+  ours: CellValue;
+  alternatives: [CellValue, CellValue, CellValue, CellValue];
+}
+
+const comparisonRows: ComparisonRow[] = [
+  {
+    feature: 'Auth + 2FA',
+    ours: 'yes',
+    alternatives: ['Auth only', 'yes', 'Via plugin', 'yes'],
+  },
+  {
+    feature: 'Billing (Redis-locked)',
+    ours: 'yes',
+    alternatives: ['no', 'no', 'no', 'Basic'],
+  },
+  {
+    feature: 'Admin panel stack',
+    ours: 'React + TypeScript',
+    alternatives: ['N/A', 'Livewire', 'Filament (Blade)', 'Mixed'],
+  },
+  {
+    feature: 'Feature flags (11)',
+    ours: 'yes',
+    alternatives: ['no', 'no', 'no', 'Limited'],
+  },
+  {
+    feature: 'Test suite (90+)',
+    ours: 'yes',
+    alternatives: ['Minimal', 'Some', 'Some', 'Some'],
+  },
+  {
+    feature: 'Production-ready',
+    ours: 'yes',
+    alternatives: ['Scaffolding', 'Scaffolding', 'Scaffolding', 'Partial'],
+  },
 ];
 
 type WelcomeComponent = ((props: WelcomeProps) => JSX.Element) & {
@@ -425,6 +475,137 @@ const Welcome: WelcomeComponent = ({
                   ))}
                 </div>
               )}
+            </div>
+          </section>
+
+          {/* Comparison Table Section */}
+          <section aria-labelledby="comparison-heading" className="container border-t py-24">
+            <div className="mx-auto max-w-5xl">
+              <h2 id="comparison-heading" className="mb-4 text-center text-3xl font-bold">
+                How it compares to alternatives
+              </h2>
+              <p className="mb-10 text-center text-muted-foreground">
+                A factual feature comparison with popular Laravel starter kits. Every claim is
+                verifiable from each project&apos;s public documentation.
+              </p>
+
+              {/* Scrollable table — horizontal scroll on mobile */}
+              <div className="overflow-x-auto rounded-2xl border border-border shadow-sm">
+                <table className="w-full min-w-[640px] text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/40">
+                      <th
+                        scope="col"
+                        className="py-3 pl-5 pr-6 text-left font-semibold text-foreground"
+                      >
+                        Feature
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-4 py-3 text-center font-semibold text-primary"
+                      >
+                        This Starter
+                      </th>
+                      {comparisonAlternatives.map((alt) => (
+                        <th
+                          key={alt}
+                          scope="col"
+                          className="px-4 py-3 text-center text-xs font-medium text-muted-foreground"
+                        >
+                          {alt}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border bg-card">
+                    {comparisonRows.map((row) => (
+                      <tr key={row.feature} className="hover:bg-muted/20 transition-colors">
+                        <th
+                          scope="row"
+                          className="py-3 pl-5 pr-6 text-left text-sm font-medium text-foreground"
+                        >
+                          {row.feature}
+                        </th>
+                        {/* Our value — always first column */}
+                        <td className="px-4 py-3 text-center">
+                          {row.ours === 'yes' ? (
+                            <span className="inline-flex items-center justify-center gap-1 font-semibold text-success">
+                              <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                              <span>Yes</span>
+                            </span>
+                          ) : (
+                            <span className="font-semibold text-foreground">{row.ours}</span>
+                          )}
+                        </td>
+                        {/* Alternative values */}
+                        {row.alternatives.map((val, i) => (
+                          <td
+                            key={i}
+                            className="px-4 py-3 text-center text-xs text-muted-foreground"
+                          >
+                            {val === 'yes' ? (
+                              <span className="inline-flex items-center justify-center gap-1 text-success">
+                                <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                                <span>Yes</span>
+                              </span>
+                            ) : val === 'no' ? (
+                              <span className="inline-flex items-center justify-center gap-1">
+                                <Minus className="h-4 w-4 shrink-0 text-muted-foreground/50" aria-hidden="true" />
+                                <span>No</span>
+                              </span>
+                            ) : (
+                              <span>{val}</span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="mt-4 text-center text-xs text-muted-foreground">
+                Claims reflect each project&apos;s publicly documented features as of early 2026.{' '}
+                <Link href="/compare" className="font-medium text-primary hover:underline">
+                  See detailed per-kit breakdowns →
+                </Link>
+              </p>
+
+              {/* Anti-positioning callout */}
+              <div className="mt-10 rounded-2xl border border-border/70 bg-muted/30 p-6 md:p-8">
+                <h3 className="mb-3 text-lg font-semibold">This is not a managed platform</h3>
+                <ul className="space-y-2 text-sm text-muted-foreground">
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span>
+                      <strong className="text-foreground">Source code you own.</strong>{' '}
+                      No runtime dependency on a third-party service. Clone it, extend it,
+                      deploy it on your own infrastructure.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span>
+                      <strong className="text-foreground">Not a no-code builder.</strong>{' '}
+                      It assumes you know Laravel and React. The value is skipping the two
+                      weeks of infrastructure setup — not abstracting the code away.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span>
+                      <strong className="text-foreground">Built for developers who want control.</strong>{' '}
+                      You understand every line. When Laravel releases a major version or Stripe
+                      changes its API, you decide when and how to update.
+                    </span>
+                  </li>
+                </ul>
+                <p className="mt-4 text-sm">
+                  <Link href="/about" className="font-medium text-primary hover:underline">
+                    Read the full philosophy →
+                  </Link>
+                </p>
+              </div>
             </div>
           </section>
 
