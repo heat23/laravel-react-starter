@@ -31,6 +31,7 @@ export const AnalyticsEvents = {
   BILLING_SUBSCRIPTION_CANCELED: 'billing.subscription_canceled',
   BILLING_SUBSCRIPTION_RESUMED: 'billing.subscription_resumed',
   BILLING_PLAN_SWAPPED: 'billing.plan_swapped',
+  BILLING_PAYMENT_FAILED: 'billing.payment_failed',
 
   // Feature usage — all features use FEATURE_USED with feature_name property
   FEATURE_USED: 'feature.used',
@@ -39,6 +40,8 @@ export const AnalyticsEvents = {
   // Engagement
   ENGAGEMENT_PAGE_VIEWED: 'engagement.page_viewed',
   ENGAGEMENT_RETURN_VISIT: 'engagement.return_visit',
+  ENGAGEMENT_CTA_CLICKED: 'engagement.cta_clicked',
+  ENGAGEMENT_SOCIAL_PROOF_VIEWED: 'engagement.social_proof_viewed',
   CONTACT_FORM_SUBMITTED: 'engagement.contact_form_submitted',
 
   // Limit thresholds
@@ -46,12 +49,38 @@ export const AnalyticsEvents = {
   LIMIT_THRESHOLD_80: 'limit.threshold_80',
   LIMIT_THRESHOLD_100: 'limit.threshold_100',
 
+  // Activation
+  ACTIVATION_MILESTONE: 'activation.milestone',
+
   // Errors
   ERROR_PAGE_VIEWED: 'error.page_viewed',
 } as const;
 
 export type AnalyticsEventName =
   (typeof AnalyticsEvents)[keyof typeof AnalyticsEvents];
+
+/**
+ * Returns true the first time a feature is used on this browser, false
+ * on subsequent calls. Backed by localStorage so it persists across sessions.
+ *
+ * Resets on browser data clear — acceptable for activation metrics (a
+ * returning user on a new browser counts as a first use, minor overcounting).
+ *
+ * Usage: track(AnalyticsEvents.FEATURE_USED, { feature_name: 'api_token', is_first_use: isFirstUse('api_token') })
+ */
+export function isFirstUse(featureName: string): boolean {
+  const key = `analytics_first_use_${featureName}`;
+  try {
+    if (localStorage.getItem(key) !== null) {
+      return false;
+    }
+    localStorage.setItem(key, '1');
+    return true;
+  } catch {
+    // localStorage unavailable — treat as first use to avoid silent undercounting
+    return true;
+  }
+}
 
 /** Valid Stripe billing periods. */
 export type BillingPeriod = 'monthly' | 'annual';
@@ -81,13 +110,17 @@ export type EventPropertyMap = {
   [AnalyticsEvents.BILLING_SUBSCRIPTION_CANCELED]: { reason?: string } | undefined;
   [AnalyticsEvents.BILLING_SUBSCRIPTION_RESUMED]: { plan?: PlanKey } | undefined;
   [AnalyticsEvents.BILLING_PLAN_SWAPPED]: { from_plan?: string; to_plan?: string } | undefined;
-  [AnalyticsEvents.FEATURE_USED]: { feature_name: string };
+  [AnalyticsEvents.BILLING_PAYMENT_FAILED]: { reason?: string } | undefined;
+  [AnalyticsEvents.FEATURE_USED]: { feature_name: string; is_first_use?: boolean };
   [AnalyticsEvents.FEATURE_SETTINGS_UPDATED]: { setting_key?: string } | undefined;
-  [AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED]: { page: string };
+  [AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED]: { page: string; section?: string };
   [AnalyticsEvents.ENGAGEMENT_RETURN_VISIT]: { days_since_last_visit?: number } | undefined;
+  [AnalyticsEvents.ENGAGEMENT_CTA_CLICKED]: { source: string; label?: string; page?: string };
+  [AnalyticsEvents.ENGAGEMENT_SOCIAL_PROOF_VIEWED]: Record<string, never> | undefined;
   [AnalyticsEvents.CONTACT_FORM_SUBMITTED]: Record<string, never>;
   [AnalyticsEvents.LIMIT_THRESHOLD_50]: { resource: string; current_value: number };
   [AnalyticsEvents.LIMIT_THRESHOLD_80]: { resource: string; current_value: number };
   [AnalyticsEvents.LIMIT_THRESHOLD_100]: { resource: string; current_value: number };
+  [AnalyticsEvents.ACTIVATION_MILESTONE]: { trigger: string };
   [AnalyticsEvents.ERROR_PAGE_VIEWED]: { error_code: number; error_title?: string };
 };

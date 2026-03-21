@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AnalyticsEvent;
+use App\Jobs\DispatchAnalyticsEvent;
 use App\Jobs\PersistAuditLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +11,22 @@ use Illuminate\Support\Facades\Log;
 
 class AuditService
 {
+    /**
+     * High-value server-side events forwarded to GA4 via Measurement Protocol.
+     * Keep this list intentionally small — only lifecycle events with clear
+     * product impact. Admin-only events should NOT go to GA4.
+     */
+    private const GA4_FORWARDED_EVENTS = [
+        'auth.register',
+        'auth.login',
+        'auth.social_login',
+        'subscription.created',
+        'subscription.canceled',
+        'limit.threshold_50',
+        'limit.threshold_80',
+        'limit.threshold_100',
+    ];
+
     public function logLogin(?User $user = null): void
     {
         $user = $user ?? Auth::user();
@@ -94,5 +111,11 @@ class AuditService
             'metadata' => $metadata,
             'timestamp' => now()->toISOString(),
         ]);
+
+        // Forward high-value lifecycle events to GA4 via Measurement Protocol (async job).
+        // userId must be non-null — anonymous events have no GA4 client_id anchor.
+        if ($userId !== null && in_array($event, self::GA4_FORWARDED_EVENTS, true)) {
+            DispatchAnalyticsEvent::dispatch($event, $metadata, $userId);
+        }
     }
 }

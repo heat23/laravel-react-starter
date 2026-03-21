@@ -66,4 +66,23 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | GA4 Measurement Protocol (Server-Side Analytics)
+    |--------------------------------------------------------------------------
+    |
+    | Forwards high-value server-side events (subscription lifecycle, auth,
+    | PQL limit signals) to GA4. Disabled by default — opt-in per environment.
+    |
+    | measurement_id: G-XXXXXXXXXX (from GA4 > Admin > Data Streams)
+    | api_secret:     from GA4 > Admin > Data Streams > Measurement Protocol API secrets
+    |
+    */
+
+    'ga4' => [
+        'measurement_id' => env('GA4_MEASUREMENT_ID'),
+        'api_secret' => env('GA4_API_SECRET'),
+        'enabled' => env('GA4_MEASUREMENT_PROTOCOL_ENABLED', false),
+    ],
+
 ];

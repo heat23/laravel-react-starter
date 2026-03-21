@@ -25,14 +25,31 @@ function isGtagAvailable(): boolean {
 }
 
 /**
+ * Pre-consent event queue.
+ * Events tracked before consent is granted are stored here (max 20) and
+ * flushed when the user accepts cookies. Prevents silent event loss in
+ * GDPR-heavy jurisdictions where 20-40% of early-funnel users haven't
+ * consented yet.
+ */
+const eventQueue: Array<{ name: string; params: Record<string, unknown> }> = [];
+const MAX_QUEUE_SIZE = 20;
+
+/**
  * Track an analytics event via GA4 gtag.
- * Only fires if cookie consent has been granted and gtag is loaded.
+ * - If consent is granted and gtag is loaded: fires immediately.
+ * - If consent is not yet granted: queued (up to MAX_QUEUE_SIZE) for later flush.
  */
 export function trackEvent<E extends AnalyticsEventName>(
   eventName: E,
   properties?: EventPropertyMap[E]
 ): void {
   if (!hasConsent()) {
+    if (eventQueue.length < MAX_QUEUE_SIZE) {
+      eventQueue.push({
+        name: eventName,
+        params: (properties ?? {}) as Record<string, unknown>,
+      });
+    }
     return;
   }
 
@@ -41,6 +58,31 @@ export function trackEvent<E extends AnalyticsEventName>(
   }
 
   window.gtag!('event', eventName, properties ?? {});
+}
+
+/**
+ * Grant cookie consent, persist to localStorage, and flush the pre-consent
+ * event queue. Call this from the CookieConsent component when the user accepts.
+ *
+ * Note: if the page reloads after consent (e.g. to load the GA4 script),
+ * in-flight queued events are lost — this is the minimum viable fix.
+ * Future improvement: persist queue to sessionStorage before reload.
+ */
+export function grantConsent(): void {
+  try {
+    localStorage.setItem('cookie_consent', 'accepted');
+  } catch {
+    // localStorage unavailable — proceed anyway
+  }
+
+  // Flush all queued events now that consent is granted
+  while (eventQueue.length > 0) {
+    const event = eventQueue.shift()!;
+    // Re-call trackEvent to re-check gtag availability after consent
+    if (isGtagAvailable()) {
+      window.gtag!('event', event.name, event.params);
+    }
+  }
 }
 
 /**

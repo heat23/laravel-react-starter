@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/Components/ui/button';
+import { grantConsent } from '@/lib/analytics';
 
 const STORAGE_KEY = 'cookie_consent';
 
@@ -37,6 +38,8 @@ export default function CookieConsent() {
   const handleAccept = () => {
     setConsent('accepted');
     setVisible(false);
+    // Flush the pre-consent analytics queue before reload
+    grantConsent();
     // Reload so the Blade nonce'd script loads GA (CSP-safe)
     window.location.reload();
   };

@@ -117,6 +117,25 @@ export default function BillingIndex() {
     track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'billing' });
   }, [track]);
 
+  const billingStatus = subscription?.status;
+
+  useEffect(() => {
+    const hasPaymentFailure =
+      !!incompletePayment ||
+      billingStatus === 'past_due' ||
+      billingStatus === 'incomplete_expired';
+
+    if (hasPaymentFailure) {
+      const reason = incompletePayment
+        ? 'incomplete_payment'
+        : billingStatus === 'past_due'
+          ? 'past_due'
+          : 'incomplete_expired';
+
+      track(AnalyticsEvents.BILLING_PAYMENT_FAILED, { reason });
+    }
+  }, [billingStatus, incompletePayment, track]);
+
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
