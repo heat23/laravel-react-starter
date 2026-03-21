@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 
 import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
+import { FeatureScreenshot } from '@/Components/marketing/FeatureScreenshot';
 import { PublicFooter } from '@/Components/marketing/PublicFooter';
 import { PublicNav } from '@/Components/marketing/PublicNav';
 import { FaqJsonLd } from '@/Components/seo/FaqJsonLd';
@@ -88,6 +89,12 @@ export default function FeatureFlags({ title, metaDescription, breadcrumbs, cano
                                 out of production.
                             </p>
                         </header>
+
+                        <FeatureScreenshot
+                            src="/images/features/feature-flags-admin.svg"
+                            alt="Admin feature flags panel showing 11 flags in a table with toggle switches — billing, admin, two-factor, social auth, and webhooks enabled; notifications, onboarding, and API docs disabled"
+                            caption="Feature flag admin UI — toggle any flag globally, no redeploy required"
+                        />
 
                         <section className="mb-16">
                             <h2 className="mb-8 text-center text-3xl font-bold">

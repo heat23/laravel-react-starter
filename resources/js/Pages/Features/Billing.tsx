@@ -13,6 +13,7 @@ import { useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 
 import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
+import { FeatureScreenshot } from '@/Components/marketing/FeatureScreenshot';
 import { PublicFooter } from '@/Components/marketing/PublicFooter';
 import { PublicNav } from '@/Components/marketing/PublicNav';
 import { FaqJsonLd } from '@/Components/seo/FaqJsonLd';
@@ -120,6 +121,12 @@ export default function Billing({ title, metaDescription, breadcrumbs, canonical
                                 ships the solutions as working, tested code.
                             </p>
                         </header>
+
+                        <FeatureScreenshot
+                            src="/images/features/billing-dashboard.svg"
+                            alt="Admin billing dashboard showing MRR of $4,290, plan distribution bars for free/pro/team/enterprise tiers, and a recent subscriptions table with active and incomplete payment statuses"
+                            caption="Admin billing dashboard — MRR, plan distribution, and subscription management"
+                        />
 
                         <section className="mb-16">
                             <h2 className="mb-8 text-center text-3xl font-bold">

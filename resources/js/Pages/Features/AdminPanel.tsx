@@ -16,6 +16,7 @@ import { useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 
 import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
+import { FeatureScreenshot } from '@/Components/marketing/FeatureScreenshot';
 import { PublicFooter } from '@/Components/marketing/PublicFooter';
 import { PublicNav } from '@/Components/marketing/PublicNav';
 import { FaqJsonLd } from '@/Components/seo/FaqJsonLd';
@@ -121,14 +122,19 @@ export default function AdminPanel({ title, metaDescription, breadcrumbs, canoni
                     <article className="mx-auto max-w-4xl">
                         <header className="py-16 text-center">
                             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                                A full-featured admin panel. Written in React.
+                                Manage Users, Billing, and Feature Flags From One Dashboard
                             </h1>
                             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-                                User management, audit logs, health checks, billing stats, and
-                                feature flag controls &mdash; all in TypeScript, all customizable,
-                                no PHP admin framework required.
+                                Built in the same React + TypeScript stack as your app &mdash; one
+                                codebase, one mental model.
                             </p>
                         </header>
+
+                        <FeatureScreenshot
+                            src="/images/features/admin-dashboard.svg"
+                            alt="Admin dashboard showing stat cards for total users, new signups, and active subscriptions alongside a user signup trend chart and recent audit log activity"
+                            caption="Admin dashboard — user metrics, signup trends, and live audit log feed"
+                        />
 
                         <section className="mb-16">
                             <h2 className="mb-8 text-center text-3xl font-bold">
@@ -156,6 +162,13 @@ export default function AdminPanel({ title, metaDescription, breadcrumbs, canoni
                                 ))}
                             </div>
                         </section>
+
+                        <FeatureScreenshot
+                            src="/images/features/admin-users.svg"
+                            alt="User management table showing a list of users with their email, plan, role, and join date, with search and filter controls and CSV export"
+                            caption="User management — search, filter, bulk export, and per-user actions"
+                            className="mb-16"
+                        />
 
                         {/* Persona section */}
                         <section className="mb-16">
