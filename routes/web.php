@@ -4,6 +4,7 @@ use App\Http\Controllers\Billing\BillingController;
 use App\Http\Controllers\Billing\PricingController;
 use App\Http\Controllers\Billing\StripeWebhookController;
 use App\Http\Controllers\Billing\SubscriptionController;
+use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\ChartsController;
 use App\Http\Controllers\CompareController;
@@ -57,17 +58,29 @@ Route::get('/compare/supastarter', [CompareController::class, 'supastarter'])->n
 Route::get('/compare/larafast', [CompareController::class, 'larafast'])->name('compare.larafast');
 Route::get('/compare/laravel-vs-nextjs', [CompareController::class, 'nextjsSaas'])->name('compare.nextjs-saas');
 
-// Feature landing pages (SEO)
+// Feature landing pages (SEO) — always registered regardless of feature flags
+Route::get('/features', [FeaturesController::class, 'index'])->name('features.index');
 Route::get('/features/billing', [FeaturesController::class, 'billing'])->name('features.billing');
 Route::get('/features/feature-flags', [FeaturesController::class, 'featureFlags'])->name('features.feature-flags');
 Route::get('/features/admin-panel', [FeaturesController::class, 'adminPanel'])->name('features.admin-panel');
+Route::get('/features/webhooks', [FeaturesController::class, 'webhooks'])->name('features.webhooks');
+Route::get('/features/two-factor-auth', [FeaturesController::class, 'twoFactor'])->name('features.two-factor-auth');
+Route::get('/features/social-auth', [FeaturesController::class, 'socialAuth'])->name('features.social-auth');
 
-// Guides (long-form pillar content — separate from shorter blog posts)
+// Guides index + individual guides
+Route::get('/guides', [GuidesController::class, 'index'])->name('guides.index');
 Route::get('/guides/building-saas-with-laravel-12', [GuidesController::class, 'laravelSaasGuide'])->name('guides.laravel-saas');
 Route::get('/guides/laravel-stripe-billing-tutorial', [GuidesController::class, 'stripeGuide'])->name('guides.stripe-guide');
 Route::get('/guides/laravel-feature-flags-tutorial', [GuidesController::class, 'featureFlagsGuide'])->name('guides.feature-flags-guide');
 Route::get('/guides/saas-starter-kit-comparison-2026', [GuidesController::class, 'saasStarterKitComparison'])->name('guides.saas-starter-kit-comparison');
 Route::get('/guides/cost-of-building-saas-from-scratch', [GuidesController::class, 'buildVsBuyGuide'])->name('guides.build-vs-buy');
+Route::get('/guides/laravel-two-factor-authentication', [GuidesController::class, 'twoFactorGuide'])->name('guides.two-factor');
+Route::get('/guides/laravel-webhook-implementation', [GuidesController::class, 'webhookGuide'])->name('guides.webhook');
+Route::get('/guides/single-tenant-vs-multi-tenant-saas', [GuidesController::class, 'tenancyArchitectureGuide'])->name('guides.tenancy-architecture');
+
+// Blog (Markdown-based content at resources/content/blog/)
+Route::get('/blog', [BlogController::class, 'index'])->name('blog.index');
+Route::get('/blog/{slug}', [BlogController::class, 'show'])->name('blog.show')->where('slug', '[a-z0-9-]+');
 
 // Feedback (authenticated users only)
 Route::post('/feedback', [FeedbackController::class, 'store'])->middleware(['auth', 'throttle:10,1'])->name('feedback.store');
@@ -75,6 +88,7 @@ Route::post('/feedback', [FeedbackController::class, 'store'])->middleware(['aut
 // Onboarding (route always registered; middleware checks feature flag)
 Route::middleware('auth')->group(function () {
     Route::get('/onboarding', OnboardingController::class)->name('onboarding');
+    Route::post('/onboarding/complete', [OnboardingController::class, 'complete'])->name('onboarding.complete');
 });
 
 // Dashboard (requires auth + verification if enabled + onboarding middleware)

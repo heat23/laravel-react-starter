@@ -81,6 +81,10 @@ class SeoController extends Controller
             "- {$appUrl}/guides/laravel-stripe-billing-tutorial",
             "- {$appUrl}/guides/laravel-feature-flags-tutorial",
             "- {$appUrl}/guides/cost-of-building-saas-from-scratch",
+            "- {$appUrl}/guides/laravel-two-factor-authentication",
+            "- {$appUrl}/guides/laravel-webhook-implementation",
+            "- {$appUrl}/guides/single-tenant-vs-multi-tenant-saas",
+            "- {$appUrl}/features/webhooks",
             "- {$appUrl}/changelog",
             "- {$appUrl}/roadmap",
             "- {$appUrl}/contact",
@@ -142,6 +146,13 @@ class SeoController extends Controller
         $urls[] = ['loc' => config('app.url').'/guides/laravel-feature-flags-tutorial', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
         $urls[] = ['loc' => config('app.url').'/guides/saas-starter-kit-comparison-2026', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
         $urls[] = ['loc' => config('app.url').'/guides/cost-of-building-saas-from-scratch', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => $now];
+        $urls[] = ['loc' => config('app.url').'/guides/laravel-two-factor-authentication', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
+        $urls[] = ['loc' => config('app.url').'/guides/laravel-webhook-implementation', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
+        $urls[] = ['loc' => config('app.url').'/guides/single-tenant-vs-multi-tenant-saas', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => $now];
+
+        if (config('features.webhooks.enabled', false)) {
+            $urls[] = ['loc' => config('app.url').'/features/webhooks', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => $now];
+        }
 
         // Competitor comparison pages
         $urls[] = ['loc' => config('app.url').'/compare/laravel-jetstream', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => $now];
