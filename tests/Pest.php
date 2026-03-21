@@ -28,6 +28,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use Laravel\Cashier\Http\Controllers\PaymentController;
 use Laravel\Cashier\Subscription;
 use Tests\TestCase;
 
@@ -237,6 +238,10 @@ function registerBillingRoutes(): void
         $router->post('/billing/payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('billing.payment-method');
         $router->get('/billing/portal', [SubscriptionController::class, 'portal'])->name('billing.portal');
     });
+
+    // Cashier payment confirmation page (SCA/3DS redirect target)
+    $router->get('/stripe/payment/{id}', [PaymentController::class, 'show'])
+        ->name('cashier.payment');
 
     // Stripe webhook (no auth - Cashier verifies signature)
     $router->post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])

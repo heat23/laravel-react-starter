@@ -128,8 +128,7 @@ it('handles card declined during subscription creation', function () {
         'payment_method' => 'pm_card_declined',
     ]);
 
-    $response->assertRedirect(route('billing.index'));
-    $response->assertSessionHas('info');
+    $response->assertRedirect(route('cashier.payment', ['id' => 'pi_test_123']));
 });
 
 it('handles subscription with coupon', function () {

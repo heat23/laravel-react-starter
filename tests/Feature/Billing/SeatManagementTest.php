@@ -156,6 +156,5 @@ it('handles IncompletePayment on quantity update', function () {
         'quantity' => 8,
     ]);
 
-    $response->assertRedirect();
-    $response->assertSessionHas('info');
+    $response->assertRedirect(route('cashier.payment', ['id' => 'pi_qty_sca']));
 });

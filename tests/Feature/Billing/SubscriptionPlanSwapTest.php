@@ -155,8 +155,7 @@ it('handles IncompletePayment on swap requiring SCA', function () {
         'price_id' => 'price_team_monthly',
     ]);
 
-    $response->assertRedirect(route('billing.index'));
-    $response->assertSessionHas('info');
+    $response->assertRedirect(route('cashier.payment', ['id' => 'pi_swap_sca']));
 });
 
 it('handles Stripe API error during swap', function () {

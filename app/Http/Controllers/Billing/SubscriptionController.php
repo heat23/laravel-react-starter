@@ -362,7 +362,8 @@ class SubscriptionController extends Controller
             return back()->with('error', 'A quantity update is already in progress. Please try again.');
         } catch (IncompletePayment $e) {
             // Subscription requires 3DS/SCA — redirect to Cashier's hosted payment confirmation page.
-            return redirect()->route('cashier.payment', ['id' => $e->payment->id]);
+            return redirect()->route('cashier.payment', ['id' => $e->payment->id])
+                ->with('info', 'Additional payment authentication is required to update your seat count.');
         } catch (ApiErrorException $e) {
             Log::error('Stripe API error during quantity update', [
                 'user_id' => $user->id,

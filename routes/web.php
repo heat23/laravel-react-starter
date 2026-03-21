@@ -162,6 +162,10 @@ if (config('features.billing.enabled', false)) {
         Route::get('/billing/portal', [SubscriptionController::class, 'portal'])->name('billing.portal');
     });
 
+    // Cashier payment confirmation page (SCA/3DS redirect target)
+    Route::get('/stripe/payment/{id}', \Laravel\Cashier\Http\Controllers\PaymentController::class . '@show')
+        ->name('cashier.payment');
+
     // Stripe webhook (no auth - Cashier verifies signature)
     Route::post('/stripe/webhook', [StripeWebhookController::class, 'handleWebhook'])
         ->middleware('throttle:120,1')
