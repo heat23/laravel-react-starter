@@ -1,4 +1,4 @@
-import { BookOpen, CheckCircle2, CreditCard, Key, LayoutDashboard, Palette, Settings, Sparkles, type LucideIcon } from "lucide-react";
+import { BookOpen, CheckCircle2, CreditCard, Flag, Key, LayoutDashboard, Palette, Settings, Sparkles, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { useState, useCallback, useEffect } from "react";
@@ -27,6 +27,15 @@ const steps = [
   { id: "get-started", label: "Get Started", icon: BookOpen },
 ];
 
+const USE_CASE_OPTIONS = [
+  { value: 'saas_founder', label: 'My first SaaS', description: 'Building a product to charge real customers' },
+  { value: 'agency', label: 'Client project for an agency', description: 'Deploying this for a client engagement' },
+  { value: 'internal_tool', label: 'Internal tool', description: 'For my team — not a public-facing product' },
+  { value: 'evaluating', label: 'Evaluating for my team', description: 'Deciding if this is the right stack for us' },
+] as const;
+
+type UseCase = typeof USE_CASE_OPTIONS[number]['value'] | '';
+
 export default function Onboarding({ email_verified = false }: OnboardingProps) {
   const { auth, features } = usePage<PageProps>().props;
   const { theme, setTheme } = useTheme();
@@ -35,6 +44,7 @@ export default function Onboarding({ email_verified = false }: OnboardingProps) 
 
   const [currentStep, setCurrentStep] = useState(0);
   const [name, setName] = useState(auth.user?.name ?? "");
+  const [useCase, setUseCase] = useState<UseCase>('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -91,6 +101,13 @@ export default function Onboarding({ email_verified = false }: OnboardingProps) 
           });
         });
       }
+      // Persist use_case to user_settings (non-blocking — failure doesn't gate progress)
+      if (useCase) {
+        router.post("/api/settings", { key: 'use_case', value: useCase }, {
+          preserveState: true,
+          preserveScroll: true,
+        });
+      }
       track(AnalyticsEvents.ONBOARDING_STEP_COMPLETED, { step: 'welcome' });
       setCurrentStep(1);
     } else if (currentStep === 1) {
@@ -139,6 +156,29 @@ export default function Onboarding({ email_verified = false }: OnboardingProps) 
                     <p className="text-sm text-muted-foreground">
                       You can customize your avatar later in your profile settings.
                     </p>
+                  </div>
+
+                  {/* Use case segmentation (optional) */}
+                  <div className="space-y-3">
+                    <Label>What are you building? <span className="text-xs text-muted-foreground font-normal">(optional)</span></Label>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {USE_CASE_OPTIONS.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setUseCase(useCase === option.value ? '' : option.value)}
+                          aria-pressed={useCase === option.value ? "true" : "false"}
+                          className={`flex flex-col items-start rounded-lg border-2 p-3 text-left transition-colors ${
+                            useCase === option.value
+                              ? "border-primary bg-primary/5"
+                              : "border-muted hover:border-muted-foreground/30"
+                          }`}
+                        >
+                          <span className="text-sm font-medium">{option.label}</span>
+                          <span className="text-xs text-muted-foreground">{option.description}</span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -214,7 +254,7 @@ export default function Onboarding({ email_verified = false }: OnboardingProps) 
                   )}
 
                   <div className="flex flex-col gap-3">
-                    {features?.admin && (
+                    {features?.admin && (useCase === '' || useCase === 'internal_tool' || useCase === 'evaluating') && (
                       <ActionCard
                         icon={LayoutDashboard}
                         title="Explore the admin panel"
@@ -224,7 +264,7 @@ export default function Onboarding({ email_verified = false }: OnboardingProps) 
                         onNavigate={completeOnboardingAndGoTo}
                       />
                     )}
-                    {features?.billing && (
+                    {features?.billing && (useCase === '' || useCase === 'saas_founder' || useCase === 'evaluating') && (
                       <ActionCard
                         icon={CreditCard}
                         title="Set up billing"
@@ -234,14 +274,36 @@ export default function Onboarding({ email_verified = false }: OnboardingProps) 
                         onNavigate={completeOnboardingAndGoTo}
                       />
                     )}
-                    <ActionCard
-                      icon={Key}
-                      title="Create an API token"
-                      description="Start building integrations right away"
-                      time="1 min"
-                      href="/settings/tokens"
-                      onNavigate={completeOnboardingAndGoTo}
-                    />
+                    {(useCase === '' || useCase === 'saas_founder' || useCase === 'internal_tool') && (
+                      <ActionCard
+                        icon={Key}
+                        title="Create an API token"
+                        description="Start building integrations right away"
+                        time="1 min"
+                        href="/settings/tokens"
+                        onNavigate={completeOnboardingAndGoTo}
+                      />
+                    )}
+                    {(useCase === 'agency') && (
+                      <ActionCard
+                        icon={Flag}
+                        title="Review feature flags"
+                        description="Toggle features on or off per deployment for each client"
+                        time="2 min"
+                        href="/features/feature-flags"
+                        onNavigate={completeOnboardingAndGoTo}
+                      />
+                    )}
+                    {(useCase === 'agency') && features?.billing && (
+                      <ActionCard
+                        icon={CreditCard}
+                        title="Understand billing setup"
+                        description="Each client deployment has its own Stripe configuration"
+                        time="3 min"
+                        href="/pricing?ref=onboarding"
+                        onNavigate={completeOnboardingAndGoTo}
+                      />
+                    )}
                   </div>
                 </CardContent>
               </Card>

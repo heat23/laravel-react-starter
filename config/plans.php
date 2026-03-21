@@ -6,7 +6,7 @@
  * Defines limits and features for each subscription tier.
  * Only used when billing feature is enabled.
  *
- * Tier hierarchy (lowest to highest): free < pro < team < enterprise
+ * Tier hierarchy (lowest to highest): free < pro < pro_team < team < enterprise
  */
 
 return [
@@ -19,7 +19,7 @@ return [
     | Used by EnsureSubscribed middleware for tier-based gating.
     |
     */
-    'tier_hierarchy' => ['free', 'pro', 'team', 'enterprise'],
+    'tier_hierarchy' => ['free', 'pro', 'pro_team', 'team', 'enterprise'],
 
     /*
     |--------------------------------------------------------------------------
@@ -33,15 +33,15 @@ return [
         'price_annual' => 0,
         'per_seat' => false,
         'limits' => [
-            'projects' => env('PLAN_FREE_PROJECTS', 3),
+            'projects' => env('PLAN_FREE_PROJECTS', 1),
             'items_per_project' => env('PLAN_FREE_ITEMS', 50),
             'api_tokens' => env('PLAN_FREE_API_TOKENS', 1),
-            'history_days' => env('PLAN_FREE_HISTORY_DAYS', 30),
+            'history_days' => env('PLAN_FREE_HISTORY_DAYS', 7),
             'seats' => 1,
         ],
         'features' => [
-            'Up to 3 projects',
-            '30-day activity history',
+            '1 project',
+            '7-day activity history',
             'Basic export (CSV)',
             '1 API token',
             'Community support',
@@ -61,6 +61,9 @@ return [
         'stripe_price_annual' => env('STRIPE_PRICE_PRO_ANNUAL'),
         'price_monthly' => env('PLAN_PRO_PRICE_MONTHLY', 19),
         'price_annual' => env('PLAN_PRO_PRICE_ANNUAL', 182), // $182/yr = 20.2% off ($19 × 12 = $228)
+        // A/B test variant: set PLAN_PRO_PRICE_MONTHLY_VARIANT to test a different price point.
+        // When null, no experiment is active. When set, 50% of users see the variant price.
+        'price_monthly_variant' => env('PLAN_PRO_PRICE_MONTHLY_VARIANT'),
         'per_seat' => false,
         'limits' => [
             'projects' => null, // unlimited
@@ -81,12 +84,48 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Pro Team Tier (bridging tier between Pro and Team)
+    |--------------------------------------------------------------------------
+    |
+    | Closes the 7.7x pricing cliff between Pro ($19) and Team ($49/seat × 3 min).
+    | For 2–4 person teams who need collaboration but not full Team overhead.
+    |
+    */
+    'pro_team' => [
+        'name' => 'Pro Team',
+        'description' => 'For 2–4 person teams that need shared projects without a 3-seat minimum commitment.',
+        'stripe_price_monthly' => env('STRIPE_PRICE_PRO_TEAM'),
+        'stripe_price_annual' => env('STRIPE_PRICE_PRO_TEAM_ANNUAL'),
+        'price_monthly' => env('PLAN_PRO_TEAM_PRICE_MONTHLY', 39),
+        'price_annual' => env('PLAN_PRO_TEAM_PRICE_ANNUAL', 374), // $374/seat/yr ≈ $31.17/mo, 20% off
+        'per_seat' => true,
+        'min_seats' => (int) env('PLAN_PRO_TEAM_MIN_SEATS', 2),
+        'max_seats' => (int) env('PLAN_PRO_TEAM_MAX_SEATS', 4),
+        'limits' => [
+            'projects' => null, // unlimited
+            'items_per_project' => null, // unlimited
+            'api_tokens' => env('PLAN_PRO_TEAM_API_TOKENS', 10),
+            'history_days' => env('PLAN_PRO_TEAM_HISTORY_DAYS', 365),
+            'seats' => (int) env('PLAN_PRO_TEAM_MAX_SEATS', 4),
+        ],
+        'features' => [
+            'Everything in Pro',
+            'Up to 4 team members',
+            'Shared projects',
+            'Audit log access',
+            '1-year activity history',
+            'Priority support',
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Team Tier
     |--------------------------------------------------------------------------
     */
     'team' => [
         'name' => 'Team',
-        'description' => 'For small teams that need shared projects and per-seat billing without enterprise overhead.',
+        'description' => 'For growing teams that need shared projects and per-seat billing without enterprise overhead.',
         'stripe_price_monthly' => env('STRIPE_PRICE_TEAM'),
         'stripe_price_annual' => env('STRIPE_PRICE_TEAM_ANNUAL'),
         'price_monthly' => env('PLAN_TEAM_PRICE_MONTHLY', 49),
@@ -101,7 +140,7 @@ return [
             'seats' => env('PLAN_TEAM_MAX_SEATS', 50),
         ],
         'features' => [
-            'Everything in Pro',
+            'Everything in Pro Team',
             'Team member management (2–50 seats)',
             'Shared projects with role-based access',
             'Full audit log & compliance exports',
@@ -151,6 +190,18 @@ return [
     |
     */
     'past_due_grace_days' => (int) env('PAST_DUE_GRACE_DAYS', 7),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Retention Coupon
+    |--------------------------------------------------------------------------
+    |
+    | Stripe coupon ID applied when a user clicks "Claim Discount" in the
+    | cancel dialog. Typically a 20% off for 3 months coupon created in Stripe.
+    | Leave null to disable the retention offer.
+    |
+    */
+    'retention_coupon_id' => env('RETENTION_COUPON_ID'),
 
     /*
     |--------------------------------------------------------------------------

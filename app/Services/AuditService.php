@@ -43,11 +43,14 @@ class AuditService
         $this->persist(AnalyticsEvent::AUTH_LOGOUT->value, $user?->id, []);
     }
 
-    public function logRegistration(User $user): void
+    /**
+     * @param  array<string, mixed>  $extra  Additional metadata (e.g. UTM params, plan intent)
+     */
+    public function logRegistration(User $user, array $extra = []): void
     {
-        $this->persist(AnalyticsEvent::AUTH_REGISTER->value, $user->id, [
+        $this->persist(AnalyticsEvent::AUTH_REGISTER->value, $user->id, array_merge([
             'signup_source' => $user->signup_source ?? 'direct',
-        ]);
+        ], $extra));
     }
 
     /**

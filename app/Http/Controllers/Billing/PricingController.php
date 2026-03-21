@@ -17,6 +17,12 @@ class PricingController extends Controller
     public function __invoke(Request $request): Response
     {
         $user = $request->user();
+
+        // A/B cohort: deterministic per-visitor assignment using user ID or session ID.
+        // Cohort 1 sees the variant price when PLAN_PRO_PRICE_MONTHLY_VARIANT is set.
+        $cohortSeed = $user ? (string) $user->id : $request->session()->getId();
+        $isVariantCohort = (abs(crc32($cohortSeed)) % 2) === 1;
+
         $tiers = [];
 
         foreach (config('plans.tier_hierarchy', []) as $tierKey) {
@@ -25,13 +31,30 @@ class PricingController extends Controller
                 continue;
             }
 
+            $stripeMonthlyPriceId = $tierConfig['stripe_price_monthly'] ?? null;
+            $stripeAnnualPriceId = $tierConfig['stripe_price_annual'] ?? null;
+            $priceMonthly = $tierConfig['price_monthly'] ?? null;
+            $priceAnnual = $tierConfig['price_annual'] ?? null;
+
+            // Apply A/B variant price for Pro tier when variant is configured and visitor is in cohort
+            if ($tierKey === 'pro' && $isVariantCohort && isset($tierConfig['price_monthly_variant'])) {
+                $priceMonthly = $tierConfig['price_monthly_variant'];
+            }
+
+            // Enterprise self-serve: when a Stripe price is configured but no price_monthly
+            // is set (e.g., STRIPE_PRICE_ENTERPRISE is set but PLAN_ENTERPRISE_PRICE_MONTHLY is
+            // not), we still expose the stripe_price_id so the UI can show a self-serve checkout.
+            // The price label will show 'Custom pricing' but the checkout button will appear.
+            // Operators should set PLAN_ENTERPRISE_PRICE_MONTHLY when enabling self-serve.
+
             $tiers[$tierKey] = [
                 'name' => $tierConfig['name'] ?? ucfirst($tierKey),
                 'description' => $tierConfig['description'] ?? '',
-                'price' => $tierConfig['price_monthly'] ?? null,
-                'price_annual' => $tierConfig['price_annual'] ?? null,
-                'stripe_price_id' => $tierConfig['stripe_price_monthly'] ?? null,
-                'stripe_price_id_annual' => $tierConfig['stripe_price_annual'] ?? null,
+                'price' => $priceMonthly,
+                'price_annual' => $priceAnnual,
+                'stripe_price_id' => $stripeMonthlyPriceId,
+                'stripe_price_id_annual' => $stripeAnnualPriceId,
+                'self_serve' => $stripeMonthlyPriceId !== null,
                 'per_seat' => $tierConfig['per_seat'] ?? false,
                 'min_seats' => $tierConfig['min_seats'] ?? null,
                 'coming_soon' => $tierConfig['coming_soon'] ?? false,

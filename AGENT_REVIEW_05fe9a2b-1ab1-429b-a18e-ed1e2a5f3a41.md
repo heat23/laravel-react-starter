@@ -1,5 +1,6 @@
 # Agent Review — Session 05fe9a2b: Billing Critical Fix Pass
 
+Model: haiku
 Status: completed
 
 **Scope:** Fix 3 CRITICAL issues from prior session agent review — churn_type miscategorisation, InvoluntaryChurnWinBackNotification idempotency, and past_due_since datetime cast.

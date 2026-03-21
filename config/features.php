@@ -69,8 +69,8 @@ return [
     */
     'api_tokens' => [
         'enabled' => env('FEATURE_API_TOKENS', true),
-        'max_tokens_free' => env('API_TOKENS_MAX_FREE', 1),
-        'max_tokens_pro' => env('API_TOKENS_MAX_PRO', 10),
+        // Token limits are defined in config/plans.php per tier (plans.*.limits.api_tokens).
+        // Do not add per-tier limits here — single source of truth is config/plans.php.
     ],
 
     /*

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CaptureUtmParameters;
 use App\Http\Middleware\EnsureIsAdmin;
 use App\Http\Middleware\EnsureIsSuperAdmin;
 use App\Http\Middleware\EnsureOnboardingCompleted;
@@ -53,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: ['stripe/webhook']);
 
         $middleware->web(append: [
+            CaptureUtmParameters::class,
             SecurityHeaders::class,
             TrackLastActivity::class,
             HandleInertiaRequests::class,

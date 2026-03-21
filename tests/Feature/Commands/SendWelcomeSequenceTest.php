@@ -22,6 +22,8 @@ it('does not send email 1 — that is the listener\'s responsibility', function 
 });
 
 it('sends welcome email 2 to day-old users', function () {
+    // Command skips emails 2+ when onboarding is enabled; disable for this test
+    config(['features.onboarding.enabled' => false]);
     Notification::fake();
 
     $user = User::factory()->create([
@@ -38,6 +40,8 @@ it('sends welcome email 2 to day-old users', function () {
 });
 
 it('sends welcome email 3 to 3-day-old users', function () {
+    // Command skips emails 2+ when onboarding is enabled; disable for this test
+    config(['features.onboarding.enabled' => false]);
     Notification::fake();
 
     $user = User::factory()->create([
