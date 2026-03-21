@@ -40,7 +40,7 @@ export default function AuthLayout({
                   Welcome to {appName}
                 </h1>
                 <p className="text-lg text-brand-surface-foreground/70">
-                  Sign in to access your dashboard and manage your account.
+                  Log in to access your dashboard and manage your account.
                 </p>
               </div>
             )}

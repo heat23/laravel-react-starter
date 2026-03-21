@@ -114,7 +114,7 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
             href={route("login")}
             className="font-medium text-primary hover:text-primary/80 transition-colors"
           >
-            Back to sign in
+            Back to log in
           </Link>
         </p>
       </div>

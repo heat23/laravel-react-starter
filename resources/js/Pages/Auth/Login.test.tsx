@@ -80,14 +80,14 @@ describe('Login Page', () => {
 
       expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
       expect(screen.getByLabelText('Password')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument();
     });
 
     it('renders welcome message', () => {
       render(<Login canResetPassword={true} />);
 
       expect(screen.getByText(/welcome back/i)).toBeInTheDocument();
-      expect(screen.getByText(/sign in to your account/i)).toBeInTheDocument();
+      expect(screen.getByText(/log in to your account/i)).toBeInTheDocument();
     });
 
     it('renders forgot password link when canResetPassword is true', () => {
@@ -328,7 +328,7 @@ describe('Login Page', () => {
     it('prevents form submission with validation errors', async () => {
       render(<Login canResetPassword={true} />);
 
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
+      const submitButton = screen.getByRole('button', { name: /log in/i });
       await user.click(submitButton);
 
       // post should not be called due to validation failure
@@ -460,7 +460,7 @@ describe('Login Page', () => {
   // ============================================
 
   describe('processing state', () => {
-    it('shows "Signing in..." when processing', () => {
+    it('shows "Logging in..." when processing', () => {
       // Override useForm mock for this test
       mockedUseForm.mockReturnValue({
         data: { email: '', password: '', remember: false },
@@ -473,7 +473,7 @@ describe('Login Page', () => {
 
       render(<Login canResetPassword={true} />);
 
-      expect(screen.getByRole('button', { name: /signing in/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /logging in/i })).toBeInTheDocument();
     });
 
     it('disables submit button when processing', () => {
@@ -488,7 +488,7 @@ describe('Login Page', () => {
 
       render(<Login canResetPassword={true} />);
 
-      const submitButton = screen.getByRole('button', { name: /signing in/i });
+      const submitButton = screen.getByRole('button', { name: /logging in/i });
       expect(submitButton).toBeDisabled();
     });
   });

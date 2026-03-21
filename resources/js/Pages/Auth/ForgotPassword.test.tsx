@@ -75,11 +75,11 @@ describe('ForgotPassword Page', () => {
       expect(screen.getByRole('button', { name: /email password reset link/i })).toBeInTheDocument();
     });
 
-    it('renders back to sign in link', () => {
+    it('renders back to log in link', () => {
       render(<ForgotPassword />);
 
       expect(screen.getByText(/remembered it/i)).toBeInTheDocument();
-      expect(screen.getByText(/back to sign in/i)).toBeInTheDocument();
+      expect(screen.getByText(/back to log in/i)).toBeInTheDocument();
     });
 
     it('renders explanatory text', () => {

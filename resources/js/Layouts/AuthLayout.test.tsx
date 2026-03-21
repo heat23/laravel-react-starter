@@ -78,7 +78,7 @@ describe('AuthLayout', () => {
         </AuthLayout>,
       );
 
-      expect(screen.getByText(/sign in to access your dashboard/i)).toBeInTheDocument();
+      expect(screen.getByText(/log in to access your dashboard/i)).toBeInTheDocument();
     });
 
     it('renders custom left content when provided', () => {
@@ -89,7 +89,7 @@ describe('AuthLayout', () => {
       );
 
       expect(screen.getByTestId('custom-left')).toBeInTheDocument();
-      expect(screen.queryByText(/sign in to access your dashboard/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/log in to access your dashboard/i)).not.toBeInTheDocument();
     });
 
     it('renders left footer when provided', () => {
@@ -322,7 +322,7 @@ describe('AuthLayout', () => {
       );
 
       expect(screen.getByTestId('minimal-content')).toBeInTheDocument();
-      expect(screen.getByText(/sign in to access your dashboard/i)).toBeInTheDocument();
+      expect(screen.getByText(/log in to access your dashboard/i)).toBeInTheDocument();
     });
   });
 });

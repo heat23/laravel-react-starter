@@ -101,11 +101,11 @@ describe('ResetPassword Page', () => {
       expect(screen.getByRole('button', { name: /reset password/i })).toBeInTheDocument();
     });
 
-    it('renders back to sign in link', () => {
+    it('renders back to log in link', () => {
       render(<ResetPassword {...defaultProps} />);
 
       expect(screen.getByText(/remembered it/i)).toBeInTheDocument();
-      expect(screen.getByText(/back to sign in/i)).toBeInTheDocument();
+      expect(screen.getByText(/back to log in/i)).toBeInTheDocument();
     });
 
     it('uses AuthLayout', () => {

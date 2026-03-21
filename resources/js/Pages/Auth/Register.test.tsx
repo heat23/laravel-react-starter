@@ -98,11 +98,11 @@ describe('Register Page', () => {
       expect(screen.getByText(/start your journey/i)).toBeInTheDocument();
     });
 
-    it('renders sign in link', () => {
+    it('renders log in link', () => {
       render(<Register />);
 
       expect(screen.getByText(/already have an account/i)).toBeInTheDocument();
-      expect(screen.getByText(/sign in instead/i)).toBeInTheDocument();
+      expect(screen.getByText(/log in instead/i)).toBeInTheDocument();
     });
 
     it('renders terms checkbox', () => {

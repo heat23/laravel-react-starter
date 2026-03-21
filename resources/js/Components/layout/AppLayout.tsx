@@ -55,7 +55,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     {
       title: "Account",
       links: [
-        { href: "/login", label: "Sign in" },
+        { href: "/login", label: "Log in" },
         { href: "/register", label: "Get started" },
       ],
     },
@@ -100,7 +100,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           {/* Auth Buttons - Desktop */}
           <div className="hidden md:flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/login">Sign in</Link>
+              <Link href="/login">Log in</Link>
             </Button>
             <Button size="sm" asChild>
               <Link href="/register">Get Started</Link>
@@ -146,7 +146,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 </nav>
                 <div className="flex flex-col gap-2 pt-4 border-t">
                   <Button variant="outline" className="w-full" asChild>
-                    <Link href="/login">Sign in</Link>
+                    <Link href="/login">Log in</Link>
                   </Button>
                   <Button className="w-full" asChild>
                     <Link href="/register">Get Started</Link>
