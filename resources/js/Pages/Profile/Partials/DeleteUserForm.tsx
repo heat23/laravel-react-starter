@@ -26,8 +26,19 @@ interface DeleteUserFormProps {
   className?: string;
 }
 
+const CHURN_REASONS = [
+  { value: "too_expensive", label: "Too expensive" },
+  { value: "missing_feature", label: "Missing a feature I need" },
+  { value: "found_alternative", label: "Found a better alternative" },
+  { value: "just_testing", label: "Just testing / evaluating" },
+  { value: "other", label: "Other" },
+] as const;
+
+type ChurnReason = (typeof CHURN_REASONS)[number]["value"];
+
 export default function DeleteUserForm({ className = "" }: DeleteUserFormProps) {
   const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState<ChurnReason | "">("");
   const passwordInput = useRef<HTMLInputElement>(null);
   const { track } = useAnalytics();
 
@@ -41,6 +52,7 @@ export default function DeleteUserForm({ className = "" }: DeleteUserFormProps) 
     clearErrors,
   } = useForm({
     password: "",
+    reason: "" as ChurnReason | "",
   });
 
   const handleDelete = (e: React.FormEvent) => {
@@ -49,7 +61,7 @@ export default function DeleteUserForm({ className = "" }: DeleteUserFormProps) 
     destroy(route("profile.destroy"), {
       preserveScroll: true,
       onSuccess: () => {
-        track(AnalyticsEvents.FEATURE_USED, { feature_name: 'account_deleted' });
+        track(AnalyticsEvents.ACCOUNT_DELETED, { reason: reason || undefined });
         setOpen(false);
       },
       onError: () => {
@@ -57,8 +69,14 @@ export default function DeleteUserForm({ className = "" }: DeleteUserFormProps) 
       },
       onFinish: () => {
         reset();
+        setReason("");
       },
     });
+  };
+
+  const handleReasonChange = (value: ChurnReason) => {
+    setReason(value);
+    setData("reason", value);
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -66,6 +84,7 @@ export default function DeleteUserForm({ className = "" }: DeleteUserFormProps) 
     if (!newOpen) {
       clearErrors();
       reset();
+      setReason("");
     }
   };
 
@@ -100,6 +119,31 @@ export default function DeleteUserForm({ className = "" }: DeleteUserFormProps) 
               <li>Your subscription and billing information</li>
               <li>API tokens and integrations</li>
             </ul>
+
+            {/* Churn reason */}
+            <div className="space-y-2 mb-4">
+              <Label className="text-sm font-medium">
+                Why are you leaving? <span className="text-muted-foreground">(Optional)</span>
+              </Label>
+              <div className="grid gap-1.5">
+                {CHURN_REASONS.map((opt) => (
+                  <label
+                    key={opt.value}
+                    className="flex items-center gap-2.5 cursor-pointer rounded-md border px-3 py-2 text-sm hover:bg-muted/50 has-[:checked]:border-destructive/50 has-[:checked]:bg-destructive/5 transition-colors"
+                  >
+                    <input
+                      type="radio"
+                      name="churn_reason"
+                      value={opt.value}
+                      checked={reason === opt.value}
+                      onChange={() => handleReasonChange(opt.value)}
+                      className="accent-destructive"
+                    />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="password" className="text-sm font-medium">

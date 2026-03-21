@@ -13,12 +13,15 @@ use App\Http\Requests\Billing\UpdateQuantityRequest;
 use App\Services\AuditService;
 use App\Services\BillingService;
 use App\Services\CacheInvalidationManager;
+use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Inertia\Inertia;
 use Laravel\Cashier\Exceptions\IncompletePayment;
 use Stripe\Exception\ApiErrorException;
+use Symfony\Component\HttpFoundation\Response;
 
 class SubscriptionController extends Controller
 {
@@ -26,7 +29,61 @@ class SubscriptionController extends Controller
         private BillingService $billingService,
         private AuditService $auditService,
         private CacheInvalidationManager $cacheManager,
+        private PlanLimitService $planLimitService,
     ) {}
+
+    /**
+     * Create a Stripe Checkout session for new subscribers and redirect to Stripe's hosted page.
+     * For existing subscribers, use swap() instead.
+     */
+    public function checkout(SubscribeRequest $request): Response
+    {
+        $user = $request->user();
+        $user->loadMissing('subscriptions.items');
+
+        if ($user->subscribed('default')) {
+            return back()->with('error', 'You already have an active subscription. Use plan swap to change plans.');
+        }
+
+        $priceId = $request->validated('price_id');
+        $quantity = $request->validated('quantity', 1);
+
+        $tier = $this->billingService->resolveTierFromPrice($priceId);
+
+        if ($tier === null) {
+            return back()->with('error', 'Invalid plan selected.');
+        }
+
+        $tierConfig = config("plans.{$tier}");
+        if (! empty($tierConfig['coming_soon'] ?? false) || config('features.billing.coming_soon', false)) {
+            return back()->with('error', 'This plan is coming soon and not yet available for purchase.');
+        }
+
+        $seatError = $this->billingService->validateSeatCount($tier, $quantity);
+        if ($seatError) {
+            return back()->with('error', $seatError);
+        }
+
+        try {
+            $checkoutUrl = $this->billingService->createCheckoutSession(
+                $user,
+                $priceId,
+                $quantity,
+                route('billing.index', ['checkout' => 'success', 'plan' => $tier]),
+                route('pricing'),
+            );
+
+            return Inertia::location($checkoutUrl);
+        } catch (ApiErrorException $e) {
+            Log::error('Stripe API error during checkout session creation', [
+                'user_id' => $user->id,
+                'price_id' => $priceId,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', $this->friendlyStripeError($e));
+        }
+    }
 
     public function subscribe(SubscribeRequest $request): RedirectResponse
     {
@@ -68,21 +125,36 @@ class SubscriptionController extends Controller
             $tierConfig = config("plans.{$tier}");
             $amount = (float) ($tierConfig['price_monthly'] ?? 0) * $quantity;
 
-            $this->auditService->log(AnalyticsEvent::SUBSCRIPTION_CREATED, [
-                'user_id' => $user->id,
+            $this->auditService->logProductEvent(AnalyticsEvent::SUBSCRIPTION_CREATED, $user, [
                 'price_id' => $priceId,
                 'tier' => $tier,
                 'quantity' => $quantity,
                 'amount' => $amount,
             ]);
 
+            // Log trial start if the new subscription is in trialing state
+            $user->loadMissing('subscriptions');
+            $newSubscription = $user->subscription('default');
+            if ($newSubscription && $newSubscription->onTrial()) {
+                $trialDays = config('plans.trial.days', 14);
+                $this->auditService->logProductEvent(AnalyticsEvent::TRIAL_STARTED, $user, [
+                    'tier' => $tier,
+                    'trial_days' => $trialDays,
+                    'trial_ends_at' => $newSubscription->trial_ends_at?->toISOString(),
+                ]);
+            }
+
+            $this->planLimitService->invalidateUserPlanCache($user);
             $this->invalidateAdminCaches();
 
-            return redirect()->route('billing.index', ['checkout' => 'success'])->with('success', 'Subscription created successfully.');
+            return redirect()->route('billing.index', ['checkout' => 'success', 'plan' => $tier])->with('success', 'Subscription created successfully.');
         } catch (ConcurrentOperationException) {
             return back()->with('error', 'A subscription request is already in progress. Please try again.');
         } catch (IncompletePayment $e) {
-            return back()->with('error', 'Payment requires additional confirmation. Please try again.');
+            // Subscription created in incomplete state (3DS/SCA required).
+            // Redirect to billing.index which surfaces the incompletePayment UI with the confirm URL.
+            return redirect()->route('billing.index')
+                ->with('info', 'Your payment requires additional verification. Please complete the confirmation below.');
         } catch (ApiErrorException $e) {
             Log::error('Stripe API error during subscription creation', [
                 'user_id' => $user->id,
@@ -118,6 +190,7 @@ class SubscriptionController extends Controller
                 'feedback' => $request->validated('feedback'),
             ], fn ($v) => $v !== null));
 
+            $this->planLimitService->invalidateUserPlanCache($user);
             $this->invalidateAdminCaches();
 
             $message = $immediately
@@ -170,6 +243,7 @@ class SubscriptionController extends Controller
                 'user_id' => $user->id,
             ]);
 
+            $this->planLimitService->invalidateUserPlanCache($user);
             $this->invalidateAdminCaches();
 
             if ($request->expectsJson()) {
@@ -219,13 +293,16 @@ class SubscriptionController extends Controller
                 'new_tier' => $newTier,
             ]);
 
+            $this->planLimitService->invalidateUserPlanCache($user);
             $this->invalidateAdminCaches();
 
-            return redirect()->route('billing.index', ['swapped' => 'true'])->with('success', 'Plan updated successfully.');
+            return redirect()->route('billing.index', ['checkout' => 'success', 'plan' => $newTier, 'swapped' => 'true'])->with('success', 'Plan updated successfully.');
         } catch (ConcurrentOperationException) {
             return back()->with('error', 'A plan change is already in progress. Please try again.');
         } catch (IncompletePayment $e) {
-            return back()->with('error', 'Payment requires additional confirmation. Please try again.');
+            // Subscription requires 3DS/SCA — redirect to billing page which surfaces the incomplete payment UI.
+            return redirect()->route('billing.index')
+                ->with('info', 'Your payment requires additional verification. Please complete the confirmation below.');
         } catch (ApiErrorException $e) {
             Log::error('Stripe API error during plan swap', [
                 'user_id' => $user->id,
@@ -262,13 +339,16 @@ class SubscriptionController extends Controller
                 'quantity' => $quantity,
             ]);
 
+            $this->planLimitService->invalidateUserPlanCache($user);
             $this->invalidateAdminCaches();
 
             return redirect()->route('billing.index')->with('success', 'Seat count updated successfully.');
         } catch (ConcurrentOperationException) {
             return back()->with('error', 'A quantity update is already in progress. Please try again.');
         } catch (IncompletePayment $e) {
-            return back()->with('error', 'Payment requires additional confirmation. Please try again.');
+            // Subscription requires 3DS/SCA — redirect to billing page which surfaces the incomplete payment UI.
+            return redirect()->route('billing.index')
+                ->with('info', 'Your payment requires additional verification. Please complete the confirmation below.');
         } catch (ApiErrorException $e) {
             Log::error('Stripe API error during quantity update', [
                 'user_id' => $user->id,

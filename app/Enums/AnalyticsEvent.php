@@ -17,6 +17,13 @@ enum AnalyticsEvent: string
     case AUTH_SOCIAL_LOGIN = 'auth.social_login';
     case AUTH_SOCIAL_DISCONNECTED = 'auth.social_disconnected';
 
+    // Onboarding
+    case ONBOARDING_COMPLETED = 'onboarding.completed';
+
+    // Trial
+    case TRIAL_STARTED = 'trial.started';
+    case TRIAL_CONVERTED = 'trial.converted';
+
     // Billing
     case SUBSCRIPTION_CREATED = 'subscription.created';
     case SUBSCRIPTION_CANCELED = 'subscription.canceled';

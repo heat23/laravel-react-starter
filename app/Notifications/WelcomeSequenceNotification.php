@@ -43,14 +43,24 @@ class WelcomeSequenceNotification extends Notification implements ShouldQueue
     {
         $appName = config('app.name');
 
-        return (new MailMessage)
-            ->subject("Welcome to {$appName}!")
+        $mail = (new MailMessage)
+            ->subject("Welcome to {$appName} — Let's Get You Started")
             ->greeting("Hi {$notifiable->name}!")
-            ->line("Thanks for signing up for {$appName}. You've made a great choice.")
-            ->line('Your account is ready to go. Here\'s what you can do right now:')
-            ->line('**Explore your dashboard** — get an overview of your account')
-            ->action('Go to Dashboard', route('dashboard'))
+            ->line("Thanks for signing up for {$appName}. Your account is ready. Here's how to get set up in the next 10 minutes:")
+            ->line('**1. Set up your profile (2 min)** — add your details and customize your experience');
+
+        if (config('features.billing.enabled', false)) {
+            $mail->line('**2. Connect your Stripe account (5 min)** — configure your subscription and billing details');
+        }
+
+        if (config('features.api_tokens.enabled', true)) {
+            $mail->line('**3. Generate your first API token (1 min)** — integrate '.$appName.' with your existing tools');
+        }
+
+        $mail->action('Go to Your Dashboard', route('dashboard'))
             ->line("We'll send you a couple more tips over the next few days to help you get the most out of {$appName}.");
+
+        return $mail;
     }
 
     private function gettingStartedEmail(object $notifiable): MailMessage
@@ -64,13 +74,20 @@ class WelcomeSequenceNotification extends Notification implements ShouldQueue
             ->line('**1. Configure your settings** — set your timezone and theme preferences')
             ->line('**2. Set up your profile** — make your account feel like yours')
             ->line('**3. Explore the features** — see what\'s available to you')
-            ->action('Open Settings', route('dashboard'))
+            ->action('Open Settings', route('profile.edit'))
             ->line('Each one takes less than a minute.');
     }
 
     private function advancedFeaturesEmail(object $notifiable): MailMessage
     {
         $appName = config('app.name');
+
+        // Deep-link to the most relevant enabled feature
+        $ctaUrl = match (true) {
+            config('features.api_tokens.enabled', true) => route('settings.tokens'),
+            config('features.webhooks.enabled', false) => route('settings.webhooks'),
+            default => route('dashboard'),
+        };
 
         return (new MailMessage)
             ->subject("Unlock the full power of {$appName}")
@@ -79,7 +96,7 @@ class WelcomeSequenceNotification extends Notification implements ShouldQueue
             ->line('**API tokens** — integrate with your existing tools')
             ->line('**Webhooks** — get notified when things happen')
             ->line('**Team features** — collaborate with your colleagues')
-            ->action('Explore Features', route('dashboard'))
+            ->action('Set Up an API Token', $ctaUrl)
             ->line('Have questions? Reply to this email — we read every response.');
     }
 

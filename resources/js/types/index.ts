@@ -51,6 +51,15 @@ export interface PageProps {
   errors: Record<string, string>;
   features: Features;
   notifications_unread_count: number;
+  /** Active A/B experiment variants keyed by experiment name. */
+  experiments?: Record<string, string>;
+  /** Whether the changelog has entries newer than the user last acknowledged. */
+  has_unread_changelog?: boolean;
+  /**
+   * PQL limit warnings — resources where the user is at ≥80% of their plan limit.
+   * Only present when billing is enabled and the user is authenticated.
+   */
+  limit_warnings?: Record<string, { current: number; limit: number; threshold: 80 | 100 }> | null;
 }
 
 // Common pagination type
@@ -120,6 +129,9 @@ export interface ComparisonPageProps {
   metaDescription: string;
   features: ComparisonFeature[];
   breadcrumbs?: BreadcrumbItem[];
+  canonicalUrl?: string;
+  ogImage?: string;
+  whenToChooseThem?: string;
 }
 
 // Feature landing pages
@@ -127,6 +139,9 @@ export interface FeaturePageProps {
   title: string;
   metaDescription: string;
   breadcrumbs?: BreadcrumbItem[];
+  canonicalUrl?: string;
+  ogImage?: string;
+  canRegister?: boolean;
 }
 
 // Guide/pillar article pages
@@ -135,6 +150,8 @@ export interface GuidePageProps {
   metaDescription: string;
   appName: string;
   breadcrumbs?: BreadcrumbItem[];
+  canonicalUrl?: string;
+  ogImage?: string;
 }
 
 // Form state helpers

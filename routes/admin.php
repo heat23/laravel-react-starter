@@ -12,6 +12,8 @@ use App\Http\Controllers\Admin\AdminFeedbackController;
 use App\Http\Controllers\Admin\AdminHealthController;
 use App\Http\Controllers\Admin\AdminImpersonationController;
 use App\Http\Controllers\Admin\AdminNotificationsController;
+use App\Http\Controllers\Admin\AdminProductAnalyticsController;
+use App\Http\Controllers\Admin\AdminRoadmapController;
 use App\Http\Controllers\Admin\AdminScheduleController;
 use App\Http\Controllers\Admin\AdminSessionsController;
 use App\Http\Controllers\Admin\AdminSocialAuthController;
@@ -28,6 +30,9 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
     ->group(function () {
         // Metrics Dashboard (landing page)
         Route::get('/', AdminDashboardController::class)->name('dashboard');
+
+        // Product Analytics
+        Route::get('/analytics', AdminProductAnalyticsController::class)->name('analytics');
 
         // Users Management
         Route::get('/users/export', [AdminUsersController::class, 'export'])
@@ -151,6 +156,13 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
 
         // Schedule Monitor
         Route::get('/schedule', AdminScheduleController::class)->name('schedule');
+
+        // Roadmap Management
+        Route::get('/roadmap', [AdminRoadmapController::class, 'index'])->name('roadmap.index');
+        Route::get('/roadmap/create', [AdminRoadmapController::class, 'create'])->name('roadmap.create');
+        Route::post('/roadmap', [AdminRoadmapController::class, 'store'])->middleware('throttle:30,1')->name('roadmap.store');
+        Route::patch('/roadmap/{roadmapEntry}', [AdminRoadmapController::class, 'update'])->middleware('throttle:30,1')->name('roadmap.update');
+        Route::delete('/roadmap/{roadmapEntry}', [AdminRoadmapController::class, 'destroy'])->middleware(['throttle:10,1', 'super_admin'])->name('roadmap.destroy');
 
         // Feature-gated admin sections (auth via group middleware on line 21)
         if (config('features.billing.enabled')) {

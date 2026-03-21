@@ -32,6 +32,13 @@ export const AnalyticsEvents = {
   BILLING_SUBSCRIPTION_RESUMED: 'billing.subscription_resumed',
   BILLING_PLAN_SWAPPED: 'billing.plan_swapped',
   BILLING_PAYMENT_FAILED: 'billing.payment_failed',
+  BILLING_PERIOD_TOGGLED: 'billing.period_toggled',
+
+  // Dedicated feature events (high-signal)
+  AUTH_2FA_ENABLED: 'auth.2fa_enabled',
+
+  // Subscription lifecycle (server-side event names for funnel alignment)
+  SUBSCRIPTION_CANCELED: 'subscription.canceled',
 
   // Feature usage — all features use FEATURE_USED with feature_name property
   FEATURE_USED: 'feature.used',
@@ -48,6 +55,12 @@ export const AnalyticsEvents = {
   LIMIT_THRESHOLD_50: 'limit.threshold_50',
   LIMIT_THRESHOLD_80: 'limit.threshold_80',
   LIMIT_THRESHOLD_100: 'limit.threshold_100',
+
+  // Trial
+  BILLING_TRIAL_STARTED: 'billing.trial_started',
+
+  // Account lifecycle
+  ACCOUNT_DELETED: 'account.deleted',
 
   // Activation
   ACTIVATION_MILESTONE: 'activation.milestone',
@@ -111,6 +124,11 @@ export type EventPropertyMap = {
   [AnalyticsEvents.BILLING_SUBSCRIPTION_RESUMED]: { plan?: PlanKey } | undefined;
   [AnalyticsEvents.BILLING_PLAN_SWAPPED]: { from_plan?: string; to_plan?: string } | undefined;
   [AnalyticsEvents.BILLING_PAYMENT_FAILED]: { reason?: string } | undefined;
+  [AnalyticsEvents.BILLING_PERIOD_TOGGLED]: { from: BillingPeriod; to: BillingPeriod };
+  [AnalyticsEvents.AUTH_2FA_ENABLED]: undefined;
+  [AnalyticsEvents.SUBSCRIPTION_CANCELED]: { plan?: PlanKey; reason?: string; grace_period_ends?: string } | undefined;
+  [AnalyticsEvents.BILLING_TRIAL_STARTED]: { plan: string; trial_days: number };
+  [AnalyticsEvents.ACCOUNT_DELETED]: { reason?: string } | undefined;
   [AnalyticsEvents.FEATURE_USED]: { feature_name: string; is_first_use?: boolean };
   [AnalyticsEvents.FEATURE_SETTINGS_UPDATED]: { setting_key?: string } | undefined;
   [AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED]: { page: string; section?: string };

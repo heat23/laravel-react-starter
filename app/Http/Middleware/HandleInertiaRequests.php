@@ -2,8 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\ChangelogController;
+use App\Models\User;
+use App\Models\UserSetting;
 use App\Services\BillingService;
 use App\Services\FeatureFlagService;
+use App\Services\PlanLimitService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -20,6 +24,68 @@ class HandleInertiaRequests extends Middleware
         private BillingService $billingService,
         private FeatureFlagService $featureFlagService,
     ) {}
+
+    /**
+     * Return approaching-limit flags for the user.
+     * Only resources at ≥80% usage are returned.
+     * Cached per-user for 60 seconds to minimise query overhead.
+     *
+     * @return array<string, array{current: int, limit: int, threshold: int}>
+     */
+    private function getLimitWarnings(User $user): array
+    {
+        return cache()->remember("user:{$user->id}:limit_warnings", 60, function () use ($user) {
+            $planLimitService = app(PlanLimitService::class);
+            $warnings = [];
+
+            // API tokens
+            if (config('features.api_tokens.enabled', true)) {
+                $tokenLimit = $planLimitService->getLimit($user, 'api_tokens');
+                if ($tokenLimit !== null && $tokenLimit > 0) {
+                    $tokenCount = $user->tokens()->count();
+                    $pct = ($tokenCount / $tokenLimit) * 100;
+                    if ($pct >= 80) {
+                        $warnings['api_tokens'] = [
+                            'current' => $tokenCount,
+                            'limit' => $tokenLimit,
+                            'threshold' => $pct >= 100 ? 100 : 80,
+                        ];
+                    }
+                }
+            }
+
+            // Webhook endpoints
+            if (config('features.webhooks.enabled', false)) {
+                $webhookLimit = $planLimitService->getLimit($user, 'webhook_endpoints');
+                if ($webhookLimit !== null && $webhookLimit > 0) {
+                    $webhookCount = $user->webhookEndpoints()->count();
+                    $pct = ($webhookCount / $webhookLimit) * 100;
+                    if ($pct >= 80) {
+                        $warnings['webhook_endpoints'] = [
+                            'current' => $webhookCount,
+                            'limit' => $webhookLimit,
+                            'threshold' => $pct >= 100 ? 100 : 80,
+                        ];
+                    }
+                }
+            }
+
+            return $warnings;
+        });
+    }
+
+    private function hasUnreadChangelog(object $user): bool
+    {
+        $latestVersion = ChangelogController::latestVersion();
+
+        if (! $latestVersion) {
+            return false;
+        }
+
+        $lastSeen = UserSetting::getValue($user->id, 'changelog_last_seen_version');
+
+        return $lastSeen !== $latestVersion;
+    }
 
     /**
      * Determine the current asset version.
@@ -100,6 +166,13 @@ class HandleInertiaRequests extends Middleware
                     fn () => $user->unreadNotifications()->count()
                 )
                 : 0,
+            // Active A/B experiment variants — keyed by experiment name.
+            // Add experiment keys here as new tests are launched.
+            'experiments' => $user ? fn () => [] : null,
+            'has_unread_changelog' => $user ? fn () => $this->hasUnreadChangelog($user) : false,
+            // PQL limit warnings — only computed when billing is enabled and user is authenticated.
+            // Cached per-user with a 60-second TTL to avoid query overhead on every request.
+            'limit_warnings' => $user && $features['billing'] ? fn () => $this->getLimitWarnings($user) : null,
         ];
     }
 }

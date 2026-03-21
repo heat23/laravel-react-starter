@@ -18,6 +18,7 @@ class DeleteAccountRequest extends FormRequest
     {
         return [
             'password' => ['required', 'current_password'],
+            'reason' => ['nullable', 'string', 'in:too_expensive,missing_feature,found_alternative,just_testing,other'],
         ];
     }
 }

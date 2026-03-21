@@ -1,5 +1,6 @@
 import {
   AlertCircle,
+  BarChart2,
   Bell,
   CreditCard,
   FileText,
@@ -34,7 +35,10 @@ export interface AdminNavGroup {
 export const adminNavigationGroups: AdminNavGroup[] = [
   {
     label: 'Overview',
-    items: [{ href: '/admin', label: 'Metrics', icon: LayoutDashboard }],
+    items: [
+      { href: '/admin', label: 'Metrics', icon: LayoutDashboard },
+      { href: '/admin/analytics', label: 'Product Analytics', icon: BarChart2 },
+    ],
   },
   {
     label: 'Management',

@@ -89,9 +89,10 @@ class ProfileController extends Controller
             }
         }
 
-        $this->auditService->log(AnalyticsEvent::ACCOUNT_DELETED, [
+        $this->auditService->log(AnalyticsEvent::ACCOUNT_DELETED, array_filter([
             'user_id' => $user->id,
-        ]);
+            'reason' => $request->validated('reason'),
+        ], fn ($v) => $v !== null));
 
         Auth::logout();
 

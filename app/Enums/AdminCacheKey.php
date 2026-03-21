@@ -43,6 +43,11 @@ enum AdminCacheKey: string
     // Feature Flags
     case FEATURE_FLAGS_GLOBAL = 'admin:feature_flags:global';
 
+    // Product Analytics
+    case PRODUCT_ANALYTICS_SIGNUP_TREND = 'admin:product_analytics:signup_trend';
+    case PRODUCT_ANALYTICS_ONBOARDING_FUNNEL = 'admin:product_analytics:onboarding_funnel';
+    case PRODUCT_ANALYTICS_FEATURE_ADOPTION = 'admin:product_analytics:feature_adoption';
+
     /** Default TTL in seconds for most admin caches. */
     public const DEFAULT_TTL = 300;
 

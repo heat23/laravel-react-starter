@@ -75,12 +75,13 @@ class PlanLimitService
     }
 
     /**
-     * Invalidate the cached plan tier for a user.
+     * Invalidate the cached plan tier and limit warnings for a user.
      * Call after subscription state changes (webhooks, cancel, resume, etc.).
      */
     public function invalidateUserPlanCache(User $user): void
     {
         Cache::forget("user:{$user->id}:plan_tier");
+        Cache::forget("user:{$user->id}:limit_warnings");
     }
 
     /**
@@ -129,6 +130,13 @@ class PlanLimitService
 
         foreach ($thresholds as $threshold) {
             if ($percentage >= $threshold) {
+                // Guard: fire at most once per user per limit per threshold per day.
+                $cacheKey = "pql:{$user->id}:{$limitKey}:threshold_{$threshold}";
+                if (Cache::has($cacheKey)) {
+                    break;
+                }
+                Cache::put($cacheKey, true, now()->addHours(24));
+
                 $auditService = app(AuditService::class);
                 $analyticsEvent = match ($threshold) {
                     50 => AnalyticsEvent::LIMIT_THRESHOLD_50,
