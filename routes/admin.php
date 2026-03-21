@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminDataHealthController;
 use App\Http\Controllers\Admin\AdminFailedJobsController;
 use App\Http\Controllers\Admin\AdminFeatureFlagController;
+use App\Http\Controllers\Admin\AdminFeedbackController;
 use App\Http\Controllers\Admin\AdminHealthController;
 use App\Http\Controllers\Admin\AdminImpersonationController;
 use App\Http\Controllers\Admin\AdminNotificationsController;
@@ -74,6 +75,16 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
 
         // Config Viewer
         Route::get('/config', AdminConfigController::class)->name('config');
+
+        // Feedback Inbox
+        Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');
+        Route::get('/feedback/{feedback}', [AdminFeedbackController::class, 'show'])->name('feedback.show');
+        Route::patch('/feedback/{feedback}', [AdminFeedbackController::class, 'update'])
+            ->middleware('throttle:30,1')
+            ->name('feedback.update');
+        Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])
+            ->middleware(['throttle:10,1', 'super_admin'])
+            ->name('feedback.destroy');
 
         // Audit Logs
         Route::get('/audit-logs', [AdminAuditLogController::class, 'index'])->name('audit-logs.index');

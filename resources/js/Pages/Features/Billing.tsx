@@ -15,6 +15,8 @@ import { Head, Link } from '@inertiajs/react';
 
 import { Logo, TextLogo } from '@/Components/branding/Logo';
 import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
+import { FaqJsonLd } from '@/Components/seo/FaqJsonLd';
+import { RelatedContent } from '@/Components/seo/RelatedContent';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
 import { Button } from '@/Components/ui/button';
@@ -74,7 +76,7 @@ const faqs = [
     },
 ];
 
-export default function Billing({ title, metaDescription, breadcrumbs }: FeaturePageProps) {
+export default function Billing({ title, metaDescription, breadcrumbs, canonicalUrl, ogImage, canRegister }: FeaturePageProps) {
     const { track } = useAnalytics();
 
     useEffect(() => {
@@ -87,10 +89,14 @@ export default function Billing({ title, metaDescription, breadcrumbs }: Feature
                 <meta property="og:title" content={title} />
                 <meta property="og:description" content={metaDescription} />
                 <meta property="og:type" content="website" />
+                {ogImage && <meta property="og:image" content={ogImage} />}
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:title" content={title} />
                 <meta name="twitter:description" content={metaDescription} />
+                {ogImage && <meta name="twitter:image" content={ogImage} />}
+                {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
                 {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
+                <FaqJsonLd questions={faqs} />
             </Head>
 
             <div className="min-h-screen bg-background">
@@ -218,17 +224,67 @@ export default function Billing({ title, metaDescription, breadcrumbs }: Feature
                             </div>
                         </section>
 
+                        <section className="prose prose-neutral dark:prose-invert mb-16 max-w-none">
+                            <h2>How billing and webhooks work together</h2>
+                            <p>
+                                Stripe communicates subscription events (payment failed, subscription updated,
+                                invoice finalized) via webhooks. The billing system relies on incoming Stripe
+                                webhooks for dunning and incomplete payment recovery. If you&apos;re building
+                                outgoing webhooks to notify your own customers of subscription changes, see the{' '}
+                                <Link href="/guides/laravel-webhook-implementation" className="text-primary hover:underline">
+                                    Laravel webhook implementation guide
+                                </Link>{' '}
+                                for HMAC signing, queue-based retry, and delivery tracking patterns.
+                            </p>
+                        </section>
+
                         <section className="flex flex-wrap items-center justify-center gap-4 border-t pt-12">
-                            <Button size="lg" asChild>
+                            {canRegister && (
+                                <Button
+                                    size="lg"
+                                    asChild
+                                    onClick={() =>
+                                        track(AnalyticsEvents.ENGAGEMENT_CTA_CLICKED, {
+                                            source: 'feature_page_register',
+                                            page: 'billing',
+                                        })
+                                    }
+                                >
+                                    <Link href="/register">
+                                        Get the Starter Kit
+                                        <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Link>
+                                </Button>
+                            )}
+                            <Button variant="outline" size="lg" asChild>
                                 <Link href="/pricing">
                                     See pricing
-                                    <ArrowRight className="ml-2 h-4 w-4" />
                                 </Link>
                             </Button>
-                            <Button variant="outline" size="lg" asChild>
+                            <Button variant="ghost" size="lg" asChild>
                                 <Link href="/">Back to overview</Link>
                             </Button>
                         </section>
+
+                        <RelatedContent
+                            items={[
+                                {
+                                    title: 'Laravel Stripe Billing Tutorial',
+                                    href: '/guides/laravel-stripe-billing-tutorial',
+                                    description: 'Subscriptions, webhooks, and race condition prevention',
+                                },
+                                {
+                                    title: 'Compare vs Laravel Spark',
+                                    href: '/compare/laravel-spark',
+                                    description: 'One-time vs $99/year — full feature comparison',
+                                },
+                                {
+                                    title: 'Feature Flags',
+                                    href: '/features/feature-flags',
+                                    description: 'Toggle billing and other features with one env var',
+                                },
+                            ]}
+                        />
                     </article>
                 </main>
 
