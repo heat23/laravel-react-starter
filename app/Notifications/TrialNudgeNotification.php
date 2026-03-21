@@ -76,7 +76,7 @@ class TrialNudgeNotification extends Notification implements ShouldQueue
             ->greeting("Hi {$notifiable->name}!")
             ->line("Your {$appName} trial ends in {$daysLeft} ".($daysLeft === 1 ? 'day' : 'days').'. To keep your access uninterrupted, choose a plan that fits your needs.')
             ->line('**What happens when your trial ends?** You\'ll keep your account and data, but premium features will be restricted until you subscribe.')
-            ->action('Choose a Plan', config('features.billing.enabled') ? route('pricing') : route('dashboard'))
+            ->action('Choose a Plan', config('features.billing.enabled') ? route('billing.index') : route('dashboard'))
             ->line('Need more time? Reply to this email and we\'ll see what we can do.');
     }
 
@@ -87,10 +87,10 @@ class TrialNudgeNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->subject('Your trial has ended')
             ->greeting("Hi {$notifiable->name}!")
-            ->line("Your {$appName} trial period has ended. Your account and data are still here — nothing has been deleted.")
+            ->line("Your {$appName} trial period has ended. Your account and data are still here.")
             ->line('To regain access to premium features, subscribe to a plan.')
-            ->action('Subscribe Now', config('features.billing.enabled') ? route('pricing') : route('dashboard'))
-            ->line('If you decided this isn\'t for you, no hard feelings. Your data will be retained for 30 days.');
+            ->action('Subscribe Now', config('features.billing.enabled') ? route('billing.index') : route('dashboard'))
+            ->line('If you decided this isn\'t for you, no hard feelings — your account stays active.');
     }
 
     /**

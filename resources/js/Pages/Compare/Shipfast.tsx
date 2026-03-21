@@ -126,7 +126,7 @@ export default function Shipfast({
                 If you&apos;re a Laravel developer, the PHP ecosystem &mdash; Cashier, Telescope,
                 Horizon, Octane, Pest &mdash; is mature, predictable, and battle-tested for SaaS.
                 Laravel&apos;s queue system, job batching, and Redis integration are production-proven
-                at scale. Redis-locked billing mutations, PHPStan static analysis, and Pest&apos;s
+                at scale. concurrent payment protection mutations, PHPStan static analysis, and Pest&apos;s
                 expressive test syntax are real advantages for a solo founder who needs confidence
                 in their billing layer.
               </p>

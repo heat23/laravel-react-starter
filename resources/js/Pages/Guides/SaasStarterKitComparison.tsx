@@ -216,7 +216,7 @@ export default function SaasStarterKitComparison({
                       <tbody>
                         {[
                           ['Auth', 'Login + register', 'Social auth, 2FA, rate limiting, audit logging, session management'],
-                          ['Billing', 'Stripe Checkout link', 'Redis-locked mutations, multiple tiers, dunning, incomplete payment recovery'],
+                          ['Billing', 'Stripe Checkout link', 'double-charge prevention, multiple tiers, dunning, incomplete payment recovery'],
                           ['Admin panel', 'None', 'User management, health monitoring, audit log viewer, feature flag controls'],
                           ['2FA', 'None', 'TOTP with recovery codes, forced 2FA option'],
                           ['API tokens', 'None', 'Sanctum token management UI with permissions'],
@@ -404,7 +404,7 @@ export default function SaasStarterKitComparison({
                   </p>
                   <p>
                     <strong>What it includes:</strong> Laravel 12 + React 18 + TypeScript +
-                    Inertia.js SSR. Production Stripe billing with Redis-locked mutations (prevents
+                    Inertia.js SSR. Production Stripe billing with double-charge prevention (prevents
                     double-charge race conditions), 4 plan tiers, team seats, dunning emails, and
                     incomplete payment recovery. A custom React admin panel with user management,
                     health monitoring (DB, cache, queue, disk), audit log viewer, and feature flag
@@ -673,7 +673,7 @@ export default function SaasStarterKitComparison({
                   <p>
                     For Laravel developers building a React-based SaaS in 2026, Laravel React
                     Starter is the strongest option in the market: the only kit that ships
-                    production billing (Redis-locked Stripe), a custom React admin panel,
+                    production billing (concurrent payment protection), a custom React admin panel,
                     90+ tests, PHPStan static analysis, and 11 feature flags as a single
                     one-time purchase. For Livewire teams, Larafast is the best alternative.
                     For zero-budget projects, Wave provides a solid foundation with the

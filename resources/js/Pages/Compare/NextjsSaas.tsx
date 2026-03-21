@@ -91,7 +91,7 @@ export default function NextjsSaas({ title, metaDescription, appName, breadcrumb
                 name: 'What is the best Laravel SaaS starter kit?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'Laravel React Starter is a production-ready starter kit for building SaaS with Laravel 12, React 18, TypeScript, and Tailwind CSS v4. It includes Stripe billing with Redis-locked mutations, a custom admin panel, 11 feature flags with database overrides, HMAC-signed webhooks, TOTP two-factor authentication, audit logging, and 90+ tests across Pest and Vitest — all in a single codebase with no external service dependencies.',
+                    text: 'Laravel React Starter is a production-ready starter kit for building SaaS with Laravel 12, React 18, TypeScript, and Tailwind CSS v4. It includes Stripe billing with double-charge prevention, a custom admin panel, 11 feature flags with database overrides, HMAC-signed webhooks, TOTP two-factor authentication, audit logging, and 90+ tests across Pest and Vitest — all in a single codebase with no external service dependencies.',
                 },
             },
         ],
@@ -654,7 +654,7 @@ export default function NextjsSaas({ title, metaDescription, appName, breadcrumb
                                         </summary>
                                         <p className="mt-3 text-muted-foreground text-sm leading-relaxed">
                                             Laravel React Starter is a production-ready starter with React 18 + TypeScript,
-                                            Laravel 12, Stripe billing (Redis-locked), a custom admin panel, 11 feature flags,
+                                            Laravel 12, Stripe billing (concurrent payment protection), a custom admin panel, 11 feature flags,
                                             HMAC-signed webhooks, TOTP 2FA, audit logging, and 90+ Pest + Vitest tests —
                                             all in a single codebase.{' '}
                                             <Link href="/compare" className="text-primary underline-offset-4 hover:underline">

@@ -15,6 +15,6 @@ it('passes changelog entries as array props', function () {
 
     $response->assertInertia(fn ($page) => $page
         ->component('Changelog')
-        ->has('entries', 1)
+        ->has('entries', 3)
     );
 });

@@ -582,7 +582,7 @@ export default function LaravelSaasGuide({ title, metaDescription, appName, brea
                                         frontend (Livewire + Filament). Choose this if you prefer a PHP-only stack.
                                     </li>
                                     <li>
-                                        <strong>This starter kit</strong>: React + TypeScript frontend, Redis-locked billing
+                                        <strong>This starter kit</strong>: React + TypeScript frontend, concurrent payment protection
                                         with 4 tiers, 11 feature flags, a full admin panel, 90+ automated tests, PHPStan
                                         at level 8. One-time purchase, no subscription. Built for developers who want a
                                         React + Laravel SaaS with production-grade billing from day one.

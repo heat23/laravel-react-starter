@@ -541,7 +541,7 @@ export default function BuildVsBuyGuide({ title, metaDescription, appName, appUr
                                     </Link>
                                 </h3>
                                 <ul>
-                                    <li>Stripe Cashier with Redis-locked subscription mutations (prevents concurrent Stripe calls)</li>
+                                    <li>Stripe Cashier with double-charge prevention (prevents concurrent Stripe calls)</li>
                                     <li>Four plan tiers: free, pro, team (3&ndash;50 seats), enterprise</li>
                                     <li>Subscription lifecycle: create, cancel, resume, upgrade, downgrade with proration</li>
                                     <li>Dunning: incomplete payment reminders at 1 hour and 12 hours via queued notifications</li>

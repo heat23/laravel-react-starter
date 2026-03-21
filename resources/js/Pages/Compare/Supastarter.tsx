@@ -132,7 +132,7 @@ export default function Supastarter({
                 a proprietary SDK.
               </p>
               <p>
-                The Redis-locked billing layer is a concrete advantage for billing safety that
+                The concurrent payment protection layer is a concrete advantage for billing safety that
                 Supabase&apos;s architecture doesn&apos;t address &mdash; concurrent subscription
                 mutations are serialized with distributed locks. PHPStan on the backend and
                 TypeScript strict on the frontend gives you static analysis coverage across both

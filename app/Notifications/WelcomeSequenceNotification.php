@@ -108,7 +108,7 @@ class WelcomeSequenceNotification extends Notification implements ShouldQueue
         }
 
         if (config('features.billing.enabled', false)) {
-            $mail->line('**Billing & plans** — manage your subscription and upgrade to unlock more');
+            $mail->line('**Billing & plans** — manage your subscription and upgrade when you\'re ready');
         }
 
         $mail->action('Explore Advanced Features', $ctaUrl)

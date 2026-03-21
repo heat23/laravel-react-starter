@@ -89,7 +89,7 @@ export default function LaravelJetstream({
                 focuses on authentication scaffolding: login, registration, two-factor auth,
                 API tokens, and team management. This starter includes all of those plus
                 production infrastructure that Jetstream intentionally leaves to you: Stripe
-                billing with Redis-locked mutations, a full admin panel, feature flags,
+                billing with double-charge prevention, a full admin panel, feature flags,
                 webhooks, audit logging, and social authentication. The tradeoff is clear:
                 Jetstream is free and focused; this starter is a paid, broader foundation.
               </p>
@@ -134,7 +134,7 @@ export default function LaravelJetstream({
               <h2>When to choose Laravel React Starter</h2>
               <p>
                 If you are shipping a SaaS product and need billing infrastructure from day
-                one, Jetstream does not provide it. Redis-locked Stripe subscription mutations,
+                one, Jetstream does not provide it. double-charge prevention,
                 four plan tiers with seat-based pricing, dunning email sequences, and incomplete
                 payment recovery are outside Jetstream&apos;s scope. You would build all of that
                 yourself on top of Jetstream&apos;s auth scaffolding.

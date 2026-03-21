@@ -131,7 +131,7 @@ export default function Wave({
                 safety matters to your team, this starter&apos;s architecture is more consistent.
               </p>
               <p>
-                The Redis-locked billing layer is custom-built for safety &mdash; concurrent Stripe
+                The concurrent payment protection layer is custom-built for safety &mdash; concurrent Stripe
                 operations are serialized with distributed locks, preventing race conditions that can
                 occur when multiple requests modify the same subscription simultaneously. The 11
                 feature flags with database overrides give you granular control over feature rollouts
@@ -155,7 +155,7 @@ export default function Wave({
               <h2 className="text-2xl font-bold">Wave is a SaaS theme. We&apos;re a production-ready template with tests, CI, and billing wired up.</h2>
               <p className="mt-2 text-muted-foreground">
                 React + TypeScript across auth, frontend, and admin panel — with 90+ tests
-                and Redis-locked billing from day one.
+                and concurrent payment protection from day one.
               </p>
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
                 <Button asChild size="lg">

@@ -83,7 +83,7 @@ export default function LaravelSpark({
                 The tradeoff is scope and cost structure. Spark is a recurring subscription
                 focused narrowly on billing. It does not include an admin panel, feature flags,
                 webhooks, audit logging, or a frontend opinion. Those are left to you. This
-                starter includes comparable billing infrastructure &mdash; Redis-locked Stripe
+                starter includes comparable billing infrastructure &mdash; concurrent payment protection
                 mutations, four plan tiers, dunning emails &mdash; plus all of those additional
                 features, as a one-time purchase.
               </p>

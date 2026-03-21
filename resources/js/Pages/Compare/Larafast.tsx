@@ -31,7 +31,7 @@ const faqSchema = JSON.stringify({
       name: 'Does Laravel React Starter include Stripe billing like Larafast?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'Yes. Laravel React Starter includes production-grade Stripe billing via Laravel Cashier with Redis-locked subscription mutations to prevent race conditions, support for four plan tiers (free, pro, team, enterprise), per-seat pricing, a billing portal, and incomplete payment reminders — comparable to or exceeding Larafast\'s billing implementation.',
+        text: 'Yes. Laravel React Starter includes production-grade Stripe billing via Laravel Cashier with double-charge prevention to prevent race conditions, support for four plan tiers (free, pro, team, enterprise), per-seat pricing, a billing portal, and incomplete payment reminders — comparable to or exceeding Larafast\'s billing implementation.',
       },
     },
     {
@@ -173,8 +173,8 @@ export default function Larafast({
               <h2 id="what-is-lrs">What Is Laravel React Starter?</h2>
               <p>
                 Laravel React Starter is a production-ready Laravel&nbsp;12 SaaS boilerplate built
-                around React&nbsp;18, TypeScript, and Inertia.js SSR. It ships with Redis-locked
-                Stripe billing (four tiers), a custom TypeScript admin panel, 11 feature flags
+                around React&nbsp;18, TypeScript, and Inertia.js SSR. It ships with concurrent payment protection,
+                Stripe billing (four plans), a custom TypeScript admin panel, 11 feature flags
                 with database overrides, HMAC-signed webhooks (inbound and outbound), TOTP
                 two-factor authentication, and a 90+ test suite covering Pest, Vitest, PHPStan,
                 and Pint — all in a single one-time purchase.
@@ -360,7 +360,7 @@ export default function Larafast({
                   </dt>
                   <dd className="mt-2 text-muted-foreground">
                     Yes. Laravel React Starter includes production-grade Stripe billing via Laravel
-                    Cashier with Redis-locked subscription mutations to prevent race conditions,
+                    Cashier with double-charge prevention to prevent race conditions,
                     support for four plan tiers (free, pro, team, enterprise), per-seat pricing,
                     a billing portal, and incomplete payment reminders — comparable to or exceeding
                     Larafast&apos;s billing implementation.

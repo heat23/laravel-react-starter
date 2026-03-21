@@ -538,7 +538,7 @@ export default function TenancyArchitectureGuide({ title, metaDescription, appNa
                                     it&apos;s in one place, not nested inside tenant resolution middleware.
                                 </p>
                                 <p>
-                                    Redis-locked billing mutations (35-second timeout, rejected on lock failure)
+                                    concurrent payment protection mutations (35-second timeout, rejected on lock failure)
                                     ensure that concurrent operations — multiple users updating the same
                                     subscription simultaneously — are handled safely without race conditions. See
                                     the{' '}
@@ -615,7 +615,7 @@ export default function TenancyArchitectureGuide({ title, metaDescription, appNa
 
                                 <p>
                                     Laravel React Starter is single-tenant by deliberate design. The 11 feature
-                                    flags, Redis-locked billing, full{' '}
+                                    flags, concurrent payment protection, full{' '}
                                     <Link href="/features/admin-panel" className="text-primary hover:underline">
                                         admin panel
                                     </Link>

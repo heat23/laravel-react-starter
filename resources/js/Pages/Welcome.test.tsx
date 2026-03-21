@@ -133,7 +133,7 @@ describe('Welcome', () => {
   // ============================================
 
   describe('hero section', () => {
-    it('shows Get Started Free button when canRegister is true', () => {
+    it('shows Start Building Free button when canRegister is true', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
       expect(
@@ -141,7 +141,7 @@ describe('Welcome', () => {
       ).toBeGreaterThan(0);
     });
 
-    it('hides Get Started Free button when canRegister is false', () => {
+    it('hides Start Building Free button when canRegister is false', () => {
       render(<Welcome canLogin={true} canRegister={false} />);
 
       expect(
