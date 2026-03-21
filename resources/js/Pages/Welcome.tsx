@@ -393,6 +393,68 @@ const Welcome: WelcomeComponent = ({
             </div>
           </section>
 
+          {/* Resources / Compare Section */}
+          <section className="container border-t py-24">
+            <div className="mx-auto max-w-4xl">
+              <h2 className="mb-4 text-center text-2xl font-bold">
+                Compare &amp; Learn
+              </h2>
+              <p className="mb-10 text-center text-muted-foreground">
+                Not sure if this is the right kit? See how it compares to every alternative.
+              </p>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Link
+                  href="/compare"
+                  className="group rounded-2xl border border-border/70 bg-card p-6 shadow-sm transition-colors hover:border-primary/30"
+                >
+                  <h3 className="mb-2 font-semibold">
+                    Starter Kit Comparison Hub
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Side-by-side cards for all 8 Laravel SaaS boilerplates — Larafast, SaaSyKit,
+                    Wave, Spark, Jetstream, ShipFast, SupaStarter.
+                  </p>
+                  <span className="mt-3 inline-flex items-center text-sm font-medium text-primary">
+                    Compare all
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </span>
+                </Link>
+                <Link
+                  href="/guides/saas-starter-kit-comparison-2026"
+                  className="group rounded-2xl border border-border/70 bg-card p-6 shadow-sm transition-colors hover:border-primary/30"
+                >
+                  <h3 className="mb-2 font-semibold">
+                    2026 Buyer&apos;s Guide
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    In-depth review of each kit: feature matrix, pricing table, pros/cons, and
+                    our ranked recommendation for React and Livewire teams.
+                  </p>
+                  <span className="mt-3 inline-flex items-center text-sm font-medium text-primary">
+                    Read the guide
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </span>
+                </Link>
+                <Link
+                  href="/pricing"
+                  className="group rounded-2xl border border-border/70 bg-card p-6 shadow-sm transition-colors hover:border-primary/30"
+                >
+                  <h3 className="mb-2 font-semibold">
+                    Pricing
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    One-time purchase. Full source access. No recurring license fees.
+                    Everything in the comparison matrix, ready to deploy.
+                  </p>
+                  <span className="mt-3 inline-flex items-center text-sm font-medium text-primary">
+                    View pricing
+                    <ArrowRight className="ml-1 h-3 w-3" />
+                  </span>
+                </Link>
+              </div>
+            </div>
+          </section>
+
           {/* Tech Stack Section */}
           <section className="container border-t py-24">
             <div className="mx-auto max-w-4xl text-center">

@@ -128,12 +128,10 @@ export default function BuildVsBuyGuide({ title, metaDescription, appName, appUr
                 {/* JSON-LD: do NOT sanitize with DOMPurify — it corrupts @context and type values (SD009) */}
                 <script
                     type="application/ld+json"
-                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{ __html: articleSchema }}
                 />
                 <script
                     type="application/ld+json"
-                    // eslint-disable-next-line react/no-danger
                     dangerouslySetInnerHTML={{ __html: faqSchema }}
                 />
             </Head>

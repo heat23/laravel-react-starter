@@ -157,6 +157,11 @@ export default function Supastarter({
                   <Link href="/pricing">View pricing</Link>
                 </Button>
               </div>
+              <div className="mt-4">
+                <Link href="/compare" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  ← See all comparisons
+                </Link>
+              </div>
             </section>
           </article>
         </main>

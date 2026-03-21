@@ -116,9 +116,7 @@ export default function NextjsSaas({ title, metaDescription, appName, breadcrumb
                     content="Which is better for SaaS in 2026? Laravel vs Next.js compared on developer experience, performance, ecosystem, and deployment. With starter kit recommendations."
                 />
                 {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
-                {/* eslint-disable-next-line react/no-danger */}
                 <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: articleSchema }} />
-                {/* eslint-disable-next-line react/no-danger */}
                 <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchema }} />
             </Head>
 

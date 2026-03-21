@@ -283,7 +283,7 @@ describe('Welcome', () => {
       render(<Welcome canLogin={true} canRegister={true} />);
 
       const currentYear = new Date().getFullYear().toString();
-      expect(screen.getByText(new RegExp(currentYear))).toBeInTheDocument();
+      expect(screen.getByText(new RegExp(`© ${currentYear}`))).toBeInTheDocument();
     });
   });
 
