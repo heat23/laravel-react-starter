@@ -186,22 +186,22 @@ const Welcome: WelcomeComponent = ({
         />
         <meta
           property="og:title"
-          content={`${appName} — Ship your SaaS in days, not months`}
+          content={`${appName} — Ship a production-ready Laravel + React SaaS in hours, not weeks`}
         />
         <meta
           property="og:description"
-          content={`${featureCount} toggleable features, Redis-locked billing, production admin panel. Laravel 12 + React 18 + TypeScript.`}
+          content={`${featureCount} toggleable features, Redis-locked billing, production admin panel. Laravel 12 + React 18 + TypeScript. Built for indie developers and small teams.`}
         />
         <meta property="og:type" content="website" />
         <meta property="og:image" content={ogImageUrl} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta
           name="twitter:title"
-          content={`${appName} — Ship your SaaS in days, not months`}
+          content={`${appName} — Ship a production-ready Laravel + React SaaS in hours, not weeks`}
         />
         <meta
           name="twitter:description"
-          content={`${featureCount} toggleable features, Redis-locked billing, production admin panel. Laravel 12 + React 18 + TypeScript.`}
+          content={`${featureCount} toggleable features, Redis-locked billing, production admin panel. Laravel 12 + React 18 + TypeScript. Built for indie developers and small teams.`}
         />
         <meta name="twitter:image" content={ogImageUrl} />
         {faqs.length > 0 && (
@@ -262,7 +262,10 @@ const Welcome: WelcomeComponent = ({
               className="hidden items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
             >
               Pricing
-              <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary">
+              <span
+                className="rounded-full bg-primary/10 px-1.5 py-0.5 text-xs font-medium text-primary"
+                aria-label="Save 20% with annual billing"
+              >
                 Save 20%
               </span>
             </Link>
@@ -419,6 +422,59 @@ const Welcome: WelcomeComponent = ({
             </div>
           </section>
 
+          {/* Social Proof Section */}
+          <section aria-label="Social proof" className="container border-t py-24">
+            <div className="mx-auto max-w-5xl">
+              {/* Metrics bar */}
+              <div className="mb-12 flex flex-wrap items-center justify-center gap-8 text-center">
+                {githubStars !== undefined && (
+                  <>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-3xl font-bold text-primary">
+                        ★ {githubStars.toLocaleString()}
+                      </span>
+                      <span className="text-sm text-muted-foreground">GitHub stars</span>
+                    </div>
+                    <div className="hidden h-10 w-px bg-border sm:block" />
+                  </>
+                )}
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-3xl font-bold">{userCount}+</span>
+                  <span className="text-sm text-muted-foreground">Developers using it</span>
+                </div>
+                <div className="hidden h-10 w-px bg-border sm:block" />
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-3xl font-bold">{testCount}+</span>
+                  <span className="text-sm text-muted-foreground">Automated tests included</span>
+                </div>
+                <div className="hidden h-10 w-px bg-border sm:block" />
+                <div className="flex flex-col items-center gap-1">
+                  <span className="text-3xl font-bold">2–3 days</span>
+                  <span className="text-sm text-muted-foreground">To your first production deploy</span>
+                </div>
+              </div>
+
+              {testimonials.length > 0 && (
+                <div className="grid gap-6 md:grid-cols-3">
+                  {testimonials.map((testimonial) => (
+                    <figure
+                      key={testimonial.name}
+                      className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm"
+                    >
+                      <blockquote className="mb-4 text-sm italic text-muted-foreground">
+                        &ldquo;{testimonial.quote}&rdquo;
+                      </blockquote>
+                      <figcaption>
+                        <p className="text-sm font-semibold">{testimonial.name}</p>
+                        <p className="text-xs text-muted-foreground">{testimonial.role}</p>
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
           {/* Before vs After Section */}
           <section className="container py-24">
             <div className="mx-auto max-w-4xl">
@@ -461,46 +517,6 @@ const Welcome: WelcomeComponent = ({
                   </ul>
                 </div>
               </div>
-            </div>
-          </section>
-
-          {/* Social Proof Section */}
-          <section className="container border-t py-24">
-            <div className="mx-auto max-w-5xl">
-              <div className="mb-12 flex flex-wrap items-center justify-center gap-8 text-center">
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-3xl font-bold text-primary">★★★★★</span>
-                  <span className="text-sm text-muted-foreground">Used by 100+ developers</span>
-                </div>
-                <div className="hidden h-10 w-px bg-border sm:block" />
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-3xl font-bold">{testCount}+</span>
-                  <span className="text-sm text-muted-foreground">Automated tests included</span>
-                </div>
-                <div className="hidden h-10 w-px bg-border sm:block" />
-                <div className="flex flex-col items-center gap-1">
-                  <span className="text-3xl font-bold">2–3 days</span>
-                  <span className="text-sm text-muted-foreground">To your first production deploy</span>
-                </div>
-              </div>
-              {testimonials.length > 0 && (
-                <div className="grid gap-6 md:grid-cols-3">
-                  {testimonials.map((testimonial) => (
-                    <div
-                      key={testimonial.name}
-                      className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm"
-                    >
-                      <p className="mb-4 text-sm text-muted-foreground italic">
-                        &ldquo;{testimonial.quote}&rdquo;
-                      </p>
-                      <div>
-                        <p className="text-sm font-semibold">{testimonial.name}</p>
-                        <p className="text-xs text-muted-foreground">{testimonial.role}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           </section>
 
