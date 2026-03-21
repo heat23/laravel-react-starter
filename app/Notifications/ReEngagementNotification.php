@@ -98,13 +98,21 @@ class ReEngagementNotification extends Notification implements ShouldQueue
     {
         $appName = config('app.name');
 
+        $changelogItem = 'smarter activity tracking and faster load times across the board';
+
+        $ctaUrl = $this->dashboardUrl('reengagement_winback', 3);
+        if (config('features.billing.enabled', false)) {
+            // Deep-link to changelog if available, otherwise dashboard
+            $ctaUrl = route('dashboard').'?utm_source=email&utm_campaign=reengagement_winback&utm_content=email_3';
+        }
+
         return (new MailMessage)
-            ->subject("Your {$appName} account is still active")
+            ->subject('One thing changed since you last logged in')
             ->greeting("Hi {$notifiable->name}!")
-            ->line("It's been 30 days since your last visit. Your account and all your data are still here — nothing has been deleted.")
-            ->line('If you\'d like to continue using your account, just log in whenever you\'re ready.')
-            ->action('Log In', route('login'))
-            ->line('If you no longer need your account, you can manage your data from your profile settings.');
+            ->line("Since your last visit, we shipped {$changelogItem}. A lot of {$appName} users tell us it's the thing that finally made it click.")
+            ->line('Your account and all your data are still here — nothing has been deleted.')
+            ->action('See What\'s New →', $ctaUrl)
+            ->line('If you have questions or want to share feedback, just reply to this email. We read every response.');
     }
 
     private function valueTip(object $notifiable): MailMessage

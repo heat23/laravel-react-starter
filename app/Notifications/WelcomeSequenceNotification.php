@@ -89,15 +89,32 @@ class WelcomeSequenceNotification extends Notification implements ShouldQueue
             default => route('dashboard'),
         };
 
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject("Unlock the full power of {$appName}")
             ->greeting("Hi {$notifiable->name}!")
-            ->line("You've been with us for a few days now. Here are some features you might not have discovered yet:")
-            ->line('**API tokens** — integrate with your existing tools')
-            ->line('**Webhooks** — get notified when things happen')
-            ->line('**Team features** — collaborate with your colleagues')
-            ->action('Set Up an API Token', $ctaUrl)
+            ->line("You've been with us for a few days now. Here are some features you might not have discovered yet:");
+
+        // Only mention features that are enabled in this deployment
+        if (config('features.api_tokens.enabled', true)) {
+            $mail->line('**API tokens** — integrate with your existing tools');
+        }
+
+        if (config('features.webhooks.enabled', false)) {
+            $mail->line('**Webhooks** — get notified when things happen in real time');
+        }
+
+        if (config('features.two_factor.enabled', false)) {
+            $mail->line('**Two-factor authentication** — add an extra layer of security to your account');
+        }
+
+        if (config('features.billing.enabled', false)) {
+            $mail->line('**Billing & plans** — manage your subscription and upgrade to unlock more');
+        }
+
+        $mail->action('Explore Advanced Features', $ctaUrl)
             ->line('Have questions? Reply to this email — we read every response.');
+
+        return $mail;
     }
 
     /**

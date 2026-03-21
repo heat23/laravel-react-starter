@@ -11,11 +11,10 @@ class SendWelcomeSequence extends Command
 {
     protected $signature = 'emails:send-welcome-sequence';
 
-    protected $description = 'Send welcome email sequence to new users (immediate, day 1, day 3)';
+    protected $description = 'Send day-1 and day-3 follow-up emails in the welcome sequence (email 1 is sent by the Registered event listener)';
 
     /** @var array<int, array{days: int, maxDays: int}> */
     private const EMAIL_SCHEDULE = [
-        1 => ['days' => 0, 'maxDays' => 1],
         2 => ['days' => 1, 'maxDays' => 2],
         3 => ['days' => 3, 'maxDays' => 5],
     ];
@@ -48,6 +47,10 @@ class SendWelcomeSequence extends Command
         $sent = 0;
 
         foreach ($users as $user) {
+            if ($this->hasOptedOut($user)) {
+                continue;
+            }
+
             if ($this->alreadySentEmail($user, $emailNumber)) {
                 continue;
             }
@@ -72,11 +75,18 @@ class SendWelcomeSequence extends Command
         return $sent;
     }
 
+    private function hasOptedOut(User $user): bool
+    {
+        $value = \App\Models\UserSetting::getValue($user->id, 'marketing_emails', true);
+
+        return $value === false || $value === '0' || $value === 0;
+    }
+
     private function alreadySentEmail(User $user, int $emailNumber): bool
     {
         return $user->notifications()
             ->where('type', WelcomeSequenceNotification::class)
-            ->where('data', 'like', '%"email_number":'.$emailNumber.'%')
+            ->where('data->email_number', $emailNumber)
             ->exists();
     }
 }
