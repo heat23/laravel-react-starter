@@ -2,6 +2,9 @@
 
 use App\Models\User;
 use App\Services\BillingService;
+use Laravel\Cashier\Exceptions\IncompletePayment;
+use Laravel\Cashier\Payment;
+use Stripe\PaymentIntent;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -51,7 +54,7 @@ it('cannot reduce below min_seats for team plan', function () {
     createTeamSubscription($user, 5);
 
     $response = $this->actingAs($user)->post('/billing/quantity', [
-        'quantity' => 1, // team min is 3
+        'quantity' => 1, // team min is 2
     ]);
 
     $response->assertSessionHas('error');
@@ -142,11 +145,11 @@ it('handles IncompletePayment on quantity update', function () {
     createTeamSubscription($user, 5);
 
     $mock = Mockery::mock(BillingService::class)->makePartial();
-    $paymentIntent = \Stripe\PaymentIntent::constructFrom(['id' => 'pi_qty_sca', 'status' => 'requires_action']);
-    $payment = new \Laravel\Cashier\Payment($paymentIntent);
+    $paymentIntent = PaymentIntent::constructFrom(['id' => 'pi_qty_sca', 'status' => 'requires_action']);
+    $payment = new Payment($paymentIntent);
     $mock->shouldReceive('updateQuantity')
         ->once()
-        ->andThrow(new \Laravel\Cashier\Exceptions\IncompletePayment($payment));
+        ->andThrow(new IncompletePayment($payment));
     app()->instance(BillingService::class, $mock);
 
     $response = $this->actingAs($user)->post('/billing/quantity', [
