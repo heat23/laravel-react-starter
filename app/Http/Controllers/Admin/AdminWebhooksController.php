@@ -118,7 +118,7 @@ class AdminWebhooksController extends Controller
     public function endpoints(): Response
     {
         $endpoints = WebhookEndpoint::withTrashed()
-            ->with(['user:id,name,email'])
+            ->with(['user' => fn ($q) => $q->withTrashed()->select('id', 'name', 'email')])
             ->withCount('deliveries')
             ->orderByRaw('deleted_at IS NOT NULL ASC')
             ->orderByDesc('created_at')

@@ -106,7 +106,7 @@ class AdminFailedJobsController extends Controller
             ->with('success', 'Failed job deleted.');
     }
 
-    public function bulkRetry(Request $request): RedirectResponse
+    public function bulkRetry(Request $request, AuditService $audit): RedirectResponse
     {
         $validated = $request->validate([
             'ids' => ['required', 'array', 'max:100'],
@@ -124,11 +124,16 @@ class AdminFailedJobsController extends Controller
             }
         }
 
+        $audit->log(AnalyticsEvent::ADMIN_FAILED_JOB_BULK_RETRY, [
+            'count' => $retried,
+            'requested' => count($validated['ids']),
+        ]);
+
         return redirect()->route('admin.failed-jobs.index')
             ->with('success', "{$retried} job(s) queued for retry.");
     }
 
-    public function bulkDelete(Request $request): RedirectResponse
+    public function bulkDelete(Request $request, AuditService $audit): RedirectResponse
     {
         $validated = $request->validate([
             'ids' => ['required', 'array', 'max:100'],
@@ -136,6 +141,11 @@ class AdminFailedJobsController extends Controller
         ]);
 
         $deleted = DB::table('failed_jobs')->whereIn('uuid', $validated['ids'])->delete();
+
+        $audit->log(AnalyticsEvent::ADMIN_FAILED_JOB_BULK_DELETE, [
+            'count' => $deleted,
+            'requested' => count($validated['ids']),
+        ]);
 
         return redirect()->route('admin.failed-jobs.index')
             ->with('success', "{$deleted} failed job(s) deleted.");

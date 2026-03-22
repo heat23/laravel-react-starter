@@ -57,6 +57,14 @@ enum AnalyticsEvent: string
     case ADMIN_CACHE_FLUSHED = 'admin.cache_flushed';
     case ADMIN_WEBHOOK_ENDPOINT_RESTORED = 'admin.webhook_endpoint.restored';
     case ADMIN_TOKEN_REVOKED = 'admin.token.revoked';
+    case ADMIN_SESSION_TERMINATED = 'admin.session.terminated';
+    case ADMIN_FAILED_JOB_BULK_RETRY = 'admin.failed_job.bulk_retry';
+    case ADMIN_FAILED_JOB_BULK_DELETE = 'admin.failed_job.bulk_delete';
+    case ADMIN_ROADMAP_ENTRY_CREATED = 'admin.roadmap_entry.created';
+    case ADMIN_ROADMAP_ENTRY_UPDATED = 'admin.roadmap_entry.updated';
+    case ADMIN_ROADMAP_ENTRY_DELETED = 'admin.roadmap_entry.deleted';
+    case ADMIN_FEEDBACK_UPDATED = 'admin.feedback.updated';
+    case ADMIN_FEEDBACK_DELETED = 'admin.feedback.deleted';
 
     // User actions
     case PROFILE_UPDATED = 'profile.updated';

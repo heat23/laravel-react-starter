@@ -122,6 +122,7 @@ class AdminBillingController extends Controller
 
         return response()->streamDownload(function () use ($query, $maxRows, $billingService) {
             $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel compatibility
             fputcsv($handle, ['User Name', 'User Email', 'Tier', 'Status', 'Quantity', 'Trial Ends', 'Ends At', 'Created At', 'Stripe ID']);
 
             $exported = 0;

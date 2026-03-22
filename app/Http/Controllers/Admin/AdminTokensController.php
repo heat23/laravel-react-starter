@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminCacheKey;
 use App\Enums\AnalyticsEvent;
+use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminTokenIndexRequest;
 use App\Services\AuditService;
@@ -94,10 +95,11 @@ class AdminTokensController extends Controller
             ->orderByDesc('personal_access_tokens.last_used_at');
 
         if ($search = $request->validated('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('personal_access_tokens.name', 'like', "%{$search}%")
-                    ->orWhere('users.email', 'like', "%{$search}%")
-                    ->orWhere('users.name', 'like', "%{$search}%");
+            $escaped = QueryHelper::escapeLike($search);
+            $query->where(function ($q) use ($escaped) {
+                $q->whereRaw("personal_access_tokens.name LIKE ? ESCAPE '|'", ["%{$escaped}%"])
+                    ->orWhereRaw("users.email LIKE ? ESCAPE '|'", ["%{$escaped}%"])
+                    ->orWhereRaw("users.name LIKE ? ESCAPE '|'", ["%{$escaped}%"]);
             });
         }
 

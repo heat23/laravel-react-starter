@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
 use App\Models\RoadmapEntry;
+use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -13,6 +15,10 @@ use Inertia\Response;
 
 class AdminRoadmapController extends Controller
 {
+    public function __construct(
+        private AuditService $auditService,
+    ) {}
+
     public function index(): Response
     {
         $entries = RoadmapEntry::withCount('feedbackSubmissions')
@@ -41,7 +47,13 @@ class AdminRoadmapController extends Controller
 
         $validated['slug'] = Str::slug($validated['title']);
 
-        RoadmapEntry::create($validated);
+        $entry = RoadmapEntry::create($validated);
+
+        $this->auditService->log(AnalyticsEvent::ADMIN_ROADMAP_ENTRY_CREATED, [
+            'entry_id' => $entry->id,
+            'title' => $entry->title,
+            'status' => $entry->status,
+        ]);
 
         return redirect()->route('admin.roadmap.index')->with('success', 'Roadmap entry created.');
     }
@@ -57,11 +69,22 @@ class AdminRoadmapController extends Controller
 
         $roadmapEntry->update($validated);
 
+        $this->auditService->log(AnalyticsEvent::ADMIN_ROADMAP_ENTRY_UPDATED, [
+            'entry_id' => $roadmapEntry->id,
+            'title' => $roadmapEntry->title,
+            'changes' => array_keys($validated),
+        ]);
+
         return back()->with('success', 'Roadmap entry updated.');
     }
 
     public function destroy(RoadmapEntry $roadmapEntry): RedirectResponse
     {
+        $this->auditService->log(AnalyticsEvent::ADMIN_ROADMAP_ENTRY_DELETED, [
+            'entry_id' => $roadmapEntry->id,
+            'title' => $roadmapEntry->title,
+        ]);
+
         $roadmapEntry->delete();
 
         return redirect()->route('admin.roadmap.index')->with('success', 'Roadmap entry deleted.');

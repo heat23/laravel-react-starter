@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminCacheKey;
 use App\Enums\AnalyticsEvent;
+use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminAuditLogIndexRequest;
 use App\Http\Requests\Admin\AdminExportRequest;
@@ -66,6 +67,7 @@ class AdminAuditLogController extends Controller
 
         return response()->streamDownload(function () use ($query, $maxRows) {
             $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel compatibility
             fputcsv($handle, ['ID', 'Event', 'User Email', 'IP', 'Metadata', 'Date']);
 
             $exported = 0;
@@ -118,10 +120,10 @@ class AdminAuditLogController extends Controller
         }
 
         if (! empty($filters['search'])) {
-            $term = '%'.str_replace('%', '\\%', $filters['search']).'%';
-            $query->where(function ($q) use ($term) {
-                $q->where('metadata', 'like', $term)
-                    ->orWhere('event', 'like', $term);
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                QueryHelper::whereLike($q, 'metadata', $search, 'and');
+                QueryHelper::whereLike($q, 'event', $search, 'or');
             });
         }
 
