@@ -1,4 +1,4 @@
-import { Bell, CheckCircle, Mail, Send, TrendingUp } from 'lucide-react';
+import { Bell, CheckCircle, Mail, Send, TrendingUp, User } from 'lucide-react';
 
 import { useState } from 'react';
 
@@ -28,8 +28,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/Components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/Components/ui/table';
 import { Textarea } from '@/Components/ui/textarea';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { formatDate, formatRelativeTime } from '@/lib/format';
 import type { AdminNotificationsDashboardProps } from '@/types/admin';
 
 const recipientLabels: Record<'all' | 'admins', string> = {
@@ -40,6 +49,7 @@ const recipientLabels: Record<'all' | 'admins', string> = {
 export default function NotificationsDashboard({
   stats,
   volume_chart,
+  recent_notifications,
 }: AdminNotificationsDashboardProps) {
   const { data, setData, post, processing, errors, reset } = useForm({
     subject: '',
@@ -134,6 +144,82 @@ export default function NotificationsDashboard({
             </CardContent>
           </Card>
         </div>
+
+        {/* Recent Notification History */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-4 w-4" />
+              Recent Notifications
+            </CardTitle>
+            <CardDescription>
+              Latest {recent_notifications.length} notifications delivered to users
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {recent_notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground gap-2">
+                <Bell className="h-8 w-8 opacity-40" />
+                <p className="text-sm">No notifications sent yet.</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Subject</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Sent</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recent_notifications.map((n) => (
+                    <TableRow key={n.id}>
+                      <TableCell>
+                        {n.user_name ? (
+                          <div className="flex items-center gap-2">
+                            <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                            <div>
+                              <div className="font-medium text-sm">{n.user_name}</div>
+                              <div className="text-xs text-muted-foreground">{n.user_email}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs font-mono text-muted-foreground">{n.type}</span>
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate text-sm">
+                        {n.subject ?? <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        {n.read_at ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                            <CheckCircle className="h-3 w-3" />
+                            Read
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                            <Bell className="h-3 w-3" />
+                            Unread
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
+                        <span title={formatDate(n.created_at)}>
+                          {formatRelativeTime(n.created_at)}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Compose Announcement */}
         <Card>

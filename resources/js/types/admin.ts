@@ -574,9 +574,20 @@ export interface AdminTwoFactorDashboardProps {
   stats: TwoFactorStats;
 }
 
+export interface NotificationHistoryItem {
+  id: string;
+  type: string;
+  subject: string | null;
+  user_name: string | null;
+  user_email: string | null;
+  read_at: string | null;
+  created_at: string;
+}
+
 export interface AdminNotificationsDashboardProps {
   stats: NotificationStats;
   volume_chart: ChartDataPoint[];
+  recent_notifications: NotificationHistoryItem[];
 }
 
 // ---------------------------------------------------------------------------

@@ -362,6 +362,7 @@ describe("Admin UI Smoke Tests", () => {
             by_type: [{ type: "info", count: 50 }, { type: "success", count: 50 }],
           }}
           volume_chart={[]}
+          recent_notifications={[]}
         />
       );
 
