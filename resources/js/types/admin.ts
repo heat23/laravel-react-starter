@@ -636,6 +636,39 @@ export interface AdminFailedJobsIndexProps {
 }
 
 // ---------------------------------------------------------------------------
+// Contact Submissions
+// ---------------------------------------------------------------------------
+
+export interface ContactSubmissionItem {
+  id: number;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: 'new' | 'replied' | 'spam';
+  replied_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContactSubmissionFilters {
+  status?: string;
+  search?: string;
+  sort?: string;
+  dir?: string;
+}
+
+export interface AdminContactSubmissionsIndexProps {
+  submissions: PaginatedResponse<ContactSubmissionItem>;
+  filters: ContactSubmissionFilters;
+  counts: { new: number; replied: number; spam: number };
+}
+
+export interface AdminContactSubmissionShowProps {
+  submission: ContactSubmissionItem;
+}
+
+// ---------------------------------------------------------------------------
 // Feedback
 // ---------------------------------------------------------------------------
 

@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminAuditLogController;
 use App\Http\Controllers\Admin\AdminBillingController;
 use App\Http\Controllers\Admin\AdminCacheController;
 use App\Http\Controllers\Admin\AdminConfigController;
+use App\Http\Controllers\Admin\AdminContactSubmissionsController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminDataHealthController;
 use App\Http\Controllers\Admin\AdminEmailSendLogController;
@@ -97,6 +98,19 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])
             ->middleware(['throttle:10,1', 'super_admin'])
             ->name('feedback.destroy');
+
+        // Contact Submissions — export before {contactSubmission} wildcard
+        Route::get('/contact-submissions/export', [AdminContactSubmissionsController::class, 'export'])
+            ->middleware('throttle:10,1')
+            ->name('contact-submissions.export');
+        Route::get('/contact-submissions', [AdminContactSubmissionsController::class, 'index'])->name('contact-submissions.index');
+        Route::get('/contact-submissions/{contactSubmission}', [AdminContactSubmissionsController::class, 'show'])->name('contact-submissions.show');
+        Route::patch('/contact-submissions/{contactSubmission}', [AdminContactSubmissionsController::class, 'update'])
+            ->middleware('throttle:30,1')
+            ->name('contact-submissions.update');
+        Route::delete('/contact-submissions/{contactSubmission}', [AdminContactSubmissionsController::class, 'destroy'])
+            ->middleware(['throttle:10,1', 'super_admin'])
+            ->name('contact-submissions.destroy');
 
         // Email Send Logs
         Route::get('/email-send-logs', [AdminEmailSendLogController::class, 'index'])->name('email-send-logs.index');

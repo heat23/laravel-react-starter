@@ -6,6 +6,7 @@ import {
   FileText,
   Heart,
   HeartPulse,
+  Inbox,
   Key,
   LayoutDashboard,
   Mail,
@@ -45,6 +46,7 @@ export const adminNavigationGroups: AdminNavGroup[] = [
     label: 'Management',
     items: [
       { href: '/admin/users', label: 'Users', icon: Users },
+      { href: '/admin/contact-submissions', label: 'Contact Submissions', icon: Inbox },
       { href: '/admin/audit-logs', label: 'Audit Logs', icon: FileText },
       { href: '/admin/email-send-logs', label: 'Email Send Logs', icon: Mail },
     ],

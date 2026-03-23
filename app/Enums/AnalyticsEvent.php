@@ -70,6 +70,9 @@ enum AnalyticsEvent: string
     case ADMIN_FEEDBACK_EXPORTED = 'admin.feedback.exported';
     case ADMIN_TOKENS_EXPORTED = 'admin.tokens.exported';
     case ADMIN_NOTIFICATION_SENT = 'admin.notification.sent';
+    case ADMIN_CONTACT_SUBMISSION_UPDATED = 'admin.contact_submission.updated';
+    case ADMIN_CONTACT_SUBMISSION_DELETED = 'admin.contact_submission.deleted';
+    case ADMIN_CONTACT_SUBMISSIONS_EXPORTED = 'admin.contact_submissions.exported';
 
     // User actions
     case PROFILE_UPDATED = 'profile.updated';

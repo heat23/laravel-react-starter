@@ -24,6 +24,7 @@ return [
         'email_send_logs' => 50,
         'incoming_webhooks' => 25,
         'roadmap' => 100,
+        'contact_submissions' => 50,
     ],
 
     'api' => [

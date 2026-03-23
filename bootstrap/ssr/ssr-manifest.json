@@ -99,6 +99,8 @@
   "resources/js/Pages/Admin/Billing/Subscriptions.tsx": [],
   "resources/js/Pages/Admin/Cache/Index.tsx": [],
   "resources/js/Pages/Admin/Config.tsx": [],
+  "resources/js/Pages/Admin/ContactSubmissions/Index.tsx": [],
+  "resources/js/Pages/Admin/ContactSubmissions/Show.tsx": [],
   "resources/js/Pages/Admin/Dashboard.test.tsx": [],
   "resources/js/Pages/Admin/Dashboard.tsx": [],
   "resources/js/Pages/Admin/DataHealth.tsx": [],
