@@ -113,6 +113,7 @@
   "resources/js/Pages/Admin/Feedback/Show.tsx": [],
   "resources/js/Pages/Admin/Health.tsx": [],
   "resources/js/Pages/Admin/Notifications/Dashboard.tsx": [],
+  "resources/js/Pages/Admin/NpsResponses/Index.tsx": [],
   "resources/js/Pages/Admin/ProductAnalytics.tsx": [],
   "resources/js/Pages/Admin/Roadmap/Create.tsx": [],
   "resources/js/Pages/Admin/Roadmap/Index.tsx": [],

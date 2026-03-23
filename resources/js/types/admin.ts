@@ -842,3 +842,40 @@ export interface AdminEmailSendLogIndexProps {
   sequenceTypes: string[];
   filters: EmailSendLogFilters;
 }
+
+// ---------------------------------------------------------------------------
+// NPS Responses
+// ---------------------------------------------------------------------------
+
+export interface NpsResponseItem {
+  id: number;
+  score: number;
+  category: 'promoter' | 'passive' | 'detractor';
+  comment: string | null;
+  survey_trigger: string;
+  created_at: string;
+  user: { id: number; name: string; email: string } | null;
+}
+
+export interface NpsResponseFilters {
+  category?: string;
+  survey_trigger?: string;
+  search?: string;
+  sort?: string;
+  dir?: string;
+}
+
+export interface NpsResponseSummary {
+  total: number;
+  promoters: number;
+  passives: number;
+  detractors: number;
+  nps_score: number | null;
+}
+
+export interface AdminNpsResponsesIndexProps {
+  responses: PaginatedResponse<NpsResponseItem>;
+  filters: NpsResponseFilters;
+  summary: NpsResponseSummary;
+  surveyTriggers: string[];
+}

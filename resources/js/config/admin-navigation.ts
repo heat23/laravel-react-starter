@@ -14,6 +14,7 @@ import {
   Server,
   Settings,
   ShieldCheck,
+  Star,
   ToggleLeft,
   Users,
   Users2,
@@ -47,6 +48,7 @@ export const adminNavigationGroups: AdminNavGroup[] = [
     items: [
       { href: '/admin/users', label: 'Users', icon: Users },
       { href: '/admin/contact-submissions', label: 'Contact Submissions', icon: Inbox },
+      { href: '/admin/nps-responses', label: 'NPS Responses', icon: Star },
       { href: '/admin/audit-logs', label: 'Audit Logs', icon: FileText },
       { href: '/admin/email-send-logs', label: 'Email Send Logs', icon: Mail },
     ],

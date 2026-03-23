@@ -25,6 +25,7 @@ return [
         'incoming_webhooks' => 25,
         'roadmap' => 100,
         'contact_submissions' => 50,
+        'nps_responses' => 50,
     ],
 
     'api' => [

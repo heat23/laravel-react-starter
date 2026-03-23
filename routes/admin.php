@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\AdminFeedbackController;
 use App\Http\Controllers\Admin\AdminHealthController;
 use App\Http\Controllers\Admin\AdminImpersonationController;
 use App\Http\Controllers\Admin\AdminNotificationsController;
+use App\Http\Controllers\Admin\AdminNpsResponsesController;
 use App\Http\Controllers\Admin\AdminProductAnalyticsController;
 use App\Http\Controllers\Admin\AdminRoadmapController;
 use App\Http\Controllers\Admin\AdminScheduleController;
@@ -111,6 +112,12 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         Route::delete('/contact-submissions/{contactSubmission}', [AdminContactSubmissionsController::class, 'destroy'])
             ->middleware(['throttle:10,1', 'super_admin'])
             ->name('contact-submissions.destroy');
+
+        // NPS Responses — export before index to avoid prefix collision
+        Route::get('/nps-responses/export', [AdminNpsResponsesController::class, 'export'])
+            ->middleware('throttle:10,1')
+            ->name('nps-responses.export');
+        Route::get('/nps-responses', [AdminNpsResponsesController::class, 'index'])->name('nps-responses.index');
 
         // Email Send Logs
         Route::get('/email-send-logs', [AdminEmailSendLogController::class, 'index'])->name('email-send-logs.index');
