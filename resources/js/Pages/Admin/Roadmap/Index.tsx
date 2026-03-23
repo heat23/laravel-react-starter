@@ -1,6 +1,6 @@
 import { Download, Map, Plus, Trash2 } from 'lucide-react';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 
@@ -15,6 +15,7 @@ import {
   CardTitle,
 } from '@/Components/ui/card';
 import { ConfirmDialog } from '@/Components/ui/confirm-dialog';
+import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import {
   Select,
@@ -24,11 +25,12 @@ import {
   SelectValue,
 } from '@/Components/ui/select';
 import { Textarea } from '@/Components/ui/textarea';
+import { useAdminFilters } from '@/hooks/useAdminFilters';
+import { useAdminKeyboardShortcuts } from '@/hooks/useAdminKeyboardShortcuts';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { formatDate } from '@/lib/format';
 import type { PageProps } from '@/types';
-import type { AdminRoadmapIndexProps, RoadmapEntry } from '@/types/admin';
-import { useAdminKeyboardShortcuts } from '@/hooks/useAdminKeyboardShortcuts';
+import type { AdminRoadmapIndexProps, RoadmapEntry, RoadmapFilters } from '@/types/admin';
 
 type RoadmapStatus = 'planned' | 'in_progress' | 'completed';
 
@@ -108,12 +110,23 @@ function InlineEditForm({
   );
 }
 
-export default function AdminRoadmapIndex({ entries }: AdminRoadmapIndexProps) {
+export default function AdminRoadmapIndex({ entries, filters }: AdminRoadmapIndexProps) {
   const isSuperAdmin = usePage<PageProps>().props.auth.user?.is_super_admin ?? false;
   const [editingId, setEditingId] = useState<number | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<RoadmapEntry | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
-  useAdminKeyboardShortcuts({});
+  const { search, setSearch, updateFilter, clearFilters } =
+    useAdminFilters<RoadmapFilters>({
+      route: '/admin/roadmap',
+      filters,
+    });
+
+  const hasFilters = !!(filters.search || filters.status);
+
+  useAdminKeyboardShortcuts({
+    onSearch: () => searchInputRef.current?.focus(),
+  });
 
   function handleDelete(): Promise<void> {
     if (!deleteEntry) return Promise.resolve();
@@ -128,17 +141,23 @@ export default function AdminRoadmapIndex({ entries }: AdminRoadmapIndexProps) {
     });
   }
 
+  const allEntries = entries.data;
+
   const grouped = columns.reduce<Record<RoadmapStatus, RoadmapEntry[]>>((acc, col) => {
-    acc[col] = entries.filter((e) => e.status === col);
+    acc[col] = allEntries.filter((e) => e.status === col);
     return acc;
   }, { planned: [], in_progress: [], completed: [] });
+
+  const subtitle = hasFilters
+    ? `${entries.total} result${entries.total === 1 ? '' : 's'}`
+    : `${entries.total} entr${entries.total === 1 ? 'y' : 'ies'}`;
 
   return (
     <AdminLayout>
       <Head title="Admin - Roadmap" />
       <PageHeader
         title="Roadmap"
-        subtitle={`${entries.length} entr${entries.length === 1 ? 'y' : 'ies'}`}
+        subtitle={subtitle}
         actions={
           <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" asChild>
@@ -157,23 +176,74 @@ export default function AdminRoadmapIndex({ entries }: AdminRoadmapIndexProps) {
         }
       />
 
-      <div className="container py-6">
-        {entries.length === 0 ? (
+      <div className="container py-6 space-y-4">
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+          <Input
+            ref={searchInputRef}
+            className="max-w-xs"
+            placeholder="Search title, description..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search roadmap entries"
+          />
+
+          <Select
+            value={filters.status ?? 'all'}
+            onValueChange={(v) =>
+              updateFilter({ status: v === 'all' ? undefined : v })
+            }
+          >
+            <SelectTrigger className="w-40" aria-label="Filter by status">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="planned">Planned</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          )}
+        </div>
+
+        {allEntries.length === 0 ? (
           <Card>
             <CardContent className="py-16 flex flex-col items-center gap-4">
               <Map className="h-12 w-12 text-muted-foreground/40" />
               <div className="text-center">
-                <p className="font-medium">No roadmap entries</p>
-                <p className="text-sm text-muted-foreground">
-                  Create your first entry to share your product direction with users.
-                </p>
+                {hasFilters ? (
+                  <>
+                    <p className="font-medium">No entries match the current filters</p>
+                    <p className="text-sm text-muted-foreground">
+                      Try adjusting your search or filter criteria.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="font-medium">No roadmap entries</p>
+                    <p className="text-sm text-muted-foreground">
+                      Create your first entry to share your product direction with users.
+                    </p>
+                  </>
+                )}
               </div>
-              <Button asChild>
-                <Link href="/admin/roadmap/create">
-                  <Plus className="mr-2 h-4 w-4" />
-                  New Entry
-                </Link>
-              </Button>
+              {hasFilters ? (
+                <Button variant="outline" size="sm" onClick={clearFilters}>
+                  Clear filters
+                </Button>
+              ) : (
+                <Button asChild>
+                  <Link href="/admin/roadmap/create">
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Entry
+                  </Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
@@ -246,6 +316,45 @@ export default function AdminRoadmapIndex({ entries }: AdminRoadmapIndexProps) {
                 )}
               </div>
             ))}
+          </div>
+        )}
+
+        {entries.last_page > 1 && (
+          <div className="flex items-center justify-between text-sm text-muted-foreground pt-2">
+            <span>
+              Showing {entries.from ?? 0}–{entries.to ?? 0} of {entries.total} entries
+            </span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={entries.current_page === 1}
+                onClick={() =>
+                  router.get('/admin/roadmap', {
+                    ...filters,
+                    page: entries.current_page - 1,
+                  }, { preserveState: true, replace: true })
+                }
+              >
+                Previous
+              </Button>
+              <span className="px-2">
+                {entries.current_page} / {entries.last_page}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={entries.current_page === entries.last_page}
+                onClick={() =>
+                  router.get('/admin/roadmap', {
+                    ...filters,
+                    page: entries.current_page + 1,
+                  }, { preserveState: true, replace: true })
+                }
+              >
+                Next
+              </Button>
+            </div>
           </div>
         )}
       </div>

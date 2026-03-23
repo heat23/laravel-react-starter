@@ -166,3 +166,60 @@ it('non-super-admin cannot delete a roadmap entry', function () {
         ->delete("/admin/roadmap/{$entry->id}")
         ->assertForbidden();
 });
+
+// ── Search & Filter ───────────────────────────────────────────────────────────
+
+it('admin can search roadmap entries by title', function () {
+    $admin = User::factory()->admin()->create();
+    RoadmapEntry::create(['title' => 'Dark Mode Support', 'slug' => 'dark-mode', 'status' => 'planned']);
+    RoadmapEntry::create(['title' => 'API Rate Limiting', 'slug' => 'api-rate', 'status' => 'in_progress']);
+
+    $response = $this->actingAs($admin)
+        ->get('/admin/roadmap?search=Dark')
+        ->assertOk();
+
+    $entries = $response->original->getData()['page']['props']['entries'];
+    expect($entries['total'])->toBe(1);
+    expect($entries['data'][0]['title'])->toBe('Dark Mode Support');
+});
+
+it('admin can filter roadmap entries by status', function () {
+    $admin = User::factory()->admin()->create();
+    RoadmapEntry::create(['title' => 'Feature A', 'slug' => 'feature-a', 'status' => 'planned']);
+    RoadmapEntry::create(['title' => 'Feature B', 'slug' => 'feature-b', 'status' => 'completed']);
+    RoadmapEntry::create(['title' => 'Feature C', 'slug' => 'feature-c', 'status' => 'planned']);
+
+    $response = $this->actingAs($admin)
+        ->get('/admin/roadmap?status=planned')
+        ->assertOk();
+
+    $entries = $response->original->getData()['page']['props']['entries'];
+    expect($entries['total'])->toBe(2);
+    expect(collect($entries['data'])->pluck('status')->unique()->values()->toArray())->toBe(['planned']);
+});
+
+it('index returns paginated entries', function () {
+    $admin = User::factory()->admin()->create();
+
+    $response = $this->actingAs($admin)
+        ->get('/admin/roadmap')
+        ->assertOk();
+
+    $props = $response->original->getData()['page']['props'];
+    expect($props)->toHaveKey('entries')
+        ->and($props['entries'])->toHaveKey('data')
+        ->and($props['entries'])->toHaveKey('total')
+        ->and($props['entries'])->toHaveKey('current_page');
+});
+
+it('index returns filters prop', function () {
+    $admin = User::factory()->admin()->create();
+
+    $response = $this->actingAs($admin)
+        ->get('/admin/roadmap?search=test&status=planned')
+        ->assertOk();
+
+    $props = $response->original->getData()['page']['props'];
+    expect($props['filters']['search'])->toBe('test')
+        ->and($props['filters']['status'])->toBe('planned');
+});

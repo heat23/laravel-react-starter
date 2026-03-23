@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AnalyticsEvent;
+use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminRoadmapIndexRequest;
 use App\Http\Requests\Admin\AdminStoreRoadmapRequest;
 use App\Http\Requests\Admin\AdminUpdateRoadmapRequest;
 use App\Models\RoadmapEntry;
@@ -44,15 +46,31 @@ class AdminRoadmapController extends Controller
             ->fromQuery($query);
     }
 
-    public function index(): Response
+    public function index(AdminRoadmapIndexRequest $request): Response
     {
-        $entries = RoadmapEntry::withCount('feedbackSubmissions')
+        $validated = $request->validated();
+
+        $query = RoadmapEntry::withCount('feedbackSubmissions')
             ->orderBy('display_order')
-            ->orderBy('status')
-            ->get();
+            ->orderBy('status');
+
+        if ($search = $validated['search'] ?? null) {
+            $query->where(function ($q) use ($search) {
+                QueryHelper::whereLike($q, 'title', $search);
+                QueryHelper::whereLike($q, 'description', $search, 'or');
+            });
+        }
+
+        if ($status = $validated['status'] ?? null) {
+            $query->where('status', $status);
+        }
+
+        $entries = $query->paginate(config('pagination.admin.roadmap', 100));
+        $filters = array_filter($validated, fn ($v) => $v !== null);
 
         return Inertia::render('Admin/Roadmap/Index', [
             'entries' => $entries,
+            'filters' => $filters,
         ]);
     }
 

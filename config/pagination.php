@@ -23,6 +23,7 @@ return [
         'feedback' => 50,
         'email_send_logs' => 50,
         'incoming_webhooks' => 25,
+        'roadmap' => 100,
     ],
 
     'api' => [

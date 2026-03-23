@@ -678,8 +678,14 @@ export interface RoadmapEntry {
   updated_at: string;
 }
 
+export interface RoadmapFilters {
+  search?: string;
+  status?: string;
+}
+
 export interface AdminRoadmapIndexProps {
-  entries: RoadmapEntry[];
+  entries: PaginatedResponse<RoadmapEntry>;
+  filters: RoadmapFilters;
 }
 
 export interface AdminFailedJobShowProps {
