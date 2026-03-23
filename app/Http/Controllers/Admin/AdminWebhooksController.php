@@ -239,10 +239,8 @@ class AdminWebhooksController extends Controller
         ]);
     }
 
-    public function restoreEndpoint(int $id, Request $request): RedirectResponse
+    public function restoreEndpoint(int $id): RedirectResponse
     {
-        abort_unless($request->user()?->isSuperAdmin(), 403);
-
         $endpoint = WebhookEndpoint::withTrashed()->findOrFail($id);
 
         abort_unless($endpoint->trashed(), 422, 'Endpoint is not deleted.');

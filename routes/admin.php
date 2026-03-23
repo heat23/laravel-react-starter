@@ -220,7 +220,7 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
             Route::get('/webhooks/incoming', [AdminWebhooksController::class, 'incomingWebhooks'])->name('webhooks.incoming');
             Route::get('/webhooks/endpoints', [AdminWebhooksController::class, 'endpoints'])->name('webhooks.endpoints');
             Route::patch('/webhooks/endpoints/{id}/restore', [AdminWebhooksController::class, 'restoreEndpoint'])
-                ->middleware('throttle:10,1')
+                ->middleware(['throttle:10,1', 'super_admin'])
                 ->name('webhooks.endpoints.restore');
             Route::get('/webhooks/deliveries/{id}', [AdminWebhooksController::class, 'showDelivery'])->name('webhooks.deliveries.show');
         }
