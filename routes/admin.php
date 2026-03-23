@@ -173,7 +173,10 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         // Schedule Monitor
         Route::get('/schedule', AdminScheduleController::class)->name('schedule');
 
-        // Roadmap Management
+        // Roadmap Management — export/create before {roadmapEntry} wildcard
+        Route::get('/roadmap/export', [AdminRoadmapController::class, 'export'])
+            ->middleware('throttle:10,1')
+            ->name('roadmap.export');
         Route::get('/roadmap', [AdminRoadmapController::class, 'index'])->name('roadmap.index');
         Route::get('/roadmap/create', [AdminRoadmapController::class, 'create'])->name('roadmap.create');
         Route::post('/roadmap', [AdminRoadmapController::class, 'store'])->middleware('throttle:30,1')->name('roadmap.store');

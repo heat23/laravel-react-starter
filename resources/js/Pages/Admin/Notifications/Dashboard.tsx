@@ -1,6 +1,8 @@
-import { Bell, CheckCircle, Mail, TrendingUp } from 'lucide-react';
+import { Bell, CheckCircle, Mail, Send, TrendingUp } from 'lucide-react';
 
-import { Head } from '@inertiajs/react';
+import { useState } from 'react';
+
+import { Head, useForm } from '@inertiajs/react';
 
 import { AdminAreaChart, AdminBarChart } from '@/Components/admin/AdminCharts';
 import {
@@ -8,6 +10,7 @@ import {
   type StatCard,
 } from '@/Components/admin/AdminStatsGrid';
 import PageHeader from '@/Components/layout/PageHeader';
+import { Button } from '@/Components/ui/button';
 import {
   Card,
   CardContent,
@@ -15,13 +18,53 @@ import {
   CardHeader,
   CardTitle,
 } from '@/Components/ui/card';
+import { ConfirmDialog } from '@/Components/ui/confirm-dialog';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/Components/ui/select';
+import { Textarea } from '@/Components/ui/textarea';
 import AdminLayout from '@/Layouts/AdminLayout';
 import type { AdminNotificationsDashboardProps } from '@/types/admin';
+
+const recipientLabels: Record<'all' | 'admins', string> = {
+  all: 'All users',
+  admins: 'Admins only',
+};
 
 export default function NotificationsDashboard({
   stats,
   volume_chart,
 }: AdminNotificationsDashboardProps) {
+  const { data, setData, post, processing, errors, reset } = useForm({
+    subject: '',
+    body: '',
+    recipient: 'all' as 'all' | 'admins',
+  });
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    setShowConfirm(true);
+  }
+
+  function handleConfirm(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      post('/admin/notifications/send', {
+        onSuccess: () => {
+          reset();
+          resolve();
+        },
+        onError: () => reject(),
+      });
+    });
+  }
+
   return (
     <AdminLayout>
       <Head title="Admin - Notifications" />
@@ -91,7 +134,101 @@ export default function NotificationsDashboard({
             </CardContent>
           </Card>
         </div>
+
+        {/* Compose Announcement */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Send className="h-4 w-4" />
+              Send Announcement
+            </CardTitle>
+            <CardDescription>
+              Send an in-app notification to a user segment. Messages appear in the
+              user's notification inbox.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSend} className="space-y-4 max-w-lg">
+              <div className="space-y-1.5">
+                <Label htmlFor="recipient">Recipients</Label>
+                <Select
+                  value={data.recipient}
+                  onValueChange={(v) => setData('recipient', v as 'all' | 'admins')}
+                >
+                  <SelectTrigger id="recipient">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All users</SelectItem>
+                    <SelectItem value="admins">Admins only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="subject">Subject *</Label>
+                <Input
+                  id="subject"
+                  value={data.subject}
+                  onChange={(e) => setData('subject', e.target.value)}
+                  placeholder="Brief subject line..."
+                  required
+                  aria-describedby={errors.subject ? 'subject-error' : undefined}
+                />
+                {errors.subject && (
+                  <p id="subject-error" className="text-xs text-destructive">
+                    {errors.subject}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="body">Message *</Label>
+                <Textarea
+                  id="body"
+                  rows={5}
+                  value={data.body}
+                  onChange={(e) => setData('body', e.target.value)}
+                  placeholder="Write your announcement..."
+                  required
+                  aria-describedby={errors.body ? 'body-error' : undefined}
+                />
+                {errors.body && (
+                  <p id="body-error" className="text-xs text-destructive">
+                    {errors.body}
+                  </p>
+                )}
+              </div>
+
+              <Button type="submit" disabled={processing}>
+                <Send className="mr-2 h-4 w-4" />
+                {processing ? 'Sending...' : 'Send Announcement'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
+
+      <ConfirmDialog
+        open={showConfirm}
+        onOpenChange={(open) => !processing && setShowConfirm(open)}
+        onConfirm={handleConfirm}
+        title="Send Announcement"
+        description={
+          <span>
+            This will send an in-app notification to{' '}
+            <strong>{recipientLabels[data.recipient]}</strong>.
+            <span className="mt-3 block space-y-1 rounded-md bg-muted p-3 text-foreground">
+              <span className="block font-medium">{data.subject}</span>
+              <span className="block text-sm font-normal text-muted-foreground line-clamp-4">
+                {data.body}
+              </span>
+            </span>
+          </span>
+        }
+        confirmLabel="Send"
+        loadingLabel="Sending..."
+      />
     </AdminLayout>
   );
 }

@@ -63,8 +63,13 @@ enum AnalyticsEvent: string
     case ADMIN_ROADMAP_ENTRY_CREATED = 'admin.roadmap_entry.created';
     case ADMIN_ROADMAP_ENTRY_UPDATED = 'admin.roadmap_entry.updated';
     case ADMIN_ROADMAP_ENTRY_DELETED = 'admin.roadmap_entry.deleted';
+    case ADMIN_ROADMAP_EXPORTED = 'admin.roadmap.exported';
     case ADMIN_FEEDBACK_UPDATED = 'admin.feedback.updated';
     case ADMIN_FEEDBACK_DELETED = 'admin.feedback.deleted';
+    case ADMIN_FEEDBACK_BULK_UPDATED = 'admin.feedback.bulk_updated';
+    case ADMIN_FEEDBACK_EXPORTED = 'admin.feedback.exported';
+    case ADMIN_TOKENS_EXPORTED = 'admin.tokens.exported';
+    case ADMIN_NOTIFICATION_SENT = 'admin.notification.sent';
 
     // User actions
     case PROFILE_UPDATED = 'profile.updated';
