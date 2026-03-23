@@ -80,6 +80,7 @@ export default function WebhooksDashboard({
                 title: 'Incoming Webhooks',
                 value: stats.total_incoming,
                 description: `${stats.pending_deliveries} pending`,
+                href: '/admin/webhooks/incoming',
               },
             ] satisfies StatCard[]
           }

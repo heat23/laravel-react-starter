@@ -524,6 +524,26 @@ export interface AdminWebhookEndpointsProps {
   endpoints: PaginatedResponse<AdminWebhookEndpoint>;
 }
 
+export interface AdminIncomingWebhook {
+  id: number;
+  provider: string;
+  external_id: string | null;
+  event_type: string | null;
+  status: string;
+  payload: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface AdminIncomingWebhooksProps {
+  webhooks: PaginatedResponse<AdminIncomingWebhook>;
+  providers: string[];
+  filters: {
+    provider?: string;
+    status?: string;
+    event_type?: string;
+  };
+}
+
 export interface AdminTokensDashboardProps {
   stats: TokenDashboardStats;
   most_active: ActiveToken[];

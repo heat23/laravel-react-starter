@@ -6,6 +6,7 @@ use App\Enums\AdminCacheKey;
 use App\Enums\AnalyticsEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
+use App\Models\IncomingWebhook;
 use App\Models\User;
 use App\Models\WebhookEndpoint;
 use App\Services\AuditService;
@@ -144,6 +145,58 @@ class AdminWebhooksController extends Controller
 
         return Inertia::render('Admin/Webhooks/Endpoints', [
             'endpoints' => $endpoints,
+        ]);
+    }
+
+    public function incomingWebhooks(Request $request): Response
+    {
+        $provider = $request->string('provider')->toString() ?: null;
+        $status = $request->string('status')->toString() ?: null;
+        $eventType = $request->string('event_type')->toString() ?: null;
+
+        $validStatuses = ['received', 'processing', 'processed', 'failed'];
+        if ($status !== null && ! in_array($status, $validStatuses, true)) {
+            $status = null;
+        }
+
+        $query = IncomingWebhook::latest();
+
+        if ($provider !== null) {
+            $query->where('provider', $provider);
+        }
+
+        if ($status !== null) {
+            $query->where('status', $status);
+        }
+
+        if ($eventType !== null) {
+            $escaped = QueryHelper::escapeLike($eventType);
+            $query->whereRaw("event_type LIKE ? ESCAPE '|'", ["%{$escaped}%"]);
+        }
+
+        $webhooks = $query
+            ->paginate(config('pagination.admin.users', 25))
+            ->withQueryString()
+            ->through(fn (IncomingWebhook $w) => [
+                'id' => $w->id,
+                'provider' => $w->provider,
+                'external_id' => $w->external_id,
+                'event_type' => $w->event_type,
+                'status' => $w->status,
+                'payload' => $w->payload,
+                'created_at' => $w->created_at?->toISOString(),
+            ]);
+
+        $providers = IncomingWebhook::distinct()->orderBy('provider')->pluck('provider')->toArray();
+
+        return Inertia::render('Admin/Webhooks/IncomingWebhooks', [
+            'webhooks' => $webhooks,
+            'providers' => $providers,
+            'filters' => array_filter([
+                'provider' => $provider,
+                'status' => $status,
+                'event_type' => $eventType,
+            ]),
         ]);
     }
 

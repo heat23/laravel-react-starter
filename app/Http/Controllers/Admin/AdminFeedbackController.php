@@ -103,7 +103,6 @@ class AdminFeedbackController extends Controller
         $count = 0;
         DB::transaction(function () use ($ids, $action, &$count) {
             $feedbacks = Feedback::whereIn('id', $ids)->lockForUpdate()->get();
-            $count = $feedbacks->count();
             foreach ($feedbacks as $item) {
                 if ($action === 'delete') {
                     $item->delete();
@@ -115,6 +114,7 @@ class AdminFeedbackController extends Controller
                 } elseif ($action === 'decline') {
                     $item->update(['status' => 'declined']);
                 }
+                $count++;
             }
         });
 
