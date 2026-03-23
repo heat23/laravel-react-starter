@@ -4,10 +4,10 @@ Model: haiku
 status: completed
 agents-directory: /Users/sood/.claude/agents/
 agents-dispatched: codex-adversarial-reviewer (haiku sub-agent, self-review degraded path)
-codex-adversarial-reviewer: superpowers fallback via haiku candidate generation — 3 candidates, 0 accepted, 3 rejected
+codex-adversarial-reviewer: superpowers fallback via haiku candidate generation — cycle 1: 3 candidates, 0 accepted, 3 rejected; cycle 2: 6 candidates, 0 accepted, 6 rejected
 hostile-adversarial-focus: no — diff touches admin read-only route + frontend page (no auth, payment, or data deletion)
 dispatch-mode: background
-review-evidence: SREV-001 through SREV-003 candidates generated; all rejected after adjudication
+review-evidence: SREV-001 through SREV-009 candidates generated across 2 cycles; all rejected after adjudication
 remediation: no findings accepted
 
 ---
@@ -47,6 +47,38 @@ remediation: no findings accepted
 
 ---
 
+---
+
+### SREV-007: Raw `int $id` instead of route model binding
+- Severity: low (candidate)
+- File: app/Http/Controllers/Admin/AdminWebhooksController.php:209
+
+**Adjudication: REJECT**
+
+Admin controllers in this codebase consistently use raw IDs when custom eager loading with `withTrashed()` on nested relationships is required. Route model binding cannot handle the `endpoint` → `withTrashed()` → `user` → `withTrashed()` nesting needed here. `findOrFail()` correctly returns 404 on missing IDs. Not an issue.
+
+---
+
+### SREV-008: PHPStan baseline entry unnecessary
+- Severity: low (candidate)
+- File: phpstan-baseline.neon
+
+**Adjudication: REJECT**
+
+Larastan resolves `delivered_at` and `created_at` as `string|Carbon` when `casts` is defined as a method (not a property array). The `toISOString()` false positive is genuine — the baseline entry is required and mirrors the same pattern already baselined for 6 other files.
+
+---
+
+### SREV-009: Nested eager loading style
+- Severity: low (candidate)
+- File: app/Http/Controllers/Admin/AdminWebhooksController.php:212-214
+
+**Adjudication: REJECT**
+
+Style-only concern. Dot-notation (`endpoint.user`) cannot apply `withTrashed()` to intermediate relations, so the nested callback form is the correct pattern here.
+
+---
+
 ## Rejected Findings Summary
 
 | ID | Title | Reason |
@@ -54,3 +86,9 @@ remediation: no findings accepted
 | SREV-001 | registerAdminRoutes missing delivery route | False positive: routes registered at boot via phpunit.xml FEATURE_WEBHOOKS=true; guard check prevents duplicate registration; tests pass |
 | SREV-002 | Missing DB facade import | False positive: Laravel global facade alias is project convention, consistent across all test files, PHPStan level 5 passes |
 | SREV-003 | response_body XSS in pre tag | False positive: React JSX text rendering auto-escapes; dangerouslySetInnerHTML not used; admin-only context |
+| SREV-004 | registerAdminRoutes missing delivery route (cycle 2) | Duplicate of SREV-001 — same false positive |
+| SREV-005 | Missing DB facade import (cycle 2) | Duplicate of SREV-002 — same false positive |
+| SREV-006 | response_body XSS (cycle 2) | Duplicate of SREV-003 — same false positive |
+| SREV-007 | Raw int param vs route model binding | Admin pattern; nested withTrashed requires callback form; findOrFail handles 404 |
+| SREV-008 | PHPStan baseline entry excessive | Required: Larastan resolves casts-as-method types as string|Carbon; same pattern as 6 other baselined files |
+| SREV-009 | Nested eager loading style | Style-only; dot-notation cannot apply withTrashed to intermediate relations |
