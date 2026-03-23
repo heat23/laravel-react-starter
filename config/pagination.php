@@ -20,6 +20,8 @@ return [
         'recent_events' => 10,
         'subscription_logs' => 20,
         'failed_jobs' => 25,
+        'feedback' => 50,
+        'email_send_logs' => 50,
     ],
 
     'api' => [

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\AdminCacheController;
 use App\Http\Controllers\Admin\AdminConfigController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminDataHealthController;
+use App\Http\Controllers\Admin\AdminEmailSendLogController;
 use App\Http\Controllers\Admin\AdminFailedJobsController;
 use App\Http\Controllers\Admin\AdminFeatureFlagController;
 use App\Http\Controllers\Admin\AdminFeedbackController;
@@ -81,7 +82,13 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         // Config Viewer
         Route::get('/config', AdminConfigController::class)->name('config');
 
-        // Feedback Inbox
+        // Feedback Inbox — bulk/export routes before {feedback} wildcard
+        Route::get('/feedback/export', [AdminFeedbackController::class, 'export'])
+            ->middleware('throttle:10,1')
+            ->name('feedback.export');
+        Route::post('/feedback/bulk-update', [AdminFeedbackController::class, 'bulkUpdate'])
+            ->middleware('throttle:10,1')
+            ->name('feedback.bulk-update');
         Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');
         Route::get('/feedback/{feedback}', [AdminFeedbackController::class, 'show'])->name('feedback.show');
         Route::patch('/feedback/{feedback}', [AdminFeedbackController::class, 'update'])
@@ -90,6 +97,9 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])
             ->middleware(['throttle:10,1', 'super_admin'])
             ->name('feedback.destroy');
+
+        // Email Send Logs
+        Route::get('/email-send-logs', [AdminEmailSendLogController::class, 'index'])->name('email-send-logs.index');
 
         // Audit Logs
         Route::get('/audit-logs', [AdminAuditLogController::class, 'index'])->name('audit-logs.index');
@@ -190,6 +200,9 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
 
         if (config('features.api_tokens.enabled')) {
             Route::get('/tokens', AdminTokensController::class)->name('tokens');
+            Route::get('/tokens/export', [AdminTokensController::class, 'export'])
+                ->middleware('throttle:10,1')
+                ->name('tokens.export');
             Route::get('/tokens/list', [AdminTokensController::class, 'index'])->name('tokens.index');
             Route::delete('/tokens/{id}', [AdminTokensController::class, 'revoke'])
                 ->middleware('throttle:10,1')
@@ -202,6 +215,9 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
 
         if (config('features.notifications.enabled')) {
             Route::get('/notifications', AdminNotificationsController::class)->name('notifications');
+            Route::post('/notifications/send', [AdminNotificationsController::class, 'send'])
+                ->middleware(['throttle:10,1', 'super_admin'])
+                ->name('notifications.send');
         }
 
         if (config('features.two_factor.enabled')) {

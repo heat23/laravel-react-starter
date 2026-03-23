@@ -8,6 +8,7 @@ import {
   HeartPulse,
   Key,
   LayoutDashboard,
+  Mail,
   Radio,
   Server,
   Settings,
@@ -45,6 +46,7 @@ export const adminNavigationGroups: AdminNavGroup[] = [
     items: [
       { href: '/admin/users', label: 'Users', icon: Users },
       { href: '/admin/audit-logs', label: 'Audit Logs', icon: FileText },
+      { href: '/admin/email-send-logs', label: 'Email Send Logs', icon: Mail },
     ],
   },
   {

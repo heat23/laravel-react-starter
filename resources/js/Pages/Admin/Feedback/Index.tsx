@@ -1,10 +1,18 @@
 import { MessageSquare } from 'lucide-react';
 
+import { useState, useCallback, useEffect, useRef } from 'react';
+
 import { Head, Link, router } from '@inertiajs/react';
 
+import { AdminDataTable } from '@/Components/admin/AdminDataTable';
+import { SortHeader } from '@/Components/admin/SortHeader';
 import PageHeader from '@/Components/layout/PageHeader';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
+import { Checkbox } from '@/Components/ui/checkbox';
+import { ConfirmDialog } from '@/Components/ui/confirm-dialog';
+import { ExportButton } from '@/Components/ui/export-button';
+import { Input } from '@/Components/ui/input';
 import {
   Select,
   SelectContent,
@@ -20,31 +28,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/Components/ui/table';
+import { useAdminFilters } from '@/hooks/useAdminFilters';
+import { useAdminKeyboardShortcuts } from '@/hooks/useAdminKeyboardShortcuts';
+import { useNavigationState } from '@/hooks/useNavigationState';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { formatDate } from '@/lib/format';
-
-interface FeedbackItem {
-  id: number;
-  type: string;
-  status: string;
-  priority: string;
-  message: string;
-  created_at: string;
-  user: { name: string; email: string } | null;
-}
-
-interface Paginated<T> {
-  data: T[];
-  current_page: number;
-  last_page: number;
-  links: Array<{ url: string | null; label: string; active: boolean }>;
-}
-
-interface Props {
-  feedback: Paginated<FeedbackItem>;
-  filters: { type?: string; status?: string };
-  counts: { open: number; in_review: number; resolved: number };
-}
+import type { AdminFeedbackIndexProps, FeedbackFilters } from '@/types/admin';
 
 const statusVariant: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   open: 'default',
@@ -59,10 +48,77 @@ const priorityVariant: Record<string, 'default' | 'secondary' | 'destructive' | 
   high: 'destructive',
 };
 
-export default function AdminFeedbackIndex({ feedback, filters, counts }: Props) {
-  function setFilter(key: string, value: string) {
-    router.get('/admin/feedback', { ...filters, [key]: value === 'all' ? undefined : value }, { preserveState: true, replace: true });
-  }
+export default function AdminFeedbackIndex({ feedback, filters, counts }: AdminFeedbackIndexProps) {
+  const { search, setSearch, updateFilter, handleSort, handlePage, clearFilters } =
+    useAdminFilters<FeedbackFilters>({
+      route: '/admin/feedback',
+      filters,
+    });
+
+  const isNavigating = useNavigationState();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
+
+  const currentPage = feedback.current_page;
+  const lastPage = feedback.last_page;
+
+  useAdminKeyboardShortcuts({
+    onSearch: () => searchInputRef.current?.focus(),
+    onNextPage: currentPage < lastPage ? () => handlePage(currentPage + 1) : undefined,
+    onPrevPage: currentPage > 1 ? () => handlePage(currentPage - 1) : undefined,
+  });
+
+  // Clear selection on page change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [feedback.current_page]);
+
+  const allSelected =
+    feedback.data.length > 0 && feedback.data.every((f) => selectedIds.has(f.id));
+  const someSelected = selectedIds.size > 0;
+
+  const toggleItem = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(feedback.data.map((f) => f.id)));
+    }
+  }, [allSelected, feedback.data]);
+
+  const doBulkAction = useCallback(
+    (action: 'resolve' | 'decline' | 'delete'): Promise<void> => {
+      const ids = Array.from(selectedIds);
+      return new Promise((resolve, reject) => {
+        router.post(
+          '/admin/feedback/bulk-update',
+          { ids, action },
+          {
+            onSuccess: () => {
+              setSelectedIds(new Set());
+              resolve();
+            },
+            onError: () => reject(),
+          },
+        );
+      });
+    },
+    [selectedIds],
+  );
+
+  const exportParams: Record<string, string> = {};
+  if (filters.type) exportParams.type = filters.type;
+  if (filters.status) exportParams.status = filters.status;
+  if (filters.search) exportParams.search = filters.search;
 
   return (
     <AdminLayout>
@@ -70,13 +126,29 @@ export default function AdminFeedbackIndex({ feedback, filters, counts }: Props)
       <PageHeader
         title="Feedback Inbox"
         subtitle={`${counts.open} open · ${counts.in_review} in review · ${counts.resolved} resolved`}
-        icon={MessageSquare}
+        actions={
+          <ExportButton href="/admin/feedback/export" params={exportParams} label="Export CSV" />
+        }
       />
 
       <div className="container py-6 space-y-4">
-        <div className="flex gap-2">
-          <Select value={filters.type ?? 'all'} onValueChange={(v) => setFilter('type', v)}>
-            <SelectTrigger className="w-36">
+        <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
+          <Input
+            ref={searchInputRef}
+            className="max-w-xs"
+            placeholder="Search message, user..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Search feedback"
+          />
+
+          <Select
+            value={filters.type ?? 'all'}
+            onValueChange={(v) =>
+              updateFilter({ type: v === 'all' ? undefined : v })
+            }
+          >
+            <SelectTrigger className="w-36" aria-label="Filter by type">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
@@ -87,8 +159,13 @@ export default function AdminFeedbackIndex({ feedback, filters, counts }: Props)
             </SelectContent>
           </Select>
 
-          <Select value={filters.status ?? 'all'} onValueChange={(v) => setFilter('status', v)}>
-            <SelectTrigger className="w-36">
+          <Select
+            value={filters.status ?? 'all'}
+            onValueChange={(v) =>
+              updateFilter({ status: v === 'all' ? undefined : v })
+            }
+          >
+            <SelectTrigger className="w-36" aria-label="Filter by status">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -99,72 +176,136 @@ export default function AdminFeedbackIndex({ feedback, filters, counts }: Props)
               <SelectItem value="declined">Declined</SelectItem>
             </SelectContent>
           </Select>
+
+          {(filters.type || filters.status || filters.search) && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          )}
         </div>
 
-        <div className="rounded-md border">
+        {someSelected && (
+          <div className="flex items-center gap-3 p-3 bg-muted rounded-md flex-wrap">
+            <span className="text-sm text-muted-foreground">
+              {selectedIds.size} selected
+            </span>
+            <Button size="sm" variant="outline" onClick={() => doBulkAction('resolve')}>
+              Resolve
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => doBulkAction('decline')}>
+              Decline
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => setBulkDeleteConfirmOpen(true)}
+            >
+              Delete
+            </Button>
+          </div>
+        )}
+
+        <AdminDataTable
+          isEmpty={feedback.data.length === 0}
+          isNavigating={isNavigating}
+          pagination={feedback}
+          onPage={handlePage}
+          paginationLabel="feedback items"
+          emptyIcon={MessageSquare}
+          emptyTitle="No feedback found"
+          emptyDescription={
+            filters.type || filters.status || filters.search
+              ? 'No feedback matches the current filters.'
+              : 'No feedback submissions yet.'
+          }
+          emptyAction={
+            (filters.type || filters.status || filters.search) ? (
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            ) : undefined
+          }
+        >
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Type</TableHead>
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={toggleAll}
+                    aria-label="Select all feedback"
+                  />
+                </TableHead>
+                <SortHeader column="type" label="Type" currentSort={filters.sort} currentDir={filters.dir} onSort={handleSort} />
                 <TableHead>User</TableHead>
                 <TableHead>Message</TableHead>
-                <TableHead>Priority</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
+                <SortHeader column="priority" label="Priority" currentSort={filters.sort} currentDir={filters.dir} onSort={handleSort} />
+                <SortHeader column="status" label="Status" currentSort={filters.sort} currentDir={filters.dir} onSort={handleSort} />
+                <SortHeader column="created_at" label="Date" currentSort={filters.sort} currentDir={filters.dir} onSort={handleSort} />
                 <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
-              {feedback.data.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                    No feedback submissions found.
+              {feedback.data.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(item.id)}
+                      onCheckedChange={() => toggleItem(item.id)}
+                      aria-label={`Select feedback ${item.id}`}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{item.type}</Badge>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {item.user ? (
+                      <div>
+                        <div className="font-medium">{item.user.name}</div>
+                        <div className="text-muted-foreground text-xs">{item.user.email}</div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Guest</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="max-w-xs truncate text-sm">
+                    {item.message}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={priorityVariant[item.priority] ?? 'outline'}>
+                      {item.priority}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={statusVariant[item.status] ?? 'outline'}>
+                      {item.status.replace('_', ' ')}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {formatDate(item.created_at)}
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link href={`/admin/feedback/${item.id}`}>View</Link>
+                    </Button>
                   </TableCell>
                 </TableRow>
-              ) : (
-                feedback.data.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <Badge variant="outline">{item.type}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {item.user ? (
-                        <div>
-                          <div className="font-medium">{item.user.name}</div>
-                          <div className="text-muted-foreground text-xs">{item.user.email}</div>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Guest</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="max-w-xs truncate text-sm">
-                      {item.message}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={priorityVariant[item.priority] ?? 'outline'}>
-                        {item.priority}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={statusVariant[item.status] ?? 'outline'}>
-                        {item.status.replace('_', ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {formatDate(item.created_at)}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link href={`/admin/feedback/${item.id}`}>View</Link>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
+              ))}
             </TableBody>
           </Table>
-        </div>
+        </AdminDataTable>
       </div>
+
+      <ConfirmDialog
+        open={bulkDeleteConfirmOpen}
+        onOpenChange={(open) => !open && setBulkDeleteConfirmOpen(false)}
+        onConfirm={() => doBulkAction('delete')}
+        title="Delete Feedback"
+        description={`This will permanently delete ${selectedIds.size} feedback item(s). This action cannot be undone.`}
+        confirmLabel="Delete"
+        loadingLabel="Deleting..."
+        variant="destructive"
+      />
     </AdminLayout>
   );
 }

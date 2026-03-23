@@ -5,7 +5,7 @@ namespace App\Http\Requests\Admin;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class AdminFeedbackIndexRequest extends FormRequest
+class AdminEmailSendLogIndexRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -15,10 +15,9 @@ class AdminFeedbackIndexRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['nullable', 'string', Rule::in(['bug', 'feature', 'general'])],
-            'status' => ['nullable', 'string', Rule::in(['open', 'in_review', 'resolved', 'declined'])],
             'search' => ['nullable', 'string', 'max:100'],
-            'sort' => ['nullable', 'string', Rule::in(['created_at', 'priority', 'status', 'type'])],
+            'sequence_type' => ['nullable', 'string', 'max:60'],
+            'sort' => ['nullable', 'string', Rule::in(['sent_at', 'sequence_type', 'email_number'])],
             'dir' => ['nullable', 'string', Rule::in(['asc', 'desc'])],
         ];
     }

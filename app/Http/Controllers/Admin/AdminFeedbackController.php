@@ -3,15 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AnalyticsEvent;
+use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminBulkFeedbackRequest;
+use App\Http\Requests\Admin\AdminFeedbackExportRequest;
 use App\Http\Requests\Admin\AdminFeedbackIndexRequest;
+use App\Http\Requests\Admin\AdminUpdateFeedbackRequest;
 use App\Models\Feedback;
 use App\Services\AuditService;
+use App\Support\CsvExport;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminFeedbackController extends Controller
 {
@@ -21,8 +26,12 @@ class AdminFeedbackController extends Controller
 
     public function index(AdminFeedbackIndexRequest $request): Response
     {
+        $allowedSorts = ['created_at', 'priority', 'status', 'type'];
+        $sort = in_array($request->validated('sort'), $allowedSorts, true) ? $request->validated('sort') : 'created_at';
+        $dir = ($request->validated('dir') ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
         $query = Feedback::with(['user' => fn ($q) => $q->withTrashed()])
-            ->latest();
+            ->orderBy($sort, $dir);
 
         if ($request->validated('type')) {
             $query->byType($request->validated('type'));
@@ -32,12 +41,21 @@ class AdminFeedbackController extends Controller
             $query->byStatus($request->validated('status'));
         }
 
+        if ($search = $request->validated('search')) {
+            $escaped = QueryHelper::escapeLike($search);
+            $query->where(function ($q) use ($escaped) {
+                $q->whereRaw("message LIKE ? ESCAPE '|'", ["%{$escaped}%"])
+                    ->orWhereHas('user', fn ($uq) => $uq->whereRaw("name LIKE ? ESCAPE '|'", ["%{$escaped}%"])
+                        ->orWhereRaw("email LIKE ? ESCAPE '|'", ["%{$escaped}%"]));
+            });
+        }
+
         $feedback = $query->paginate(config('pagination.admin.feedback', 50))
             ->withQueryString();
 
         return Inertia::render('Admin/Feedback/Index', [
             'feedback' => $feedback,
-            'filters' => $request->only('type', 'status'),
+            'filters' => $request->only('type', 'status', 'search', 'sort', 'dir'),
             'counts' => [
                 'open' => Feedback::byStatus('open')->count(),
                 'in_review' => Feedback::byStatus('in_review')->count(),
@@ -55,14 +73,9 @@ class AdminFeedbackController extends Controller
         ]);
     }
 
-    public function update(Request $request, Feedback $feedback): RedirectResponse
+    public function update(AdminUpdateFeedbackRequest $request, Feedback $feedback): RedirectResponse
     {
-        $validated = $request->validate([
-            'status' => ['sometimes', 'string', Rule::in(['open', 'in_review', 'resolved', 'declined'])],
-            'priority' => ['sometimes', 'string', Rule::in(['low', 'medium', 'high'])],
-            'admin_notes' => ['sometimes', 'nullable', 'string', 'max:2000'],
-            'roadmap_entry_id' => ['sometimes', 'nullable', 'integer', 'exists:roadmap_entries,id'],
-        ]);
+        $validated = $request->validated();
 
         if (isset($validated['status'])) {
             if ($validated['status'] === 'resolved' && $feedback->status !== 'resolved') {
@@ -82,6 +95,38 @@ class AdminFeedbackController extends Controller
         return back()->with('success', 'Feedback updated.');
     }
 
+    public function bulkUpdate(AdminBulkFeedbackRequest $request): RedirectResponse
+    {
+        $ids = $request->validated('ids');
+        $action = $request->validated('action');
+
+        $count = 0;
+        DB::transaction(function () use ($ids, $action, &$count) {
+            $feedbacks = Feedback::whereIn('id', $ids)->lockForUpdate()->get();
+            $count = $feedbacks->count();
+            foreach ($feedbacks as $item) {
+                if ($action === 'delete') {
+                    $item->delete();
+                } elseif ($action === 'resolve') {
+                    $item->update([
+                        'status' => 'resolved',
+                        'resolved_at' => $item->resolved_at ?? now(),
+                    ]);
+                } elseif ($action === 'decline') {
+                    $item->update(['status' => 'declined']);
+                }
+            }
+        });
+
+        $this->auditService->log(AnalyticsEvent::ADMIN_FEEDBACK_BULK_UPDATED, [
+            'ids' => $ids,
+            'action' => $action,
+            'count' => $count,
+        ]);
+
+        return back()->with('success', "Bulk {$action} applied to {$count} item(s).");
+    }
+
     public function destroy(Feedback $feedback): RedirectResponse
     {
         $this->auditService->log(AnalyticsEvent::ADMIN_FEEDBACK_DELETED, [
@@ -93,5 +138,48 @@ class AdminFeedbackController extends Controller
         $feedback->delete();
 
         return redirect()->route('admin.feedback.index')->with('success', 'Feedback deleted.');
+    }
+
+    public function export(AdminFeedbackExportRequest $request): StreamedResponse
+    {
+        $this->auditService->log(AnalyticsEvent::ADMIN_FEEDBACK_EXPORTED, [
+            'filters' => $request->validated(),
+        ]);
+
+        $query = Feedback::with(['user' => fn ($q) => $q->withTrashed()])
+            ->latest();
+
+        if ($request->validated('type')) {
+            $query->byType($request->validated('type'));
+        }
+
+        if ($request->validated('status')) {
+            $query->byStatus($request->validated('status'));
+        }
+
+        if ($search = $request->validated('search')) {
+            $escaped = QueryHelper::escapeLike($search);
+            $query->where(function ($q) use ($escaped) {
+                $q->whereRaw("message LIKE ? ESCAPE '|'", ["%{$escaped}%"])
+                    ->orWhereHas('user', fn ($uq) => $uq->whereRaw("name LIKE ? ESCAPE '|'", ["%{$escaped}%"])
+                        ->orWhereRaw("email LIKE ? ESCAPE '|'", ["%{$escaped}%"]));
+            });
+        }
+
+        $query->limit(config('pagination.export.max_rows', 10000));
+
+        return (new CsvExport([
+            'ID' => 'id',
+            'Type' => 'type',
+            'Status' => 'status',
+            'Priority' => 'priority',
+            'Message' => 'message',
+            'User Name' => fn ($f) => $f->user !== null ? $f->user->name : 'Guest',
+            'User Email' => fn ($f) => $f->user !== null ? $f->user->email : '',
+            'Admin Notes' => 'admin_notes',
+            'Resolved At' => fn ($f) => $f->resolved_at?->toISOString() ?? '',
+            'Created' => fn ($f) => $f->created_at?->toISOString() ?? '',
+        ]))->filename('feedback-'.now()->format('Y-m-d').'.csv')
+            ->fromQuery($query);
     }
 }

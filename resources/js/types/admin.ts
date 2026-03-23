@@ -595,6 +595,62 @@ export interface AdminFailedJobsIndexProps {
   filters: { queue?: string };
 }
 
+// ---------------------------------------------------------------------------
+// Feedback
+// ---------------------------------------------------------------------------
+
+export interface FeedbackItem {
+  id: number;
+  type: string;
+  status: string;
+  priority: string;
+  message: string;
+  admin_notes: string | null;
+  roadmap_entry_id: number | null;
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+  user: { id: number; name: string; email: string } | null;
+}
+
+export interface FeedbackFilters {
+  type?: string;
+  status?: string;
+  search?: string;
+  sort?: string;
+  dir?: string;
+}
+
+export interface AdminFeedbackIndexProps {
+  feedback: PaginatedResponse<FeedbackItem>;
+  filters: FeedbackFilters;
+  counts: { open: number; in_review: number; resolved: number };
+}
+
+export interface AdminFeedbackShowProps {
+  feedback: FeedbackItem;
+}
+
+// ---------------------------------------------------------------------------
+// Roadmap
+// ---------------------------------------------------------------------------
+
+export interface RoadmapEntry {
+  id: number;
+  slug: string;
+  title: string;
+  description: string | null;
+  status: 'planned' | 'in_progress' | 'completed';
+  display_order: number;
+  feedback_submissions_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminRoadmapIndexProps {
+  entries: RoadmapEntry[];
+}
+
 export interface AdminFailedJobShowProps {
   job: FailedJobDetail;
 }
@@ -657,4 +713,30 @@ export interface AdminScheduleTask {
 
 export interface AdminScheduleIndexProps {
   tasks: AdminScheduleTask[];
+}
+
+// ---------------------------------------------------------------------------
+// Email Send Logs
+// ---------------------------------------------------------------------------
+
+export interface EmailSendLogItem {
+  id: number;
+  user_id: number;
+  sequence_type: string;
+  email_number: number;
+  sent_at: string;
+  user: { id: number; name: string; email: string } | null;
+}
+
+export interface EmailSendLogFilters {
+  search?: string;
+  sequence_type?: string;
+  sort?: string;
+  dir?: string;
+}
+
+export interface AdminEmailSendLogIndexProps {
+  logs: PaginatedResponse<EmailSendLogItem>;
+  sequenceTypes: string[];
+  filters: EmailSendLogFilters;
 }
