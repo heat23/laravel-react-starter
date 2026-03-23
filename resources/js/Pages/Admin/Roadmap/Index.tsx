@@ -1,6 +1,6 @@
-import { Download, Map, Plus, Trash2 } from 'lucide-react';
+import { Download, GripVertical, Map, Plus, Trash2 } from 'lucide-react';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 
@@ -28,6 +28,7 @@ import { Textarea } from '@/Components/ui/textarea';
 import { useAdminFilters } from '@/hooks/useAdminFilters';
 import { useAdminKeyboardShortcuts } from '@/hooks/useAdminKeyboardShortcuts';
 import AdminLayout from '@/Layouts/AdminLayout';
+import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/format';
 import type { PageProps } from '@/types';
 import type { AdminRoadmapIndexProps, RoadmapEntry, RoadmapFilters } from '@/types/admin';
@@ -116,6 +117,17 @@ export default function AdminRoadmapIndex({ entries, filters }: AdminRoadmapInde
   const [deleteEntry, setDeleteEntry] = useState<RoadmapEntry | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // Drag-and-drop state
+  const [orderedEntries, setOrderedEntries] = useState<RoadmapEntry[]>(entries.data);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ col: RoadmapStatus; beforeId: number | null } | null>(null);
+  const dragRef = useRef<{ entry: RoadmapEntry; fromCol: RoadmapStatus } | null>(null);
+
+  // Sync with server when entries prop refreshes
+  useEffect(() => {
+    setOrderedEntries(entries.data);
+  }, [entries.data]);
+
   const { search, setSearch, updateFilter, clearFilters } =
     useAdminFilters<RoadmapFilters>({
       route: '/admin/roadmap',
@@ -141,10 +153,82 @@ export default function AdminRoadmapIndex({ entries, filters }: AdminRoadmapInde
     });
   }
 
-  const allEntries = entries.data;
+  // --- Drag-and-drop handlers ---
 
+  function handleDragStart(e: React.DragEvent, entry: RoadmapEntry, col: RoadmapStatus) {
+    dragRef.current = { entry, fromCol: col };
+    setDraggingId(entry.id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(entry.id));
+  }
+
+  function handleDragEnd() {
+    dragRef.current = null;
+    setDraggingId(null);
+    setDropTarget(null);
+  }
+
+  function handleDragOver(e: React.DragEvent, col: RoadmapStatus, beforeId: number | null) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    setDropTarget({ col, beforeId });
+  }
+
+  function handleDrop(e: React.DragEvent, toCol: RoadmapStatus, beforeId: number | null) {
+    e.preventDefault();
+    e.stopPropagation();
+    setDropTarget(null);
+
+    if (!dragRef.current) return;
+    const { entry, fromCol: _fromCol } = dragRef.current;
+    dragRef.current = null;
+    setDraggingId(null);
+
+    // Remove entry from current position, insert at target
+    let newEntries = orderedEntries.filter((e) => e.id !== entry.id);
+    const updated: RoadmapEntry = { ...entry, status: toCol };
+
+    if (beforeId === null) {
+      newEntries = [...newEntries, updated];
+    } else {
+      const idx = newEntries.findIndex((e) => e.id === beforeId);
+      if (idx === -1) {
+        newEntries = [...newEntries, updated];
+      } else {
+        newEntries = [...newEntries.slice(0, idx), updated, ...newEntries.slice(idx)];
+      }
+    }
+
+    // Assign sequential display_orders per column
+    const items: Array<{ id: number; status: string; display_order: number }> = [];
+    columns.forEach((col) => {
+      newEntries
+        .filter((e) => e.status === col)
+        .forEach((e, i) => items.push({ id: e.id, status: col, display_order: i }));
+    });
+
+    const finalEntries = newEntries.map((e) => {
+      const item = items.find((i) => i.id === e.id);
+      return item ? { ...e, display_order: item.display_order } : e;
+    });
+
+    // Capture snapshot before optimistic update so revert is always correct
+    const snapshot = orderedEntries;
+    setOrderedEntries(finalEntries);
+
+    router.post('/admin/roadmap/reorder', { items }, {
+      preserveState: true,
+      preserveScroll: true,
+      onError: () => setOrderedEntries(snapshot),
+    });
+  }
+
+  // Build grouped from orderedEntries (sort within column by display_order)
   const grouped = columns.reduce<Record<RoadmapStatus, RoadmapEntry[]>>((acc, col) => {
-    acc[col] = allEntries.filter((e) => e.status === col);
+    acc[col] = orderedEntries
+      .filter((e) => e.status === col)
+      .sort((a, b) => a.display_order - b.display_order);
     return acc;
   }, { planned: [], in_progress: [], completed: [] });
 
@@ -211,7 +295,7 @@ export default function AdminRoadmapIndex({ entries, filters }: AdminRoadmapInde
           )}
         </div>
 
-        {allEntries.length === 0 ? (
+        {orderedEntries.length === 0 ? (
           <Card>
             <CardContent className="py-16 flex flex-col items-center gap-4">
               <Map className="h-12 w-12 text-muted-foreground/40" />
@@ -257,63 +341,107 @@ export default function AdminRoadmapIndex({ entries, filters }: AdminRoadmapInde
                   </Badge>
                 </div>
 
-                {grouped[col].length === 0 ? (
-                  <Card className="border-dashed">
-                    <CardContent className="py-8 text-center text-sm text-muted-foreground">
-                      No entries
-                    </CardContent>
-                  </Card>
-                ) : (
-                  grouped[col].map((entry) => (
-                    <Card key={entry.id} className="group">
-                      <CardHeader className="pb-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <CardTitle className="text-base leading-snug">
-                            {entry.title}
-                          </CardTitle>
-                          {isSuperAdmin && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 opacity-0 group-hover:opacity-100 shrink-0"
-                              aria-label="Delete entry"
-                              onClick={() => setDeleteEntry(entry)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          )}
-                        </div>
-                        {entry.description && (
-                          <CardDescription className="text-xs line-clamp-3">
-                            {entry.description}
-                          </CardDescription>
-                        )}
-                      </CardHeader>
-                      <CardContent className="pb-3">
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>{entry.feedback_submissions_count} upvotes</span>
-                          <span>{formatDate(entry.created_at)}</span>
-                        </div>
-
-                        {editingId === entry.id ? (
-                          <InlineEditForm
-                            entry={entry}
-                            onClose={() => setEditingId(null)}
-                          />
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="mt-2 h-7 text-xs"
-                            onClick={() => setEditingId(entry.id)}
-                          >
-                            Edit
-                          </Button>
-                        )}
+                <div
+                  className={cn(
+                    'min-h-24 rounded-lg space-y-3 transition-colors',
+                    draggingId !== null && dropTarget?.col === col && dropTarget?.beforeId === null
+                      ? 'bg-primary/5 ring-2 ring-primary/30'
+                      : draggingId !== null
+                        ? 'ring-1 ring-dashed ring-muted-foreground/30'
+                        : '',
+                  )}
+                  onDragOver={(e) => handleDragOver(e, col, null)}
+                  onDrop={(e) => handleDrop(e, col, null)}
+                >
+                  {grouped[col].length === 0 ? (
+                    <Card
+                      className={cn(
+                        'border-dashed transition-colors',
+                        draggingId !== null && dropTarget?.col === col
+                          ? 'border-primary bg-primary/5'
+                          : '',
+                      )}
+                    >
+                      <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                        {draggingId !== null ? 'Drop here' : 'No entries'}
                       </CardContent>
                     </Card>
-                  ))
-                )}
+                  ) : (
+                    grouped[col].map((entry) => (
+                      <div key={entry.id}>
+                        {/* Drop indicator: shown above this card when it's the insert target */}
+                        {draggingId !== null &&
+                          dropTarget?.col === col &&
+                          dropTarget?.beforeId === entry.id && (
+                            <div className="h-1 rounded-full bg-primary mx-1 mb-2" aria-hidden />
+                          )}
+                        <Card
+                          className={cn(
+                            'group transition-opacity',
+                            draggingId === entry.id && 'opacity-40',
+                          )}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, entry, col)}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={(e) => handleDragOver(e, col, entry.id)}
+                          onDrop={(e) => handleDrop(e, col, entry.id)}
+                        >
+                          <CardHeader className="pb-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-start gap-1.5 min-w-0">
+                                <GripVertical
+                                  className="h-4 w-4 text-muted-foreground/40 shrink-0 mt-0.5 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+                                  aria-hidden
+                                />
+                                <CardTitle className="text-base leading-snug">
+                                  {entry.title}
+                                </CardTitle>
+                              </div>
+                              {isSuperAdmin && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 opacity-0 group-hover:opacity-100 shrink-0"
+                                  aria-label="Delete entry"
+                                  onClick={() => setDeleteEntry(entry)}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              )}
+                            </div>
+                            {entry.description && (
+                              <CardDescription className="text-xs line-clamp-3">
+                                {entry.description}
+                              </CardDescription>
+                            )}
+                          </CardHeader>
+                          <CardContent className="pb-3">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                              <span>{entry.feedback_submissions_count} upvotes</span>
+                              <span>{formatDate(entry.created_at)}</span>
+                            </div>
+
+                            {editingId === entry.id ? (
+                              <InlineEditForm
+                                entry={entry}
+                                onClose={() => setEditingId(null)}
+                              />
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="mt-2 h-7 text-xs"
+                                onClick={() => setEditingId(entry.id)}
+                              >
+                                Edit
+                              </Button>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             ))}
           </div>

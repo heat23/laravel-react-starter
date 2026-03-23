@@ -5,13 +5,16 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AnalyticsEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminReorderRoadmapRequest;
 use App\Http\Requests\Admin\AdminRoadmapIndexRequest;
 use App\Http\Requests\Admin\AdminStoreRoadmapRequest;
 use App\Http\Requests\Admin\AdminUpdateRoadmapRequest;
 use App\Models\RoadmapEntry;
 use App\Services\AuditService;
 use App\Support\CsvExport;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -82,9 +85,21 @@ class AdminRoadmapController extends Controller
     public function store(AdminStoreRoadmapRequest $request): RedirectResponse
     {
         $validated = $request->validated();
-        $validated['slug'] = Str::slug($validated['title']);
+        $baseSlug = Str::slug($validated['title']);
+        $counter = 1;
+        $entry = null;
+        do {
+            $validated['slug'] = $counter === 1 ? $baseSlug : $baseSlug.'-'.($counter - 1);
+            try {
+                $entry = RoadmapEntry::create($validated);
+            } catch (UniqueConstraintViolationException) {
+                $counter++;
+            }
+        } while ($entry === null && $counter <= 100);
 
-        $entry = RoadmapEntry::create($validated);
+        if ($entry === null) {
+            return back()->withErrors(['title' => 'Could not generate a unique slug. Please use a different title.']);
+        }
 
         $this->auditService->log(AnalyticsEvent::ADMIN_ROADMAP_ENTRY_CREATED, [
             'entry_id' => $entry->id,
@@ -93,6 +108,27 @@ class AdminRoadmapController extends Controller
         ]);
 
         return redirect()->route('admin.roadmap.index')->with('success', 'Roadmap entry created.');
+    }
+
+    public function reorder(AdminReorderRoadmapRequest $request): RedirectResponse
+    {
+        $validated = $request->validated();
+
+        DB::transaction(function () use ($validated) {
+            foreach ($validated['items'] as $item) {
+                RoadmapEntry::where('id', $item['id'])->update([
+                    'status' => $item['status'],
+                    'display_order' => $item['display_order'],
+                ]);
+            }
+        });
+
+        $this->auditService->log(AnalyticsEvent::ADMIN_ROADMAP_ENTRY_UPDATED, [
+            'action' => 'reorder',
+            'count' => count($validated['items']),
+        ]);
+
+        return back();
     }
 
     public function update(AdminUpdateRoadmapRequest $request, RoadmapEntry $roadmapEntry): RedirectResponse

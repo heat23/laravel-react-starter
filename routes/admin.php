@@ -180,6 +180,7 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         Route::get('/roadmap', [AdminRoadmapController::class, 'index'])->name('roadmap.index');
         Route::get('/roadmap/create', [AdminRoadmapController::class, 'create'])->name('roadmap.create');
         Route::post('/roadmap', [AdminRoadmapController::class, 'store'])->middleware('throttle:30,1')->name('roadmap.store');
+        Route::post('/roadmap/reorder', [AdminRoadmapController::class, 'reorder'])->middleware('throttle:30,1')->name('roadmap.reorder');
         Route::patch('/roadmap/{roadmapEntry}', [AdminRoadmapController::class, 'update'])->middleware('throttle:30,1')->name('roadmap.update');
         Route::delete('/roadmap/{roadmapEntry}', [AdminRoadmapController::class, 'destroy'])->middleware(['throttle:10,1', 'super_admin'])->name('roadmap.destroy');
 
