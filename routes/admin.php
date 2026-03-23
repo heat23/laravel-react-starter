@@ -232,7 +232,7 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
                 ->name('tokens.export');
             Route::get('/tokens/list', [AdminTokensController::class, 'index'])->name('tokens.index');
             Route::delete('/tokens/{id}', [AdminTokensController::class, 'revoke'])
-                ->middleware('throttle:10,1')
+                ->middleware(['throttle:10,1', 'super_admin'])
                 ->name('tokens.revoke');
         }
 

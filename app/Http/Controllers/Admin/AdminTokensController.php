@@ -6,15 +6,17 @@ use App\Enums\AdminCacheKey;
 use App\Enums\AnalyticsEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminTokenExportRequest;
 use App\Http\Requests\Admin\AdminTokenIndexRequest;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
+use App\Support\CsvExport;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminTokensController extends Controller
 {
@@ -123,10 +125,55 @@ class AdminTokensController extends Controller
         ]);
     }
 
-    public function revoke(int $id, Request $request): RedirectResponse
+    public function export(AdminTokenExportRequest $request): StreamedResponse
     {
-        abort_unless($request->user()?->isSuperAdmin(), 403);
+        $this->auditService->log(AnalyticsEvent::ADMIN_TOKENS_EXPORTED, [
+            'filters' => $request->validated(),
+        ]);
 
+        $query = DB::table('personal_access_tokens')
+            ->join('users', 'personal_access_tokens.tokenable_id', '=', 'users.id')
+            ->where('personal_access_tokens.tokenable_type', 'App\\Models\\User')
+            ->select(
+                'personal_access_tokens.id',
+                'personal_access_tokens.name as token_name',
+                'personal_access_tokens.abilities',
+                'personal_access_tokens.last_used_at',
+                'personal_access_tokens.expires_at',
+                'personal_access_tokens.created_at',
+                'users.name as user_name',
+                'users.email as user_email',
+            )
+            ->orderByDesc('personal_access_tokens.last_used_at');
+
+        if ($search = $request->validated('search')) {
+            $escaped = QueryHelper::escapeLike($search);
+            $query->where(function ($q) use ($escaped) {
+                $q->whereRaw("personal_access_tokens.name LIKE ? ESCAPE '|'", ["%{$escaped}%"])
+                    ->orWhereRaw("users.email LIKE ? ESCAPE '|'", ["%{$escaped}%"])
+                    ->orWhereRaw("users.name LIKE ? ESCAPE '|'", ["%{$escaped}%"]);
+            });
+        }
+
+        $query->limit(config('pagination.export.max_rows', 10000));
+
+        return (new CsvExport([
+            'ID' => 'id',
+            'Token Name' => 'token_name',
+            'User Name' => 'user_name',
+            'User Email' => 'user_email',
+            'Abilities' => fn ($row) => is_string($row->abilities)
+                ? implode(', ', json_decode($row->abilities, true) ?? [])
+                : '',
+            'Last Used' => fn ($row) => $row->last_used_at ?? '',
+            'Expires' => fn ($row) => $row->expires_at ?? '',
+            'Created' => 'created_at',
+        ]))->filename('tokens-'.now()->format('Y-m-d').'.csv')
+            ->fromCollection($query->cursor());
+    }
+
+    public function revoke(int $id): RedirectResponse
+    {
         $token = DB::table('personal_access_tokens')->where('id', $id)->first();
         abort_unless((bool) $token, 404);
 
