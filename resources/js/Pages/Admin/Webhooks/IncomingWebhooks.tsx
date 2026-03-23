@@ -80,7 +80,7 @@ export default function IncomingWebhooks({
         <div className="flex flex-wrap gap-3">
           <Select
             value={filters.provider ?? 'all'}
-            onValueChange={(v) => updateFilter('provider', v === 'all' ? '' : v)}
+            onValueChange={(v) => updateFilter({ provider: v === 'all' ? '' : v })}
           >
             <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="All providers" />
@@ -97,7 +97,7 @@ export default function IncomingWebhooks({
 
           <Select
             value={filters.status ?? 'all'}
-            onValueChange={(v) => updateFilter('status', v === 'all' ? '' : v)}
+            onValueChange={(v) => updateFilter({ status: v === 'all' ? '' : v })}
           >
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="All statuses" />
@@ -169,6 +169,7 @@ export default function IncomingWebhooks({
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label={`View webhook #${webhook.id}`}
                       onClick={() => setSelectedWebhook(webhook)}
                     >
                       View

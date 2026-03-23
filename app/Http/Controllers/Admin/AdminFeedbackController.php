@@ -109,7 +109,7 @@ class AdminFeedbackController extends Controller
                 } elseif ($action === 'resolve') {
                     $item->update([
                         'status' => 'resolved',
-                        'resolved_at' => $item->resolved_at ?? now(),
+                        'resolved_at' => now(),
                     ]);
                 } elseif ($action === 'decline') {
                     $item->update(['status' => 'declined']);

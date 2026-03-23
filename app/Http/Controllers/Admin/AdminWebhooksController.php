@@ -154,6 +154,11 @@ class AdminWebhooksController extends Controller
         $status = $request->string('status')->toString() ?: null;
         $eventType = $request->string('event_type')->toString() ?: null;
 
+        // Sanitize provider to alphanumeric + underscore to prevent unexpected filter values
+        if ($provider !== null && ! preg_match('/^[a-z0-9_]+$/i', $provider)) {
+            $provider = null;
+        }
+
         $validStatuses = ['received', 'processing', 'processed', 'failed'];
         if ($status !== null && ! in_array($status, $validStatuses, true)) {
             $status = null;
@@ -175,7 +180,7 @@ class AdminWebhooksController extends Controller
         }
 
         $webhooks = $query
-            ->paginate(config('pagination.admin.users', 25))
+            ->paginate(config('pagination.admin.incoming_webhooks', 25))
             ->withQueryString()
             ->through(fn (IncomingWebhook $w) => [
                 'id' => $w->id,

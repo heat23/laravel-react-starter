@@ -22,6 +22,7 @@ return [
         'failed_jobs' => 25,
         'feedback' => 50,
         'email_send_logs' => 50,
+        'incoming_webhooks' => 25,
     ],
 
     'api' => [
