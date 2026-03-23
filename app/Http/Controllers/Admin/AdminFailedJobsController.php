@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminBulkDeleteFailedJobRequest;
+use App\Http\Requests\Admin\AdminBulkRetryFailedJobRequest;
 use App\Http\Requests\Admin\AdminFailedJobIndexRequest;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -106,12 +107,9 @@ class AdminFailedJobsController extends Controller
             ->with('success', 'Failed job deleted.');
     }
 
-    public function bulkRetry(Request $request, AuditService $audit): RedirectResponse
+    public function bulkRetry(AdminBulkRetryFailedJobRequest $request, AuditService $audit): RedirectResponse
     {
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'max:100'],
-            'ids.*' => ['required', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $retried = 0;
         foreach ($validated['ids'] as $uuid) {
@@ -133,12 +131,9 @@ class AdminFailedJobsController extends Controller
             ->with('success', "{$retried} job(s) queued for retry.");
     }
 
-    public function bulkDelete(Request $request, AuditService $audit): RedirectResponse
+    public function bulkDelete(AdminBulkDeleteFailedJobRequest $request, AuditService $audit): RedirectResponse
     {
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'max:100'],
-            'ids.*' => ['required', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $deleted = DB::table('failed_jobs')->whereIn('uuid', $validated['ids'])->delete();
 
