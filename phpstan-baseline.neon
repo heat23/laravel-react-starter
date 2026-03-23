@@ -491,3 +491,9 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: routes/api.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Admin/AdminWebhooksController.php

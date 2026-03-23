@@ -1,6 +1,6 @@
 import { AlertTriangle, Radio, Zap } from 'lucide-react';
 
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 
 import { AdminBarChart, AdminPieChart } from '@/Components/admin/AdminCharts';
 import {
@@ -170,12 +170,13 @@ export default function WebhooksDashboard({
                       <TableHead>Response</TableHead>
                       <TableHead>Attempts</TableHead>
                       <TableHead>Time</TableHead>
+                      <TableHead className="sr-only">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {recent_failures.map((failure) => (
                       <TableRow key={failure.id}>
-                        <TableCell className="text-sm font-mono max-w-[200px] truncate">
+                        <TableCell className="text-sm font-mono max-w-[200px] truncate" title={failure.endpoint_url}>
                           {failure.endpoint_url}
                         </TableCell>
                         <TableCell>
@@ -193,6 +194,14 @@ export default function WebhooksDashboard({
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {formatRelativeTime(failure.created_at)}
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/admin/webhooks/deliveries/${failure.id}`}
+                            className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                          >
+                            View
+                          </Link>
                         </TableCell>
                       </TableRow>
                     ))}

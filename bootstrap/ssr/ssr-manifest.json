@@ -127,6 +127,7 @@
   "resources/js/Pages/Admin/Users/Index.tsx": [],
   "resources/js/Pages/Admin/Users/Show.tsx": [],
   "resources/js/Pages/Admin/Webhooks/Dashboard.tsx": [],
+  "resources/js/Pages/Admin/Webhooks/DeliveryDetail.tsx": [],
   "resources/js/Pages/Admin/Webhooks/Endpoints.tsx": [],
   "resources/js/Pages/Admin/Webhooks/IncomingWebhooks.tsx": [],
   "resources/js/Pages/Admin/__smoke-tests__.test.tsx": [],

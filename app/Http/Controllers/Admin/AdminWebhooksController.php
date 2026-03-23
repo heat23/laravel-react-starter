@@ -8,6 +8,7 @@ use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Models\IncomingWebhook;
 use App\Models\User;
+use App\Models\WebhookDelivery;
 use App\Models\WebhookEndpoint;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
@@ -202,6 +203,39 @@ class AdminWebhooksController extends Controller
                 'status' => $status,
                 'event_type' => $eventType,
             ]),
+        ]);
+    }
+
+    public function showDelivery(int $id): Response
+    {
+        /** @var WebhookDelivery $delivery */
+        $delivery = WebhookDelivery::with([
+            'endpoint' => fn ($q) => $q->withTrashed()->with(['user' => fn ($uq) => $uq->withTrashed()->select('id', 'name', 'email')]),
+        ])->findOrFail($id);
+
+        /** @var WebhookEndpoint|null $endpoint */
+        $endpoint = $delivery->endpoint;
+        $user = $endpoint !== null && $endpoint->user instanceof User ? $endpoint->user : null;
+
+        return Inertia::render('Admin/Webhooks/DeliveryDetail', [
+            'delivery' => [
+                'id' => $delivery->id,
+                'uuid' => $delivery->uuid,
+                'event_type' => $delivery->event_type,
+                'payload' => $delivery->payload,
+                'status' => $delivery->status,
+                'response_code' => $delivery->response_code,
+                'response_body' => $delivery->response_body,
+                'attempts' => $delivery->attempts,
+                'delivered_at' => $delivery->delivered_at?->toISOString(),
+                'created_at' => $delivery->created_at?->toISOString(),
+                'endpoint_id' => $endpoint?->id,
+                'endpoint_url' => $endpoint !== null ? $endpoint->url : '[Deleted Endpoint]',
+                'endpoint_deleted' => $endpoint?->deleted_at !== null,
+                'user_id' => $user !== null ? $user->id : null,
+                'user_name' => $user !== null ? $user->name : '[Deleted User]',
+                'user_email' => $user !== null ? $user->email : '',
+            ],
         ]);
     }
 

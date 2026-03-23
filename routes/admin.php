@@ -215,6 +215,7 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
             Route::patch('/webhooks/endpoints/{id}/restore', [AdminWebhooksController::class, 'restoreEndpoint'])
                 ->middleware('throttle:10,1')
                 ->name('webhooks.endpoints.restore');
+            Route::get('/webhooks/deliveries/{id}', [AdminWebhooksController::class, 'showDelivery'])->name('webhooks.deliveries.show');
         }
 
         if (config('features.api_tokens.enabled')) {

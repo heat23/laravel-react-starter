@@ -533,6 +533,29 @@ export interface AdminWebhookEndpointsProps {
   endpoints: PaginatedResponse<AdminWebhookEndpoint>;
 }
 
+export interface AdminWebhookDelivery {
+  id: number;
+  uuid: string;
+  event_type: string;
+  payload: Record<string, unknown> | null;
+  status: string;
+  response_code: number | null;
+  response_body: string | null;
+  attempts: number;
+  delivered_at: string | null;
+  created_at: string;
+  endpoint_id: number | null;
+  endpoint_url: string;
+  endpoint_deleted: boolean;
+  user_id: number | null;
+  user_name: string;
+  user_email: string;
+}
+
+export interface AdminWebhookDeliveryDetailProps {
+  delivery: AdminWebhookDelivery;
+}
+
 export interface AdminIncomingWebhook {
   id: number;
   provider: string;
