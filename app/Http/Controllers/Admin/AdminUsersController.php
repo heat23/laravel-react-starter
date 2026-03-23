@@ -12,6 +12,7 @@ use App\Http\Requests\Admin\AdminUserExportRequest;
 use App\Http\Requests\Admin\AdminUserIndexRequest;
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Models\UserStageHistory;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
 use App\Services\EngagementScoringService;
@@ -134,6 +135,18 @@ class AdminUsersController extends Controller
             }
         }
 
+        $stageHistory = UserStageHistory::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get()
+            ->map(fn (UserStageHistory $h) => [
+                'id' => $h->id,
+                'from_stage' => $h->from_stage,
+                'to_stage' => $h->to_stage,
+                'reason' => $h->reason,
+                'created_at' => $h->created_at->toISOString(),
+            ]);
+
         return Inertia::render('Admin/Users/Show', [
             'user' => [
                 'id' => $user->id,
@@ -150,6 +163,7 @@ class AdminUsersController extends Controller
             ],
             'recent_audit_logs' => $recentAuditLogs,
             'subscription' => $subscription,
+            'stage_history' => $stageHistory,
         ]);
     }
 

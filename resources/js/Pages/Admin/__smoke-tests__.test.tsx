@@ -138,6 +138,7 @@ describe("Admin UI Smoke Tests", () => {
           }}
           recent_audit_logs={[]}
           subscription={null}
+          stage_history={[]}
         />
       );
 

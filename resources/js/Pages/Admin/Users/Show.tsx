@@ -32,12 +32,13 @@ import { useAdminAction } from '@/hooks/useAdminAction';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { formatDate } from '@/lib/format';
 import type { PageProps } from '@/types';
-import type { AdminUsersShowProps } from '@/types/admin';
+import type { AdminUsersShowProps, UserStageHistoryEntry } from '@/types/admin';
 
 export default function AdminUserShow({
   user,
   recent_audit_logs,
   subscription,
+  stage_history,
 }: AdminUsersShowProps) {
   const { confirmAction, setConfirmAction, executeAction, getDialogProps } =
     useAdminAction();
@@ -320,6 +321,53 @@ export default function AdminUserShow({
             </CardContent>
           </Card>
         )}
+
+        {/* Stage Transition History */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Lifecycle Stage History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {stage_history.length === 0 ? (
+              <EmptyState
+                title="No stage transitions recorded"
+                description="Stage transition history will appear here as the user progresses through lifecycle stages."
+                size="sm"
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>From</TableHead>
+                      <TableHead>To</TableHead>
+                      <TableHead>Reason</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {stage_history.map((entry: UserStageHistoryEntry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {entry.from_stage ?? '—'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{entry.to_stage}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground max-w-xs truncate">
+                          {entry.reason}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {formatDate(entry.created_at)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Audit Logs */}
         <Card>

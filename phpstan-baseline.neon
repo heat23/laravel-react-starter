@@ -105,7 +105,19 @@ parameters:
 		-
 			message: '#^Cannot call method toISOString\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 4
+			count: 5
+			path: app/Http/Controllers/Admin/AdminUsersController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\UserStageHistory\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Admin/AdminUsersController.php
+
+		-
+			message: '#^Using nullsafe method call on non-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
 			path: app/Http/Controllers/Admin/AdminUsersController.php
 
 		-

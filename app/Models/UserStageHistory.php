@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserStageHistory extends Model
 {
-    public $timestamps = false;
+    protected $table = 'user_stage_history';
+
+    public const UPDATED_AT = null;
 
     protected $fillable = [
         'user_id',
@@ -21,7 +23,6 @@ class UserStageHistory extends Model
     {
         return [
             'metadata' => 'array',
-            'created_at' => 'datetime',
         ];
     }
 

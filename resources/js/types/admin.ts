@@ -417,10 +417,19 @@ export interface AdminUsersIndexProps {
   filters: AdminUserFilters;
 }
 
+export interface UserStageHistoryEntry {
+  id: number;
+  from_stage: string | null;
+  to_stage: string;
+  reason: string;
+  created_at: string | null;
+}
+
 export interface AdminUsersShowProps {
   user: AdminUserDetail;
   recent_audit_logs: AuditLogEntry[];
   subscription: UserSubscription | null;
+  stage_history: UserStageHistoryEntry[];
 }
 
 export interface AdminAuditLogsIndexProps {
