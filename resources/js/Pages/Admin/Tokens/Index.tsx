@@ -9,6 +9,7 @@ import PageHeader from '@/Components/layout/PageHeader';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { ConfirmDialog } from '@/Components/ui/confirm-dialog';
+import { ExportButton } from '@/Components/ui/export-button';
 import { Input } from '@/Components/ui/input';
 import {
   Table,
@@ -62,9 +63,16 @@ export default function AdminTokensIndex({ tokens, filters }: AdminTokensIndexPr
         title="All API Tokens"
         subtitle="Browse and revoke user API tokens"
         actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/admin/tokens">Back to Dashboard</Link>
-          </Button>
+          <div className="flex gap-2">
+            <ExportButton
+              href="/admin/tokens/export"
+              params={filters.search ? { search: filters.search } : undefined}
+              label="Export CSV"
+            />
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/tokens">Back to Dashboard</Link>
+            </Button>
+          </div>
         }
       />
 

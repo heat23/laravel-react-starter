@@ -1,0 +1,12 @@
+[mcp_servers.laravel-boost]
+command = "php"
+args = ["artisan", "boost:mcp"]
+cwd = "/Users/sood/dev/heatware/laravel-react-starter"
+
+[mcp_servers.herd]
+command = "php"
+args = ["/Applications/Herd.app/Contents/Resources/herd-mcp.phar"]
+cwd = "/Users/sood/dev/heatware/laravel-react-starter"
+
+[mcp_servers.herd.env]
+SITE_PATH = "/Users/sood/dev/heatware/laravel-react-starter"

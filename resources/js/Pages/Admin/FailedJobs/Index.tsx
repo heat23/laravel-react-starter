@@ -9,6 +9,7 @@ import PageHeader from '@/Components/layout/PageHeader';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Checkbox } from '@/Components/ui/checkbox';
+import { ConfirmDialog } from '@/Components/ui/confirm-dialog';
 import {
   Select,
   SelectContent,
@@ -41,6 +42,7 @@ export default function AdminFailedJobsIndex({
   });
   const isNavigating = useNavigationState();
   const [selectedUuids, setSelectedUuids] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
 
   // Clear selection on page navigation
   useEffect(() => {
@@ -77,11 +79,17 @@ export default function AdminFailedJobsIndex({
     );
   }, [selectedUuids]);
 
-  const bulkDelete = useCallback(() => {
+  const bulkDelete = useCallback((): Promise<void> => {
     const ids = Array.from(selectedUuids);
-    router.delete('/admin/failed-jobs/bulk', {
-      data: { ids },
-      onSuccess: () => setSelectedUuids(new Set()),
+    return new Promise((resolve, reject) => {
+      router.delete('/admin/failed-jobs/bulk', {
+        data: { ids },
+        onSuccess: () => {
+          setSelectedUuids(new Set());
+          resolve();
+        },
+        onError: () => reject(),
+      });
     });
   }, [selectedUuids]);
 
@@ -124,7 +132,7 @@ export default function AdminFailedJobsIndex({
             <Button size="sm" variant="outline" onClick={bulkRetry}>
               Retry Selected
             </Button>
-            <Button size="sm" variant="destructive" onClick={bulkDelete}>
+            <Button size="sm" variant="destructive" onClick={() => setBulkDeleteConfirmOpen(true)}>
               Delete Selected
             </Button>
           </div>
@@ -201,6 +209,17 @@ export default function AdminFailedJobsIndex({
           </Table>
         </AdminDataTable>
       </div>
+
+      <ConfirmDialog
+        open={bulkDeleteConfirmOpen}
+        onOpenChange={(open) => !open && setBulkDeleteConfirmOpen(false)}
+        onConfirm={bulkDelete}
+        title="Delete Failed Jobs"
+        description={`This will permanently delete ${selectedUuids.size} failed job record(s). This action cannot be undone.`}
+        confirmLabel="Delete"
+        loadingLabel="Deleting..."
+        variant="destructive"
+      />
     </AdminLayout>
   );
 }

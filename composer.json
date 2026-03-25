@@ -21,6 +21,7 @@
         "infection/infection": "^0.32.4",
         "knuckleswtf/scribe": "^5.7",
         "larastan/larastan": "^3.9",
+        "laravel/boost": "^2.3",
         "laravel/breeze": "^2.3",
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.24",
