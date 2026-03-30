@@ -268,6 +268,11 @@ export default function AdminUserShow({
                     </span>
                   </div>
                 )}
+                <Button variant="outline" size="sm" asChild className="mt-2">
+                  <Link href={`/admin/billing/subscriptions/${subscription.id}`}>
+                    View Subscription Details
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           )}

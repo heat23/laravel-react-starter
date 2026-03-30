@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AnalyticsEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminBulkContactSubmissionRequest;
 use App\Http\Requests\Admin\AdminContactSubmissionExportRequest;
 use App\Http\Requests\Admin\AdminContactSubmissionsIndexRequest;
 use App\Http\Requests\Admin\AdminUpdateContactSubmissionRequest;
@@ -12,6 +13,7 @@ use App\Models\ContactSubmission;
 use App\Services\AuditService;
 use App\Support\CsvExport;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -83,6 +85,38 @@ class AdminContactSubmissionsController extends Controller
         ]);
 
         return back()->with('success', 'Submission updated.');
+    }
+
+    public function bulkUpdate(AdminBulkContactSubmissionRequest $request): RedirectResponse
+    {
+        $ids = $request->validated('ids');
+        $action = $request->validated('action');
+
+        $count = 0;
+        DB::transaction(function () use ($ids, $action, &$count) {
+            $submissions = ContactSubmission::whereIn('id', $ids)->lockForUpdate()->get();
+            foreach ($submissions as $submission) {
+                if ($action === 'delete') {
+                    $submission->delete();
+                } elseif ($action === 'spam') {
+                    $submission->update(['status' => 'spam', 'replied_at' => null]);
+                } elseif ($action === 'replied') {
+                    $submission->update([
+                        'status' => 'replied',
+                        'replied_at' => $submission->replied_at ?? now(),
+                    ]);
+                }
+                $count++;
+            }
+        });
+
+        $this->auditService->log(AnalyticsEvent::ADMIN_CONTACT_SUBMISSION_BULK_UPDATED, [
+            'ids' => $ids,
+            'action' => $action,
+            'count' => $count,
+        ]);
+
+        return back()->with('success', "Bulk {$action} applied to {$count} submission(s).");
     }
 
     public function destroy(ContactSubmission $contactSubmission): RedirectResponse

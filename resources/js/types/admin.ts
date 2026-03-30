@@ -187,6 +187,7 @@ export interface SubscriptionFilters extends SortableFilters {
 
 /** User subscription as shown on user detail page */
 export interface UserSubscription {
+  id: number;
   stripe_status: string;
   stripe_price: string;
   quantity: number;
@@ -780,10 +781,17 @@ export interface AdminSessionRow {
   last_activity: string;
 }
 
+export interface SessionFilters {
+  search?: string;
+  sort?: string;
+  dir?: string;
+}
+
 export interface AdminSessionsIndexProps {
   sessions: PaginatedResponse<AdminSessionRow> | Record<string, never>;
   driver: string;
   driverSupported: boolean;
+  filters: SessionFilters;
 }
 
 // ---------------------------------------------------------------------------

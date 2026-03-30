@@ -127,6 +127,7 @@ class AdminUsersController extends Controller
             if ($sub) {
                 $sub->load('owner', 'items.subscription');
                 $subscription = [
+                    'id' => $sub->id,
                     'stripe_status' => $sub->stripe_status,
                     'stripe_price' => $sub->stripe_price,
                     'quantity' => $sub->quantity,

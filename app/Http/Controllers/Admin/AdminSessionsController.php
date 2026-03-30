@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AnalyticsEvent;
+use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\AdminSessionIndexRequest;
 use App\Services\AuditService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,13 +20,19 @@ class AdminSessionsController extends Controller
         private AuditService $auditService,
     ) {}
 
-    public function index(): Response
+    public function index(AdminSessionIndexRequest $request): Response
     {
         $driver = Config::get('session.driver');
-        $sessions = collect();
+        $sessions = (object) [];
 
         if ($driver === 'database') {
-            $sessions = DB::table('sessions')
+            $allowedSorts = ['last_activity', 'ip_address'];
+            $sort = in_array($request->validated('sort'), $allowedSorts, true)
+                ? $request->validated('sort')
+                : 'last_activity';
+            $dir = ($request->validated('dir') ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+            $query = DB::table('sessions')
                 ->leftJoin('users', 'sessions.user_id', '=', 'users.id')
                 ->select(
                     'sessions.id as session_id',
@@ -35,9 +43,20 @@ class AdminSessionsController extends Controller
                     'sessions.user_agent',
                     'sessions.last_activity',
                 )
-                ->whereNotNull('sessions.user_id')
-                ->orderByDesc('sessions.last_activity')
+                ->whereNotNull('sessions.user_id');
+
+            if ($search = $request->validated('search')) {
+                $escaped = QueryHelper::escapeLike($search);
+                $query->where(function ($q) use ($escaped): void {
+                    $q->whereRaw("users.name LIKE ? ESCAPE '|'", ["%{$escaped}%"])
+                        ->orWhereRaw("users.email LIKE ? ESCAPE '|'", ["%{$escaped}%"]);
+                });
+            }
+
+            $sessions = $query
+                ->orderBy("sessions.{$sort}", $dir)
                 ->paginate(config('pagination.admin.users', 25))
+                ->withQueryString()
                 ->through(fn ($row) => [
                     'session_id' => $row->session_id,
                     'user_id' => $row->user_id,
@@ -53,6 +72,7 @@ class AdminSessionsController extends Controller
             'sessions' => $sessions,
             'driver' => $driver,
             'driverSupported' => $driver === 'database',
+            'filters' => $request->only('search', 'sort', 'dir'),
         ]);
     }
 

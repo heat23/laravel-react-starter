@@ -73,7 +73,10 @@ enum AnalyticsEvent: string
     case ADMIN_CONTACT_SUBMISSION_UPDATED = 'admin.contact_submission.updated';
     case ADMIN_CONTACT_SUBMISSION_DELETED = 'admin.contact_submission.deleted';
     case ADMIN_CONTACT_SUBMISSIONS_EXPORTED = 'admin.contact_submissions.exported';
+    case ADMIN_CONTACT_SUBMISSION_BULK_UPDATED = 'admin.contact_submission.bulk_updated';
+    case ADMIN_DATA_HEALTH_VIEWED = 'admin.data_health.viewed';
     case ADMIN_NPS_EXPORTED = 'admin.nps.exported';
+    case ADMIN_EMAIL_SEND_LOGS_EXPORTED = 'admin.email_send_logs.exported';
 
     // User actions
     case PROFILE_UPDATED = 'profile.updated';

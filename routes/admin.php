@@ -100,10 +100,13 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
             ->middleware(['throttle:10,1', 'super_admin'])
             ->name('feedback.destroy');
 
-        // Contact Submissions — export before {contactSubmission} wildcard
+        // Contact Submissions — export/bulk before {contactSubmission} wildcard
         Route::get('/contact-submissions/export', [AdminContactSubmissionsController::class, 'export'])
             ->middleware('throttle:10,1')
             ->name('contact-submissions.export');
+        Route::post('/contact-submissions/bulk-update', [AdminContactSubmissionsController::class, 'bulkUpdate'])
+            ->middleware('throttle:30,1')
+            ->name('contact-submissions.bulk-update');
         Route::get('/contact-submissions', [AdminContactSubmissionsController::class, 'index'])->name('contact-submissions.index');
         Route::get('/contact-submissions/{contactSubmission}', [AdminContactSubmissionsController::class, 'show'])->name('contact-submissions.show');
         Route::patch('/contact-submissions/{contactSubmission}', [AdminContactSubmissionsController::class, 'update'])
@@ -119,7 +122,10 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
             ->name('nps-responses.export');
         Route::get('/nps-responses', [AdminNpsResponsesController::class, 'index'])->name('nps-responses.index');
 
-        // Email Send Logs
+        // Email Send Logs — export before index to avoid prefix collision
+        Route::get('/email-send-logs/export', [AdminEmailSendLogController::class, 'export'])
+            ->middleware('throttle:10,1')
+            ->name('email-send-logs.export');
         Route::get('/email-send-logs', [AdminEmailSendLogController::class, 'index'])->name('email-send-logs.index');
 
         // Audit Logs

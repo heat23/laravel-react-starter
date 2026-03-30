@@ -8,6 +8,7 @@ import { AdminDataTable } from '@/Components/admin/AdminDataTable';
 import { SortHeader } from '@/Components/admin/SortHeader';
 import PageHeader from '@/Components/layout/PageHeader';
 import { Button } from '@/Components/ui/button';
+import { ExportButton } from '@/Components/ui/export-button';
 import { Input } from '@/Components/ui/input';
 import {
   Select,
@@ -44,6 +45,12 @@ export default function AdminEmailSendLogsIndex({
       filters,
     });
 
+  const exportParams = Object.fromEntries(
+    Object.entries({ search: filters.search, sequence_type: filters.sequence_type }).filter(
+      ([, v]) => v != null,
+    ) as [string, string][],
+  );
+
   const isNavigating = useNavigationState();
   const currentPage = logs.current_page;
   const lastPage = logs.last_page;
@@ -60,6 +67,9 @@ export default function AdminEmailSendLogsIndex({
       <PageHeader
         title="Email Send Logs"
         subtitle={`${logs.total.toLocaleString()} log entries`}
+        actions={
+          <ExportButton href="/admin/email-send-logs/export" params={exportParams} label="Export CSV" />
+        }
       />
 
       <div className="container py-6 space-y-4">

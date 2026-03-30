@@ -1,6 +1,6 @@
 import { Inbox } from 'lucide-react';
 
-import { useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 import { Head, Link, router } from '@inertiajs/react';
 
@@ -9,6 +9,8 @@ import { SortHeader } from '@/Components/admin/SortHeader';
 import PageHeader from '@/Components/layout/PageHeader';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
+import { Checkbox } from '@/Components/ui/checkbox';
+import { ConfirmDialog } from '@/Components/ui/confirm-dialog';
 import { ExportButton } from '@/Components/ui/export-button';
 import { Input } from '@/Components/ui/input';
 import {
@@ -52,15 +54,63 @@ export default function AdminContactSubmissionsIndex({
 
   const isNavigating = useNavigationState();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
 
   const currentPage = submissions.current_page;
   const lastPage = submissions.last_page;
+
+  // Clear selection on page change
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [submissions.current_page]);
 
   useAdminKeyboardShortcuts({
     onSearch: () => searchInputRef.current?.focus(),
     onNextPage: currentPage < lastPage ? () => handlePage(currentPage + 1) : undefined,
     onPrevPage: currentPage > 1 ? () => handlePage(currentPage - 1) : undefined,
   });
+
+  const allSelected =
+    submissions.data.length > 0 && submissions.data.every((s) => selectedIds.has(s.id));
+  const someSelected = selectedIds.size > 0;
+
+  const toggleItem = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(submissions.data.map((s) => s.id)));
+    }
+  }, [allSelected, submissions.data]);
+
+  const doBulkAction = useCallback(
+    (action: 'spam' | 'replied' | 'delete'): Promise<void> => {
+      const ids = Array.from(selectedIds);
+      return new Promise((resolve, reject) => {
+        router.post(
+          '/admin/contact-submissions/bulk-update',
+          { ids, action },
+          {
+            onSuccess: () => {
+              setSelectedIds(new Set());
+              resolve();
+            },
+            onError: () => reject(),
+          },
+        );
+      });
+    },
+    [selectedIds],
+  );
 
   const exportParams: Record<string, string> = {};
   if (filters.status) exportParams.status = filters.status;
@@ -114,6 +164,27 @@ export default function AdminContactSubmissionsIndex({
           )}
         </div>
 
+        {someSelected && (
+          <div className="flex items-center gap-3 p-3 bg-muted rounded-md flex-wrap">
+            <span className="text-sm text-muted-foreground">
+              {selectedIds.size} selected
+            </span>
+            <Button size="sm" variant="outline" onClick={() => doBulkAction('replied')}>
+              Mark Replied
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => doBulkAction('spam')}>
+              Mark Spam
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => setBulkDeleteConfirmOpen(true)}
+            >
+              Delete
+            </Button>
+          </div>
+        )}
+
         <AdminDataTable
           isEmpty={submissions.data.length === 0}
           isNavigating={isNavigating}
@@ -138,6 +209,13 @@ export default function AdminContactSubmissionsIndex({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-[40px]">
+                  <Checkbox
+                    checked={allSelected}
+                    onCheckedChange={toggleAll}
+                    aria-label="Select all submissions"
+                  />
+                </TableHead>
                 <SortHeader
                   column="name"
                   label="Name"
@@ -173,6 +251,13 @@ export default function AdminContactSubmissionsIndex({
             <TableBody>
               {submissions.data.map((item) => (
                 <TableRow key={item.id}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.has(item.id)}
+                      onCheckedChange={() => toggleItem(item.id)}
+                      aria-label={`Select submission from ${item.name}`}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium text-sm">{item.name}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">{item.email}</TableCell>
                   <TableCell className="max-w-xs truncate text-sm">{item.subject}</TableCell>
@@ -193,6 +278,17 @@ export default function AdminContactSubmissionsIndex({
           </Table>
         </AdminDataTable>
       </div>
+
+      <ConfirmDialog
+        open={bulkDeleteConfirmOpen}
+        onOpenChange={(open) => !open && setBulkDeleteConfirmOpen(false)}
+        onConfirm={() => doBulkAction('delete')}
+        title="Delete Submissions"
+        description={`This will permanently delete ${selectedIds.size} submission(s). This action cannot be undone.`}
+        confirmLabel="Delete"
+        loadingLabel="Deleting..."
+        variant="destructive"
+      />
     </AdminLayout>
   );
 }

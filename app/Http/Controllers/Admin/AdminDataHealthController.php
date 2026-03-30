@@ -2,17 +2,29 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
+use App\Services\AuditService;
 use App\Services\DataHealthService;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AdminDataHealthController extends Controller
 {
+    public function __construct(
+        private AuditService $auditService,
+    ) {}
+
     public function index(DataHealthService $dataHealth): Response
     {
+        $checks = $dataHealth->runAllChecks();
+
+        $this->auditService->log(AnalyticsEvent::ADMIN_DATA_HEALTH_VIEWED, [
+            'check_count' => count($checks),
+        ]);
+
         return Inertia::render('Admin/DataHealth', [
-            'checks' => $dataHealth->runAllChecks(),
+            'checks' => $checks,
             'ran_at' => now()->toISOString(),
         ]);
     }
