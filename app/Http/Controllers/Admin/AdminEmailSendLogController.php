@@ -78,8 +78,8 @@ class AdminEmailSendLogController extends Controller
 
         return (new CsvExport([
             'ID' => 'id',
-            'User Name' => fn ($log) => $log->user?->name ?? '[Deleted User]',
-            'User Email' => fn ($log) => $log->user?->email ?? '',
+            'User Name' => fn ($log) => $log->user !== null ? $log->user->name : '[Deleted User]',
+            'User Email' => fn ($log) => $log->user !== null ? $log->user->email : '',
             'Sequence Type' => 'sequence_type',
             'Email Number' => 'email_number',
             'Sent At' => fn ($log) => $log->sent_at?->toISOString() ?? '',
