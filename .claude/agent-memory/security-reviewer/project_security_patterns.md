@@ -120,5 +120,15 @@ Eighth audit (2026-03-22):
 50. Note: HandleInertiaRequests shares is_super_admin via $user->isSuperAdmin() — this is intentional for frontend gating. Password hash, remember_token, and stripe keys are NOT in the shared props. Safe.
 51. CONFIRMED UNADDRESSED: Findings 2, 4, 6, 7/19, 9, 10, 14, 22 remain open as of 8th audit.
 
+Ninth audit (2026-03-31):
+52. FIXED: Finding #22 (admin user creation privilege escalation) — AdminCreateUserRequest now gates the `is_admin` rule behind isSuperAdmin() check. Non-super-admins can no longer create admin users. AdminUsersController::store confirmed to only apply is_admin from validated data.
+53. FIXED: Finding #7/19 (AdminFeedbackController::index used plain Request) — now uses AdminFeedbackIndexRequest FormRequest.
+54. FIXED: Finding #4 (AdminSystemController visible to all admins) — route now has `->middleware('super_admin')` in routes/admin.php.
+55. MEDIUM: AdminBulkDeactivateRequest validates ids max:100, but AdminUsersController::bulkDeactivate reads $request->input('ids') not $request->validated('ids'), bypassing the max:100 cap. Same bug in bulkRestore. An admin could send an unbounded array. [NEW, UNADDRESSED]
+56. LOW: AdminBulkFeedbackRequest has no max:N on ids array — no upper bound. Same for AdminBulkContactSubmissionRequest. An admin could trigger a large lockForUpdate. [NEW, UNADDRESSED]
+57. Note: AdminToggleActiveRequest and AdminToggleAdminRequest authorize() check isAdmin() but routes have super_admin middleware — route middleware is the real guard, FormRequest is cosmetically loose. Not a security gap.
+58. Note: Command palette user search calls GET /admin/feature-flags/search-users via fetch() — GET is CSRF-exempt, route is behind admin middleware. Safe.
+59. CONFIRMED UNADDRESSED: Findings 2, 6, 9, 10, 14 remain open as of 9th audit. Findings 4, 7/19, 22 now FIXED.
+
 **Why:** Full security audit passes.
-**How to apply:** Reference these findings when reviewing future PRs touching auth, billing, or webhook handling. Findings 2, 4, 6, 7/19, 9, 10, 14, 22 are unaddressed — check for fixes before clearing. Finding #43 (expanded $fillable) escalates the severity of finding #6.
+**How to apply:** Reference these findings when reviewing future PRs touching auth, billing, or webhook handling. Findings 2, 6, 9, 10, 14 are still unaddressed. Finding #55 (bulkDeactivate/bulkRestore bypass validated()) is new. Finding #56 (no max:N on bulk feedback/contact submission IDs) is new.
