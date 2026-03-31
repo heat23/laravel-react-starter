@@ -38,7 +38,7 @@ test.describe('Register Page', () => {
 
     // Submit + link
     await expect(page.getByRole('button', { name: /create account/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /sign in instead/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /log in instead/i })).toBeVisible();
 
     // Desktop layout — left branded panel with feature highlights
     await assertDesktopAuthLayout(page);

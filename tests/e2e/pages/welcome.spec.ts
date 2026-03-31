@@ -24,8 +24,7 @@ test.describe('Welcome Page', () => {
     await expect(page.getByRole('link', { name: /get started/i })).toBeVisible();
 
     // Hero
-    await expect(page.getByRole('heading', { level: 1 })).toContainText('Ship your SaaS');
-    await expect(page.getByText('in days, not months')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Laravel + React SaaS starter kit');
 
     // Feature cards
     await expect(page.getByText('Secure by default')).toBeVisible();
@@ -48,7 +47,10 @@ test.describe('Welcome Page', () => {
     await page.goto('/');
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    // Log in link is behind hamburger menu on mobile — open it first
+    await page.getByRole('button', { name: /open menu/i }).click();
     await expect(page.getByRole('link', { name: /log in/i })).toBeVisible();
+    await page.getByRole('button', { name: /close menu/i }).click();
     await expect(page.getByText('Secure by default')).toBeVisible();
   });
 
@@ -87,10 +89,11 @@ test.describe('Welcome Page', () => {
       .getAttribute('href');
     expect(getStartedHref).toContain('/register');
 
-    const createAccountHref = await page
-      .getByRole('link', { name: /create your first account/i })
+    const startBuildingHref = await page
+      .getByRole('link', { name: /start building free/i })
+      .first()
       .getAttribute('href');
-    expect(createAccountHref).toContain('/register');
+    expect(startBuildingHref).toContain('/register');
   });
 
   // Visual regression --------------------------------------------------------

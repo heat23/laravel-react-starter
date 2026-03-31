@@ -23,14 +23,14 @@ test.describe('Login Page', () => {
 
     // Heading
     await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
-    await expect(page.getByText('Sign in to your account to continue')).toBeVisible();
+    await expect(page.getByText('Log in to your account to continue')).toBeVisible();
 
     // Form fields
     await expect(page.getByLabel(/email address/i)).toBeVisible();
     await expect(page.getByLabel(/^password$/i)).toBeVisible();
     await expect(page.getByRole('button', { name: /show password/i })).toBeVisible();
     await expect(page.getByText(/keep me signed in/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /log in/i })).toBeVisible();
 
     // Links
     await expect(page.getByRole('link', { name: /forgot password/i })).toBeVisible();
@@ -54,7 +54,7 @@ test.describe('Login Page', () => {
     // Form still accessible
     await expect(page.getByLabel(/email address/i)).toBeVisible();
     await expect(page.getByLabel(/^password$/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /log in/i })).toBeVisible();
   });
 
   test('shows mobile layout on tablet viewport', async ({ page }, testInfo) => {
@@ -64,7 +64,7 @@ test.describe('Login Page', () => {
     // 768px is below the lg (1024px) breakpoint — same layout as mobile
     await assertMobileAuthLayout(page);
     await expect(page.getByLabel(/email address/i)).toBeVisible();
-    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /log in/i })).toBeVisible();
   });
 
   test('dark mode renders without errors', async ({ page }, testInfo) => {

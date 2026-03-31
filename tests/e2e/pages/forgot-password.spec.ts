@@ -32,7 +32,7 @@ test.describe('Forgot Password Page', () => {
     await expect(page.getByRole('button', { name: /email password reset link/i })).toBeVisible();
 
     // Back link
-    await expect(page.getByRole('link', { name: /back to sign in/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /back to log in/i })).toBeVisible();
 
     // Desktop layout
     await assertDesktopAuthLayout(page);
@@ -66,11 +66,11 @@ test.describe('Forgot Password Page', () => {
     expect(errors).toHaveLength(0);
   });
 
-  test('back to sign in link points to login', async ({ page }, testInfo) => {
+  test('back to log in link points to login', async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium-desktop', 'Desktop only');
     await page.goto('/forgot-password');
 
-    const href = await page.getByRole('link', { name: /back to sign in/i }).getAttribute('href');
+    const href = await page.getByRole('link', { name: /back to log in/i }).getAttribute('href');
     expect(href).toContain('/login');
   });
 
