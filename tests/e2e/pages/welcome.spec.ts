@@ -28,7 +28,7 @@ test.describe('Welcome Page', () => {
 
     // Feature cards
     await expect(page.getByText('Secure by default')).toBeVisible();
-    await expect(page.getByText('11 feature flags')).toBeVisible();
+    await expect(page.getByText('11 feature flags').first()).toBeVisible();
     await expect(page.getByText('Production-grade billing')).toBeVisible();
 
     // Tech stack
