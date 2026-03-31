@@ -6,7 +6,11 @@ use App\Enums\AnalyticsEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminBulkDeactivateRequest;
+use App\Http\Requests\Admin\AdminBulkRestoreRequest;
 use App\Http\Requests\Admin\AdminCreateUserRequest;
+use App\Http\Requests\Admin\AdminSendPasswordResetRequest;
+use App\Http\Requests\Admin\AdminToggleActiveRequest;
+use App\Http\Requests\Admin\AdminToggleAdminRequest;
 use App\Http\Requests\Admin\AdminUpdateUserRequest;
 use App\Http\Requests\Admin\AdminUserExportRequest;
 use App\Http\Requests\Admin\AdminUserIndexRequest;
@@ -19,7 +23,6 @@ use App\Services\EngagementScoringService;
 use App\Support\CsvExport;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
@@ -37,7 +40,9 @@ class AdminUsersController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Admin/Users/Create');
+        return Inertia::render('Admin/Users/Create', [
+            'isSuperAdmin' => auth()->user()?->isSuperAdmin() ?? false,
+        ]);
     }
 
     public function store(AdminCreateUserRequest $request): RedirectResponse
@@ -52,6 +57,7 @@ class AdminUsersController extends Controller
 
         if (! empty($validated['is_admin'])) {
             $user->is_admin = true;
+            $user->email_verified_at = now();
             $user->save();
         }
 
@@ -72,8 +78,7 @@ class AdminUsersController extends Controller
         $validated = $request->validated();
 
         $query = $this->buildUserQuery($validated)
-            ->withCount('tokens', 'settings', 'webhookEndpoints')
-            ->with('settings:id,user_id,key');
+            ->withCount('tokens', 'settings', 'webhookEndpoints');
 
         $perPage = (int) ($validated['per_page'] ?? config('pagination.admin.users', 25));
         $users = $query->paginate($perPage);
@@ -138,7 +143,7 @@ class AdminUsersController extends Controller
 
         $stageHistory = UserStageHistory::where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
-            ->limit(50)
+            ->limit(config('pagination.admin.stage_history', 50))
             ->get()
             ->map(fn (UserStageHistory $h) => [
                 'id' => $h->id,
@@ -186,7 +191,7 @@ class AdminUsersController extends Controller
             ->with('success', 'User updated successfully.');
     }
 
-    public function toggleAdmin(Request $request, User $user): RedirectResponse
+    public function toggleAdmin(AdminToggleAdminRequest $request, User $user): RedirectResponse
     {
         if ($user->id === $request->user()->id) {
             return back()->with('error', 'Cannot change own admin status.');
@@ -243,7 +248,36 @@ class AdminUsersController extends Controller
         return back()->with('success', "Deactivated {$count} user(s).");
     }
 
-    public function toggleActive(Request $request, User $user): RedirectResponse
+    public function bulkRestore(AdminBulkRestoreRequest $request): RedirectResponse
+    {
+        $ids = collect($request->input('ids'));
+
+        $users = User::onlyTrashed()->whereIn('id', $ids)->get();
+
+        $count = DB::transaction(function () use ($users) {
+            $restored = 0;
+            foreach ($users as $user) {
+                $user->restore();
+                $this->auditService->log(AnalyticsEvent::ADMIN_USER_RESTORED, [
+                    'target_user_id' => $user->id,
+                    'target_email' => $user->email,
+                    'bulk' => true,
+                    'changes' => ['active' => ['from' => false, 'to' => true]],
+                ]);
+                $restored++;
+            }
+
+            return $restored;
+        });
+
+        foreach ($users as $user) {
+            $this->invalidateUserCaches($user);
+        }
+
+        return back()->with('success', "Restored {$count} user(s).");
+    }
+
+    public function toggleActive(AdminToggleActiveRequest $request, User $user): RedirectResponse
     {
         if ($user->id === $request->user()->id) {
             return back()->with('error', 'Cannot deactivate own account.');
@@ -299,7 +333,7 @@ class AdminUsersController extends Controller
             ->fromQuery($query);
     }
 
-    public function sendPasswordReset(Request $request, User $user): RedirectResponse
+    public function sendPasswordReset(AdminSendPasswordResetRequest $request, User $user): RedirectResponse
     {
         if (! $user->hasPassword()) {
             return back()->with('error', 'User has no password (OAuth-only account).');

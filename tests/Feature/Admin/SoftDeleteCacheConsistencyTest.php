@@ -5,7 +5,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
 beforeEach(function () {
-    $this->admin = User::factory()->admin()->create();
+    // toggle-active and toggle-admin routes require super_admin middleware.
+    $this->admin = User::factory()->superAdmin()->create();
 });
 
 it('invalidates user feature flag cache when deactivated', function () {

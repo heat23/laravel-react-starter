@@ -1,10 +1,26 @@
 # Audit Fix Prompts
 
-Generated from audit `d01038f9-3418-4c74-a6c0-6b0ae1ac4918` on 2026-03-31.
+## Latest Audit: `b29447e2` (2026-03-31, Comprehensive)
 
-Each file contains a `/v` prompt to fix a specific audit finding. Run them in priority order.
+Each phase file contains `/v` prompts to fix audit findings. Run them in priority order.
 
-## Immediate (before next deploy)
+| File | Findings | Priority |
+|------|----------|----------|
+| [phase-1-before-production.md](phase-1-before-production.md) | SEC-001, SEC-002, SEC-003, PERF-001, JOBS-001, CI-001, CI-002, INFRA-008 | HIGH - Before production |
+| [phase-2-before-ga.md](phase-2-before-ga.md) | AUTH-001, ARCH-001, ARCH-002, FE-002, FE-003, INFRA-001, INFRA-005, INFRA-006, INFRA-007, SEC-005 | MEDIUM - Before GA |
+| [phase-3-post-ga-hardening.md](phase-3-post-ga-hardening.md) | TEST-001-003, FE-001, INFRA-002-004, ARCH-003, AUTH-002 | MEDIUM - Post-GA |
+| [phase-4-polish.md](phase-4-polish.md) | All LOW-severity items | LOW - Ongoing |
+
+### Related Artifacts
+
+- `AUDIT_REPORT_b29447e2.json` - Machine-readable findings (55 total)
+- `AUDIT_REPORT_b29447e2.md` - Human-readable report
+
+---
+
+## Previous Audit: `d01038f9` (2026-03-31)
+
+### Immediate (before next deploy)
 
 | # | File | Finding | Severity |
 |---|------|---------|----------|
@@ -12,7 +28,7 @@ Each file contains a `/v` prompt to fix a specific audit finding. Run them in pr
 | 2 | [SEC-001](SEC-001-add-retention-coupon-form-request.md) | Add Form Request to retention coupon | CRITICAL |
 | 3 | [DATA-004/005](DATA-004-005-fix-retention-coupon-cache-and-enum.md) | Fix cache invalidation + audit enum | MEDIUM |
 
-## Short-term (this sprint)
+### Short-term (this sprint)
 
 | # | File | Finding | Severity |
 |---|------|---------|----------|
@@ -22,7 +38,7 @@ Each file contains a `/v` prompt to fix a specific audit finding. Run them in pr
 | 7 | [DATA-001](DATA-001-add-transaction-to-toggleActive.md) | Add transaction to toggleActive | MEDIUM |
 | 8 | [AUTH-002](AUTH-002-add-password-confirmation-billing.md) | Password confirmation on billing mutations | MEDIUM |
 
-## Medium-term (this quarter)
+### Medium-term (this quarter)
 
 | # | File | Finding | Severity |
 |---|------|---------|----------|

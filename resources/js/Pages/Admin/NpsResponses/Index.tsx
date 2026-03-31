@@ -96,7 +96,7 @@ export default function AdminNpsResponsesIndex({
         }
       />
 
-      <div className="container py-6 space-y-4">
+      <div className="container py-8 space-y-4">
         {/* NPS Score Summary */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           <div className="rounded-lg border bg-card p-4 text-center">

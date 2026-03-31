@@ -106,3 +106,124 @@ it('counts webhook endpoints and deliveries', function () {
         ->where('stats.active_endpoints', 1)
     );
 });
+
+it('loads incoming webhooks index', function () {
+    $admin = User::factory()->admin()->create();
+
+    DB::table('incoming_webhooks')->insert([
+        'provider' => 'github',
+        'event_type' => 'push',
+        'payload' => json_encode(['ref' => 'refs/heads/main']),
+        'status' => 'received',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($admin)->get('/admin/webhooks/incoming');
+
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->component('Admin/Webhooks/IncomingWebhooks')
+        ->has('webhooks.data', 1)
+        ->where('webhooks.data.0.provider', 'github')
+        ->has('providers')
+        ->has('filters')
+    );
+});
+
+it('filters incoming webhooks by provider', function () {
+    $admin = User::factory()->admin()->create();
+
+    DB::table('incoming_webhooks')->insert([
+        ['provider' => 'github', 'event_type' => 'push', 'payload' => json_encode([]), 'status' => 'received', 'created_at' => now(), 'updated_at' => now()],
+        ['provider' => 'stripe', 'event_type' => 'charge.succeeded', 'payload' => json_encode([]), 'status' => 'processed', 'created_at' => now(), 'updated_at' => now()],
+    ]);
+
+    $response = $this->actingAs($admin)->get('/admin/webhooks/incoming?provider=github');
+
+    $response->assertInertia(fn ($page) => $page
+        ->has('webhooks.data', 1)
+        ->where('webhooks.data.0.provider', 'github')
+        ->where('filters.provider', 'github')
+    );
+});
+
+it('filters incoming webhooks by status', function () {
+    $admin = User::factory()->admin()->create();
+
+    DB::table('incoming_webhooks')->insert([
+        ['provider' => 'github', 'event_type' => 'push', 'payload' => json_encode([]), 'status' => 'received', 'created_at' => now(), 'updated_at' => now()],
+        ['provider' => 'stripe', 'event_type' => 'charge.succeeded', 'payload' => json_encode([]), 'status' => 'processed', 'created_at' => now(), 'updated_at' => now()],
+    ]);
+
+    $response = $this->actingAs($admin)->get('/admin/webhooks/incoming?status=processed');
+
+    $response->assertInertia(fn ($page) => $page
+        ->has('webhooks.data', 1)
+        ->where('webhooks.data.0.status', 'processed')
+    );
+});
+
+it('rejects non-admin access to incoming webhooks', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->get('/admin/webhooks/incoming')->assertStatus(403);
+});
+
+it('restores a soft-deleted webhook endpoint as super_admin', function () {
+    $superAdmin = User::factory()->superAdmin()->admin()->create();
+    $owner = User::factory()->create();
+
+    $endpointId = DB::table('webhook_endpoints')->insertGetId([
+        'user_id' => $owner->id,
+        'url' => 'https://example.com/deleted-hook',
+        'events' => json_encode(['user.created']),
+        'secret' => encrypt('test_secret'),
+        'active' => true,
+        'deleted_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $response = $this->actingAs($superAdmin)->patch("/admin/webhooks/endpoints/{$endpointId}/restore");
+
+    $response->assertRedirect(route('admin.webhooks.endpoints'));
+    $response->assertSessionHas('success');
+    expect(DB::table('webhook_endpoints')->where('id', $endpointId)->whereNull('deleted_at')->exists())->toBeTrue();
+});
+
+it('returns 403 when non-super_admin tries to restore endpoint', function () {
+    $admin = User::factory()->admin()->create();
+    $owner = User::factory()->create();
+
+    $endpointId = DB::table('webhook_endpoints')->insertGetId([
+        'user_id' => $owner->id,
+        'url' => 'https://example.com/deleted-hook',
+        'events' => json_encode(['user.created']),
+        'secret' => encrypt('test_secret'),
+        'active' => true,
+        'deleted_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $this->actingAs($admin)->patch("/admin/webhooks/endpoints/{$endpointId}/restore")->assertStatus(403);
+});
+
+it('returns 422 when trying to restore a non-deleted endpoint', function () {
+    $superAdmin = User::factory()->superAdmin()->admin()->create();
+    $owner = User::factory()->create();
+
+    $endpointId = DB::table('webhook_endpoints')->insertGetId([
+        'user_id' => $owner->id,
+        'url' => 'https://example.com/active-hook',
+        'events' => json_encode(['user.created']),
+        'secret' => encrypt('test_secret'),
+        'active' => true,
+        'deleted_at' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $this->actingAs($superAdmin)->patch("/admin/webhooks/endpoints/{$endpointId}/restore")->assertStatus(422);
+});

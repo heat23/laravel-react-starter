@@ -42,6 +42,13 @@ it('returns 403 for non-admin on toggle-active', function () {
     $this->actingAs($user)->patch("/admin/users/{$target->id}/toggle-active")->assertStatus(403);
 });
 
+it('returns 403 for non-super-admin on toggle-active', function () {
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->create();
+
+    $this->actingAs($admin)->patch("/admin/users/{$target->id}/toggle-active")->assertStatus(403);
+});
+
 it('loads index with user list', function () {
     $admin = User::factory()->admin()->create();
     User::factory()->count(3)->create();
@@ -178,7 +185,7 @@ it('prevents self-demotion', function () {
 });
 
 it('soft-deletes a user via toggle active', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     $response = $this->actingAs($admin)->patch("/admin/users/{$user->id}/toggle-active");
@@ -188,7 +195,7 @@ it('soft-deletes a user via toggle active', function () {
 });
 
 it('restores a soft-deleted user', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
     $user->delete();
 
@@ -199,7 +206,7 @@ it('restores a soft-deleted user', function () {
 });
 
 it('prevents self-deactivation', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->patch("/admin/users/{$admin->id}/toggle-active");
 
@@ -321,7 +328,7 @@ it('shows success flash on toggle admin', function () {
 });
 
 it('shows success flash on deactivate', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     $response = $this->actingAs($admin)->patch("/admin/users/{$user->id}/toggle-active");
@@ -330,7 +337,7 @@ it('shows success flash on deactivate', function () {
 });
 
 it('shows success flash on restore', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
     $user->delete();
 
@@ -389,7 +396,7 @@ it('invalidates dashboard cache on toggle admin', function () {
 });
 
 it('invalidates dashboard cache on toggle active', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     Cache::put(AdminCacheKey::DASHBOARD_STATS->value, ['cached' => true], 300);
@@ -426,7 +433,7 @@ it('captures before/after values when toggling admin', function () {
 });
 
 it('captures before/after values when deactivating user', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     $this->actingAs($admin)->patch("/admin/users/{$user->id}/toggle-active");
@@ -438,7 +445,7 @@ it('captures before/after values when deactivating user', function () {
 });
 
 it('captures before/after values when restoring user', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
     $user->delete();
 
@@ -572,4 +579,105 @@ it('returns 403 for non-admin on password reset', function () {
     $target = User::factory()->create();
 
     $this->actingAs($user)->post("/admin/users/{$target->id}/send-password-reset")->assertStatus(403);
+});
+
+// ADM-PM-005: Bulk restore
+it('bulk restores deactivated users', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $users = User::factory()->count(2)->create();
+    foreach ($users as $user) {
+        $user->delete();
+    }
+
+    $response = $this->actingAs($admin)->post('/admin/users/bulk-restore', [
+        'ids' => $users->pluck('id')->toArray(),
+    ]);
+
+    $response->assertRedirect();
+    $response->assertSessionHas('success');
+    foreach ($users as $user) {
+        expect($user->fresh())->not->toBeNull();
+        expect($user->fresh()->deleted_at)->toBeNull();
+    }
+});
+
+it('bulk restore only restores trashed users', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $activeUser = User::factory()->create();
+    $trashedUser = User::factory()->create();
+    $trashedUser->delete();
+
+    $this->actingAs($admin)->post('/admin/users/bulk-restore', [
+        'ids' => [$activeUser->id, $trashedUser->id],
+    ]);
+
+    // Active user stays active (not affected)
+    expect($activeUser->fresh()->deleted_at)->toBeNull();
+    // Trashed user is restored
+    expect($trashedUser->fresh()->deleted_at)->toBeNull();
+});
+
+it('creates audit log entries on bulk restore', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $user = User::factory()->create();
+    $user->delete();
+
+    $this->actingAs($admin)->post('/admin/users/bulk-restore', [
+        'ids' => [$user->id],
+    ]);
+
+    $log = AuditLog::where('event', 'admin.user_restored')
+        ->where('metadata->bulk', true)
+        ->latest('id')
+        ->first();
+    expect($log)->not->toBeNull();
+    expect($log->metadata['target_user_id'])->toBe($user->id);
+    expect($log->metadata['changes']['active']['from'])->toBeFalse();
+    expect($log->metadata['changes']['active']['to'])->toBeTrue();
+});
+
+it('invalidates cache on bulk restore', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $user = User::factory()->create();
+    $user->delete();
+
+    Cache::put(AdminCacheKey::DASHBOARD_STATS->value, ['cached' => true], 300);
+
+    $this->actingAs($admin)->post('/admin/users/bulk-restore', [
+        'ids' => [$user->id],
+    ]);
+
+    expect(Cache::has(AdminCacheKey::DASHBOARD_STATS->value))->toBeFalse();
+});
+
+it('returns 403 for non-admin on bulk restore', function () {
+    $user = User::factory()->create();
+    $target = User::factory()->create();
+    $target->delete();
+
+    $this->actingAs($user)->post('/admin/users/bulk-restore', [
+        'ids' => [$target->id],
+    ])->assertStatus(403);
+});
+
+it('rejects empty ids on bulk restore', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)->post('/admin/users/bulk-restore', [
+        'ids' => [],
+    ])->assertSessionHasErrors('ids');
+});
+
+// ADM-SEC-004: Bulk restore requires super_admin
+it('returns 403 for regular admin on bulk restore', function () {
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->create();
+    $target->delete();
+
+    $this->actingAs($admin)->post('/admin/users/bulk-restore', [
+        'ids' => [$target->id],
+    ])->assertStatus(403);
+
+    // User remains deactivated
+    expect($target->fresh()->deleted_at)->not->toBeNull();
 });

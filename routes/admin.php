@@ -61,7 +61,7 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
             ->name('users.toggle-admin');
         Route::patch('/users/{user}/toggle-active', [AdminUsersController::class, 'toggleActive'])
             ->withTrashed()
-            ->middleware('throttle:10,1')
+            ->middleware(['throttle:10,1', 'super_admin'])
             ->name('users.toggle-active');
         Route::post('/users/{user}/send-password-reset', [AdminUsersController::class, 'sendPasswordReset'])
             ->middleware('throttle:5,1')
@@ -71,6 +71,9 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
         Route::post('/users/bulk-deactivate', [AdminUsersController::class, 'bulkDeactivate'])
             ->middleware('throttle:10,1')
             ->name('users.bulk-deactivate');
+        Route::post('/users/bulk-restore', [AdminUsersController::class, 'bulkRestore'])
+            ->middleware(['throttle:10,1', 'super_admin'])
+            ->name('users.bulk-restore');
 
         // Impersonation — super_admin only
         Route::post('/users/{user}/impersonate', [AdminImpersonationController::class, 'start'])
@@ -135,8 +138,8 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
             ->name('audit-logs.export');
         Route::get('/audit-logs/{auditLog}', [AdminAuditLogController::class, 'show'])->name('audit-logs.show');
 
-        // System Info
-        Route::get('/system', AdminSystemController::class)->name('system');
+        // System Info — restricted to super_admin: exposes exact package versions, PHP version, OS, DB version
+        Route::get('/system', AdminSystemController::class)->middleware('super_admin')->name('system');
 
         // Failed Jobs Management — bulk routes first to avoid {id} wildcard capture
         Route::get('/failed-jobs', [AdminFailedJobsController::class, 'index'])->name('failed-jobs.index');

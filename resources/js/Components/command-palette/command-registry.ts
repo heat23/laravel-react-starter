@@ -12,12 +12,20 @@ export interface CommandItem {
   action: () => void;
 }
 
+export interface AdminNavEntry {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+
 interface BuildCommandsOptions {
   features: Record<string, boolean>;
   resolvedTheme: "light" | "dark";
   setTheme: (theme: "light" | "dark" | "system") => void;
   navigate: (href: string) => void;
   close: () => void;
+  isAdmin?: boolean;
+  adminNavItems?: AdminNavEntry[];
 }
 
 export function buildCommands({
@@ -26,6 +34,8 @@ export function buildCommands({
   setTheme,
   navigate,
   close,
+  isAdmin = false,
+  adminNavItems = [],
 }: BuildCommandsOptions): CommandItem[] {
   const commands: CommandItem[] = [];
 
@@ -43,6 +53,22 @@ export function buildCommands({
         close();
       },
     });
+  }
+
+  // Admin navigation commands
+  if (isAdmin) {
+    for (const item of adminNavItems) {
+      commands.push({
+        id: `admin-nav-${item.href}`,
+        label: item.label,
+        icon: item.icon,
+        group: "Admin",
+        action: () => {
+          navigate(item.href);
+          close();
+        },
+      });
+    }
   }
 
   // Action commands

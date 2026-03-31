@@ -104,6 +104,19 @@ it('shows subscription detail when owner is hard-deleted', function () {
     );
 });
 
+it('show logs an audit event', function () {
+    $admin = User::factory()->admin()->create();
+    $user = User::factory()->create();
+    $sub = createSubscription($user);
+
+    $this->actingAs($admin)->get("/admin/billing/subscriptions/{$sub->id}");
+
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => 'admin.billing.subscription_viewed',
+        'user_id' => $admin->id,
+    ]);
+});
+
 it('returns 404 for non-existent subscription', function () {
     $admin = User::factory()->admin()->create();
 

@@ -72,7 +72,7 @@ export default function AdminEmailSendLogsIndex({
         }
       />
 
-      <div className="container py-6 space-y-4">
+      <div className="container py-8 space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
           <Input
             ref={searchInputRef}

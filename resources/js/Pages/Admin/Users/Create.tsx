@@ -16,7 +16,11 @@ import { Label } from '@/Components/ui/label';
 import { LoadingButton } from '@/Components/ui/loading-button';
 import AdminLayout from '@/Layouts/AdminLayout';
 
-export default function AdminCreateUser() {
+export default function AdminCreateUser({
+  isSuperAdmin,
+}: {
+  isSuperAdmin: boolean;
+}) {
   const form = useForm({
     name: '',
     email: '',
@@ -113,16 +117,18 @@ export default function AdminCreateUser() {
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="is_admin"
-                  checked={form.data.is_admin}
-                  onCheckedChange={(checked) =>
-                    form.setData('is_admin', checked === true)
-                  }
-                />
-                <Label htmlFor="is_admin">Grant admin access</Label>
-              </div>
+              {isSuperAdmin && (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="is_admin"
+                    checked={form.data.is_admin}
+                    onCheckedChange={(checked) =>
+                      form.setData('is_admin', checked === true)
+                    }
+                  />
+                  <Label htmlFor="is_admin">Grant admin access</Label>
+                </div>
+              )}
 
               <div className="flex gap-3 pt-2">
                 <LoadingButton type="submit" loading={form.processing}>

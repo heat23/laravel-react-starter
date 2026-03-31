@@ -25,7 +25,11 @@ export function SortHeader({ column, label, currentSort, currentDir, onSort }: S
       aria-sort={isActive ? (currentDir === "asc" ? "ascending" : "descending") : "none"}
     >
       {label}
-      {isActive && <span className="ml-1">{currentDir === "asc" ? "↑" : "↓"}</span>}
+      {isActive && (
+        <span className="ml-1" aria-hidden="true">
+          {currentDir === "asc" ? "↑" : "↓"}
+        </span>
+      )}
     </TableHead>
   );
 }

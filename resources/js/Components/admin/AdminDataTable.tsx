@@ -47,6 +47,8 @@ interface AdminDataTableProps {
   perPage?: number;
   /** Called when the user changes the per-page select. */
   onPerPageChange?: (value: number) => void;
+  /** Accessible label for the data region (e.g. "Users table"). */
+  "aria-label"?: string;
 }
 
 /**
@@ -71,10 +73,11 @@ export function AdminDataTable({
   className,
   perPage,
   onPerPageChange,
+  "aria-label": ariaLabel,
 }: AdminDataTableProps) {
   return (
     <>
-      <Card className={className}>
+      <Card className={className} role="region" aria-label={ariaLabel}>
         <CardContent className="p-0">
           {isEmpty ? (
             <EmptyState
@@ -84,7 +87,10 @@ export function AdminDataTable({
               action={emptyAction}
             />
           ) : (
-            <div className={`overflow-x-auto transition-opacity ${isNavigating ? "opacity-50" : ""}`}>
+            <div
+              className={`overflow-x-auto transition-opacity ${isNavigating ? "opacity-50" : ""}`}
+              aria-busy={isNavigating}
+            >
               {children}
             </div>
           )}

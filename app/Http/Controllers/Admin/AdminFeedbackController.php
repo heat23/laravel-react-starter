@@ -11,6 +11,7 @@ use App\Http\Requests\Admin\AdminFeedbackIndexRequest;
 use App\Http\Requests\Admin\AdminUpdateFeedbackRequest;
 use App\Models\Feedback;
 use App\Services\AuditService;
+use App\Services\CacheInvalidationManager;
 use App\Support\CsvExport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,7 @@ class AdminFeedbackController extends Controller
 {
     public function __construct(
         private AuditService $auditService,
+        private CacheInvalidationManager $cacheManager,
     ) {}
 
     public function index(AdminFeedbackIndexRequest $request): Response
@@ -92,6 +94,8 @@ class AdminFeedbackController extends Controller
             'changes' => array_keys($validated),
         ]);
 
+        $this->cacheManager->invalidateDashboard();
+
         return back()->with('success', 'Feedback updated.');
     }
 
@@ -124,6 +128,8 @@ class AdminFeedbackController extends Controller
             'count' => $count,
         ]);
 
+        $this->cacheManager->invalidateDashboard();
+
         return back()->with('success', "Bulk {$action} applied to {$count} item(s).");
     }
 
@@ -136,6 +142,8 @@ class AdminFeedbackController extends Controller
         ]);
 
         $feedback->delete();
+
+        $this->cacheManager->invalidateDashboard();
 
         return redirect()->route('admin.feedback.index')->with('success', 'Feedback deleted.');
     }

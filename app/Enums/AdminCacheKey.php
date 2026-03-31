@@ -42,6 +42,9 @@ enum AdminCacheKey: string
     case NOTIFICATIONS_STATS = 'admin:notifications:stats';
     case NOTIFICATIONS_VOLUME = 'admin:notifications:volume';
 
+    // Contact Submissions
+    case CONTACT_SUBMISSIONS_STATS = 'admin:contact_submissions:stats';
+
     // Feature Flags
     case FEATURE_FLAGS_GLOBAL = 'admin:feature_flags:global';
 

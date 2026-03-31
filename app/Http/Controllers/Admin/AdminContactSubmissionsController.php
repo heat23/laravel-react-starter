@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\AdminCacheKey;
 use App\Enums\AnalyticsEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
@@ -13,6 +14,7 @@ use App\Models\ContactSubmission;
 use App\Services\AuditService;
 use App\Support\CsvExport;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -48,14 +50,20 @@ class AdminContactSubmissionsController extends Controller
         $submissions = $query->paginate(config('pagination.admin.contact_submissions', 50))
             ->withQueryString();
 
-        return Inertia::render('Admin/ContactSubmissions/Index', [
-            'submissions' => $submissions,
-            'filters' => $request->only('status', 'search', 'sort', 'dir'),
-            'counts' => [
+        $counts = Cache::remember(
+            AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value,
+            AdminCacheKey::DEFAULT_TTL,
+            fn () => [
                 'new' => ContactSubmission::byStatus('new')->count(),
                 'replied' => ContactSubmission::byStatus('replied')->count(),
                 'spam' => ContactSubmission::byStatus('spam')->count(),
-            ],
+            ]
+        );
+
+        return Inertia::render('Admin/ContactSubmissions/Index', [
+            'submissions' => $submissions,
+            'filters' => $request->only('status', 'search', 'sort', 'dir'),
+            'counts' => $counts,
         ]);
     }
 
@@ -78,6 +86,8 @@ class AdminContactSubmissionsController extends Controller
         }
 
         $contactSubmission->update($data);
+
+        Cache::forget(AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value);
 
         $this->auditService->log(AnalyticsEvent::ADMIN_CONTACT_SUBMISSION_UPDATED, [
             'submission_id' => $contactSubmission->id,
@@ -110,6 +120,8 @@ class AdminContactSubmissionsController extends Controller
             }
         });
 
+        Cache::forget(AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value);
+
         $this->auditService->log(AnalyticsEvent::ADMIN_CONTACT_SUBMISSION_BULK_UPDATED, [
             'ids' => $ids,
             'action' => $action,
@@ -127,6 +139,8 @@ class AdminContactSubmissionsController extends Controller
         ]);
 
         $contactSubmission->delete();
+
+        Cache::forget(AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value);
 
         return redirect()->route('admin.contact-submissions.index')->with('success', 'Submission deleted.');
     }

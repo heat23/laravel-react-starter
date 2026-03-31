@@ -10,6 +10,7 @@ use App\Http\Requests\Admin\AdminAuditLogIndexRequest;
 use App\Http\Requests\Admin\AdminExportRequest;
 use App\Models\AuditLog;
 use App\Services\AuditService;
+use App\Support\CsvExport;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
@@ -55,6 +56,17 @@ class AdminAuditLogController extends Controller
         ]);
     }
 
+    /**
+     * Export audit logs as a CSV file.
+     *
+     * Security note: The metadata column is intentionally exported in full.
+     * Audit log exports are compliance artifacts — stripping fields would
+     * produce incomplete records unsuitable for incident investigation or
+     * regulatory review. Access is already restricted to super-admin users
+     * who can view the same data via the UI. The metadata may contain IP
+     * addresses, user-agent strings, and before/after state diffs; this is
+     * by design and must not be filtered or truncated.
+     */
     public function export(AdminExportRequest $request): StreamedResponse
     {
         $this->auditService->log(AnalyticsEvent::ADMIN_AUDIT_LOGS_EXPORTED, [
@@ -64,37 +76,18 @@ class AdminAuditLogController extends Controller
         $query = $this->applyFilters(AuditLog::with('user'), $request->validated());
 
         $maxRows = config('pagination.export.max_rows', 10000);
+        $items = $query->orderByDesc('id')->lazy(500)->take($maxRows);
 
-        return response()->streamDownload(function () use ($query, $maxRows) {
-            $handle = fopen('php://output', 'w');
-            fwrite($handle, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel compatibility
-            fputcsv($handle, ['ID', 'Event', 'User Email', 'IP', 'Metadata', 'Date']);
-
-            $exported = 0;
-            foreach ($query->lazyByIdDesc(500) as $log) {
-                if ($exported >= $maxRows) {
-                    break;
-                }
-                fputcsv($handle, array_map(
-                    fn ($v) => is_string($v) && isset($v[0]) && in_array($v[0], ['=', '+', '-', '@', "\t", "\r"])
-                        ? "'".$v
-                        : $v,
-                    [
-                        $log->id,
-                        $log->event,
-                        $log->user?->email ?? 'System',
-                        $log->ip,
-                        json_encode($log->metadata),
-                        $log->created_at?->toISOString(),
-                    ]
-                ));
-                $exported++;
-            }
-
-            fclose($handle);
-        }, 'audit-logs-'.now()->format('Y-m-d').'.csv', [
-            'Content-Type' => 'text/csv',
-        ]);
+        return (new CsvExport([
+            'ID' => fn (AuditLog $log) => (string) $log->id,
+            'Event' => fn (AuditLog $log) => $log->event,
+            'User Email' => fn (AuditLog $log) => $log->user?->email ?? 'System',
+            'IP' => fn (AuditLog $log) => $log->ip,
+            'Metadata' => fn (AuditLog $log) => json_encode($log->metadata),
+            'Date' => fn (AuditLog $log) => $log->created_at?->toISOString(),
+        ]))
+            ->filename('audit-logs-'.now()->format('Y-m-d').'.csv')
+            ->fromCollection($items);
     }
 
     private function applyFilters($query, array $filters)

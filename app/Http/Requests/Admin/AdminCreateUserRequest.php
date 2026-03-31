@@ -14,11 +14,16 @@ class AdminCreateUserRequest extends FormRequest
 
     public function rules(): array
     {
-        return [
+        $rules = [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', Password::defaults()],
-            'is_admin' => ['nullable', 'boolean'],
         ];
+
+        if ($this->user()?->isSuperAdmin()) {
+            $rules['is_admin'] = ['nullable', 'boolean'];
+        }
+
+        return $rules;
     }
 }

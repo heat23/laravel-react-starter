@@ -18,6 +18,9 @@ export interface AdminActionTarget {
 interface ConfirmState {
   type: AdminActionType;
   user: AdminActionTarget;
+  onOptimisticUpdate?: () => void;
+  onRollback?: () => void;
+  onSuccess?: () => void;
 }
 
 interface DialogProps {
@@ -36,11 +39,20 @@ export function useAdminAction() {
         resolve();
         return;
       }
-      const { type, user } = confirmAction;
+      const { type, user, onOptimisticUpdate, onRollback, onSuccess } = confirmAction;
+
+      onOptimisticUpdate?.();
+
       const options = {
         preserveState: true,
-        onSuccess: () => resolve(),
-        onError: () => reject(),
+        onSuccess: () => {
+          onSuccess?.();
+          resolve();
+        },
+        onError: () => {
+          onRollback?.();
+          reject();
+        },
       };
 
       if (type === 'toggleAdmin') {
@@ -51,7 +63,16 @@ export function useAdminAction() {
         router.post(
           `/admin/users/${user.id}/impersonate`,
           {},
-          { onSuccess: () => resolve(), onError: () => reject() }
+          {
+            onSuccess: () => {
+              onSuccess?.();
+              resolve();
+            },
+            onError: () => {
+              onRollback?.();
+              reject();
+            },
+          }
         );
       } else if (type === 'sendPasswordReset') {
         router.post(`/admin/users/${user.id}/send-password-reset`, {}, options);

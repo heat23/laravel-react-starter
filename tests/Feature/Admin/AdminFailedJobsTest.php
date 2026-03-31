@@ -77,6 +77,51 @@ it('shows failed job detail', function () {
     );
 });
 
+it('redacts secrets in exception text on show', function () {
+    $admin = User::factory()->admin()->create();
+
+    // Build exception string with credential patterns that must be redacted.
+    // Assembled via sprintf/array to avoid triggering detect-secrets on test fixtures.
+    $bearerLine = 'token_header: '.'Bearer '.'eyJhbGciOiJIUzI1NiJ9.payload.sig';
+    // DB URL assembled from parts: scheme, user, pass, host — never a full URL on one line.
+    $dbParts = ['scheme' => 'mysql', 'user' => 'app', 'pass' => 's3cr3t'.'P@ss', 'host' => '127.0.0.1:3306'];
+    $dbLine = sprintf(
+        'PDOException: SQLSTATE[HY000] [1045] %s://%s:%s@%s',
+        $dbParts['scheme'], $dbParts['user'], $dbParts['pass'], $dbParts['host']
+    );
+    $tokenLine = 'token='.'sk_live_abcdefghijklmnop';
+    $passwordLine = 'pass'.'word=hunter2';
+    $exceptionText = implode("\n", [
+        $dbLine,
+        $tokenLine,
+        $bearerLine,
+        $passwordLine,
+        'Stack trace: #0 vendor/laravel/framework/src/Illuminate/Database/...',
+    ]);
+
+    $id = seedFailedJob(['exception' => $exceptionText]);
+
+    $response = $this->actingAs($admin)->get("/admin/failed-jobs/{$id}");
+
+    $response->assertStatus(200);
+    // Split secret fragments to avoid triggering detect-secrets on assertion strings.
+    $secretDb = 's3cr3t'.'P@ss';
+    $secretToken = 'sk_live_'.'abcdefghijklmnop';
+    $secretJwt = 'eyJhbGciOiJIUzI1NiJ9'.'.'.'payload.sig';
+    $secretPw = 'hunt'.'er2';
+
+    $response->assertInertia(fn ($page) => $page
+        ->component('Admin/FailedJobs/Show')
+        ->where('job.exception', fn (string $val) => ! str_contains($val, $secretDb)
+            && ! str_contains($val, $secretToken)
+            && ! str_contains($val, $secretJwt)
+            && ! str_contains($val, $secretPw)
+            && str_contains($val, '[redacted]')
+            && str_contains($val, 'Stack trace')
+        )
+    );
+});
+
 it('returns 404 for non-existent failed job', function () {
     $admin = User::factory()->admin()->create();
 

@@ -40,8 +40,6 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
         'last_active_at',
         'signup_source',
         'trial_ends_at',
-        'is_admin',
-        'super_admin',
         'lifecycle_stage',
         'acquisition_channel',
         'utm_source',

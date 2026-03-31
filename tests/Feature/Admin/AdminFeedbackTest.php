@@ -4,6 +4,7 @@ use App\Enums\AnalyticsEvent;
 use App\Models\AuditLog;
 use App\Models\Feedback;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 
 beforeEach(function () {
     registerAdminRoutes();
@@ -166,4 +167,40 @@ it('feedback from soft-deleted users loads correctly on index', function () {
     $this->actingAs($admin)
         ->get('/admin/feedback')
         ->assertOk();
+});
+
+// ── Cache invalidation ────────────────────────────────────────────────────────
+
+it('update invalidates the dashboard stats cache', function () {
+    $admin = User::factory()->admin()->create();
+    $feedback = makeFeedback();
+    Cache::put('admin:dashboard:stats', ['stale' => true], 300);
+
+    $this->actingAs($admin)
+        ->patch("/admin/feedback/{$feedback->id}", ['status' => 'in_review']);
+
+    expect(Cache::has('admin:dashboard:stats'))->toBeFalse();
+});
+
+it('bulkUpdate invalidates the dashboard stats cache', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $f1 = makeFeedback();
+    $f2 = makeFeedback();
+    Cache::put('admin:dashboard:stats', ['stale' => true], 300);
+
+    $this->actingAs($admin)
+        ->post('/admin/feedback/bulk-update', ['ids' => [$f1->id, $f2->id], 'action' => 'resolve']);
+
+    expect(Cache::has('admin:dashboard:stats'))->toBeFalse();
+});
+
+it('destroy invalidates the dashboard stats cache', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $feedback = makeFeedback();
+    Cache::put('admin:dashboard:stats', ['stale' => true], 300);
+
+    $this->actingAs($admin)
+        ->delete("/admin/feedback/{$feedback->id}");
+
+    expect(Cache::has('admin:dashboard:stats'))->toBeFalse();
 });

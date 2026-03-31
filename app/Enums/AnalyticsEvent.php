@@ -43,6 +43,8 @@ enum AnalyticsEvent: string
     case ADMIN_IMPERSONATION_STOPPED = 'admin.impersonation_stopped';
     case ADMIN_AUDIT_LOGS_EXPORTED = 'admin.audit_logs_exported';
     case ADMIN_SUBSCRIPTIONS_EXPORTED = 'admin.subscriptions_exported';
+    case ADMIN_BILLING_SUBSCRIPTIONS_VIEWED = 'admin.billing.subscriptions_viewed';
+    case ADMIN_BILLING_SUBSCRIPTION_VIEWED = 'admin.billing.subscription_viewed';
     case ADMIN_USERS_EXPORTED = 'admin.users_exported';
     case ADMIN_PASSWORD_RESET_SENT = 'admin.password_reset_sent';
     case ADMIN_USER_CREATED = 'admin.user.created';

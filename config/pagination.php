@@ -26,6 +26,7 @@ return [
         'roadmap' => 100,
         'contact_submissions' => 50,
         'nps_responses' => 50,
+        'stage_history' => 50,
     ],
 
     'api' => [

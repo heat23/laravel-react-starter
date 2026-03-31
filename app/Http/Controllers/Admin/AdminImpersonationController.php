@@ -28,7 +28,7 @@ class AdminImpersonationController extends Controller
             return back()->with('error', 'Cannot impersonate yourself.');
         }
 
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->isSuperAdmin()) {
             return back()->with('error', 'Cannot impersonate another admin.');
         }
 

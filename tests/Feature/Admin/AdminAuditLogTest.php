@@ -259,6 +259,33 @@ it('exports audit logs in newest-first order', function () {
     expect($firstPos)->toBeLessThan($secondPos, 'Newer events should appear before older events in export');
 });
 
+it('exports full metadata including sensitive fields for compliance', function () {
+    // Audit log exports are compliance artifacts — metadata must be complete.
+    // Stripping fields like ip, user_agent, or before/after diffs would produce
+    // incomplete records unsuitable for incident investigation. This test
+    // explicitly documents and asserts the intentional full-export behaviour.
+    $admin = User::factory()->admin()->create();
+    AuditLog::create([
+        'event' => 'admin.user_toggled_admin',
+        'user_id' => $admin->id,
+        'ip' => '10.0.0.1',
+        'user_agent' => 'Mozilla/5.0',
+        'metadata' => [
+            'target_user_id' => 99,
+            'before' => ['is_admin' => false],
+            'after' => ['is_admin' => true],
+            'user_agent' => 'Mozilla/5.0',
+        ],
+    ]);
+
+    $response = $this->actingAs($admin)->get('/admin/audit-logs/export');
+
+    $content = $response->streamedContent();
+    expect($content)->toContain('target_user_id');
+    expect($content)->toContain('"before"');
+    expect($content)->toContain('"after"');
+});
+
 it('exports with event filter', function () {
     $admin = User::factory()->admin()->create();
     AuditLog::create(['event' => 'auth.login', 'user_id' => $admin->id, 'ip' => '127.0.0.1', 'metadata' => []]);

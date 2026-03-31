@@ -31,7 +31,7 @@ export function AdminPagination({
 
   return (
     <div className="flex items-center justify-between">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground" aria-live="polite" aria-atomic="true">
         Showing {from ?? 0}–{to ?? 0} of {total} {label}
       </p>
       <nav aria-label="Pagination" className="flex gap-1">

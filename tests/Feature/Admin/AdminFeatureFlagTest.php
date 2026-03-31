@@ -302,3 +302,145 @@ it('accepts null reason when setting override', function () {
     $override = FeatureFlagOverride::where('flag', 'billing')->whereNull('user_id')->first();
     expect($override->reason)->toBeNull();
 });
+
+// removeGlobal
+
+it('audit logs global override removal', function () {
+    $admin = User::factory()->superAdmin()->create();
+    FeatureFlagOverride::create(['flag' => 'billing', 'user_id' => null, 'enabled' => true]);
+
+    $response = $this->actingAs($admin)->delete('/admin/feature-flags/billing');
+
+    $response->assertRedirect();
+
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => 'admin.feature_flag.global_override_removed',
+        'user_id' => $admin->id,
+    ]);
+});
+
+it('returns error when removing global override for unknown flag', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    $response = $this->actingAs($admin)->delete('/admin/feature-flags/unknown_flag');
+
+    $response->assertRedirect();
+    $response->assertSessionHasErrors('flag');
+});
+
+// removeUserOverride
+
+it('audit logs user override removal', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $targetUser = User::factory()->create();
+    FeatureFlagOverride::create(['flag' => 'billing', 'user_id' => $targetUser->id, 'enabled' => true]);
+
+    $response = $this->actingAs($admin)->delete("/admin/feature-flags/billing/users/{$targetUser->id}");
+
+    $response->assertRedirect();
+
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => 'admin.feature_flag.user_override_removed',
+        'user_id' => $admin->id,
+    ]);
+});
+
+it('returns error when removing user override for unknown flag', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $targetUser = User::factory()->create();
+
+    $response = $this->actingAs($admin)->delete("/admin/feature-flags/unknown_flag/users/{$targetUser->id}");
+
+    $response->assertRedirect();
+    $response->assertSessionHasErrors('user_override');
+});
+
+// removeAllUserOverrides
+
+it('audit logs bulk user override removal', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $user1 = User::factory()->create();
+    FeatureFlagOverride::create(['flag' => 'billing', 'user_id' => $user1->id, 'enabled' => true]);
+
+    $response = $this->actingAs($admin)->delete('/admin/feature-flags/billing/users');
+
+    $response->assertRedirect();
+
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => 'admin.feature_flag.all_user_overrides_removed',
+        'user_id' => $admin->id,
+    ]);
+});
+
+it('removes all user overrides is idempotent when no overrides exist', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    $response = $this->actingAs($admin)->delete('/admin/feature-flags/billing/users');
+
+    $response->assertRedirect();
+    $response->assertSessionHas('success');
+});
+
+it('returns error when removing all user overrides for unknown flag', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    $response = $this->actingAs($admin)->delete('/admin/feature-flags/unknown_flag/users');
+
+    $response->assertRedirect();
+    $response->assertSessionHasErrors('user_overrides');
+});
+
+// getTargetedUsers auth protection
+
+it('getTargetedUsers redirects guests to login', function () {
+    $response = $this->get('/admin/feature-flags/billing/users');
+
+    $response->assertRedirect('/login');
+});
+
+it('getTargetedUsers returns 403 for non-admin users', function () {
+    $user = User::factory()->create(['is_admin' => false]);
+
+    $response = $this->actingAs($user)->get('/admin/feature-flags/billing/users');
+
+    $response->assertStatus(403);
+});
+
+it('getTargetedUsers returns 422 for unknown flag', function () {
+    $admin = User::factory()->admin()->create();
+
+    $response = $this->actingAs($admin)->get('/admin/feature-flags/unknown_flag/users');
+
+    $response->assertStatus(422);
+    $response->assertJson(['success' => false]);
+});
+
+it('getTargetedUsers returns empty array when no user overrides exist', function () {
+    $admin = User::factory()->admin()->create();
+
+    $response = $this->actingAs($admin)->get('/admin/feature-flags/billing/users');
+
+    $response->assertStatus(200);
+    expect($response->json())->toBe([]);
+});
+
+// searchUsers edge cases
+
+it('search-users rejects query longer than 100 characters', function () {
+    $admin = User::factory()->admin()->create();
+    $longQuery = str_repeat('a', 101);
+
+    $response = $this->actingAs($admin)->get("/admin/feature-flags/search-users?q={$longQuery}");
+
+    $response->assertStatus(422);
+    $response->assertJson(['success' => false]);
+});
+
+it('search-users returns empty array when no users match', function () {
+    $admin = User::factory()->admin()->create();
+
+    $response = $this->actingAs($admin)->get('/admin/feature-flags/search-users?q=zzznomatch');
+
+    $response->assertStatus(200);
+    expect($response->json())->toBe([]);
+});

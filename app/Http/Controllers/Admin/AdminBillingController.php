@@ -54,6 +54,10 @@ class AdminBillingController extends Controller
 
     public function subscriptions(AdminSubscriptionIndexRequest $request): Response
     {
+        $this->auditService->log(AnalyticsEvent::ADMIN_BILLING_SUBSCRIPTIONS_VIEWED, [
+            'filters' => $request->validated(),
+        ]);
+
         return Inertia::render('Admin/Billing/Subscriptions', [
             'subscriptions' => $this->statsService->getFilteredSubscriptions($request->validated()),
             'filters' => $request->only('search', 'status', 'tier', 'sort', 'dir'),
@@ -65,6 +69,11 @@ class AdminBillingController extends Controller
     public function show(Subscription $subscription): Response
     {
         $subscription->load(['owner' => fn ($q) => $q->withTrashed(), 'items']);
+
+        $this->auditService->log(AnalyticsEvent::ADMIN_BILLING_SUBSCRIPTION_VIEWED, [
+            'subscription_id' => $subscription->id,
+            'user_id' => $subscription->user_id,
+        ]);
 
         $items = $subscription->items->map(fn ($item) => [
             'id' => $item->id,
@@ -126,7 +135,7 @@ class AdminBillingController extends Controller
             fputcsv($handle, ['User Name', 'User Email', 'Tier', 'Status', 'Quantity', 'Trial Ends', 'Ends At', 'Created At', 'Stripe ID']);
 
             $exported = 0;
-            foreach ($query->lazyById(500) as $row) {
+            foreach ($query->lazyById(500, 'subscriptions.id') as $row) {
                 if ($exported >= $maxRows) {
                     break;
                 }

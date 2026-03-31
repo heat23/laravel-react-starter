@@ -16,8 +16,14 @@ it('returns 403 for non-admin users', function () {
     $this->actingAs($user)->get('/admin/system')->assertStatus(403);
 });
 
+it('returns 403 for admin without super_admin', function () {
+    $admin = User::factory()->admin()->create(['super_admin' => false]);
+
+    $this->actingAs($admin)->get('/admin/system')->assertStatus(403);
+});
+
 it('loads system page with PHP and Laravel versions', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->get('/admin/system');
 
@@ -30,7 +36,7 @@ it('loads system page with PHP and Laravel versions', function () {
 });
 
 it('loads system page with queue stats', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->get('/admin/system');
 
@@ -41,7 +47,7 @@ it('loads system page with queue stats', function () {
 });
 
 it('loads system page with package list', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->get('/admin/system');
 
@@ -51,7 +57,7 @@ it('loads system page with package list', function () {
 });
 
 it('includes server info', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->get('/admin/system');
 
@@ -63,7 +69,7 @@ it('includes server info', function () {
 });
 
 it('includes database info', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->get('/admin/system');
 
@@ -74,7 +80,7 @@ it('includes database info', function () {
 });
 
 it('php version matches runtime', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->get('/admin/system');
 
@@ -84,7 +90,7 @@ it('php version matches runtime', function () {
 });
 
 it('laravel version matches app version', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->get('/admin/system');
 
@@ -94,7 +100,7 @@ it('laravel version matches app version', function () {
 });
 
 it('packages include laravel framework', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->get('/admin/system');
 
@@ -106,7 +112,7 @@ it('packages include laravel framework', function () {
 });
 
 it('packages have name and version', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->get('/admin/system');
 
@@ -120,7 +126,7 @@ it('packages have name and version', function () {
 });
 
 it('queue stats include pending and failed jobs', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->get('/admin/system');
 

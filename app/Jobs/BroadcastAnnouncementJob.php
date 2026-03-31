@@ -14,10 +14,10 @@ class BroadcastAnnouncementJob implements ShouldQueue
     public int $tries = 1;
 
     public function __construct(
-        private readonly string $recipient,
-        private readonly string $subject,
-        private readonly string $body,
-        private readonly string $sentBy,
+        public readonly string $recipient,
+        public readonly string $subject,
+        public readonly string $body,
+        public readonly string $sentBy,
     ) {}
 
     public function handle(): void

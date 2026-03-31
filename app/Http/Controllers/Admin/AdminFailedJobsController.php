@@ -64,8 +64,8 @@ class AdminFailedJobsController extends Controller
                 'connection' => $job->connection,
                 'queue' => $job->queue,
                 'payload_summary' => $this->extractJobName($job->payload),
-                'payload' => $job->payload,
-                'exception' => $job->exception,
+                'payload' => $this->sanitizePayload($job->payload),
+                'exception' => $this->sanitizeException($job->exception),
                 'failed_at' => $job->failed_at,
             ],
         ]);
@@ -146,6 +146,33 @@ class AdminFailedJobsController extends Controller
             ->with('success', "{$deleted} failed job(s) deleted.");
     }
 
+    /**
+     * Sanitize exception text before display.
+     *
+     * Exception messages can embed database passwords (PDO DSN errors),
+     * API keys, Bearer tokens, or Stripe-style secrets. Redact common
+     * credential patterns so they never appear in the admin UI.
+     */
+    private function sanitizeException(string $exception): string
+    {
+        $patterns = [
+            // Key=value or key: value credential patterns
+            '/\b(password|token|secret|api[_\-]?key|authorization|credential|stripe[_\-]?key|webhook[_\-]?secret|signing[_\-]?secret|access[_\-]?key|auth)\s*[=:]\s*\S+/i',
+            // Bearer / Basic auth header values
+            '/\b(Bearer|Basic)\s+\S+/i',
+            // Database DSN with embedded password: driver://user:password@host
+            '/(\w+):\/\/([^:\/]+):([^@]+)@/i',
+            // Stripe-style API keys: sk_live_xxx, pk_test_xxx, rk_live_xxx
+            '/\b(sk|pk|rk)_(live|test)_\w+/i',
+        ];
+
+        foreach ($patterns as $pattern) {
+            $exception = preg_replace($pattern, '[redacted]', $exception) ?? $exception;
+        }
+
+        return $exception;
+    }
+
     private function extractJobName(string $payload): string
     {
         $data = json_decode($payload, true);
@@ -155,5 +182,63 @@ class AdminFailedJobsController extends Controller
         }
 
         return class_basename($data['displayName'] ?? $data['job'] ?? 'Unknown');
+    }
+
+    /**
+     * Sanitize a raw job payload before display.
+     *
+     * The serialized command in data.command may contain model attributes,
+     * API keys, tokens, or other secrets. We redact it entirely and also
+     * recursively redact any keys whose names suggest sensitive data.
+     *
+     * @return array<string, mixed>
+     */
+    private function sanitizePayload(string $payload): array
+    {
+        $data = json_decode($payload, true);
+
+        if (! is_array($data)) {
+            return ['error' => 'Invalid payload format'];
+        }
+
+        // The serialized PHP object in data.command can contain arbitrary
+        // model attributes including API keys, passwords, and tokens.
+        if (isset($data['data']['command'])) {
+            $data['data']['command'] = '[redacted — serialized job command]';
+        }
+
+        return $this->redactSensitiveKeys($data);
+    }
+
+    /**
+     * Recursively redact values for keys that match known secret patterns.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function redactSensitiveKeys(array $data): array
+    {
+        $sensitivePatterns = [
+            'password', 'token', 'secret', 'key', 'api_key', 'apikey',
+            'authorization', 'credential', 'private', 'access_key', 'auth',
+            'stripe', 'webhook_secret', 'signing_secret',
+        ];
+
+        foreach ($data as $k => $v) {
+            $lower = strtolower((string) $k);
+            foreach ($sensitivePatterns as $pattern) {
+                if (str_contains($lower, $pattern)) {
+                    $data[$k] = '[redacted]';
+
+                    continue 2;
+                }
+            }
+
+            if (is_array($v)) {
+                $data[$k] = $this->redactSensitiveKeys($v);
+            }
+        }
+
+        return $data;
     }
 }

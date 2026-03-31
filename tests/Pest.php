@@ -300,7 +300,7 @@ function registerAdminRoutes(): void
                 $router->get('/audit-logs/export', [AdminAuditLogController::class, 'export'])->name('audit-logs.export');
                 $router->get('/audit-logs/{auditLog}', [AdminAuditLogController::class, 'show'])->name('audit-logs.show');
 
-                $router->get('/system', [AdminSystemController::class, '__invoke'])->name('system');
+                $router->get('/system', [AdminSystemController::class, '__invoke'])->middleware('super_admin')->name('system');
 
                 $router->get('/failed-jobs', [AdminFailedJobsController::class, 'index'])->name('failed-jobs.index');
                 $router->get('/failed-jobs/{id}', [AdminFailedJobsController::class, 'show'])->name('failed-jobs.show');
@@ -338,6 +338,12 @@ function registerAdminRoutes(): void
             ->name('admin.')
             ->group(function () use ($router) {
                 $router->get('/webhooks', [AdminWebhooksController::class, '__invoke'])->name('webhooks');
+                $router->get('/webhooks/incoming', [AdminWebhooksController::class, 'incomingWebhooks'])->name('webhooks.incoming');
+                $router->get('/webhooks/endpoints', [AdminWebhooksController::class, 'endpoints'])->name('webhooks.endpoints');
+                $router->patch('/webhooks/endpoints/{id}/restore', [AdminWebhooksController::class, 'restoreEndpoint'])
+                    ->middleware(['super_admin'])
+                    ->name('webhooks.endpoints.restore');
+                $router->get('/webhooks/deliveries/{id}', [AdminWebhooksController::class, 'showDelivery'])->name('webhooks.deliveries.show');
             });
         $needsRefresh = true;
     }
@@ -368,6 +374,9 @@ function registerAdminRoutes(): void
             ->name('admin.')
             ->group(function () use ($router) {
                 $router->get('/notifications', [AdminNotificationsController::class, '__invoke'])->name('notifications');
+                $router->post('/notifications/send', [AdminNotificationsController::class, 'send'])
+                    ->middleware(['super_admin'])
+                    ->name('notifications.send');
             });
         $needsRefresh = true;
     }

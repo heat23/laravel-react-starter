@@ -68,7 +68,32 @@ export default function AdminUsersIndex({
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkRestoreConfirmOpen, setBulkRestoreConfirmOpen] = useState(false);
+  const [optimisticOverrides, setOptimisticOverrides] = useState<
+    Map<number, Partial<(typeof users.data)[number]>>
+  >(new Map());
+
+  function applyOptimisticOverride(
+    id: number,
+    patch: Partial<(typeof users.data)[number]>
+  ): void {
+    setOptimisticOverrides((prev) => new Map(prev).set(id, patch));
+  }
+
+  function clearOptimisticOverride(id: number): void {
+    setOptimisticOverrides((prev) => {
+      const next = new Map(prev);
+      next.delete(id);
+      return next;
+    });
+  }
+
+  const displayUsers = users.data.map((u) => {
+    const override = optimisticOverrides.get(u.id);
+    return override ? { ...u, ...override } : u;
+  });
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const isDeactivatedFilter = filters.status === 'deactivated';
 
   useEffect(() => {
     setSelectedIds(new Set());
@@ -83,15 +108,20 @@ export default function AdminUsersIndex({
     onPrevPage: currentPage > 1 ? () => handlePage(currentPage - 1) : undefined,
   });
 
-  // Only non-admin, active, non-self users are eligible for bulk deactivation
+  // Selectable for bulk deactivate: non-admin, active, non-self
+  // Selectable for bulk restore: deactivated, non-self
   const selectableIds = useMemo(
     () =>
       new Set(
         users.data
-          .filter((u) => !u.is_admin && !u.deleted_at && u.id !== currentUserId)
+          .filter((u) =>
+            isDeactivatedFilter
+              ? !!u.deleted_at && u.id !== currentUserId
+              : !u.is_admin && !u.deleted_at && u.id !== currentUserId
+          )
           .map((u) => u.id)
       ),
-    [users.data, currentUserId]
+    [users.data, currentUserId, isDeactivatedFilter]
   );
   const allSelectableSelected =
     selectableIds.size > 0 &&
@@ -129,6 +159,30 @@ export default function AdminUsersIndex({
           onSuccess: () => {
             setSelectedIds(new Set());
             setBulkConfirmOpen(false);
+            requestAnimationFrame(() => searchInputRef.current?.focus());
+            resolve();
+          },
+          onError: () => reject(),
+        }
+      );
+    });
+  }, [selectedIds]);
+
+  const executeBulkRestore = useCallback((): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const ids = Array.from(selectedIds);
+      if (ids.length === 0) {
+        resolve();
+        return;
+      }
+      router.post(
+        '/admin/users/bulk-restore',
+        { ids },
+        {
+          preserveState: true,
+          onSuccess: () => {
+            setSelectedIds(new Set());
+            setBulkRestoreConfirmOpen(false);
             requestAnimationFrame(() => searchInputRef.current?.focus());
             resolve();
           },
@@ -240,13 +294,23 @@ export default function AdminUsersIndex({
             <span className="text-sm font-medium">
               {selectedIds.size} user(s) selected
             </span>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setBulkConfirmOpen(true)}
-            >
-              Deactivate Selected
-            </Button>
+            {isDeactivatedFilter ? (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setBulkRestoreConfirmOpen(true)}
+              >
+                Restore Selected
+              </Button>
+            ) : (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setBulkConfirmOpen(true)}
+              >
+                Deactivate Selected
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -284,7 +348,7 @@ export default function AdminUsersIndex({
             ) : undefined
           }
         >
-          <Table>
+          <Table role="grid">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[40px]">
@@ -331,7 +395,7 @@ export default function AdminUsersIndex({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.data.map((user) => {
+              {displayUsers.map((user) => {
                 const isSelectable = selectableIds.has(user.id);
                 return (
                   <TableRow
@@ -433,17 +497,41 @@ export default function AdminUsersIndex({
                           {isSuperAdmin && !user.deleted_at && user.id !== currentUserId && (
                             <DropdownMenuItem
                               onClick={() =>
-                                setConfirmAction({ type: 'toggleAdmin', user })
+                                setConfirmAction({
+                                  type: 'toggleAdmin',
+                                  user,
+                                  onOptimisticUpdate: () =>
+                                    applyOptimisticOverride(user.id, {
+                                      is_admin: !user.is_admin,
+                                    }),
+                                  onRollback: () =>
+                                    clearOptimisticOverride(user.id),
+                                  onSuccess: () =>
+                                    clearOptimisticOverride(user.id),
+                                })
                               }
                             >
                               <Shield className="mr-2 h-4 w-4" />
                               {user.is_admin ? 'Remove Admin' : 'Make Admin'}
                             </DropdownMenuItem>
                           )}
-                          {user.id !== currentUserId && (
+                          {isSuperAdmin && user.id !== currentUserId && (
                             <DropdownMenuItem
                               onClick={() =>
-                                setConfirmAction({ type: 'toggleActive', user })
+                                setConfirmAction({
+                                  type: 'toggleActive',
+                                  user,
+                                  onOptimisticUpdate: () =>
+                                    applyOptimisticOverride(user.id, {
+                                      deleted_at: user.deleted_at
+                                        ? null
+                                        : new Date().toISOString(),
+                                    }),
+                                  onRollback: () =>
+                                    clearOptimisticOverride(user.id),
+                                  onSuccess: () =>
+                                    clearOptimisticOverride(user.id),
+                                })
                               }
                             >
                               {user.deleted_at
@@ -494,6 +582,16 @@ export default function AdminUsersIndex({
         description={`Are you sure you want to deactivate ${selectedIds.size} user(s)? They will not be able to log in.`}
         variant="destructive"
         confirmLabel="Deactivate"
+      />
+
+      {/* Bulk Restore Confirm Dialog */}
+      <ConfirmDialog
+        open={bulkRestoreConfirmOpen}
+        onOpenChange={setBulkRestoreConfirmOpen}
+        onConfirm={executeBulkRestore}
+        title="Bulk Restore Users"
+        description={`Are you sure you want to restore ${selectedIds.size} user(s)? They will be able to log in again.`}
+        confirmLabel="Restore"
       />
     </AdminLayout>
   );

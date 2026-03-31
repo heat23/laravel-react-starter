@@ -28,6 +28,7 @@ class AuditLog extends Model
         ];
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class)->withTrashed();

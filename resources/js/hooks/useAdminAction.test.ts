@@ -5,12 +5,17 @@ import { router } from "@inertiajs/react";
 
 import { useAdminAction, type AdminActionTarget } from "./useAdminAction";
 
+type RouterOptions = {
+  onSuccess?: () => void;
+  onError?: () => void;
+};
+
 vi.mock("@inertiajs/react", () => ({
   router: {
-    patch: vi.fn((_url: string, _data: unknown, options?: { onSuccess?: () => void }) => {
+    patch: vi.fn((_url: string, _data: unknown, options?: RouterOptions) => {
       options?.onSuccess?.();
     }),
-    post: vi.fn((_url: string, _data: unknown, options?: { onSuccess?: () => void }) => {
+    post: vi.fn((_url: string, _data: unknown, options?: RouterOptions) => {
       options?.onSuccess?.();
     }),
   },
@@ -40,6 +45,16 @@ describe("useAdminAction", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    (router.patch as ReturnType<typeof vi.fn>).mockImplementation(
+      (_url: string, _data: unknown, options?: RouterOptions) => {
+        options?.onSuccess?.();
+      }
+    );
+    (router.post as ReturnType<typeof vi.fn>).mockImplementation(
+      (_url: string, _data: unknown, options?: RouterOptions) => {
+        options?.onSuccess?.();
+      }
+    );
   });
 
   it("starts with no confirm action", () => {
@@ -178,6 +193,121 @@ describe("useAdminAction", () => {
         {},
         expect.objectContaining({}),
       );
+    });
+  });
+
+  describe("optimistic updates", () => {
+    it("calls onOptimisticUpdate before the router call", async () => {
+      const callOrder: string[] = [];
+      (router.patch as ReturnType<typeof vi.fn>).mockImplementation(
+        (_url: string, _data: unknown, options?: RouterOptions) => {
+          callOrder.push("router");
+          options?.onSuccess?.();
+        }
+      );
+
+      const { result } = renderHook(() => useAdminAction());
+      act(() => {
+        result.current.setConfirmAction({
+          type: "toggleAdmin",
+          user: mockUser,
+          onOptimisticUpdate: () => callOrder.push("optimistic"),
+        });
+      });
+
+      await act(async () => {
+        await result.current.executeAction();
+      });
+
+      expect(callOrder).toEqual(["optimistic", "router"]);
+    });
+
+    it("calls onSuccess after a successful router call", async () => {
+      const onSuccess = vi.fn();
+      const { result } = renderHook(() => useAdminAction());
+      act(() => {
+        result.current.setConfirmAction({
+          type: "toggleAdmin",
+          user: mockUser,
+          onSuccess,
+        });
+      });
+
+      await act(async () => {
+        await result.current.executeAction();
+      });
+
+      expect(onSuccess).toHaveBeenCalledTimes(1);
+    });
+
+    it("calls onRollback instead of onSuccess when router fails", async () => {
+      (router.patch as ReturnType<typeof vi.fn>).mockImplementation(
+        (_url: string, _data: unknown, options?: RouterOptions) => {
+          options?.onError?.();
+        }
+      );
+
+      const onOptimisticUpdate = vi.fn();
+      const onRollback = vi.fn();
+      const onSuccess = vi.fn();
+      const { result } = renderHook(() => useAdminAction());
+      act(() => {
+        result.current.setConfirmAction({
+          type: "toggleActive",
+          user: mockUser,
+          onOptimisticUpdate,
+          onRollback,
+          onSuccess,
+        });
+      });
+
+      await act(async () => {
+        await result.current.executeAction().catch(() => {});
+      });
+
+      expect(onOptimisticUpdate).toHaveBeenCalledTimes(1);
+      expect(onRollback).toHaveBeenCalledTimes(1);
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it("calls onRollback on impersonate failure", async () => {
+      (router.post as ReturnType<typeof vi.fn>).mockImplementation(
+        (_url: string, _data: unknown, options?: RouterOptions) => {
+          options?.onError?.();
+        }
+      );
+
+      const onRollback = vi.fn();
+      const onSuccess = vi.fn();
+      const { result } = renderHook(() => useAdminAction());
+      act(() => {
+        result.current.setConfirmAction({
+          type: "impersonate",
+          user: mockUser,
+          onRollback,
+          onSuccess,
+        });
+      });
+
+      await act(async () => {
+        await result.current.executeAction().catch(() => {});
+      });
+
+      expect(onRollback).toHaveBeenCalledTimes(1);
+      expect(onSuccess).not.toHaveBeenCalled();
+    });
+
+    it("does not require optimistic callbacks (backward compatible)", async () => {
+      const { result } = renderHook(() => useAdminAction());
+      act(() => {
+        result.current.setConfirmAction({ type: "toggleAdmin", user: mockUser });
+      });
+
+      await act(async () => {
+        await result.current.executeAction();
+      });
+
+      expect(router.patch).toHaveBeenCalledTimes(1);
     });
   });
 });

@@ -7,6 +7,7 @@ use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminSessionIndexRequest;
 use App\Services\AuditService;
+use App\Services\CacheInvalidationManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -18,6 +19,7 @@ class AdminSessionsController extends Controller
 {
     public function __construct(
         private AuditService $auditService,
+        private CacheInvalidationManager $cacheInvalidation,
     ) {}
 
     public function index(AdminSessionIndexRequest $request): Response
@@ -90,6 +92,8 @@ class AdminSessionsController extends Controller
         $this->auditService->log(AnalyticsEvent::ADMIN_SESSION_TERMINATED, [
             'target_user_id' => $userId,
         ]);
+
+        $this->cacheInvalidation->invalidateDashboard();
 
         return redirect()->route('admin.sessions.index')
             ->with('success', 'User sessions terminated.');
