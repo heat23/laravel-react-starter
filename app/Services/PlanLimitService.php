@@ -30,7 +30,7 @@ class PlanLimitService
      */
     public function startTrial(User $user): void
     {
-        $trialDays = config('plans.trial.days', 14);
+        $trialDays = (int) config('plans.trial.days', 14);
         $tier = config('plans.trial.tier', 'pro');
         $trialEndsAt = Carbon::now()->addDays($trialDays);
 

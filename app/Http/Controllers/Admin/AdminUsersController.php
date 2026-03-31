@@ -21,6 +21,7 @@ use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
 use App\Services\EngagementScoringService;
 use App\Support\CsvExport;
+use Illuminate\Auth\Passwords\PasswordBroker;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -339,7 +340,9 @@ class AdminUsersController extends Controller
             return back()->with('error', 'User has no password (OAuth-only account).');
         }
 
-        $token = Password::broker()->createToken($user);
+        /** @var PasswordBroker $broker */
+        $broker = Password::broker();
+        $token = $broker->createToken($user);
         $user->sendPasswordResetNotification($token);
 
         $this->auditService->log(AnalyticsEvent::ADMIN_PASSWORD_RESET_SENT, [
