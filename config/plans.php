@@ -210,7 +210,7 @@ return [
     */
     'trial' => [
         'enabled' => env('TRIAL_ENABLED', true),
-        'days' => env('TRIAL_DAYS', 14),
+        'days' => (int) env('TRIAL_DAYS', 14),
         'tier' => 'pro', // which tier to grant during trial
     ],
 ];
