@@ -38,14 +38,13 @@ test.describe('Register Page', () => {
 
     // Submit + link
     await expect(page.getByRole('button', { name: /create account/i })).toBeVisible();
-    await expect(page.getByRole('link', { name: /sign in instead/i })).toBeVisible();
+    await expect(page.getByRole('link', { name: /log in instead/i })).toBeVisible();
 
     // Desktop layout — left branded panel with feature highlights
     await assertDesktopAuthLayout(page);
-    await expect(page.getByText('Secure by Default')).toBeVisible();
-    await expect(page.getByText('Modern Stack')).toBeVisible();
-    await expect(page.getByText('Stay Informed')).toBeVisible();
-    await expect(page.getByText('Lightning Fast')).toBeVisible();
+    await expect(page.getByText('Ship in Days')).toBeVisible();
+    await expect(page.getByText('90+ Tests Included')).toBeVisible();
+    await expect(page.getByText('Toggle What You Need')).toBeVisible();
     await expect(page.getByText('Free to get started')).toBeVisible();
     await expect(page.getByText('No credit card required')).toBeVisible();
   });
