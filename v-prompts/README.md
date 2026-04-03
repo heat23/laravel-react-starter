@@ -1,45 +1,30 @@
-# Audit Fix Prompts
+# v-prompts — Audit Fix Prompts
+Generated: 2026-04-03 from AUDIT_REPORT_2026-04-03.md
 
-## Latest Audit: `b29447e2` (2026-03-31, Comprehensive)
+Each file contains ready-to-run /v prompts. Pass the file contents to /v or copy individual sections.
 
-Each phase file contains `/v` prompts to fix audit findings. Run them in priority order.
+## Files
 
-| File | Findings | Priority |
-|------|----------|----------|
-| [phase-1-before-production.md](phase-1-before-production.md) | SEC-001, SEC-002, SEC-003, PERF-001, JOBS-001, CI-001, CI-002, INFRA-008 | HIGH - Before production |
-| [phase-2-before-ga.md](phase-2-before-ga.md) | AUTH-001, ARCH-001, ARCH-002, FE-002, FE-003, INFRA-001, INFRA-005, INFRA-006, INFRA-007, SEC-005 | MEDIUM - Before GA |
-| [phase-3-post-ga-hardening.md](phase-3-post-ga-hardening.md) | TEST-001-003, FE-001, INFRA-002-004, ARCH-003, AUTH-002 | MEDIUM - Post-GA |
-| [phase-4-polish.md](phase-4-polish.md) | All LOW-severity items | LOW - Ongoing |
+| File | Sprint | Content |
+|------|--------|---------|
+| sprint-1-launch-blockers.md | Sprint 1 (~10h) | SEC-001, OPSRISK-001, LEGAL-001, LAUNCH-001, FUNNEL-001, COPY-001 |
+| sprint-2-security-compliance.md | Sprint 2 (~12h) | LEGAL-002-004, DEPLOY-001-002, ADMIN-001, LAUNCH-002-003 |
+| sprint-3-quality-gtm.md | Sprint 3 (~15h) | GTM-001-002, FUNNEL-002-003, ADMIN-002-003, SEO-001, LAUNCH-003-004 |
+| sprint-4-polish.md | Sprint 4 (~18h) | All P3: A11Y, DS, UX, DOCS, SEO, ARCH, FUNNEL, ADMIN |
 
-### Related Artifacts
+## P1 Quick Fixes
 
-- `AUDIT_REPORT_b29447e2.json` - Machine-readable findings (55 total)
-- `AUDIT_REPORT_b29447e2.md` - Human-readable report
+Fix FUNNEL-001 immediately (runtime crash):
+  /v fix CheckExpiredTrials to use Carbon::parse() before calling ->toISOString()
+  File: app/Console/Commands/CheckExpiredTrials.php
 
----
+Fix LEGAL-001 immediately (visible disclaimer in production):
+  /v fix LegalContent.tsx to only render the Template disclaimer when NODE_ENV=development
 
-## Previous Audit: `d01038f9` (2026-03-31)
+Fix OPSRISK-001 + SEC-001 (.env defaults):
+  /v update .env.example to default CACHE_STORE=redis and QUEUE_CONNECTION=redis with AppServiceProvider boot warnings when billing is enabled with non-Redis drivers
 
-### Immediate (before next deploy)
-
-| # | File | Finding | Severity |
-|---|------|---------|----------|
-| 1 | [SEC-005](SEC-005-fix-audit-log-route-ordering.md) | Fix audit-logs route ordering bug | HIGH |
-| 2 | [SEC-001](SEC-001-add-retention-coupon-form-request.md) | Add Form Request to retention coupon | CRITICAL |
-| 3 | [DATA-004/005](DATA-004-005-fix-retention-coupon-cache-and-enum.md) | Fix cache invalidation + audit enum | MEDIUM |
-
-### Short-term (this sprint)
-
-| # | File | Finding | Severity |
-|---|------|---------|----------|
-| 4 | [SEC-002/003](SEC-002-003-feature-gate-api-routes.md) | Feature-gate notification + webhook API routes | HIGH |
-| 5 | [SEC-004](SEC-004-add-resume-form-request.md) | Add Form Request to resume endpoint | HIGH |
-| 6 | [SEC-006](SEC-006-fix-duplicate-subscription-query.md) | Fix duplicate subscription query | HIGH |
-| 7 | [DATA-001](DATA-001-add-transaction-to-toggleActive.md) | Add transaction to toggleActive | MEDIUM |
-| 8 | [AUTH-002](AUTH-002-add-password-confirmation-billing.md) | Password confirmation on billing mutations | MEDIUM |
-
-### Medium-term (this quarter)
-
-| # | File | Finding | Severity |
-|---|------|---------|----------|
-| 9 | [PERF-002](PERF-002-cache-subscription-status.md) | Cache subscription status per-user | MEDIUM |
+## Full Audit Report
+- JSON: AUDIT_REPORT_2026-04-03.json (51 findings, 17 areas)
+- Markdown: AUDIT_REPORT_2026-04-03.md
+- Prior batch: saas-audit-results_dfb85618-a29e-4541-b6db-79e85fc31521.json
