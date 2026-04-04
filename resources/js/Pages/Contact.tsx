@@ -45,7 +45,7 @@ export default function Contact() {
     post(route('contact.store'), {
       onSuccess: () => {
         reset();
-        track(AnalyticsEvents.CONTACT_FORM_SUBMITTED);
+        track(AnalyticsEvents.ENGAGEMENT_CONTACT_FORM_SUBMITTED);
       },
     });
   }

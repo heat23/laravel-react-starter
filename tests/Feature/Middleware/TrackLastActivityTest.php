@@ -38,3 +38,28 @@ it('does not update for unauthenticated requests', function () {
 
     $response->assertOk();
 });
+
+it('respects a custom activity_tracking_window from config', function () {
+    config(['app.activity_tracking_window' => 5]);
+
+    // Set last_active_at to 3 minutes ago — within the default 15-min window but outside the custom 5-min window
+    $threeMinutesAgo = now()->subMinutes(3);
+    $user = User::factory()->create(['last_active_at' => $threeMinutesAgo]);
+
+    $this->actingAs($user)->get('/dashboard');
+
+    // With a 5-min window, 3 minutes ago is still within the window → should NOT update
+    expect($user->fresh()->last_active_at->toDateTimeString())
+        ->toBe($threeMinutesAgo->toDateTimeString());
+});
+
+it('updates when last_active_at exceeds custom activity_tracking_window', function () {
+    config(['app.activity_tracking_window' => 5]);
+
+    $oldTime = now()->subMinutes(6);
+    $user = User::factory()->create(['last_active_at' => $oldTime]);
+
+    $this->actingAs($user)->get('/dashboard');
+
+    expect($user->fresh()->last_active_at->gt($oldTime))->toBeTrue();
+});

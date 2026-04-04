@@ -11,7 +11,7 @@ class TrackLastActivity
     /**
      * Update the authenticated user's last_active_at timestamp.
      *
-     * Throttled to once per 15 minutes to reduce write pressure.
+     * Throttled to once per config('app.activity_tracking_window') minutes to reduce write pressure.
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -32,6 +32,6 @@ class TrackLastActivity
             return true;
         }
 
-        return $lastActive->lt(now()->subMinutes(15));
+        return $lastActive->lt(now()->subMinutes(config('app.activity_tracking_window', 15)));
     }
 }

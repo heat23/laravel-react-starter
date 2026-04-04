@@ -10,35 +10,43 @@ import {
   ToggleLeft,
   CheckCircle2,
   LucideIcon,
-} from "lucide-react";
-import { z } from "zod";
+} from 'lucide-react';
+import { z } from 'zod';
 
-import { useState, FormEventHandler } from "react";
+import { useState, useEffect, FormEventHandler } from 'react';
 
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm } from '@inertiajs/react';
 
-import { PasswordStrengthIndicator, type PasswordRequirement } from "@/Components/auth/PasswordStrengthIndicator";
-import { SocialAuthButtons } from "@/Components/auth/SocialAuthButtons";
-import InputError from "@/Components/InputError";
-import { LegalContentModal } from "@/Components/legal/LegalContentModal";
-import { Checkbox } from "@/Components/ui/checkbox";
-import { Input } from "@/Components/ui/input";
-import { Label } from "@/Components/ui/label";
-import { LoadingButton } from "@/Components/ui/loading-button";
-import { useFormValidation } from "@/hooks/useFormValidation";
-import { useAnalytics } from "@/hooks/useAnalytics";
-import AuthLayout from "@/Layouts/AuthLayout";
-import { AnalyticsEvents } from "@/lib/events";
+import {
+  PasswordStrengthIndicator,
+  type PasswordRequirement,
+} from '@/Components/auth/PasswordStrengthIndicator';
+import { SocialAuthButtons } from '@/Components/auth/SocialAuthButtons';
+import InputError from '@/Components/InputError';
+import { LegalContentModal } from '@/Components/legal/LegalContentModal';
+import { Checkbox } from '@/Components/ui/checkbox';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { LoadingButton } from '@/Components/ui/loading-button';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { useFormValidation } from '@/hooks/useFormValidation';
+import AuthLayout from '@/Layouts/AuthLayout';
+import { AnalyticsEvents } from '@/lib/events';
 
-const registerSchema = z.object({
-  name: z.string().min(1, "Name is required").max(255, "Name is too long"),
-  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  password_confirmation: z.string().min(1, "Please confirm your password"),
-}).refine((data) => data.password === data.password_confirmation, {
-  message: "Passwords do not match",
-  path: ["password_confirmation"],
-});
+const registerSchema = z
+  .object({
+    name: z.string().min(1, 'Name is required').max(255, 'Name is too long'),
+    email: z
+      .string()
+      .min(1, 'Email is required')
+      .email('Please enter a valid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    password_confirmation: z.string().min(1, 'Please confirm your password'),
+  })
+  .refine((data) => data.password === data.password_confirmation, {
+    message: 'Passwords do not match',
+    path: ['password_confirmation'],
+  });
 
 interface Feature {
   icon: LucideIcon;
@@ -56,51 +64,85 @@ interface RegisterProps {
 }
 
 const passwordRequirements: PasswordRequirement[] = [
-  { id: "length", label: "At least 8 characters", test: (p) => p.length >= 8 },
-  { id: "uppercase", label: "One uppercase letter", test: (p) => /[A-Z]/.test(p) },
-  { id: "lowercase", label: "One lowercase letter", test: (p) => /[a-z]/.test(p) },
-  { id: "number", label: "One number", test: (p) => /\d/.test(p) },
+  { id: 'length', label: 'At least 8 characters', test: (p) => p.length >= 8 },
+  {
+    id: 'uppercase',
+    label: 'One uppercase letter',
+    test: (p) => /[A-Z]/.test(p),
+  },
+  {
+    id: 'lowercase',
+    label: 'One lowercase letter',
+    test: (p) => /[a-z]/.test(p),
+  },
+  { id: 'number', label: 'One number', test: (p) => /\d/.test(p) },
 ];
 
 const sellingPoints: Feature[] = [
   {
     icon: Rocket,
-    title: "Ship in Days",
-    description: "Auth, billing, admin panel, and 11 feature flags — ready from your first login.",
+    title: 'Ship in Days',
+    description:
+      'Auth, billing, admin panel, and 11 feature flags — ready from your first login.',
   },
   {
     icon: FlaskConical,
-    title: "90+ Tests Included",
-    description: "Every feature is tested with Pest, Vitest, and Playwright. Refactor confidently from day one.",
+    title: '90+ Tests Included',
+    description:
+      'Every feature is tested with Pest, Vitest, and Playwright. Refactor confidently from day one.',
   },
   {
     icon: ToggleLeft,
-    title: "Toggle What You Need",
-    description: "11 feature flags let you enable billing, webhooks, 2FA, and more with a single env var.",
+    title: 'Toggle What You Need',
+    description:
+      '11 feature flags let you enable billing, webhooks, 2FA, and more with a single env var.',
   },
 ];
 
-export default function Register({ error, rememberDays = 30, onboardingEnabled = false, features }: RegisterProps) {
+export default function Register({
+  error,
+  rememberDays = 30,
+  onboardingEnabled = false,
+  features,
+}: RegisterProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
+  const [legalModal, setLegalModal] = useState<'terms' | 'privacy' | null>(
+    null
+  );
   const [weakPasswordWarning, setWeakPasswordWarning] = useState(false);
-  const { errors: clientErrors, validateField, validateAll, clearError, setErrors: setClientErrors } = useFormValidation(registerSchema);
+  const {
+    errors: clientErrors,
+    validateField,
+    validateAll,
+    clearError,
+    setErrors: setClientErrors,
+  } = useFormValidation(registerSchema);
   const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'register' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Helper for grammatically correct day/days
   const dayText = rememberDays === 1 ? 'day' : 'days';
 
   const { data, setData, post, processing, errors, reset } = useForm({
-    name: "",
-    email: "",
-    password: "",
-    password_confirmation: "",
+    name: '',
+    email: '',
+    password: '',
+    password_confirmation: '',
     remember: false,
   });
 
-  const passedRequirements = passwordRequirements.filter((req) => req.test(data.password)).length;
-  const passwordStrength = passwordRequirements.length > 0 ? (passedRequirements / passwordRequirements.length) * 100 : 0;
+  const passedRequirements = passwordRequirements.filter((req) =>
+    req.test(data.password)
+  ).length;
+  const passwordStrength =
+    passwordRequirements.length > 0
+      ? (passedRequirements / passwordRequirements.length) * 100
+      : 0;
 
   const handleSubmit: FormEventHandler = (e) => {
     e.preventDefault();
@@ -118,15 +160,13 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
       setWeakPasswordWarning(true);
     }
 
-    post(route("register"), {
-      onFinish: () => reset("password", "password_confirmation"),
+    post(route('register'), {
+      onFinish: () => reset('password', 'password_confirmation'),
       onSuccess: () => {
         track(AnalyticsEvents.AUTH_REGISTER, { source: 'email' });
       },
     });
   };
-
-  const appName = import.meta.env.VITE_APP_NAME || "Our Application";
 
   const leftContent = (
     <div className="max-w-lg space-y-8">
@@ -134,10 +174,13 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
         <h1 className="text-4xl font-bold leading-tight">
           Ship your SaaS,
           <br />
-          <span className="text-brand-surface-foreground/80">not the setup work.</span>
+          <span className="text-brand-surface-foreground/80">
+            not the setup work.
+          </span>
         </h1>
         <p className="text-lg text-brand-surface-foreground/70 leading-relaxed">
-          Everything you need to go from signup to paying customers — auth, billing, admin, and APIs included.
+          Everything you need to go from signup to paying customers — auth,
+          billing, admin, and APIs included.
         </p>
       </div>
 
@@ -153,7 +196,9 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
             </div>
             <div>
               <h3 className="font-semibold mb-0.5">{feature.title}</h3>
-              <p className="text-sm text-brand-surface-foreground/60">{feature.description}</p>
+              <p className="text-sm text-brand-surface-foreground/60">
+                {feature.description}
+              </p>
             </div>
           </div>
         ))}
@@ -178,10 +223,10 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
 
   const footer = (
     <>
-      By creating an account, you agree to our{" "}
+      By creating an account, you agree to our{' '}
       <button
         type="button"
-        onClick={() => setLegalModal("terms")}
+        onClick={() => setLegalModal('terms')}
         className="text-primary hover:underline"
       >
         Terms of Service
@@ -190,9 +235,16 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
   );
 
   return (
-    <AuthLayout leftContent={leftContent} leftFooter={leftFooter} footer={footer}>
+    <AuthLayout
+      leftContent={leftContent}
+      leftFooter={leftFooter}
+      footer={footer}
+    >
       <Head title="Create account">
-        <meta name="description" content="Create your free account to get started. No credit card required." />
+        <meta
+          name="description"
+          content="Create your free account to get started. No credit card required."
+        />
       </Head>
       <div className="space-y-8">
         {/* Header */}
@@ -207,7 +259,10 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
 
         {/* Social Login - Only show if feature is enabled */}
         {features?.socialAuth && (
-          <SocialAuthButtons processing={processing} separatorText="or register with email" />
+          <SocialAuthButtons
+            processing={processing}
+            separatorText="or register with email"
+          />
         )}
 
         {error && (
@@ -230,18 +285,26 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
                   placeholder="John Doe"
                   value={data.name}
                   onChange={(e) => {
-                    setData("name", e.target.value);
-                    if (clientErrors.name) clearError("name");
+                    setData('name', e.target.value);
+                    if (clientErrors.name) clearError('name');
                   }}
-                  onBlur={(e) => validateField("name", e.target.value)}
+                  onBlur={(e) => validateField('name', e.target.value)}
                   className="pl-10"
                   autoComplete="name"
                   required
-                  aria-describedby={(clientErrors.name || errors.name) ? "register-name-error" : undefined}
+                  aria-describedby={
+                    clientErrors.name || errors.name
+                      ? 'register-name-error'
+                      : undefined
+                  }
                   aria-invalid={!!(clientErrors.name || errors.name)}
                 />
               </div>
-              <InputError id="register-name-error" message={clientErrors.name || errors.name} className="text-xs" />
+              <InputError
+                id="register-name-error"
+                message={clientErrors.name || errors.name}
+                className="text-xs"
+              />
             </div>
           )}
 
@@ -255,18 +318,26 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
                 placeholder="you@example.com"
                 value={data.email}
                 onChange={(e) => {
-                  setData("email", e.target.value);
-                  if (clientErrors.email) clearError("email");
+                  setData('email', e.target.value);
+                  if (clientErrors.email) clearError('email');
                 }}
-                onBlur={(e) => validateField("email", e.target.value)}
+                onBlur={(e) => validateField('email', e.target.value)}
                 className="pl-10"
                 autoComplete="username"
                 required
-                aria-describedby={(clientErrors.email || errors.email) ? "register-email-error" : undefined}
+                aria-describedby={
+                  clientErrors.email || errors.email
+                    ? 'register-email-error'
+                    : undefined
+                }
                 aria-invalid={!!(clientErrors.email || errors.email)}
               />
             </div>
-            <InputError id="register-email-error" message={clientErrors.email || errors.email} className="text-xs" />
+            <InputError
+              id="register-email-error"
+              message={clientErrors.email || errors.email}
+              className="text-xs"
+            />
           </div>
 
           <div className="space-y-3">
@@ -275,25 +346,29 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
               <Lock className="absolute left-3 h-4 w-4 text-muted-foreground" />
               <Input
                 id="password"
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Create a strong password"
                 value={data.password}
                 onChange={(e) => {
-                  setData("password", e.target.value);
-                  if (clientErrors.password) clearError("password");
+                  setData('password', e.target.value);
+                  if (clientErrors.password) clearError('password');
                 }}
-                onBlur={(e) => validateField("password", e.target.value)}
+                onBlur={(e) => validateField('password', e.target.value)}
                 className="pl-10 pr-10"
                 autoComplete="new-password"
                 required
-                aria-describedby={(clientErrors.password || errors.password) ? "register-password-error" : undefined}
+                aria-describedby={
+                  clientErrors.password || errors.password
+                    ? 'register-password-error'
+                    : undefined
+                }
                 aria-invalid={!!(clientErrors.password || errors.password)}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 aria-pressed={showPassword}
               >
                 {showPassword ? (
@@ -304,8 +379,15 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
               </button>
             </div>
 
-            <PasswordStrengthIndicator password={data.password} passwordRequirements={passwordRequirements} />
-            <InputError id="register-password-error" message={clientErrors.password || errors.password} className="text-xs" />
+            <PasswordStrengthIndicator
+              password={data.password}
+              passwordRequirements={passwordRequirements}
+            />
+            <InputError
+              id="register-password-error"
+              message={clientErrors.password || errors.password}
+              className="text-xs"
+            />
           </div>
 
           <div className="space-y-2">
@@ -314,40 +396,69 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
               <Lock className="absolute left-3 h-4 w-4 text-muted-foreground" />
               <Input
                 id="password_confirmation"
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Re-enter your password"
                 value={data.password_confirmation}
                 onChange={(e) => {
-                  setData("password_confirmation", e.target.value);
-                  if (clientErrors.password_confirmation) clearError("password_confirmation");
+                  setData('password_confirmation', e.target.value);
+                  if (clientErrors.password_confirmation)
+                    clearError('password_confirmation');
                 }}
                 onBlur={(e) => {
                   const val = e.target.value;
                   if (!val) {
-                    validateField("password_confirmation", val);
+                    validateField('password_confirmation', val);
                   } else if (val !== data.password) {
-                    setClientErrors(prev => ({ ...prev, password_confirmation: "Passwords do not match" }));
+                    setClientErrors((prev) => ({
+                      ...prev,
+                      password_confirmation: 'Passwords do not match',
+                    }));
                   } else {
-                    setClientErrors(prev => ({ ...prev, password_confirmation: undefined }));
+                    setClientErrors((prev) => ({
+                      ...prev,
+                      password_confirmation: undefined,
+                    }));
                   }
                 }}
                 className="pl-10 pr-10"
                 autoComplete="new-password"
                 required
-                aria-describedby={(clientErrors.password_confirmation || errors.password_confirmation) ? "register-password-confirmation-error" : undefined}
-                aria-invalid={!!(clientErrors.password_confirmation || errors.password_confirmation)}
+                aria-describedby={
+                  clientErrors.password_confirmation ||
+                  errors.password_confirmation
+                    ? 'register-password-confirmation-error'
+                    : undefined
+                }
+                aria-invalid={
+                  !!(
+                    clientErrors.password_confirmation ||
+                    errors.password_confirmation
+                  )
+                }
               />
             </div>
-            <InputError id="register-password-confirmation-error" message={clientErrors.password_confirmation || errors.password_confirmation} className="text-xs" />
+            <InputError
+              id="register-password-confirmation-error"
+              message={
+                clientErrors.password_confirmation ||
+                errors.password_confirmation
+              }
+              className="text-xs"
+            />
           </div>
 
           <div className="flex items-center space-x-2">
             <Checkbox
               id="remember-register"
               checked={data.remember}
-              onCheckedChange={(checked) => setData("remember", checked === true)}
+              onCheckedChange={(checked) =>
+                setData('remember', checked === true)
+              }
             />
-            <Label htmlFor="remember-register" className="text-sm font-normal text-muted-foreground cursor-pointer">
+            <Label
+              htmlFor="remember-register"
+              className="text-sm font-normal text-muted-foreground cursor-pointer"
+            >
               Keep me signed in for {rememberDays} {dayText}
             </Label>
           </div>
@@ -359,19 +470,22 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
               onCheckedChange={(checked) => setAcceptTerms(checked === true)}
               className="mt-0.5"
             />
-            <Label htmlFor="terms" className="text-sm font-normal text-muted-foreground cursor-pointer leading-relaxed">
-              I agree to the{" "}
+            <Label
+              htmlFor="terms"
+              className="text-sm font-normal text-muted-foreground cursor-pointer leading-relaxed"
+            >
+              I agree to the{' '}
               <button
                 type="button"
-                onClick={() => setLegalModal("terms")}
+                onClick={() => setLegalModal('terms')}
                 className="text-primary hover:underline"
               >
                 Terms of Service
-              </button>
-              {" "}and{" "}
+              </button>{' '}
+              and{' '}
               <button
                 type="button"
-                onClick={() => setLegalModal("privacy")}
+                onClick={() => setLegalModal('privacy')}
                 className="text-primary hover:underline"
               >
                 Privacy Policy
@@ -381,7 +495,8 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
 
           {weakPasswordWarning && passwordStrength < 100 && (
             <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-              Your password doesn&apos;t meet all requirements. Consider strengthening it, or continue if you&apos;re sure.
+              Your password doesn&apos;t meet all requirements. Consider
+              strengthening it, or continue if you&apos;re sure.
             </div>
           )}
 
@@ -400,9 +515,9 @@ export default function Register({ error, rememberDays = 30, onboardingEnabled =
 
         {/* Login Link */}
         <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
+          Already have an account?{' '}
           <Link
-            href={route("login")}
+            href={route('login')}
             className="font-medium text-primary hover:text-primary/80 transition-colors"
           >
             Log in instead

@@ -24,6 +24,7 @@ describe('CookieConsent', () => {
 
   it('hides banner when consent is accepted', () => {
     localStorage.setItem('cookie_consent', 'accepted');
+    localStorage.setItem('cookie_consent_version', '1.0');
 
     render(<CookieConsent />);
 
@@ -34,12 +35,57 @@ describe('CookieConsent', () => {
 
   it('hides banner when consent is declined', () => {
     localStorage.setItem('cookie_consent', 'declined');
+    localStorage.setItem('cookie_consent_version', '1.0');
 
     render(<CookieConsent />);
 
     expect(
       screen.queryByRole('dialog', { name: /cookie consent/i })
     ).not.toBeInTheDocument();
+  });
+
+  it('shows banner when stored version differs from current version', () => {
+    localStorage.setItem('cookie_consent', 'accepted');
+    localStorage.setItem('cookie_consent_version', '0.9');
+
+    render(<CookieConsent />);
+
+    expect(
+      screen.getByRole('dialog', { name: /cookie consent/i })
+    ).toBeInTheDocument();
+  });
+
+  it('shows banner when consent is declined but version is stale', () => {
+    localStorage.setItem('cookie_consent', 'declined');
+    localStorage.setItem('cookie_consent_version', '0.9');
+
+    render(<CookieConsent />);
+
+    expect(
+      screen.getByRole('dialog', { name: /cookie consent/i })
+    ).toBeInTheDocument();
+  });
+
+  it('hides banner when stored version matches current version', () => {
+    localStorage.setItem('cookie_consent', 'accepted');
+    localStorage.setItem('cookie_consent_version', '1.0');
+
+    render(<CookieConsent />);
+
+    expect(
+      screen.queryByRole('dialog', { name: /cookie consent/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('shows banner when consent accepted but version key is missing', () => {
+    localStorage.setItem('cookie_consent', 'accepted');
+    // No cookie_consent_version key set
+
+    render(<CookieConsent />);
+
+    expect(
+      screen.getByRole('dialog', { name: /cookie consent/i })
+    ).toBeInTheDocument();
   });
 
   it('stores accepted consent in localStorage', async () => {
@@ -76,6 +122,34 @@ describe('CookieConsent', () => {
     render(<CookieConsent />);
 
     await user.click(screen.getByRole('button', { name: /decline/i }));
+
+    expect(
+      screen.queryByRole('dialog', { name: /cookie consent/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('banner stays hidden after accepting when component remounts', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<CookieConsent />);
+
+    await user.click(screen.getByRole('button', { name: /accept/i }));
+    unmount();
+
+    render(<CookieConsent />);
+
+    expect(
+      screen.queryByRole('dialog', { name: /cookie consent/i })
+    ).not.toBeInTheDocument();
+  });
+
+  it('banner stays hidden after declining when component remounts', async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<CookieConsent />);
+
+    await user.click(screen.getByRole('button', { name: /decline/i }));
+    unmount();
+
+    render(<CookieConsent />);
 
     expect(
       screen.queryByRole('dialog', { name: /cookie consent/i })

@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasUnsubscribeLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -9,7 +10,7 @@ use Illuminate\Notifications\Notification;
 
 class PaymentActionRequiredNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUnsubscribeLink, Queueable;
 
     public function __construct(
         public readonly string $hostedInvoiceUrl,
@@ -36,13 +37,19 @@ class PaymentActionRequiredNotification extends Notification implements ShouldQu
         $firstName = explode(' ', $fullName)[0] ?: $fullName ?: 'there';
         $appName = config('app.name');
 
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject("{$appName}: Action required to renew your subscription")
             ->greeting("Hi {$firstName},")
             ->line('Your bank requires additional verification to complete your subscription renewal.')
             ->line('This is a standard security step (3D Secure / SCA) required by your card issuer. It only takes a moment to complete.')
             ->action('Complete Verification →', $this->hostedInvoiceUrl)
             ->line('If you do not complete this step, your subscription may be paused. The link above is valid for 24 hours.');
+
+        if ($line = $this->unsubscribeLine($notifiable)) {
+            $mail->line($line);
+        }
+
+        return $mail;
     }
 
     /**

@@ -205,16 +205,67 @@ it('resolves user tier for expired subscription', function () {
 it('throws exception when Redis lock cannot be acquired for subscription creation', function () {
     $user = User::factory()->create();
 
-    // Acquire lock manually to simulate concurrent operation
-    $lock = Cache::lock("subscription:create:{$user->id}", 35);
-    $lock->get();
+    // Acquire lock via the service's own key-builder so key drift is caught at compile time
+    $lock = Cache::lock($this->service->lockKey('create', $user), 35);
+    expect($lock->get())->toBeTrue();
 
-    try {
-        $this->service->createSubscription($user, 'price_pro_monthly');
-        expect(true)->toBeFalse(); // Should not reach here
-    } catch (ConcurrentOperationException $e) {
-        expect($e)->toBeInstanceOf(ConcurrentOperationException::class);
-    } finally {
-        $lock->release();
-    }
+    expect(fn () => $this->service->createSubscription($user, 'price_pro_monthly'))
+        ->toThrow(ConcurrentOperationException::class);
+
+    $lock->release();
+});
+
+it('throws exception when Redis lock cannot be acquired for subscription cancellation', function () {
+    $user = User::factory()->create();
+    // Establish an active subscription so the service reaches the lock-check without
+    // short-circuiting on a missing subscription in future guard clauses.
+    createSubscription($user, [
+        'stripe_status' => 'active',
+        'stripe_price' => 'price_pro_monthly',
+        'ends_at' => null,
+    ]);
+
+    $lock = Cache::lock($this->service->lockKey('cancel', $user), 35);
+    expect($lock->get())->toBeTrue();
+
+    expect(fn () => $this->service->cancelSubscription($user))
+        ->toThrow(ConcurrentOperationException::class);
+
+    $lock->release();
+});
+
+it('throws exception when Redis lock cannot be acquired for subscription resumption', function () {
+    $user = User::factory()->create();
+    // Establish a subscription in grace period so the service has something to resume.
+    createSubscription($user, [
+        'stripe_status' => 'active',
+        'stripe_price' => 'price_pro_monthly',
+        'ends_at' => now()->addDays(7),
+    ]);
+
+    $lock = Cache::lock($this->service->lockKey('resume', $user), 35);
+    expect($lock->get())->toBeTrue();
+
+    expect(fn () => $this->service->resumeSubscription($user))
+        ->toThrow(ConcurrentOperationException::class);
+
+    $lock->release();
+});
+
+it('throws exception when Redis lock cannot be acquired for plan swap', function () {
+    $user = User::factory()->create();
+    // Establish an active subscription so the service reaches the lock-check.
+    createSubscription($user, [
+        'stripe_status' => 'active',
+        'stripe_price' => 'price_pro_monthly',
+        'ends_at' => null,
+    ]);
+
+    $lock = Cache::lock($this->service->lockKey('swap', $user), 35);
+    expect($lock->get())->toBeTrue();
+
+    expect(fn () => $this->service->swapPlan($user, 'price_pro_annual'))
+        ->toThrow(ConcurrentOperationException::class);
+
+    $lock->release();
 });

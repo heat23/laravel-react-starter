@@ -1,6 +1,6 @@
 import { Mail, CheckCircle2 } from "lucide-react";
 
-import { FormEventHandler } from "react";
+import { FormEventHandler, useEffect } from "react";
 
 import { Head, Link, useForm } from "@inertiajs/react";
 
@@ -9,7 +9,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { LoadingButton } from "@/Components/ui/loading-button";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import AuthLayout from "@/Layouts/AuthLayout";
+import { AnalyticsEvents } from "@/lib/events";
 
 interface ForgotPasswordProps {
   status?: string;
@@ -19,6 +21,11 @@ export default function ForgotPassword({ status }: ForgotPasswordProps) {
   const { data, setData, post, processing, errors } = useForm({
     email: "",
   });
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'forgot_password' });
+  }, [track]); // mount-only in practice: track is stable (see useAnalytics)
 
   const submit: FormEventHandler = (e) => {
     e.preventDefault();

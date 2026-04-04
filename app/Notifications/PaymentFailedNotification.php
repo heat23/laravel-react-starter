@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasUnsubscribeLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -9,7 +10,7 @@ use Illuminate\Notifications\Notification;
 
 class PaymentFailedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUnsubscribeLink, Queueable;
 
     public function __construct(
         public readonly string $invoiceId,
@@ -36,7 +37,7 @@ class PaymentFailedNotification extends Notification implements ShouldQueue
         $firstName = explode(' ', $fullName)[0] ?: $fullName ?: 'there';
         $appName = config('app.name');
 
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject("{$appName}: Your payment needs attention")
             ->greeting("Hi {$firstName},")
             ->line("Don't worry — this happens sometimes and is easy to fix.")
@@ -44,6 +45,12 @@ class PaymentFailedNotification extends Notification implements ShouldQueue
             ->line('To keep your access uninterrupted, update your payment method using the button below.')
             ->action('Update Payment Method →', route('billing.index'))
             ->line("If you think this is a mistake or your card was recently updated, reply to this email and we'll sort it out.");
+
+        if ($line = $this->unsubscribeLine($notifiable)) {
+            $mail->line($line);
+        }
+
+        return $mail;
     }
 
     /**

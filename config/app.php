@@ -83,4 +83,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Activity Tracking Window
+    |--------------------------------------------------------------------------
+    |
+    | How many minutes must pass before the TrackLastActivity middleware writes
+    | a new last_active_at timestamp. Higher values reduce DB write pressure;
+    | lower values give finer-grained presence data.
+    |
+    */
+
+    'activity_tracking_window' => (int) env('ACTIVITY_TRACKING_WINDOW', 15),
+
 ];

@@ -5,12 +5,20 @@ namespace App\Services;
 use App\Enums\AnalyticsEvent;
 use App\Jobs\DispatchAnalyticsEvent;
 use App\Jobs\PersistAuditLog;
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class AuditService
 {
+    /**
+     * UserSetting key that records the user's analytics consent decision
+     * (persisted by ConsentController when the cookie banner is actioned).
+     * Stored as a JSON boolean: true = consented, false = declined.
+     */
+    public const ANALYTICS_CONSENT_KEY = 'analytics_consent';
+
     /**
      * High-value server-side events forwarded to GA4 via Measurement Protocol.
      * Keep this list intentionally small — only lifecycle events with clear
@@ -105,6 +113,12 @@ class AuditService
         $ip = request()->ip();
         $userAgent = request()->userAgent();
 
+        // Anonymize IP for non-security events when configured (GDPR Art. 5(1)(c) data minimisation).
+        // Auth/security events retain full IP for abuse detection (GDPR Art. 6(1)(f) legitimate interest).
+        if ($ip !== null && config('services.audit.ip_anonymization') && ! AuditLog::isSecurityEvent($event)) {
+            $ip = AuditLog::anonymizeIp($ip);
+        }
+
         PersistAuditLog::dispatch($event, $userId, $ip, $userAgent, $metadata);
 
         Log::channel('single')->info($event, [
@@ -119,8 +133,37 @@ class AuditService
 
         // Forward high-value lifecycle events to GA4 via Measurement Protocol (async job).
         // userId must be non-null — anonymous events have no GA4 client_id anchor.
+        // Consent gate: skip forwarding only when the user has EXPLICITLY declined analytics
+        // consent via the cookie banner. When consent is unknown/unset (null), we forward under
+        // a legitimate-interest legal basis — server-side lifecycle analytics for authenticated
+        // users qualify under GDPR Art. 6(1)(f) and do not require prior consent. Explicit
+        // decline (false) is always honoured.
         if ($userId !== null && in_array($event, self::GA4_FORWARDED_EVENTS, true)) {
-            DispatchAnalyticsEvent::dispatch($event, $metadata, $userId);
+            if (! $this->userDeclinedAnalytics($userId)) {
+                DispatchAnalyticsEvent::dispatch($event, $metadata, $userId);
+            }
         }
+    }
+
+    /**
+     * Returns true only when the user has explicitly declined analytics consent.
+     * null/unset = legitimate interest applies, so returns false.
+     */
+    private function userDeclinedAnalytics(int $userId): bool
+    {
+        // Re-use the already-hydrated Auth user to avoid an extra SELECT on every call.
+        // Falls back to User::find for background jobs where Auth is not the event owner.
+        $user = Auth::id() === $userId ? Auth::user() : User::find($userId);
+
+        if (! $user) {
+            return false;
+        }
+
+        $consent = $user->getSetting(self::ANALYTICS_CONSENT_KEY);
+
+        // PHP bool false (canonical JSON round-trip) = explicitly declined.
+        // String 'false' / int 0 are defensive fallbacks against corrupted or
+        // pre-migration stored values that bypassed json_decode.
+        return $consent === false || $consent === 'false' || $consent === 0;
     }
 }

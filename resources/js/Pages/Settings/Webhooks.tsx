@@ -14,8 +14,6 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { Head } from '@inertiajs/react';
 
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { AnalyticsEvents } from '@/lib/events';
 import PageHeader from '@/Components/layout/PageHeader';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
@@ -32,7 +30,9 @@ import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { LoadingButton } from '@/Components/ui/loading-button';
 import { Skeleton } from '@/Components/ui/skeleton';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { AnalyticsEvents } from '@/lib/events';
 import type { WebhookDelivery, WebhookEndpoint } from '@/types';
 
 interface WebhooksProps {
@@ -67,6 +67,12 @@ export default function Webhooks({ available_events }: WebhooksProps) {
   useEffect(() => {
     fetchEndpoints();
   }, [fetchEndpoints]);
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'webhooks' });
+    // track is stable (useCallback in useAnalytics); [] ensures exactly-once mount fire
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;

@@ -34,7 +34,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
 
         RateLimiter::for('webhook-test', function ($request) {
-            return Limit::perMinute(5)->by($request->user()?->id ?: $request->ip());
+            return Limit::perMinute(5)->by('webhook-test|'.($request->user()?->id ?: $request->ip()));
+        });
+
+        RateLimiter::for('consent-store', function ($request) {
+            return Limit::perMinute(10)->by('consent-store|'.$request->ip());
         });
 
         Model::preventLazyLoading();

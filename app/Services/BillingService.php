@@ -8,14 +8,19 @@ use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Laravel\Cashier\Cashier;
 use Laravel\Cashier\Subscription;
+use Stripe\Exception\InvalidRequestException as StripeInvalidRequestException;
 
 class BillingService
 {
     /**
-     * Lock timeout in seconds: 30s Stripe API + 5s buffer.
+     * Lock timeout in seconds, read from config/billing.php.
      */
-    private const LOCK_TIMEOUT = 35;
+    private function lockTimeout(): int
+    {
+        return config('billing.lock_timeout', 35);
+    }
 
     /**
      * Resolve which plan tier a user belongs to based on their active subscription's Stripe price.
@@ -42,13 +47,20 @@ class BillingService
         int $quantity,
         string $successUrl,
         string $cancelUrl,
+        ?string $coupon = null,
     ): string {
         $builder = $user->newSubscription('default', $priceId)->quantity($quantity);
 
-        $checkout = $builder->checkout([
+        $checkoutOptions = [
             'success_url' => $successUrl,
             'cancel_url' => $cancelUrl,
-        ]);
+        ];
+
+        if ($coupon) {
+            $checkoutOptions['discounts'] = [['coupon' => $coupon]];
+        }
+
+        $checkout = $builder->checkout($checkoutOptions);
 
         return $checkout->url;
     }
@@ -63,7 +75,7 @@ class BillingService
         ?string $coupon = null,
         int $quantity = 1,
     ): Subscription {
-        return $this->withLock("subscription:create:{$user->id}", function () use ($user, $priceId, $paymentMethod, $coupon, $quantity) {
+        return $this->withLock($this->lockKey('create', $user), function () use ($user, $priceId, $paymentMethod, $coupon, $quantity) {
             $subscription = DB::transaction(function () use ($user, $priceId, $paymentMethod, $coupon, $quantity) {
                 $builder = $user->newSubscription('default', $priceId)->quantity($quantity);
 
@@ -93,7 +105,7 @@ class BillingService
      */
     public function cancelSubscription(User $user, bool $immediately = false): Subscription
     {
-        return $this->withLock("subscription:cancel:{$user->id}", function () use ($user, $immediately) {
+        return $this->withLock($this->lockKey('cancel', $user), function () use ($user, $immediately) {
             $subscription = DB::transaction(function () use ($user, $immediately) {
                 $subscription = $user->subscription('default');
                 $subscription->setRelation('owner', $user);
@@ -122,7 +134,7 @@ class BillingService
      */
     public function resumeSubscription(User $user): Subscription
     {
-        return $this->withLock("subscription:resume:{$user->id}", function () use ($user) {
+        return $this->withLock($this->lockKey('resume', $user), function () use ($user) {
             return DB::transaction(function () use ($user) {
                 $subscription = $user->subscription('default');
                 $subscription->setRelation('owner', $user);
@@ -139,7 +151,7 @@ class BillingService
      */
     public function swapPlan(User $user, string $newPriceId, ?string $coupon = null): Subscription
     {
-        return $this->withLock("subscription:swap:{$user->id}", function () use ($user, $newPriceId, $coupon) {
+        return $this->withLock($this->lockKey('swap', $user), function () use ($user, $newPriceId, $coupon) {
             return DB::transaction(function () use ($user, $newPriceId, $coupon) {
                 $subscription = $user->subscription('default');
                 $subscription->setRelation('owner', $user);
@@ -158,7 +170,7 @@ class BillingService
      */
     public function updateQuantity(User $user, int $quantity): Subscription
     {
-        return $this->withLock("subscription:quantity:{$user->id}", function () use ($user, $quantity) {
+        return $this->withLock($this->lockKey('quantity', $user), function () use ($user, $quantity) {
             return DB::transaction(function () use ($user, $quantity) {
                 $subscription = $user->subscription('default');
                 $subscription->setRelation('owner', $user);
@@ -219,6 +231,29 @@ class BillingService
     }
 
     /**
+     * Validate a Stripe coupon code by retrieving it via the Stripe API.
+     *
+     * Returns null on success, or a user-facing error string on failure.
+     */
+    public function validateCouponCode(string $coupon): ?string
+    {
+        try {
+            Cashier::stripe()->coupons->retrieve($coupon);
+
+            return null;
+        } catch (StripeInvalidRequestException $e) {
+            return 'The coupon code is invalid or has expired.';
+        } catch (\Exception $e) {
+            Log::warning('Coupon validation failed unexpectedly', [
+                'coupon' => $coupon,
+                'error' => $e->getMessage(),
+            ]);
+
+            return 'Unable to validate coupon code. Please try again.';
+        }
+    }
+
+    /**
      * Validate the seat count for a given tier.
      */
     public function validateSeatCount(string $tier, int $quantity): ?string
@@ -274,18 +309,30 @@ class BillingService
     }
 
     /**
+     * Return the Cache lock key for a given subscription operation and user.
+     *
+     * Exposed as public so tests can acquire the same lock to simulate concurrency
+     * without duplicating key-construction logic.
+     */
+    public function lockKey(string $operation, User $user): string
+    {
+        return "subscription:{$operation}:{$user->id}";
+    }
+
+    /**
      * Execute a callback within a Redis lock to prevent concurrent operations.
      *
      * @throws ConcurrentOperationException
      */
     private function withLock(string $key, callable $callback): mixed
     {
-        $lock = Cache::lock($key, self::LOCK_TIMEOUT);
+        $timeout = $this->lockTimeout();
+        $lock = Cache::lock($key, $timeout);
 
         if (! $lock->get()) {
             Log::warning('billing_lock_failed', [
                 'key' => $key,
-                'timeout' => self::LOCK_TIMEOUT,
+                'timeout' => $timeout,
                 'user_id' => auth()->id(),
             ]);
             throw new ConcurrentOperationException('A subscription operation is already in progress. Please try again.');

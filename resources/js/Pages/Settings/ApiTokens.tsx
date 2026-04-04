@@ -58,6 +58,12 @@ export default function ApiTokens() {
     fetchTokens();
   }, [fetchTokens]);
 
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'api_tokens' });
+    // track is stable (useCallback in useAnalytics); [] ensures exactly-once mount fire
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const res = await fetch(`/api/tokens/${deleteTarget.id}`, {

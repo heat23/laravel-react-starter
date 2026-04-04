@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Testing\TestResponse;
 use Laravel\Cashier\Subscription;
 
@@ -318,4 +319,164 @@ it('processes first webhook when last_webhook_at is null', function () {
 
     $subscription->refresh();
     expect($subscription->last_webhook_at)->toBe($eventTimestamp);
+});
+
+// ============================================
+// Cache invalidation
+// ============================================
+
+it('invalidates plan cache on customer.subscription.created', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_ci_created']);
+    Cache::put("user:{$user->id}:plan_tier", 'free', 300);
+
+    $payload = createStripeWebhookPayload('customer.subscription.created', [
+        'id' => 'sub_ci_created',
+        'customer' => 'cus_ci_created',
+        'status' => 'active',
+        'items' => ['data' => [['id' => 'si_ci1', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+        'current_period_end' => now()->addMonth()->timestamp,
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    expect(Cache::has("user:{$user->id}:plan_tier"))->toBeFalse();
+});
+
+it('invalidates plan cache on customer.subscription.updated', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_ci_updated']);
+    createSubscription($user, ['stripe_id' => 'sub_ci_updated']);
+    Cache::put("user:{$user->id}:plan_tier", 'pro', 300);
+
+    $payload = createStripeWebhookPayload('customer.subscription.updated', [
+        'id' => 'sub_ci_updated',
+        'customer' => 'cus_ci_updated',
+        'status' => 'active',
+        'items' => ['data' => [['id' => 'si_ci2', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    expect(Cache::has("user:{$user->id}:plan_tier"))->toBeFalse();
+});
+
+it('invalidates plan cache on customer.subscription.deleted', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_ci_deleted']);
+    createSubscription($user, ['stripe_id' => 'sub_ci_deleted']);
+    Cache::put("user:{$user->id}:plan_tier", 'pro', 300);
+
+    $payload = createStripeWebhookPayload('customer.subscription.deleted', [
+        'id' => 'sub_ci_deleted',
+        'customer' => 'cus_ci_deleted',
+        'status' => 'canceled',
+        'items' => ['data' => [['id' => 'si_ci3', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    expect(Cache::has("user:{$user->id}:plan_tier"))->toBeFalse();
+});
+
+it('does not invalidate plan cache on customer.subscription.trial_will_end', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_ci_trial']);
+    Cache::put("user:{$user->id}:plan_tier", 'pro', 300);
+
+    $payload = createStripeWebhookPayload('customer.subscription.trial_will_end', [
+        'id' => 'sub_ci_trial',
+        'customer' => 'cus_ci_trial',
+        'trial_end' => now()->addDays(3)->timestamp,
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    expect(Cache::has("user:{$user->id}:plan_tier"))->toBeTrue();
+});
+
+it('does not invalidate plan cache on invoice.payment_succeeded', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_ci_inv_ok']);
+    Cache::put("user:{$user->id}:plan_tier", 'pro', 300);
+
+    $payload = createStripeWebhookPayload('invoice.payment_succeeded', [
+        'id' => 'in_ci_ok',
+        'customer' => 'cus_ci_inv_ok',
+        'amount_paid' => 1900,
+        'currency' => 'usd',
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    expect(Cache::has("user:{$user->id}:plan_tier"))->toBeTrue();
+});
+
+it('does not invalidate plan cache on invoice.payment_failed', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_ci_inv_fail']);
+    Cache::put("user:{$user->id}:plan_tier", 'pro', 300);
+
+    $payload = createStripeWebhookPayload('invoice.payment_failed', [
+        'id' => 'in_ci_fail',
+        'customer' => 'cus_ci_inv_fail',
+        'amount_due' => 1900,
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    expect(Cache::has("user:{$user->id}:plan_tier"))->toBeTrue();
+});
+
+it('does not invalidate plan cache on invoice.payment_action_required', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_ci_inv_sca']);
+    Cache::put("user:{$user->id}:plan_tier", 'pro', 300);
+
+    $payload = createStripeWebhookPayload('invoice.payment_action_required', [
+        'id' => 'in_ci_sca',
+        'customer' => 'cus_ci_inv_sca',
+        'hosted_invoice_url' => 'https://invoice.stripe.com/test',
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    expect(Cache::has("user:{$user->id}:plan_tier"))->toBeTrue();
+});
+
+it('does not invalidate plan cache on charge.refunded', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_ci_refund']);
+    Cache::put("user:{$user->id}:plan_tier", 'pro', 300);
+
+    $payload = createStripeWebhookPayload('charge.refunded', [
+        'id' => 'ch_ci_refund',
+        'customer' => 'cus_ci_refund',
+        'amount_refunded' => 1900,
+        'currency' => 'usd',
+        'refunds' => ['data' => []],
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    expect(Cache::has("user:{$user->id}:plan_tier"))->toBeTrue();
+});
+
+it('does not invalidate plan cache on customer.updated', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_ci_meta']);
+    Cache::put("user:{$user->id}:plan_tier", 'pro', 300);
+
+    $payload = createStripeWebhookPayload('customer.updated', [
+        'id' => 'cus_ci_meta',
+        'email' => 'updated@example.com',
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    expect(Cache::has("user:{$user->id}:plan_tier"))->toBeTrue();
+});
+
+it('does not throw when subscription customer does not exist in the database', function () {
+    // No user with this stripe_id — invalidatePlanCache must handle null user gracefully
+    $payload = createStripeWebhookPayload('customer.subscription.created', [
+        'id' => 'sub_no_db_user',
+        'customer' => 'cus_nonexistent_xyz',
+        'status' => 'active',
+        'items' => ['data' => [['id' => 'si_nc', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+        'current_period_end' => now()->addMonth()->timestamp,
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
 });

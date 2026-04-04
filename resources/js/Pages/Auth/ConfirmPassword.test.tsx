@@ -4,7 +4,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { useForm } from '@inertiajs/react';
 
+import { AnalyticsEvents } from '@/lib/events';
+
 import ConfirmPassword from './ConfirmPassword';
+
+// Mock useAnalytics
+const mockTrack = vi.fn();
+vi.mock('@/hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
 
 // Mock useForm from Inertia
 const mockPost = vi.fn();
@@ -322,6 +330,34 @@ describe('ConfirmPassword Page', () => {
       render(<ConfirmPassword />);
 
       expect(screen.getByText(/before continuing/i)).toBeInTheDocument();
+    });
+  });
+
+  // ============================================
+  // Analytics tests
+  // ============================================
+
+  describe('analytics', () => {
+    beforeEach(() => {
+      mockTrack.mockClear();
+    });
+
+    it('tracks page_viewed on mount', () => {
+      render(<ConfirmPassword />);
+
+      expect(mockTrack).toHaveBeenCalledWith(
+        AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED,
+        { page: 'confirm_password' }
+      );
+    });
+
+    it('tracks page_viewed exactly once', () => {
+      render(<ConfirmPassword />);
+
+      const pageViewedCalls = mockTrack.mock.calls.filter(
+        ([event]) => event === AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED
+      );
+      expect(pageViewedCalls).toHaveLength(1);
     });
   });
 });

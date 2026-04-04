@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasUnsubscribeLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -9,7 +10,7 @@ use Illuminate\Notifications\Notification;
 
 class RefundProcessedNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUnsubscribeLink, Queueable;
 
     public function __construct(
         public readonly string $chargeId,
@@ -54,10 +55,15 @@ class RefundProcessedNotification extends Notification implements ShouldQueue
             $mail->line('Reason: '.$this->reason);
         }
 
-        return $mail
-            ->line('The refund should appear in your account within 5-10 business days.')
+        $mail->line('The refund should appear in your account within 5-10 business days.')
             ->action('View Billing', route('billing.index'))
             ->line('If you have any questions, please contact our support team.');
+
+        if ($line = $this->unsubscribeLine($notifiable)) {
+            $mail->line($line);
+        }
+
+        return $mail;
     }
 
     /**

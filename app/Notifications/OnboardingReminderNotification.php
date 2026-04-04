@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasUnsubscribeLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -9,7 +10,7 @@ use Illuminate\Notifications\Notification;
 
 class OnboardingReminderNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUnsubscribeLink, Queueable;
 
     public function __construct(
         public readonly int $emailNumber,
@@ -26,12 +27,18 @@ class OnboardingReminderNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        return match ($this->emailNumber) {
+        $mail = match ($this->emailNumber) {
             1 => $this->gettingStartedEmail($notifiable),
             2 => $this->featureHighlightEmail($notifiable),
             3 => $this->needHelpEmail($notifiable),
             default => $this->gettingStartedEmail($notifiable),
         };
+
+        if ($line = $this->unsubscribeLine($notifiable)) {
+            $mail->line($line);
+        }
+
+        return $mail;
     }
 
     private function gettingStartedEmail(object $notifiable): MailMessage

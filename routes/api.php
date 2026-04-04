@@ -79,7 +79,7 @@ Route::middleware(['auth:sanctum', 'throttle:webhook-test'])->prefix('webhooks')
 });
 
 // Cookie consent recording — no auth required (must work for guests, GDPR audit trail)
-Route::post('/consent', [ConsentController::class, 'store'])->middleware('throttle:10,1')->name('consent.store');
+Route::post('/consent', [ConsentController::class, 'store'])->middleware('throttle:consent-store')->name('consent.store');
 
 // Incoming webhooks (signature-verified, no auth required)
 Route::prefix('webhooks/incoming')->group(function () {

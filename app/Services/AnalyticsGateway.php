@@ -9,6 +9,8 @@ class AnalyticsGateway
 {
     private const COLLECT_URL = 'https://www.google-analytics.com/mp/collect';
 
+    private const MAX_BATCH_SIZE = 25;
+
     /**
      * Blocklist of metadata keys that must never reach GA4.
      * AuditService callers occasionally include these for internal logging;
@@ -21,7 +23,9 @@ class AnalyticsGateway
         // Network / device identifiers
         'ip', 'user_agent', 'device_id', 'session_id',
         // Personal identifiers
-        'name', 'address', 'ssn', 'dob', 'zip_code', 'postal_code',
+        'name', 'username', 'first_name', 'last_name', 'company_name',
+        'address', 'billing_address', 'shipping_address',
+        'ssn', 'dob', 'zip_code', 'postal_code', 'mobile',
         // Financial
         'credit_card', 'cvv', 'account_number', 'transaction_id',
         // Location
@@ -74,6 +78,57 @@ class AnalyticsGateway
                 'user_id' => $userId,
                 'error' => $e->getMessage(),
             ]);
+        }
+    }
+
+    /**
+     * Send a batch of events to GA4 in a single HTTP request per user.
+     * GA4 Measurement Protocol supports up to 25 events per request.
+     * Events exceeding the limit are split into multiple requests.
+     *
+     * @param  array<int, array{name: string, params: array}>  $events
+     */
+    public function sendBatch(array $events, int $userId): void
+    {
+        if (! config('services.ga4.enabled') || ! config('services.ga4.measurement_id')) {
+            return;
+        }
+
+        if ($events === []) {
+            return;
+        }
+
+        $chunks = array_chunk($events, self::MAX_BATCH_SIZE);
+
+        foreach ($chunks as $chunk) {
+            $formattedEvents = array_map(fn (array $event) => [
+                'name' => str_replace('.', '_', $event['name']),
+                'params' => array_merge($this->sanitizeParams($event['params']), [
+                    'engagement_time_msec' => 1,
+                ]),
+            ], $chunk);
+
+            $payload = [
+                'client_id' => "server_{$userId}",
+                'user_id' => (string) $userId,
+                'events' => $formattedEvents,
+            ];
+
+            try {
+                Http::timeout(5)->post(
+                    self::COLLECT_URL.'?'.http_build_query([
+                        'measurement_id' => config('services.ga4.measurement_id'),
+                        'api_secret' => config('services.ga4.api_secret'),
+                    ]),
+                    $payload
+                );
+            } catch (\Exception $e) {
+                Log::warning('AnalyticsGateway: failed to send batch', [
+                    'event_count' => count($chunk),
+                    'user_id' => $userId,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
     }
 

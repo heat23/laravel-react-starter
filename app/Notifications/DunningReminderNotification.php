@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasUnsubscribeLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -9,7 +10,7 @@ use Illuminate\Notifications\Notification;
 
 class DunningReminderNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUnsubscribeLink, Queueable;
 
     public function __construct(
         public readonly int $emailNumber,
@@ -32,12 +33,18 @@ class DunningReminderNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        return match ($this->emailNumber) {
+        $mail = match ($this->emailNumber) {
             1 => $this->gentleReminderEmail($notifiable),
             2 => $this->urgencyEmail($notifiable),
             3 => $this->finalNoticeEmail($notifiable),
             default => $this->gentleReminderEmail($notifiable),
         };
+
+        if ($line = $this->unsubscribeLine($notifiable)) {
+            $mail->line($line);
+        }
+
+        return $mail;
     }
 
     private function gentleReminderEmail(object $notifiable): MailMessage

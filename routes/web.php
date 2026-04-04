@@ -49,6 +49,7 @@ Route::get('/privacy', [LegalController::class, 'privacy'])->name('legal.privacy
 Route::get('/about', [LegalController::class, 'about'])->name('about');
 Route::get('/contact', [ContactController::class, 'show'])->middleware('throttle:10,1')->name('contact.show');
 Route::post('/contact', [ContactController::class, 'store'])->middleware('throttle:5,1')->name('contact.store');
+Route::post('/contact/sales', [ContactController::class, 'sales'])->middleware('throttle:5,1')->name('contact.sales');
 Route::get('/changelog', [ChangelogController::class, 'index'])->name('changelog');
 Route::post('/changelog/acknowledge', [ChangelogController::class, 'acknowledge'])->middleware(['auth', 'throttle:10,1'])->name('changelog.acknowledge');
 Route::get('/roadmap', [RoadmapController::class, 'index'])->name('roadmap');

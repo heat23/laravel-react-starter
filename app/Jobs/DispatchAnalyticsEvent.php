@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Services\AnalyticsGateway;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Async GA4 Measurement Protocol dispatch.
@@ -21,13 +22,26 @@ class DispatchAnalyticsEvent implements ShouldQueue
     public array $backoff = [10, 60];
 
     public function __construct(
-        private readonly string $eventName,
-        private readonly array $params,
-        private readonly int $userId,
+        public readonly string $eventName,
+        public readonly array $params,
+        public readonly int $userId,
     ) {}
 
     public function handle(AnalyticsGateway $gateway): void
     {
         $gateway->send($this->eventName, $this->params, $this->userId);
+    }
+
+    public function failed(\Throwable $e): void
+    {
+        Log::error('DispatchAnalyticsEvent failed after all retries', [
+            'event_name' => $this->eventName,
+            'user_id' => $this->userId,
+            'error' => $e->getMessage(),
+        ]);
+
+        // Route through Laravel's exception handler for proactive alerting
+        // (Sentry, Flare, or any configured error reporting channel).
+        report($e);
     }
 }

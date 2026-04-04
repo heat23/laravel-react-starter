@@ -4,7 +4,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { useForm } from '@inertiajs/react';
 
+import { AnalyticsEvents } from '@/lib/events';
+
 import ForgotPassword from './ForgotPassword';
+
+// Mock useAnalytics
+const mockTrack = vi.fn();
+vi.mock('@/hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
 
 // Mock useForm from Inertia
 const mockPost = vi.fn();
@@ -237,6 +245,34 @@ describe('ForgotPassword Page', () => {
 
       const emailInput = screen.getByLabelText(/email address/i);
       expect(emailInput).toHaveFocus();
+    });
+  });
+
+  // ============================================
+  // Analytics tests
+  // ============================================
+
+  describe('analytics', () => {
+    beforeEach(() => {
+      mockTrack.mockClear();
+    });
+
+    it('tracks page_viewed on mount', () => {
+      render(<ForgotPassword />);
+
+      expect(mockTrack).toHaveBeenCalledWith(
+        AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED,
+        { page: 'forgot_password' }
+      );
+    });
+
+    it('tracks page_viewed exactly once', () => {
+      render(<ForgotPassword />);
+
+      const pageViewedCalls = mockTrack.mock.calls.filter(
+        ([event]) => event === AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED
+      );
+      expect(pageViewedCalls).toHaveLength(1);
     });
   });
 });

@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasUnsubscribeLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -9,7 +10,7 @@ use Illuminate\Notifications\Notification;
 
 class WinBackNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUnsubscribeLink, Queueable;
 
     /**
      * Email variant number: 1 (day 3), 2 (day 14), 3 (day 30).
@@ -38,11 +39,17 @@ class WinBackNotification extends Notification implements ShouldQueue
         $firstName = explode(' ', $fullName)[0] ?: $fullName ?: 'there';
         $appName = config('app.name');
 
-        return match ($this->emailNumber) {
+        $mail = match ($this->emailNumber) {
             1 => $this->emailOne($firstName, $appName),
             2 => $this->emailTwo($firstName, $appName),
             default => $this->emailThree($firstName, $appName),
         };
+
+        if ($line = $this->unsubscribeLine($notifiable)) {
+            $mail->line($line);
+        }
+
+        return $mail;
     }
 
     private function emailOne(string $firstName, string $appName): MailMessage

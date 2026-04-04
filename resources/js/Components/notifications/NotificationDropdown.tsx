@@ -1,22 +1,22 @@
-import axios from "axios";
-import { Bell, BellOff, RefreshCw } from "lucide-react";
-import { toast } from "sonner";
+import axios from 'axios';
+import { Bell, BellOff, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { memo, useCallback, useRef, useState } from "react";
+import { memo, useCallback, useRef, useState } from 'react';
 
-import { router, usePage } from "@inertiajs/react";
+import { router, usePage } from '@inertiajs/react';
 
-import { Button } from "@/Components/ui/button";
+import { Button } from '@/Components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/Components/ui/popover";
-import { type AppNotification, type PageProps } from "@/types";
+} from '@/Components/ui/popover';
+import { type AppNotification, type PageProps } from '@/types';
 
-import { NotificationItem } from "./NotificationItem";
+import { NotificationItem } from './NotificationItem';
 
-const REFETCH_INTERVAL_MS = 5000;
+const REFETCH_INTERVAL_MS = 30_000;
 
 export const NotificationDropdown = memo(function NotificationDropdown() {
   const { notifications_unread_count: unreadCount } =
@@ -34,7 +34,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
     setError(false);
     try {
       const response = await axios.get<{ data: AppNotification[] }>(
-        "/api/notifications",
+        '/api/notifications'
       );
       setNotifications(response.data.data);
       lastFetchRef.current = Date.now();
@@ -56,15 +56,15 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
     const prev = notifications;
     setNotifications((current) =>
       current.map((n) =>
-        n.id === id ? { ...n, read_at: new Date().toISOString() } : n,
-      ),
+        n.id === id ? { ...n, read_at: new Date().toISOString() } : n
+      )
     );
     try {
       await axios.patch(`/api/notifications/${id}/read`);
-      router.reload({ only: ["notifications_unread_count"] });
+      router.reload({ only: ['notifications_unread_count'] });
     } catch {
       setNotifications(prev);
-      toast.error("Failed to mark notification as read");
+      toast.error('Failed to mark notification as read');
     }
   }
 
@@ -74,21 +74,19 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
       current.map((n) => ({
         ...n,
         read_at: n.read_at ?? new Date().toISOString(),
-      })),
+      }))
     );
     try {
-      await axios.post("/api/notifications/read-all");
-      router.reload({ only: ["notifications_unread_count"] });
+      await axios.post('/api/notifications/read-all');
+      router.reload({ only: ['notifications_unread_count'] });
     } catch {
       setNotifications(prev);
-      toast.error("Failed to mark all as read");
+      toast.error('Failed to mark all as read');
     }
   }
 
   const buttonLabel =
-    unreadCount > 0
-      ? `Notifications, ${unreadCount} unread`
-      : "Notifications";
+    unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications';
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
@@ -105,7 +103,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
               aria-hidden="true"
               className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground"
             >
-              {unreadCount > 99 ? "99+" : unreadCount}
+              {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
         </Button>
@@ -158,7 +156,8 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
                 You're all caught up.
               </p>
               <p className="mt-1 text-xs text-muted-foreground/70">
-                We'll notify you about billing events, security alerts, and team activity.
+                We'll notify you about billing events, security alerts, and team
+                activity.
               </p>
             </div>
           ) : (

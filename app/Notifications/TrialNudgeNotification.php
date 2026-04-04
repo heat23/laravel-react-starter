@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasUnsubscribeLink;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -10,7 +11,7 @@ use Illuminate\Notifications\Notification;
 
 class TrialNudgeNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUnsubscribeLink, Queueable;
 
     public function __construct(
         public readonly int $emailNumber,
@@ -33,12 +34,18 @@ class TrialNudgeNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        return match ($this->emailNumber) {
+        $mail = match ($this->emailNumber) {
             1 => $this->halfwayEmail($notifiable),
             2 => $this->urgencyEmail($notifiable),
             3 => $this->expiredEmail($notifiable),
             default => $this->halfwayEmail($notifiable),
         };
+
+        if ($line = $this->unsubscribeLine($notifiable)) {
+            $mail->line($line);
+        }
+
+        return $mail;
     }
 
     private function daysLeft(): int

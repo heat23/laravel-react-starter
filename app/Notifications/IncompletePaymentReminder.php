@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasUnsubscribeLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -9,7 +10,7 @@ use Illuminate\Notifications\Notification;
 
 class IncompletePaymentReminder extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUnsubscribeLink, Queueable;
 
     public function __construct(
         public readonly string $confirmUrl,
@@ -36,13 +37,19 @@ class IncompletePaymentReminder extends Notification implements ShouldQueue
         $fullName = $notifiable->name ?? '';
         $firstName = explode(' ', $fullName)[0] ?: $fullName ?: 'there';
 
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject("{$appName}: Complete your payment to keep your subscription active")
             ->greeting("Hi {$firstName},")
             ->line('Your subscription is waiting for payment confirmation.')
             ->line("You have **{$this->hoursRemaining} ".($this->hoursRemaining === 1 ? 'hour' : 'hours').' remaining** before it expires.')
             ->action('Complete Payment Now', $this->confirmUrl)
             ->line('If you have any questions, please contact our support team.');
+
+        if ($line = $this->unsubscribeLine($notifiable)) {
+            $mail->line($line);
+        }
+
+        return $mail;
     }
 
     /**

@@ -1,7 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import { AnalyticsEvents } from '@/lib/events';
+
 import Webhooks from './Webhooks';
+
+// Analytics mock — declared at module scope so top-level beforeEach can clear it
+const mockTrack = vi.fn();
+vi.mock('@/hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
 
 vi.mock('@inertiajs/react', async () => {
   const actual = await vi.importActual('@inertiajs/react');
@@ -78,6 +86,7 @@ global.fetch = vi.fn().mockResolvedValue({
 describe('Webhooks Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTrack.mockClear();
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
@@ -193,5 +202,41 @@ describe('Webhooks Page', () => {
 
     expect(screen.getByText('user.created')).toBeInTheDocument();
     expect(screen.getByText('user.updated')).toBeInTheDocument();
+  });
+
+  // ============================================
+  // Analytics tests
+  // ============================================
+
+  describe('analytics', () => {
+    beforeEach(() => {
+      mockTrack.mockClear();
+    });
+
+    it('tracks page_viewed exactly once on mount', () => {
+      render(<Webhooks available_events={['user.created']} />);
+
+      const pageViewedCalls = mockTrack.mock.calls.filter(
+        ([event]) => event === AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED
+      );
+      expect(pageViewedCalls).toHaveLength(1);
+      expect(pageViewedCalls[0]).toEqual([
+        AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED,
+        { page: 'webhooks' },
+      ]);
+    });
+
+    it('does not fire additional page_viewed events on re-render', () => {
+      const { rerender } = render(
+        <Webhooks available_events={['user.created']} />
+      );
+
+      rerender(<Webhooks available_events={['user.created']} />);
+
+      const pageViewedCalls = mockTrack.mock.calls.filter(
+        ([event]) => event === AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED
+      );
+      expect(pageViewedCalls).toHaveLength(1);
+    });
   });
 });

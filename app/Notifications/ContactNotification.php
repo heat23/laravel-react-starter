@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\ContactSubmission;
+use App\Support\MailSanitizer;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -26,14 +27,25 @@ class ContactNotification extends Notification implements ShouldQueue
     {
         $appName = config('app.name');
 
+        // Header-safe values (CRLF/null-byte stripped) — used in SMTP headers only.
+        $safeSubjectHeader = MailSanitizer::sanitizeForHeader($this->submission->subject);
+        $safeEmailHeader = MailSanitizer::sanitizeForHeader($this->submission->email);
+        $safeNameHeader = MailSanitizer::sanitizeForHeader($this->submission->name);
+
+        // Markdown-safe values — used in body lines.
+        $safeSubjectBody = MailSanitizer::sanitizeForMarkdown($this->submission->subject);
+        $safeNameBody = MailSanitizer::sanitizeForMarkdown($this->submission->name);
+        $safeEmailBody = MailSanitizer::sanitizeForMarkdown($this->submission->email);
+        $safeMessage = MailSanitizer::sanitizeForMarkdown($this->submission->message);
+
         return (new MailMessage)
-            ->subject("[{$appName}] New Contact: {$this->submission->subject}")
-            ->replyTo($this->submission->email, $this->submission->name)
-            ->greeting("New contact from {$this->submission->name}")
-            ->line("**Subject:** {$this->submission->subject}")
-            ->line("**From:** {$this->submission->name} <{$this->submission->email}>")
+            ->subject("[{$appName}] New Contact: {$safeSubjectHeader}")
+            ->replyTo($safeEmailHeader, $safeNameHeader)
+            ->greeting("New contact from {$safeNameHeader}")
+            ->line("**Subject:** {$safeSubjectBody}")
+            ->line("**From:** {$safeNameBody} <{$safeEmailBody}>")
             ->line('**Message:**')
-            ->line($this->submission->message)
+            ->line($safeMessage)
             ->line('Reply directly to this email to respond to the sender.');
     }
 

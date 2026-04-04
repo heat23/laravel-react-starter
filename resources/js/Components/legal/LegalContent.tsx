@@ -2,15 +2,35 @@ import { AlertTriangle } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/Components/ui/alert';
 
-function TemplateDisclaimer() {
+function TemplateDisclaimer({ forPrivacy = false }: { forPrivacy?: boolean }) {
   return (
     <Alert variant="destructive" className="mt-6">
       <AlertTriangle className="h-4 w-4" />
       <AlertTitle>Template Content — Do Not Use As-Is</AlertTitle>
-      <AlertDescription>
-        This is placeholder legal text provided as a starting point. You must
-        customize it for your specific use case and have it reviewed by a
-        qualified legal professional before publishing.
+      <AlertDescription className="space-y-2">
+        <p>
+          This is placeholder legal text provided as a starting point. You must
+          customize it for your specific use case and have it reviewed by a
+          qualified legal professional before publishing.
+        </p>
+        {forPrivacy && (
+          <p>
+            At minimum, your privacy policy must cover the following data
+            collection points active in this application:{' '}
+            <strong>
+              Google Analytics 4 (client-side via gtag.js and server-side via
+              Measurement Protocol)
+            </strong>
+            ,{' '}
+            <strong>Sentry error tracking (frontend and backend)</strong>,{' '}
+            <strong>server-side audit logs</strong> (IP address, user agent,
+            action, timestamp),{' '}
+            <strong>session and authentication data</strong>, and{' '}
+            <strong>UTM attribution parameters</strong> captured on sign-up.
+            Consult your legal counsel to ensure compliance with GDPR, CCPA,
+            and any other applicable regulations before launch.
+          </p>
+        )}
       </AlertDescription>
     </Alert>
   );
@@ -62,7 +82,7 @@ export function TermsContent({ appName }: LegalContentProps) {
         incidental, special, consequential or punitive damages.
       </p>
 
-      <TemplateDisclaimer />
+      <TemplateDisclaimer forPrivacy={false} />
     </div>
   );
 }
@@ -111,7 +131,7 @@ export function PrivacyContent({ appName }: LegalContentProps) {
         by logging into your account settings.
       </p>
 
-      <TemplateDisclaimer />
+      <TemplateDisclaimer forPrivacy={true} />
     </div>
   );
 }

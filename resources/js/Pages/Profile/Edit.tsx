@@ -3,10 +3,9 @@ import { toast } from 'sonner';
 
 import { Head } from '@inertiajs/react';
 
-import { useAnalytics } from '@/hooks/useAnalytics';
-import { AnalyticsEvents } from '@/lib/events';
 import PageHeader from '@/Components/layout/PageHeader';
 import { TimezoneSelector } from '@/Components/settings/TimezoneSelector';
+import { Button } from '@/Components/ui/button';
 import {
   Card,
   CardContent,
@@ -14,10 +13,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/Components/ui/card';
-import { Button } from '@/Components/ui/button';
 import { Label } from '@/Components/ui/label';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { useTimezone } from '@/hooks/useTimezone';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { AnalyticsEvents } from '@/lib/events';
 
 import DeleteUserForm from './Partials/DeleteUserForm';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';

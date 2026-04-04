@@ -60,7 +60,9 @@ return [
         'stripe_price_monthly' => env('STRIPE_PRICE_PRO'),
         'stripe_price_annual' => env('STRIPE_PRICE_PRO_ANNUAL'),
         'price_monthly' => env('PLAN_PRO_PRICE_MONTHLY', 19),
-        'price_annual' => env('PLAN_PRO_PRICE_ANNUAL', 182), // $182/yr = 20.2% off ($19 × 12 = $228)
+        // DISPLAY-ONLY: actual charge is determined by the Stripe price object tied to STRIPE_PRICE_PRO_ANNUAL.
+        // These MUST be kept in sync whenever pricing changes — update the Stripe price object first, then this default.
+        'price_annual' => env('PLAN_PRO_PRICE_ANNUAL', 194), // $194/yr ≈ 15% off ($19 × 12 = $228)
         // A/B test variant: set PLAN_PRO_PRICE_MONTHLY_VARIANT to test a different price point.
         // When null, no experiment is active. When set, 50% of users see the variant price.
         'price_monthly_variant' => env('PLAN_PRO_PRICE_MONTHLY_VARIANT'),
@@ -129,7 +131,9 @@ return [
         'stripe_price_monthly' => env('STRIPE_PRICE_TEAM'),
         'stripe_price_annual' => env('STRIPE_PRICE_TEAM_ANNUAL'),
         'price_monthly' => env('PLAN_TEAM_PRICE_MONTHLY', 49),
-        'price_annual' => env('PLAN_TEAM_PRICE_ANNUAL', 470), // $470/seat/yr = 20.1% off ($49 × 12 = $588)
+        // DISPLAY-ONLY: actual charge is determined by the Stripe price object tied to STRIPE_PRICE_TEAM_ANNUAL.
+        // These MUST be kept in sync whenever pricing changes — update the Stripe price object first, then this default.
+        'price_annual' => env('PLAN_TEAM_PRICE_ANNUAL', 441), // $441/seat/yr = 25% off ($49 × 12 = $588)
         'per_seat' => true,
         'min_seats' => (int) env('PLAN_TEAM_MIN_SEATS', 2),
         'limits' => [

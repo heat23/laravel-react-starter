@@ -4,7 +4,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { useForm, usePage } from '@inertiajs/react';
 
+import { AnalyticsEvents } from '@/lib/events';
+
 import Security from './Security';
+
+// Analytics mock — declared at module scope so top-level beforeEach can clear it
+const mockTrack = vi.fn();
+vi.mock('@/hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
 
 const mockPost = vi.fn();
 const mockDelete = vi.fn();
@@ -24,10 +32,27 @@ vi.mock('@inertiajs/react', async () => {
     })),
     usePage: vi.fn(() => ({
       props: {
-        auth: { user: { id: 1, name: 'Test', email: 'test@example.com', has_password: true } },
+        auth: {
+          user: {
+            id: 1,
+            name: 'Test',
+            email: 'test@example.com',
+            has_password: true,
+          },
+        },
         flash: {},
         errors: {},
-        features: { twoFactor: true, billing: false, socialAuth: false, emailVerification: true, apiTokens: true, userSettings: true, notifications: false, onboarding: false, apiDocs: false },
+        features: {
+          twoFactor: true,
+          billing: false,
+          socialAuth: false,
+          emailVerification: true,
+          apiTokens: true,
+          userSettings: true,
+          notifications: false,
+          onboarding: false,
+          apiDocs: false,
+        },
         notifications_unread_count: 0,
       },
     })),
@@ -55,7 +80,15 @@ vi.mock('@/Components/layout/PageHeader', () => ({
 }));
 
 vi.mock('@/Components/ui/input-otp', () => ({
-  InputOTP: ({ children, onChange, ...props }: { children: React.ReactNode; onChange?: (val: string) => void; [key: string]: unknown }) => (
+  InputOTP: ({
+    children,
+    onChange,
+    ...props
+  }: {
+    children: React.ReactNode;
+    onChange?: (val: string) => void;
+    [key: string]: unknown;
+  }) => (
     <div data-testid="input-otp" {...props}>
       <input
         data-testid="otp-input"
@@ -65,19 +98,30 @@ vi.mock('@/Components/ui/input-otp', () => ({
       {children}
     </div>
   ),
-  InputOTPGroup: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  InputOTPSlot: ({ index }: { index: number }) => <div data-testid={`otp-slot-${index}`} />,
+  InputOTPGroup: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  InputOTPSlot: ({ index }: { index: number }) => (
+    <div data-testid={`otp-slot-${index}`} />
+  ),
 }));
 
 vi.mock('@/Components/ui/confirm-dialog', () => ({
-  ConfirmDialog: ({ open, title, description }: { open: boolean; title: string; description: React.ReactNode }) => (
+  ConfirmDialog: ({
+    open,
+    title,
+    description,
+  }: {
+    open: boolean;
+    title: string;
+    description: React.ReactNode;
+  }) =>
     open ? (
       <div data-testid="confirm-dialog">
         <h2>{title}</h2>
         <div>{description}</div>
       </div>
-    ) : null
-  ),
+    ) : null,
 }));
 
 const mockedUseForm = vi.mocked(useForm);
@@ -88,6 +132,7 @@ describe('Security Page', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTrack.mockClear();
     mockedUseForm.mockReturnValue({
       data: {},
       setData: mockSetData,
@@ -98,10 +143,27 @@ describe('Security Page', () => {
     } as ReturnType<typeof useForm>);
     mockedUsePage.mockReturnValue({
       props: {
-        auth: { user: { id: 1, name: 'Test', email: 'test@example.com', has_password: true } },
+        auth: {
+          user: {
+            id: 1,
+            name: 'Test',
+            email: 'test@example.com',
+            has_password: true,
+          },
+        },
         flash: {},
         errors: {},
-        features: { twoFactor: true, billing: false, socialAuth: false, emailVerification: true, apiTokens: true, userSettings: true, notifications: false, onboarding: false, apiDocs: false },
+        features: {
+          twoFactor: true,
+          billing: false,
+          socialAuth: false,
+          emailVerification: true,
+          apiTokens: true,
+          userSettings: true,
+          notifications: false,
+          onboarding: false,
+          apiDocs: false,
+        },
         notifications_unread_count: 0,
       },
     } as ReturnType<typeof usePage>);
@@ -109,34 +171,77 @@ describe('Security Page', () => {
 
   describe('not-enabled state', () => {
     it('renders the security page with DashboardLayout', () => {
-      render(<Security enabled={false} qr_code={null} secret={null} recovery_codes={null} />);
+      render(
+        <Security
+          enabled={false}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
 
       expect(screen.getByTestId('dashboard-layout')).toBeInTheDocument();
     });
 
     it('renders page header', () => {
-      render(<Security enabled={false} qr_code={null} secret={null} recovery_codes={null} />);
+      render(
+        <Security
+          enabled={false}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
 
       expect(screen.getByTestId('page-header')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: /security/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /security/i })
+      ).toBeInTheDocument();
     });
 
     it('shows not enabled badge', () => {
-      render(<Security enabled={false} qr_code={null} secret={null} recovery_codes={null} />);
+      render(
+        <Security
+          enabled={false}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
 
       expect(screen.getByText(/not enabled/i)).toBeInTheDocument();
     });
 
     it('shows enable button', () => {
-      render(<Security enabled={false} qr_code={null} secret={null} recovery_codes={null} />);
+      render(
+        <Security
+          enabled={false}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
 
-      expect(screen.getByRole('button', { name: /enable two-factor authentication/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', {
+          name: /enable two-factor authentication/i,
+        })
+      ).toBeInTheDocument();
     });
 
     it('submits enable form', async () => {
-      render(<Security enabled={false} qr_code={null} secret={null} recovery_codes={null} />);
+      render(
+        <Security
+          enabled={false}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
 
-      const enableButton = screen.getByRole('button', { name: /enable two-factor authentication/i });
+      const enableButton = screen.getByRole('button', {
+        name: /enable two-factor authentication/i,
+      });
       await user.click(enableButton);
 
       expect(mockPost).toHaveBeenCalled();
@@ -148,7 +253,7 @@ describe('Security Page', () => {
       render(
         <Security
           enabled={false}
-          qr_code='<svg>mock-qr</svg>'
+          qr_code="<svg>mock-qr</svg>"
           secret="ABCDEF123456"
           recovery_codes={null}
         />
@@ -161,7 +266,7 @@ describe('Security Page', () => {
       render(
         <Security
           enabled={false}
-          qr_code='<svg>mock-qr</svg>'
+          qr_code="<svg>mock-qr</svg>"
           secret="ABCDEF123456"
           recovery_codes={null}
         />
@@ -174,7 +279,7 @@ describe('Security Page', () => {
       render(
         <Security
           enabled={false}
-          qr_code='<svg>mock-qr</svg>'
+          qr_code="<svg>mock-qr</svg>"
           secret="ABCDEF123456"
           recovery_codes={null}
         />
@@ -187,33 +292,38 @@ describe('Security Page', () => {
       render(
         <Security
           enabled={false}
-          qr_code='<svg>mock-qr</svg>'
+          qr_code="<svg>mock-qr</svg>"
           secret="ABCDEF123456"
           recovery_codes={null}
         />
       );
 
-      expect(screen.getByRole('button', { name: /confirm and enable/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /confirm and enable/i })
+      ).toBeInTheDocument();
     });
 
     it('shows copy secret button', () => {
       render(
         <Security
           enabled={false}
-          qr_code='<svg>mock-qr</svg>'
+          qr_code="<svg>mock-qr</svg>"
           secret="ABCDEF123456"
           recovery_codes={null}
         />
       );
 
-      expect(screen.getByRole('button', { name: /copy secret key/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /copy secret key/i })
+      ).toBeInTheDocument();
     });
 
     it('sanitizes QR code HTML to prevent XSS', async () => {
       const DOMPurify = await import('dompurify');
       const sanitizeSpy = vi.spyOn(DOMPurify.default, 'sanitize');
 
-      const maliciousQr = '<svg><rect width="100" height="100"/></svg><script>alert("xss")</script>';
+      const maliciousQr =
+        '<svg><rect width="100" height="100"/></svg><script>alert("xss")</script>';
       render(
         <Security
           enabled={false}
@@ -223,10 +333,9 @@ describe('Security Page', () => {
         />
       );
 
-      expect(sanitizeSpy).toHaveBeenCalledWith(
-        maliciousQr,
-        { USE_PROFILES: { svg: true, svgFilters: true } },
-      );
+      expect(sanitizeSpy).toHaveBeenCalledWith(maliciousQr, {
+        USE_PROFILES: { svg: true, svgFilters: true },
+      });
 
       sanitizeSpy.mockRestore();
     });
@@ -234,37 +343,85 @@ describe('Security Page', () => {
 
   describe('enabled state', () => {
     it('shows enabled badge', () => {
-      render(<Security enabled={true} qr_code={null} secret={null} recovery_codes={null} />);
+      render(
+        <Security
+          enabled={true}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
 
       expect(screen.getByText('Enabled')).toBeInTheDocument();
     });
 
     it('shows protection message', () => {
-      render(<Security enabled={true} qr_code={null} secret={null} recovery_codes={null} />);
+      render(
+        <Security
+          enabled={true}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
 
       expect(screen.getByText(/account is protected/i)).toBeInTheDocument();
     });
 
     it('shows view recovery codes button', () => {
-      render(<Security enabled={true} qr_code={null} secret={null} recovery_codes={null} />);
+      render(
+        <Security
+          enabled={true}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
 
-      expect(screen.getByRole('button', { name: /view recovery codes/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /view recovery codes/i })
+      ).toBeInTheDocument();
     });
 
     it('shows regenerate codes button', () => {
-      render(<Security enabled={true} qr_code={null} secret={null} recovery_codes={null} />);
+      render(
+        <Security
+          enabled={true}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
 
-      expect(screen.getByRole('button', { name: /regenerate codes/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /regenerate codes/i })
+      ).toBeInTheDocument();
     });
 
     it('shows disable button', () => {
-      render(<Security enabled={true} qr_code={null} secret={null} recovery_codes={null} />);
+      render(
+        <Security
+          enabled={true}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
 
-      expect(screen.getByRole('button', { name: /disable/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /disable/i })
+      ).toBeInTheDocument();
     });
 
     it('opens confirm dialog when disable clicked', async () => {
-      render(<Security enabled={true} qr_code={null} secret={null} recovery_codes={null} />);
+      render(
+        <Security
+          enabled={true}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
 
       await user.click(screen.getByRole('button', { name: /disable/i }));
 
@@ -276,17 +433,98 @@ describe('Security Page', () => {
     it('shows success flash message', () => {
       mockedUsePage.mockReturnValue({
         props: {
-          auth: { user: { id: 1, name: 'Test', email: 'test@example.com', has_password: true } },
+          auth: {
+            user: {
+              id: 1,
+              name: 'Test',
+              email: 'test@example.com',
+              has_password: true,
+            },
+          },
           flash: { success: 'Two-factor authentication has been enabled.' },
           errors: {},
-          features: { twoFactor: true, billing: false, socialAuth: false, emailVerification: true, apiTokens: true, userSettings: true, notifications: false, onboarding: false, apiDocs: false },
+          features: {
+            twoFactor: true,
+            billing: false,
+            socialAuth: false,
+            emailVerification: true,
+            apiTokens: true,
+            userSettings: true,
+            notifications: false,
+            onboarding: false,
+            apiDocs: false,
+          },
           notifications_unread_count: 0,
         },
       } as ReturnType<typeof usePage>);
 
-      render(<Security enabled={true} qr_code={null} secret={null} recovery_codes={null} />);
+      render(
+        <Security
+          enabled={true}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
 
-      expect(screen.getByText(/two-factor authentication has been enabled/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/two-factor authentication has been enabled/i)
+      ).toBeInTheDocument();
+    });
+  });
+
+  // ============================================
+  // Analytics tests
+  // ============================================
+
+  describe('analytics', () => {
+    beforeEach(() => {
+      mockTrack.mockClear();
+    });
+
+    it('tracks page_viewed exactly once on mount', () => {
+      render(
+        <Security
+          enabled={false}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
+
+      const pageViewedCalls = mockTrack.mock.calls.filter(
+        ([event]) => event === AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED
+      );
+      expect(pageViewedCalls).toHaveLength(1);
+      expect(pageViewedCalls[0]).toEqual([
+        AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED,
+        { page: 'security' },
+      ]);
+    });
+
+    it('does not fire additional page_viewed events on re-render', () => {
+      const { rerender } = render(
+        <Security
+          enabled={false}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
+
+      rerender(
+        <Security
+          enabled={false}
+          qr_code={null}
+          secret={null}
+          recovery_codes={null}
+        />
+      );
+
+      const pageViewedCalls = mockTrack.mock.calls.filter(
+        ([event]) => event === AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED
+      );
+      expect(pageViewedCalls).toHaveLength(1);
     });
   });
 });

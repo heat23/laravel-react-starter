@@ -13,6 +13,76 @@ class AuditLog extends Model
 
     public const UPDATED_AT = null;
 
+    /**
+     * Auth-related event prefixes that require full IP retention for abuse detection.
+     * All other events may have their IPs anonymized when the feature is enabled.
+     */
+    private const SECURITY_EVENT_PREFIXES = [
+        'auth.',
+        'admin.unauthorized_access',
+        'admin.impersonation',
+    ];
+
+    /**
+     * Anonymize an IP address by zeroing the last octet (IPv4) or
+     * last 80 bits (IPv6). Returns null if input is null.
+     */
+    public static function anonymizeIp(?string $ip): ?string
+    {
+        if ($ip === null || $ip === '') {
+            return $ip;
+        }
+
+        // IPv4-mapped IPv6 (::ffff:x.x.x.x) — normalize to IPv4 before masking
+        if (preg_match('/^(::ffff:)(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i', $ip, $matches)) {
+            $prefix = $matches[1];
+            $ipv4 = $matches[2];
+            if (filter_var($ipv4, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                return $prefix.preg_replace('/\.\d+$/', '.0', $ipv4);
+            }
+
+            // Embedded value matched the digit pattern but is not valid IPv4
+            // (e.g., ::ffff:999.0.0.1). Return masked placeholder to avoid
+            // leaking the raw address through the IPv6 branch.
+            return $prefix.'0.0.0.0';
+        }
+
+        // IPv4: replace last octet with 0
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+            return preg_replace('/\.\d+$/', '.0', $ip) ?? $ip;
+        }
+
+        // IPv6: expand to full form, zero out last 80 bits (last 5 groups)
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+            $binary = inet_pton($ip);
+            if ($binary === false) {
+                return $ip;
+            }
+            $hex = bin2hex($binary);
+            // Zero out last 80 bits = last 20 hex chars (5 groups × 2 bytes × 2 hex digits per byte)
+            $masked = substr($hex, 0, 12).str_repeat('0', 20);
+            $packed = hex2bin($masked);
+
+            return $packed !== false ? inet_ntop($packed) : $ip;
+        }
+
+        return $ip;
+    }
+
+    /**
+     * Determine if an event requires full IP retention for security/abuse detection.
+     */
+    public static function isSecurityEvent(string $event): bool
+    {
+        foreach (self::SECURITY_EVENT_PREFIXES as $prefix) {
+            if (str_starts_with($event, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     protected $fillable = [
         'event',
         'user_id',

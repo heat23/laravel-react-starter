@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasUnsubscribeLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -9,7 +10,7 @@ use Illuminate\Notifications\Notification;
 
 class PaymentRecoveredNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUnsubscribeLink, Queueable;
 
     public function __construct(
         public readonly string $invoiceId,
@@ -35,13 +36,19 @@ class PaymentRecoveredNotification extends Notification implements ShouldQueue
         $firstName = explode(' ', $fullName)[0] ?: $fullName ?: 'there';
         $appName = config('app.name');
 
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject("{$appName}: Payment successful — your subscription is active")
             ->greeting("Hi {$firstName},")
             ->line('Great news — your payment was successfully processed and your subscription is fully active.')
             ->line('You now have uninterrupted access to all your plan features. No further action is needed.')
             ->action('Go to Dashboard →', route('dashboard'))
             ->line('Thank you for staying with us!');
+
+        if ($line = $this->unsubscribeLine($notifiable)) {
+            $mail->line($line);
+        }
+
+        return $mail;
     }
 
     /**

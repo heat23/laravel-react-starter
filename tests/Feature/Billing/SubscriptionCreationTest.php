@@ -135,6 +135,7 @@ it('handles subscription with coupon', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
 
     $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('validateCouponCode')->with('SAVE20')->andReturnNull();
     $mock->shouldReceive('createSubscription')
         ->once()
         ->withArgs(fn ($u, $price, $pm, $coupon) => $coupon === 'SAVE20')
@@ -145,6 +146,40 @@ it('handles subscription with coupon', function () {
         'price_id' => 'price_pro_monthly',
         'payment_method' => 'pm_card_visa',
         'coupon' => 'SAVE20',
+    ]);
+
+    $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'pro']));
+});
+
+it('rejects subscription when Stripe coupon validation fails', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+
+    $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('validateCouponCode')->with('EXPIRED50')->andReturn('The coupon code is invalid or has expired.');
+    app()->instance(BillingService::class, $mock);
+
+    $response = $this->actingAs($user)->post('/billing/subscribe', [
+        'price_id' => 'price_pro_monthly',
+        'payment_method' => 'pm_card_visa',
+        'coupon' => 'EXPIRED50',
+    ]);
+
+    $response->assertSessionHasErrors('coupon');
+});
+
+it('passes null coupon to createSubscription when coupon field is absent', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+
+    $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('createSubscription')
+        ->once()
+        ->withArgs(fn ($u, $price, $pm, $coupon) => $coupon === null)
+        ->andReturnUsing(fn () => createSubscription($user, ['stripe_price' => 'price_pro_monthly']));
+    app()->instance(BillingService::class, $mock);
+
+    $response = $this->actingAs($user)->post('/billing/subscribe', [
+        'price_id' => 'price_pro_monthly',
+        'payment_method' => 'pm_card_visa',
     ]);
 
     $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'pro']));

@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasUnsubscribeLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -9,7 +10,7 @@ use Illuminate\Notifications\Notification;
 
 class UpgradeNudgeNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUnsubscribeLink, Queueable;
 
     public function __construct(
         public readonly int $score,
@@ -34,13 +35,19 @@ class UpgradeNudgeNotification extends Notification implements ShouldQueue
             ? "You're one of our most engaged users — and you'd get a lot more from a paid plan."
             : "Based on how you're using {$appName}, you're ready for more.";
 
-        return (new MailMessage)
+        $mail = (new MailMessage)
             ->subject("{$appName}: Ready to upgrade?")
             ->greeting("Hi {$notifiable->name}!")
             ->line($copyLine)
             ->line('Paid plans unlock higher limits, advanced features, and priority support.')
             ->action('See Plans', route('pricing'))
             ->line('Questions? Reply to this email.');
+
+        if ($line = $this->unsubscribeLine($notifiable)) {
+            $mail->line($line);
+        }
+
+        return $mail;
     }
 
     /** @return array<string, mixed> */

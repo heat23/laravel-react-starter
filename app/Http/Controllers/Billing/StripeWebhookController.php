@@ -114,6 +114,7 @@ class StripeWebhookController extends WebhookController
     protected function handleInvoicePaymentSucceeded(array $payload): Response
     {
         $this->logWebhookEvent('invoice.payment_succeeded', $payload);
+        $this->invalidatePlanCache($payload);
 
         $customerId = $payload['data']['object']['customer'] ?? null;
         $subscriptionId = $payload['data']['object']['subscription'] ?? null;
@@ -140,6 +141,7 @@ class StripeWebhookController extends WebhookController
     protected function handleInvoicePaymentFailed(array $payload): Response
     {
         $this->logWebhookEvent('invoice.payment_failed', $payload);
+        $this->invalidatePlanCache($payload);
 
         $customerId = $payload['data']['object']['customer'] ?? null;
         if ($customerId) {
@@ -174,6 +176,7 @@ class StripeWebhookController extends WebhookController
     protected function handleInvoicePaymentActionRequired(array $payload): Response
     {
         $this->logWebhookEvent('invoice.payment_action_required', $payload);
+        $this->invalidatePlanCache($payload);
 
         $customerId = $payload['data']['object']['customer'] ?? null;
         $hostedInvoiceUrl = $payload['data']['object']['hosted_invoice_url'] ?? null;
@@ -202,6 +205,7 @@ class StripeWebhookController extends WebhookController
     protected function handleChargeRefunded(array $payload): Response
     {
         $this->logWebhookEvent('charge.refunded', $payload);
+        $this->invalidatePlanCache($payload);
 
         $customerId = $payload['data']['object']['customer'] ?? null;
         if ($customerId) {

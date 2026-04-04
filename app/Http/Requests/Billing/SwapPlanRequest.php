@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Billing;
 
+use App\Http\Requests\Billing\Concerns\HasCouponValidation;
 use App\Http\Requests\Billing\Concerns\HasPriceValidation;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -9,7 +10,7 @@ use Illuminate\Validation\Rule;
 
 class SwapPlanRequest extends FormRequest
 {
-    use HasPriceValidation;
+    use HasCouponValidation, HasPriceValidation;
 
     public function authorize(): bool
     {
@@ -23,7 +24,7 @@ class SwapPlanRequest extends FormRequest
     {
         return [
             'price_id' => ['required', 'string', Rule::in($this->allowedPriceIds())],
-            'coupon' => ['nullable', 'string', 'max:50'],
+            'coupon' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9_-]+$/'],
         ];
     }
 }

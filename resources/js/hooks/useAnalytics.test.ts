@@ -55,4 +55,15 @@ describe('useAnalytics', () => {
 
     expect(trackEvent).toHaveBeenCalledWith('auth.login', undefined);
   });
+
+  it('returns a stable track reference across re-renders', () => {
+    // Verifies useCallback([]) keeps the reference identity stable so
+    // useEffect(..., [track]) callers fire exactly once on mount.
+    const { result, rerender } = renderHook(() => useAnalytics());
+    const firstRef = result.current.track;
+
+    rerender();
+
+    expect(result.current.track).toBe(firstRef);
+  });
 });

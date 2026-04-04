@@ -10,13 +10,11 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { useState, FormEventHandler } from 'react';
+import { useState, useEffect, FormEventHandler } from 'react';
 
 import { Head, useForm, usePage, router } from '@inertiajs/react';
 
-import { useAnalytics } from '@/hooks/useAnalytics';
 import InputError from '@/Components/InputError';
-import { AnalyticsEvents } from '@/lib/events';
 import PageHeader from '@/Components/layout/PageHeader';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
@@ -36,7 +34,9 @@ import {
 } from '@/Components/ui/input-otp';
 import { Label } from '@/Components/ui/label';
 import { LoadingButton } from '@/Components/ui/loading-button';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import DashboardLayout from '@/Layouts/DashboardLayout';
+import { AnalyticsEvents } from '@/lib/events';
 import type { PageProps } from '@/types';
 
 interface SecurityProps {
@@ -48,6 +48,13 @@ interface SecurityProps {
 
 export default function Security({ enabled, qr_code, secret }: SecurityProps) {
   const { flash } = usePage<PageProps>().props;
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'security' });
+    // track is stable (useCallback in useAnalytics); [] ensures exactly-once mount fire
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <DashboardLayout>
@@ -271,7 +278,9 @@ function EnabledState() {
       {},
       {
         onSuccess: () => {
-          track(AnalyticsEvents.FEATURE_USED, { feature_name: '2fa_recovery_regenerated' });
+          track(AnalyticsEvents.FEATURE_USED, {
+            feature_name: '2fa_recovery_regenerated',
+          });
           setRecoveryCodes(null);
           setShowRecoveryCodes(false);
           toast.success('Recovery codes have been regenerated.');

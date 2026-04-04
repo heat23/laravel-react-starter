@@ -4,7 +4,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { useForm } from '@inertiajs/react';
 
+import { AnalyticsEvents } from '@/lib/events';
+
 import ResetPassword from './ResetPassword';
+
+// Mock useAnalytics
+const mockTrack = vi.fn();
+vi.mock('@/hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
 
 // Mock useForm from Inertia
 const mockPost = vi.fn();
@@ -380,6 +388,41 @@ describe('ResetPassword Page', () => {
       render(<ResetPassword {...defaultProps} />);
 
       expect(screen.getByRole('button', { name: /resetting/i })).toBeInTheDocument();
+    });
+  });
+
+  // ============================================
+  // Analytics tests
+  // ============================================
+
+  describe('analytics', () => {
+    it('calls track with AUTH_PASSWORD_RESET and method=email on success', () => {
+      render(<ResetPassword {...defaultProps} />);
+
+      const form = screen.getByRole('button', { name: /reset password/i }).closest('form')!;
+      fireEvent.submit(form);
+
+      const postOptions = mockPost.mock.calls[0][1];
+      postOptions.onSuccess();
+
+      expect(mockTrack).toHaveBeenCalledOnce();
+      expect(mockTrack).toHaveBeenCalledWith(
+        AnalyticsEvents.AUTH_PASSWORD_RESET,
+        { method: 'email' }
+      );
+    });
+
+    it('does not call track when the request fails (onSuccess not called)', () => {
+      render(<ResetPassword {...defaultProps} />);
+
+      const form = screen.getByRole('button', { name: /reset password/i }).closest('form')!;
+      fireEvent.submit(form);
+
+      // onFinish fires on both success and failure; do not call onSuccess
+      const postOptions = mockPost.mock.calls[0][1];
+      postOptions.onFinish();
+
+      expect(mockTrack).not.toHaveBeenCalled();
     });
   });
 

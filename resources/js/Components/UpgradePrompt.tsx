@@ -1,6 +1,9 @@
 import { Sparkles, X } from 'lucide-react';
+
 import { useState } from 'react';
+
 import { Link } from '@inertiajs/react';
+
 import { Button } from '@/Components/ui/button';
 import type { UpgradePromptData } from '@/types';
 
@@ -20,7 +23,8 @@ export function UpgradePrompt({ prompt }: UpgradePromptProps) {
 
   if (dismissed) return null;
 
-  const limitLabel = LIMIT_LABELS[prompt.limit] ?? prompt.limit.replace(/_/g, ' ');
+  const limitLabel =
+    LIMIT_LABELS[prompt.limit] ?? prompt.limit.replace(/_/g, ' ');
 
   return (
     <div
@@ -31,14 +35,8 @@ export function UpgradePrompt({ prompt }: UpgradePromptProps) {
       <div className="container flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-sm text-primary">
           <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>
-            You've reached your {limitLabel} limit on the free plan.
-          </span>
-          <Button
-            asChild
-            size="sm"
-            className="ml-2 h-7 px-3"
-          >
+          <span>You've reached your {limitLabel} limit on the free plan.</span>
+          <Button asChild size="sm" className="ml-2 h-7 px-3">
             <Link href={prompt.cta_url}>Upgrade to {prompt.plan}</Link>
           </Button>
         </div>

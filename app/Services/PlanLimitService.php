@@ -135,11 +135,15 @@ class PlanLimitService
 
         if (! $allowed && app()->bound('session.store')) {
             try {
-                session()->flash('upgrade_prompt', [
-                    'limit' => $limitKey,
-                    'plan' => 'pro',
-                    'cta_url' => config('features.billing.enabled', false) ? route('pricing') : '/pricing',
-                ]);
+                $nextTier = $this->getNextTier($this->getUserPlan($user));
+
+                if ($nextTier !== null) {
+                    session()->flash('upgrade_prompt', [
+                        'limit' => $limitKey,
+                        'plan' => $nextTier,
+                        'cta_url' => config('features.billing.enabled', false) ? route('pricing') : '/pricing',
+                    ]);
+                }
             } catch (\Throwable) {
                 // Session may not be available in CLI/queue contexts
             }
@@ -208,6 +212,45 @@ class PlanLimitService
                 break;
             }
         }
+    }
+
+    /**
+     * Get the next upgrade tier above the given plan.
+     *
+     * Returns null when the user is already on the top tier (no upgrade available),
+     * which the caller should use to suppress the upgrade-prompt flash entirely.
+     */
+    public function getNextTier(string $currentPlan): ?string
+    {
+        /** @var array<int, string> $hierarchy */
+        $hierarchy = config('plans.tier_hierarchy', []);
+
+        if (empty($hierarchy)) {
+            Log::error('plans.tier_hierarchy is empty; cannot determine next tier', [
+                'current_plan' => $currentPlan,
+            ]);
+
+            return 'pro';
+        }
+
+        $index = array_search($currentPlan, $hierarchy, strict: true);
+
+        if ($index === false) {
+            Log::warning('Plan not found in tier_hierarchy; defaulting to first paid tier', [
+                'current_plan' => $currentPlan,
+                'hierarchy' => $hierarchy,
+            ]);
+
+            // Return the first paid tier (index 1); fall back to index 0 or 'pro' for safety.
+            return (string) ($hierarchy[1] ?? $hierarchy[0] ?? 'pro');
+        }
+
+        // Already at the top tier — no upgrade available; suppress the flash.
+        if ($index === array_key_last($hierarchy)) {
+            return null;
+        }
+
+        return (string) $hierarchy[$index + 1];
     }
 
     /**

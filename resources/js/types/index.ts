@@ -41,6 +41,7 @@ export interface Features {
 export interface UpgradePromptData {
   limit: string;
   plan: string;
+  current_plan: string;
   cta_url: string;
 }
 
@@ -71,7 +72,10 @@ export interface PageProps {
    * PQL limit warnings — resources where the user is at ≥80% of their plan limit.
    * Only present when billing is enabled and the user is authenticated.
    */
-  limit_warnings?: Record<string, { current: number; limit: number; threshold: 80 | 100 }> | null;
+  limit_warnings?: Record<
+    string,
+    { current: number; limit: number; threshold: 80 | 100 }
+  > | null;
 }
 
 // Common pagination type

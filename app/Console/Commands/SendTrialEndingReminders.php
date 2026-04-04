@@ -38,6 +38,10 @@ class SendTrialEndingReminders extends Command
                 continue;
             }
 
+            if ($this->hasOptedOut($user)) {
+                continue;
+            }
+
             // Dedup: skip if already notified today
             $settingKey = 'trial_reminder_sent_at';
             $lastSent = UserSetting::getValue($user->id, $settingKey);
@@ -67,5 +71,12 @@ class SendTrialEndingReminders extends Command
         $this->info("Sent {$sent} trial-ending reminder emails.");
 
         return self::SUCCESS;
+    }
+
+    private function hasOptedOut(User $user): bool
+    {
+        $value = UserSetting::getValue($user->id, 'marketing_emails', true);
+
+        return $value === false || $value === '0' || $value === 0;
     }
 }

@@ -30,6 +30,13 @@ export function useAnalytics() {
     setUserId(auth?.user?.id ?? null);
   }, [auth?.user?.id]);
 
+  /**
+   * Stable reference guaranteed: wrapped in useCallback with an empty deps array.
+   * Safe to include in useEffect dependency arrays without causing extra re-runs.
+   * Components SHOULD include `track` in their effect deps — the stable reference
+   * means the effect only fires on mount (or whenever other deps change), not on
+   * every render.
+   */
   const track = useCallback(
     <E extends AnalyticsEventName>(
       eventName: E,

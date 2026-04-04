@@ -4,6 +4,7 @@ use App\Jobs\PersistAuditLog;
 use App\Models\User;
 use App\Services\PlanLimitService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -430,4 +431,81 @@ it('gives team subscription user team tier limits', function () {
     createTeamSubscription($user, 5);
 
     expect($this->service->getLimit($user->fresh(), 'api_tokens'))->toBe(25);
+});
+
+// ============================================
+// getNextTier() tests
+// ============================================
+
+it('returns next tier for a plan in the middle of the hierarchy', function () {
+    config(['plans.tier_hierarchy' => ['free', 'pro', 'team', 'enterprise']]);
+
+    expect($this->service->getNextTier('free'))->toBe('pro');
+    expect($this->service->getNextTier('pro'))->toBe('team');
+    expect($this->service->getNextTier('team'))->toBe('enterprise');
+});
+
+it('returns null for a plan at the top of the hierarchy', function () {
+    config(['plans.tier_hierarchy' => ['free', 'pro', 'team', 'enterprise']]);
+
+    expect($this->service->getNextTier('enterprise'))->toBeNull();
+});
+
+it('returns null for top tier with real plans config hierarchy', function () {
+    // The real config has enterprise as the last entry
+    $hierarchy = config('plans.tier_hierarchy');
+    $topTier = end($hierarchy);
+
+    expect($this->service->getNextTier($topTier))->toBeNull();
+});
+
+it('logs warning and returns first paid tier when plan is not in hierarchy', function () {
+    config(['plans.tier_hierarchy' => ['free', 'pro', 'team', 'enterprise']]);
+    Log::spy();
+
+    $result = $this->service->getNextTier('legacy_custom_plan');
+
+    expect($result)->toBe('pro');
+    Log::shouldHaveReceived('warning')->once()->withArgs(
+        fn ($message) => str_contains($message, 'not found in tier_hierarchy')
+    );
+});
+
+it('logs error and returns pro when tier_hierarchy is empty', function () {
+    config(['plans.tier_hierarchy' => []]);
+    Log::spy();
+
+    $result = $this->service->getNextTier('free');
+
+    expect($result)->toBe('pro');
+    Log::shouldHaveReceived('error')->once()->withArgs(
+        fn ($message) => str_contains($message, 'tier_hierarchy is empty')
+    );
+});
+
+it('does not flash upgrade_prompt for top-tier users when limit exceeded', function () {
+    config(['plans.tier_hierarchy' => ['free', 'pro', 'enterprise']]);
+    config(['plans.enterprise.limits.api_tokens' => 2]);
+    $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
+    // Force enterprise tier by configuring trial tier
+    config(['plans.trial.tier' => 'enterprise']);
+
+    $result = $this->service->canPerform($user, 'api_tokens', 5);
+
+    expect($result)->toBeFalse();
+    // No session flash should have been set since user is at top tier
+    expect(session()->has('upgrade_prompt'))->toBeFalse();
+});
+
+it('flashes upgrade_prompt with correct next tier when limit exceeded', function () {
+    config(['plans.tier_hierarchy' => ['free', 'pro', 'team']]);
+    config(['plans.free.limits.api_tokens' => 1]);
+    $user = User::factory()->create(['trial_ends_at' => null]);
+
+    $this->service->canPerform($user, 'api_tokens', 5);
+
+    expect(session('upgrade_prompt'))->toMatchArray([
+        'limit' => 'api_tokens',
+        'plan' => 'pro',
+    ]);
 });

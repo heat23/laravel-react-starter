@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
+use App\Models\UserSetting;
 use App\Notifications\WinBackNotification;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -66,6 +67,10 @@ class SendWinBackEmails extends Command
                 continue;
             }
 
+            if ($this->hasOptedOut($user)) {
+                continue;
+            }
+
             if ($this->alreadySentEmail($user, $emailNumber)) {
                 continue;
             }
@@ -90,6 +95,13 @@ class SendWinBackEmails extends Command
         }
 
         return $sent;
+    }
+
+    private function hasOptedOut(User $user): bool
+    {
+        $value = UserSetting::getValue($user->id, 'marketing_emails', true);
+
+        return $value === false || $value === '0' || $value === 0;
     }
 
     private function alreadySentEmail(User $user, int $emailNumber): bool

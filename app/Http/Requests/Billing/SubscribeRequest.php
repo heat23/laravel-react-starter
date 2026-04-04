@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Billing;
 
+use App\Http\Requests\Billing\Concerns\HasCouponValidation;
 use App\Http\Requests\Billing\Concerns\HasPriceValidation;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -9,7 +10,7 @@ use Illuminate\Validation\Rule;
 
 class SubscribeRequest extends FormRequest
 {
-    use HasPriceValidation;
+    use HasCouponValidation, HasPriceValidation;
 
     public function authorize(): bool
     {

@@ -1,7 +1,15 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import { AnalyticsEvents } from '@/lib/events';
+
 import Edit from './Edit';
+
+// Mock useAnalytics
+const mockTrack = vi.fn();
+vi.mock('@/hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
 
 vi.mock('@inertiajs/react', async () => {
   const actual = await vi.importActual('@inertiajs/react');
@@ -9,10 +17,28 @@ vi.mock('@inertiajs/react', async () => {
     ...actual,
     usePage: vi.fn(() => ({
       props: {
-        auth: { user: { id: 1, name: 'Test User', email: 'test@example.com', has_password: true } },
+        auth: {
+          user: {
+            id: 1,
+            name: 'Test User',
+            email: 'test@example.com',
+            has_password: true,
+          },
+        },
         flash: {},
         errors: {},
-        features: { twoFactor: false, billing: false, socialAuth: false, emailVerification: true, apiTokens: true, userSettings: true, notifications: false, onboarding: false, apiDocs: false, webhooks: false },
+        features: {
+          twoFactor: false,
+          billing: false,
+          socialAuth: false,
+          emailVerification: true,
+          apiTokens: true,
+          userSettings: true,
+          notifications: false,
+          onboarding: false,
+          apiDocs: false,
+          webhooks: false,
+        },
         notifications_unread_count: 0,
       },
     })),
@@ -68,13 +94,17 @@ vi.mock('@/hooks/useTimezone', () => ({
 
 vi.mock('./Partials/UpdateProfileInformationForm', () => ({
   default: ({ className }: { className?: string }) => (
-    <div data-testid="update-profile-form" className={className}>Update Profile Form</div>
+    <div data-testid="update-profile-form" className={className}>
+      Update Profile Form
+    </div>
   ),
 }));
 
 vi.mock('./Partials/UpdatePasswordForm', () => ({
   default: ({ className }: { className?: string }) => (
-    <div data-testid="update-password-form" className={className}>Update Password Form</div>
+    <div data-testid="update-password-form" className={className}>
+      Update Password Form
+    </div>
   ),
 }));
 
@@ -109,14 +139,18 @@ describe('Profile Edit Page', () => {
     render(<Edit mustVerifyEmail={false} />);
 
     expect(screen.getByTestId('page-header')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Profile' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Profile' })
+    ).toBeInTheDocument();
   });
 
   it('renders Profile Information section', () => {
     render(<Edit mustVerifyEmail={false} />);
 
     expect(screen.getByText('Profile Information')).toBeInTheDocument();
-    expect(screen.getByText(/update your name, email, and account details/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/update your name, email, and account details/i)
+    ).toBeInTheDocument();
     expect(screen.getByTestId('update-profile-form')).toBeInTheDocument();
   });
 
@@ -124,7 +158,9 @@ describe('Profile Edit Page', () => {
     render(<Edit mustVerifyEmail={false} />);
 
     expect(screen.getByText('Preferences')).toBeInTheDocument();
-    expect(screen.getByText(/customize your display and regional settings/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/customize your display and regional settings/i)
+    ).toBeInTheDocument();
     expect(screen.getByTestId('timezone-selector')).toBeInTheDocument();
   });
 
@@ -132,7 +168,9 @@ describe('Profile Edit Page', () => {
     render(<Edit mustVerifyEmail={false} />);
 
     expect(screen.getByText('Update Password')).toBeInTheDocument();
-    expect(screen.getByText(/use a strong password to keep your account secure/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/use a strong password to keep your account secure/i)
+    ).toBeInTheDocument();
     expect(screen.getByTestId('update-password-form')).toBeInTheDocument();
   });
 
@@ -140,7 +178,11 @@ describe('Profile Edit Page', () => {
     render(<Edit mustVerifyEmail={false} />);
 
     expect(screen.getByText('Danger Zone')).toBeInTheDocument();
-    expect(screen.getByText(/irreversible actions that will permanently affect your account/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /irreversible actions that will permanently affect your account/i
+      )
+    ).toBeInTheDocument();
     expect(screen.getByText('Delete Account')).toBeInTheDocument();
     expect(screen.getByTestId('delete-user-form')).toBeInTheDocument();
   });
@@ -148,7 +190,9 @@ describe('Profile Edit Page', () => {
   it('displays timezone value', () => {
     render(<Edit mustVerifyEmail={false} timezone="America/New_York" />);
 
-    expect(screen.getByTestId('timezone-selector')).toHaveTextContent('America/New_York');
+    expect(screen.getByTestId('timezone-selector')).toHaveTextContent(
+      'America/New_York'
+    );
   });
 
   it('renders all four card sections in correct order', () => {
@@ -161,5 +205,33 @@ describe('Profile Edit Page', () => {
     expect(screen.getByText('Preferences')).toBeInTheDocument();
     expect(screen.getByText('Update Password')).toBeInTheDocument();
     expect(screen.getByText('Danger Zone')).toBeInTheDocument();
+  });
+
+  // ============================================
+  // Analytics tests
+  // ============================================
+
+  describe('analytics', () => {
+    beforeEach(() => {
+      mockTrack.mockClear();
+    });
+
+    it('tracks page_viewed on mount', () => {
+      render(<Edit mustVerifyEmail={false} />);
+
+      expect(mockTrack).toHaveBeenCalledWith(
+        AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED,
+        { page: 'profile' }
+      );
+    });
+
+    it('tracks page_viewed exactly once', () => {
+      render(<Edit mustVerifyEmail={false} />);
+
+      const pageViewedCalls = mockTrack.mock.calls.filter(
+        ([event]) => event === AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED
+      );
+      expect(pageViewedCalls).toHaveLength(1);
+    });
   });
 });

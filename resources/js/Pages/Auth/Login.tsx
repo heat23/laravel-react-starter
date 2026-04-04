@@ -1,26 +1,36 @@
-import { Eye, EyeOff, Mail, Lock, ArrowRight, CheckCircle2 } from "lucide-react";
-import { z } from "zod";
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  ArrowRight,
+  CheckCircle2,
+} from 'lucide-react';
+import { z } from 'zod';
 
-import { useState, FormEventHandler } from "react";
+import { useState, useEffect, FormEventHandler } from 'react';
 
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm } from '@inertiajs/react';
 
-import { SocialAuthButtons } from "@/Components/auth/SocialAuthButtons";
-import InputError from "@/Components/InputError";
-import { LegalContentModal } from "@/Components/legal/LegalContentModal";
-import { Checkbox } from "@/Components/ui/checkbox";
-import { Input } from "@/Components/ui/input";
-import { Label } from "@/Components/ui/label";
-import { LoadingButton } from "@/Components/ui/loading-button";
-import { useFormValidation } from "@/hooks/useFormValidation";
-import { useAnalytics } from "@/hooks/useAnalytics";
-import AuthLayout from "@/Layouts/AuthLayout";
-import { AnalyticsEvents } from "@/lib/events";
+import { SocialAuthButtons } from '@/Components/auth/SocialAuthButtons';
+import InputError from '@/Components/InputError';
+import { LegalContentModal } from '@/Components/legal/LegalContentModal';
+import { Checkbox } from '@/Components/ui/checkbox';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
+import { LoadingButton } from '@/Components/ui/loading-button';
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { useFormValidation } from '@/hooks/useFormValidation';
+import AuthLayout from '@/Layouts/AuthLayout';
+import { AnalyticsEvents } from '@/lib/events';
 
 // P1-004: Client-side Zod validation for instant feedback
 const loginSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
-  password: z.string().min(1, "Password is required"),
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 interface LoginProps {
@@ -33,18 +43,36 @@ interface LoginProps {
   };
 }
 
-export default function Login({ status, canResetPassword, error, rememberDays = 30, features }: LoginProps) {
+export default function Login({
+  status,
+  canResetPassword,
+  error,
+  rememberDays = 30,
+  features,
+}: LoginProps) {
   const [showPassword, setShowPassword] = useState(false);
-  const { errors: clientErrors, validateField, validateAll, clearError } = useFormValidation(loginSchema);
-  const [legalModal, setLegalModal] = useState<"terms" | "privacy" | null>(null);
+  const {
+    errors: clientErrors,
+    validateField,
+    validateAll,
+    clearError,
+  } = useFormValidation(loginSchema);
+  const [legalModal, setLegalModal] = useState<'terms' | 'privacy' | null>(
+    null
+  );
   const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'login' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Helper for grammatically correct day/days
   const dayText = rememberDays === 1 ? 'day' : 'days';
 
   const { data, setData, post, processing, errors, reset } = useForm({
-    email: "",
-    password: "",
+    email: '',
+    password: '',
     remember: false,
   });
 
@@ -53,8 +81,8 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
 
     if (!validateAll(data)) return;
 
-    post(route("login"), {
-      onFinish: () => reset("password"),
+    post(route('login'), {
+      onFinish: () => reset('password'),
       onSuccess: (page) => {
         // Only fire login event if not redirected to 2FA challenge
         if (!page.component.includes('TwoFactor')) {
@@ -80,7 +108,8 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
           Quick tip
         </p>
         <p className="text-sm text-brand-surface-foreground/80 leading-relaxed">
-          Feature flags let you toggle billing, webhooks, 2FA, and more with a single env var — no code changes or redeployment needed.
+          Feature flags let you toggle billing, webhooks, 2FA, and more with a
+          single env var — no code changes or redeployment needed.
         </p>
       </div>
 
@@ -99,18 +128,18 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
 
   const footer = (
     <>
-      By logging in, you agree to our{" "}
+      By logging in, you agree to our{' '}
       <button
         type="button"
-        onClick={() => setLegalModal("terms")}
+        onClick={() => setLegalModal('terms')}
         className="text-primary hover:underline"
       >
         Terms of Service
-      </button>
-      {" "}and{" "}
+      </button>{' '}
+      and{' '}
       <button
         type="button"
-        onClick={() => setLegalModal("privacy")}
+        onClick={() => setLegalModal('privacy')}
         className="text-primary hover:underline"
       >
         Privacy Policy
@@ -121,7 +150,10 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
   return (
     <AuthLayout leftContent={leftContent} footer={footer}>
       <Head title="Log in">
-        <meta name="description" content="Log in to your account to access your dashboard, manage settings, and more." />
+        <meta
+          name="description"
+          content="Log in to your account to access your dashboard, manage settings, and more."
+        />
       </Head>
       <div className="space-y-8">
         {/* Header */}
@@ -136,7 +168,10 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
 
         {/* Social Login - Only show if feature is enabled */}
         {features?.socialAuth && (
-          <SocialAuthButtons processing={processing} separatorText="or continue with email" />
+          <SocialAuthButtons
+            processing={processing}
+            separatorText="or continue with email"
+          />
         )}
 
         {/* Login Form */}
@@ -163,19 +198,27 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
                 placeholder="you@example.com"
                 value={data.email}
                 onChange={(e) => {
-                  setData("email", e.target.value);
-                  if (clientErrors.email) clearError("email");
+                  setData('email', e.target.value);
+                  if (clientErrors.email) clearError('email');
                 }}
-                onBlur={(e) => validateField("email", e.target.value)}
+                onBlur={(e) => validateField('email', e.target.value)}
                 className="pl-10"
                 autoComplete="username"
                 autoFocus
                 required
-                aria-describedby={(clientErrors.email || errors.email) ? "login-email-error" : undefined}
+                aria-describedby={
+                  clientErrors.email || errors.email
+                    ? 'login-email-error'
+                    : undefined
+                }
                 aria-invalid={!!(clientErrors.email || errors.email)}
               />
             </div>
-            <InputError id="login-email-error" message={clientErrors.email || errors.email} className="text-xs" />
+            <InputError
+              id="login-email-error"
+              message={clientErrors.email || errors.email}
+              className="text-xs"
+            />
           </div>
 
           <div className="space-y-2">
@@ -183,7 +226,7 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
               <Label htmlFor="password">Password</Label>
               {canResetPassword && (
                 <Link
-                  href={route("password.request")}
+                  href={route('password.request')}
                   className="text-sm text-primary hover:text-primary/80 transition-colors"
                 >
                   Forgot password?
@@ -194,25 +237,29 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
               <Lock className="absolute left-3 h-4 w-4 text-muted-foreground" />
               <Input
                 id="password"
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Enter your password"
                 value={data.password}
                 onChange={(e) => {
-                  setData("password", e.target.value);
-                  if (clientErrors.password) clearError("password");
+                  setData('password', e.target.value);
+                  if (clientErrors.password) clearError('password');
                 }}
-                onBlur={(e) => validateField("password", e.target.value)}
+                onBlur={(e) => validateField('password', e.target.value)}
                 className="pl-10 pr-10"
                 autoComplete="current-password"
                 required
-                aria-describedby={(clientErrors.password || errors.password) ? "login-password-error" : undefined}
+                aria-describedby={
+                  clientErrors.password || errors.password
+                    ? 'login-password-error'
+                    : undefined
+                }
                 aria-invalid={!!(clientErrors.password || errors.password)}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 text-muted-foreground hover:text-foreground transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
                 aria-pressed={showPassword}
               >
                 {showPassword ? (
@@ -222,21 +269,36 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
                 )}
               </button>
             </div>
-            <InputError id="login-password-error" message={clientErrors.password || errors.password} className="text-xs" />
+            <InputError
+              id="login-password-error"
+              message={clientErrors.password || errors.password}
+              className="text-xs"
+            />
           </div>
 
           <div className="flex items-center space-x-2">
             <Checkbox
               id="remember"
               checked={data.remember}
-              onCheckedChange={(checked) => setData("remember", checked === true)}
+              onCheckedChange={(checked) =>
+                setData('remember', checked === true)
+              }
             />
-            <Label htmlFor="remember" className="text-sm font-normal text-muted-foreground cursor-pointer">
+            <Label
+              htmlFor="remember"
+              className="text-sm font-normal text-muted-foreground cursor-pointer"
+            >
               Keep me signed in for {rememberDays} {dayText}
             </Label>
           </div>
 
-          <LoadingButton type="submit" className="w-full group" size="lg" loading={processing} loadingText="Logging in...">
+          <LoadingButton
+            type="submit"
+            className="w-full group"
+            size="lg"
+            loading={processing}
+            loadingText="Logging in..."
+          >
             Log in
             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
           </LoadingButton>
@@ -244,9 +306,9 @@ export default function Login({ status, canResetPassword, error, rememberDays = 
 
         {/* Register Link */}
         <p className="text-center text-sm text-muted-foreground">
-          Don't have an account?{" "}
+          Don't have an account?{' '}
           <Link
-            href={route("register")}
+            href={route('register')}
             className="font-medium text-primary hover:text-primary/80 transition-colors"
           >
             Create one for free

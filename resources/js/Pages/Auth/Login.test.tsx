@@ -4,7 +4,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { useForm } from '@inertiajs/react';
 
+import { AnalyticsEvents } from '@/lib/events';
+
 import Login from './Login';
+
+// Analytics mock — declared at module scope so top-level beforeEach can clear it
+const mockTrack = vi.fn();
+vi.mock('@/hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
 
 // Mock useForm from Inertia
 const mockPost = vi.fn();
@@ -38,19 +46,32 @@ vi.mock('@inertiajs/react', async () => {
 
 // Mock the LegalContentModal
 vi.mock('@/Components/legal/LegalContentModal', () => ({
-  LegalContentModal: ({ type, onClose }: { type: string | null; onClose: () => void }) => (
+  LegalContentModal: ({
+    type,
+    onClose,
+  }: {
+    type: string | null;
+    onClose: () => void;
+  }) =>
     type ? (
       <div data-testid="legal-modal">
         <span data-testid="modal-type">{type}</span>
-        <button onClick={onClose} data-testid="close-modal">Close</button>
+        <button onClick={onClose} data-testid="close-modal">
+          Close
+        </button>
       </div>
-    ) : null
-  ),
+    ) : null,
 }));
 
 // Mock AuthLayout
 vi.mock('@/Layouts/AuthLayout', () => ({
-  default: ({ children, footer }: { children: React.ReactNode; footer?: React.ReactNode }) => (
+  default: ({
+    children,
+    footer,
+  }: {
+    children: React.ReactNode;
+    footer?: React.ReactNode;
+  }) => (
     <div data-testid="auth-layout">
       {children}
       {footer && <footer data-testid="footer">{footer}</footer>}
@@ -63,6 +84,7 @@ describe('Login Page', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTrack.mockClear();
     // Reset window.location.href mock
     Object.defineProperty(window, 'location', {
       value: { href: 'http://localhost' },
@@ -80,7 +102,9 @@ describe('Login Page', () => {
 
       expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
       expect(screen.getByLabelText('Password')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /log in/i })
+      ).toBeInTheDocument();
     });
 
     it('renders welcome message', () => {
@@ -105,19 +129,25 @@ describe('Login Page', () => {
     it('renders remember me checkbox with default days', () => {
       render(<Login canResetPassword={true} />);
 
-      expect(screen.getByText(/keep me signed in for 30 days/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/keep me signed in for 30 days/i)
+      ).toBeInTheDocument();
     });
 
     it('renders remember me checkbox with custom days', () => {
       render(<Login canResetPassword={true} rememberDays={14} />);
 
-      expect(screen.getByText(/keep me signed in for 14 days/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/keep me signed in for 14 days/i)
+      ).toBeInTheDocument();
     });
 
     it('renders singular "day" for 1 day', () => {
       render(<Login canResetPassword={true} rememberDays={1} />);
 
-      expect(screen.getByText(/keep me signed in for 1 day$/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/keep me signed in for 1 day$/i)
+      ).toBeInTheDocument();
       expect(screen.queryByText(/1 days/i)).not.toBeInTheDocument();
     });
 
@@ -137,22 +167,36 @@ describe('Login Page', () => {
     it('renders social login buttons when feature is enabled', () => {
       render(<Login canResetPassword={true} features={{ socialAuth: true }} />);
 
-      expect(screen.getByRole('button', { name: /github/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /google/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /github/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /google/i })
+      ).toBeInTheDocument();
     });
 
     it('does not render social login buttons when feature is disabled', () => {
-      render(<Login canResetPassword={true} features={{ socialAuth: false }} />);
+      render(
+        <Login canResetPassword={true} features={{ socialAuth: false }} />
+      );
 
-      expect(screen.queryByRole('button', { name: /github/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /google/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /github/i })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /google/i })
+      ).not.toBeInTheDocument();
     });
 
     it('does not render social login buttons when features prop is undefined', () => {
       render(<Login canResetPassword={true} />);
 
-      expect(screen.queryByRole('button', { name: /github/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /google/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /github/i })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /google/i })
+      ).not.toBeInTheDocument();
     });
 
     it('shows "or continue with email" separator when social auth is enabled', () => {
@@ -205,7 +249,9 @@ describe('Login Page', () => {
 
   describe('status and error messages', () => {
     it('displays status message when provided', () => {
-      render(<Login canResetPassword={true} status="Password reset link sent!" />);
+      render(
+        <Login canResetPassword={true} status="Password reset link sent!" />
+      );
 
       expect(screen.getByText(/password reset link sent/i)).toBeInTheDocument();
     });
@@ -219,13 +265,17 @@ describe('Login Page', () => {
     it('does not display status container when no status', () => {
       const { container } = render(<Login canResetPassword={true} />);
 
-      expect(container.querySelector('.bg-success\\/5')).not.toBeInTheDocument();
+      expect(
+        container.querySelector('.bg-success\\/5')
+      ).not.toBeInTheDocument();
     });
 
     it('does not display error container when no error', () => {
       const { container } = render(<Login canResetPassword={true} />);
 
-      expect(container.querySelector('.bg-destructive\\/5')).not.toBeInTheDocument();
+      expect(
+        container.querySelector('.bg-destructive\\/5')
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -244,7 +294,9 @@ describe('Login Page', () => {
     it('toggles password visibility on button click', async () => {
       render(<Login canResetPassword={true} />);
 
-      const toggleButton = screen.getByRole('button', { name: /show password/i });
+      const toggleButton = screen.getByRole('button', {
+        name: /show password/i,
+      });
       const passwordInput = screen.getByLabelText('Password');
 
       // Initially hidden
@@ -253,7 +305,9 @@ describe('Login Page', () => {
       // Click to show
       await user.click(toggleButton);
       expect(passwordInput).toHaveAttribute('type', 'text');
-      expect(screen.getByRole('button', { name: /hide password/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /hide password/i })
+      ).toBeInTheDocument();
 
       // Click to hide again
       const hideButton = screen.getByRole('button', { name: /hide password/i });
@@ -282,13 +336,17 @@ describe('Login Page', () => {
     it('shows invalid email error for malformed email', async () => {
       render(<Login canResetPassword={true} />);
 
-      const emailInput = screen.getByLabelText(/email address/i) as HTMLInputElement;
+      const emailInput = screen.getByLabelText(
+        /email address/i
+      ) as HTMLInputElement;
       // Set the value and trigger blur with the value in the event
       emailInput.value = 'notanemail';
       fireEvent.blur(emailInput);
 
       await waitFor(() => {
-        expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/please enter a valid email address/i)
+        ).toBeInTheDocument();
       });
     });
 
@@ -368,19 +426,25 @@ describe('Login Page', () => {
     it('renders terms of service button in footer', () => {
       render(<Login canResetPassword={true} />);
 
-      expect(screen.getByRole('button', { name: /terms of service/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /terms of service/i })
+      ).toBeInTheDocument();
     });
 
     it('renders privacy policy button in footer', () => {
       render(<Login canResetPassword={true} />);
 
-      expect(screen.getByRole('button', { name: /privacy policy/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /privacy policy/i })
+      ).toBeInTheDocument();
     });
 
     it('opens terms modal when terms button is clicked', async () => {
       render(<Login canResetPassword={true} />);
 
-      const termsButton = screen.getByRole('button', { name: /terms of service/i });
+      const termsButton = screen.getByRole('button', {
+        name: /terms of service/i,
+      });
       await user.click(termsButton);
 
       expect(screen.getByTestId('legal-modal')).toBeInTheDocument();
@@ -390,7 +454,9 @@ describe('Login Page', () => {
     it('opens privacy modal when privacy button is clicked', async () => {
       render(<Login canResetPassword={true} />);
 
-      const privacyButton = screen.getByRole('button', { name: /privacy policy/i });
+      const privacyButton = screen.getByRole('button', {
+        name: /privacy policy/i,
+      });
       await user.click(privacyButton);
 
       expect(screen.getByTestId('legal-modal')).toBeInTheDocument();
@@ -400,7 +466,9 @@ describe('Login Page', () => {
     it('closes modal when close button is clicked', async () => {
       render(<Login canResetPassword={true} />);
 
-      const termsButton = screen.getByRole('button', { name: /terms of service/i });
+      const termsButton = screen.getByRole('button', {
+        name: /terms of service/i,
+      });
       await user.click(termsButton);
 
       expect(screen.getByTestId('legal-modal')).toBeInTheDocument();
@@ -427,7 +495,9 @@ describe('Login Page', () => {
     it('has autofocus on email field', () => {
       render(<Login canResetPassword={true} />);
 
-      const emailInput = screen.getByLabelText(/email address/i) as HTMLInputElement;
+      const emailInput = screen.getByLabelText(
+        /email address/i
+      ) as HTMLInputElement;
       // React's autoFocus is not rendered as an attribute in JSDOM
       // Instead we check if the element would have been focused via the autofocus property
       // or has the data-autofocus attribute, or use document.activeElement
@@ -473,7 +543,9 @@ describe('Login Page', () => {
 
       render(<Login canResetPassword={true} />);
 
-      expect(screen.getByRole('button', { name: /logging in/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /logging in/i })
+      ).toBeInTheDocument();
     });
 
     it('disables submit button when processing', () => {
@@ -510,7 +582,9 @@ describe('Login Page', () => {
 
       render(<Login canResetPassword={true} />);
 
-      expect(screen.getByText(/these credentials do not match our records/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/these credentials do not match our records/i)
+      ).toBeInTheDocument();
     });
 
     it('displays server password error', () => {
@@ -525,7 +599,40 @@ describe('Login Page', () => {
 
       render(<Login canResetPassword={true} />);
 
-      expect(screen.getByText(/the password field is required/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/the password field is required/i)
+      ).toBeInTheDocument();
+    });
+  });
+
+  // ============================================
+  // Analytics tests
+  // ============================================
+
+  describe('analytics', () => {
+    beforeEach(() => {
+      mockTrack.mockClear();
+    });
+
+    it('tracks page_viewed exactly once on mount', () => {
+      render(<Login canResetPassword={true} />);
+
+      expect(mockTrack).toHaveBeenCalledTimes(1);
+      expect(mockTrack).toHaveBeenCalledWith(
+        AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED,
+        { page: 'login' }
+      );
+    });
+
+    it('does not fire additional page_viewed events on re-render', () => {
+      const { rerender } = render(<Login canResetPassword={true} />);
+
+      rerender(<Login canResetPassword={true} />);
+
+      const pageViewedCalls = mockTrack.mock.calls.filter(
+        ([event]) => event === AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED
+      );
+      expect(pageViewedCalls).toHaveLength(1);
     });
   });
 });

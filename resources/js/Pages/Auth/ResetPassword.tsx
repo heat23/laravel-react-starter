@@ -8,7 +8,9 @@ import InputError from "@/Components/InputError";
 import { Input } from "@/Components/ui/input";
 import { Label } from "@/Components/ui/label";
 import { LoadingButton } from "@/Components/ui/loading-button";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import AuthLayout from "@/Layouts/AuthLayout";
+import { AnalyticsEvents } from "@/lib/events";
 
 interface ResetPasswordProps {
   token: string;
@@ -22,10 +24,12 @@ export default function ResetPassword({ token, email }: ResetPasswordProps) {
     password: "",
     password_confirmation: "",
   });
+  const { track } = useAnalytics();
 
   const submit: FormEventHandler = (e) => {
     e.preventDefault();
     post(route("password.store"), {
+      onSuccess: () => track(AnalyticsEvents.AUTH_PASSWORD_RESET, { method: 'email' }),
       onFinish: () => reset("password", "password_confirmation"),
     });
   };

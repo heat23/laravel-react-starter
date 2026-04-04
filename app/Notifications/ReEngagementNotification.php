@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasUnsubscribeLink;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -9,7 +10,7 @@ use Illuminate\Notifications\Notification;
 
 class ReEngagementNotification extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use HasUnsubscribeLink, Queueable;
 
     public function __construct(
         public readonly int $emailNumber,
@@ -35,16 +36,22 @@ class ReEngagementNotification extends Notification implements ShouldQueue
     {
         // High-intent users (score ≥60) get upgrade-CTA variant for email 1 and 2
         if ($this->userScore >= 60 && in_array($this->emailNumber, [1, 2], true)) {
-            return $this->upgradeCtaVariant($notifiable);
+            $mail = $this->upgradeCtaVariant($notifiable);
+        } else {
+            $mail = match ($this->emailNumber) {
+                1 => $this->gentleCheckIn($notifiable),
+                2 => $this->feedbackRequest($notifiable),
+                3 => $this->accountStatus($notifiable),
+                4 => $this->valueTip($notifiable),
+                default => $this->gentleCheckIn($notifiable),
+            };
         }
 
-        return match ($this->emailNumber) {
-            1 => $this->gentleCheckIn($notifiable),
-            2 => $this->feedbackRequest($notifiable),
-            3 => $this->accountStatus($notifiable),
-            4 => $this->valueTip($notifiable),
-            default => $this->gentleCheckIn($notifiable),
-        };
+        if ($line = $this->unsubscribeLine($notifiable)) {
+            $mail->line($line);
+        }
+
+        return $mail;
     }
 
     private function upgradeCtaVariant(object $notifiable): MailMessage

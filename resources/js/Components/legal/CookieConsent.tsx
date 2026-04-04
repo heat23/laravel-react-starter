@@ -59,7 +59,8 @@ export default function CookieConsent() {
   const [marketing, setMarketing] = useState(false);
 
   useEffect(() => {
-    if (getConsent() === null) {
+    const storedVersion = localStorage.getItem(VERSION_KEY);
+    if (getConsent() === null || storedVersion !== CONSENT_VERSION) {
       setVisible(true);
     }
   }, []);
@@ -68,11 +69,23 @@ export default function CookieConsent() {
     const categories: ConsentCategories = { necessary: true, analytics: true, marketing: true };
     persistConsent(categories);
     setVisible(false);
-    grantConsent();
     const gaMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined;
     if (gaMeasurementId) {
-      initGA4(gaMeasurementId);
+      // initGA4 must run before grantConsent: it synchronously assigns window.gtag,
+      // so the queue flush inside grantConsent will find gtag available.
+      // Wrap in try/catch so a script-load failure does not prevent consent
+      // from being persisted and the queue from being flushed/discarded.
+      try {
+        initGA4(gaMeasurementId);
+      } catch (err) {
+        console.error('[analytics] initGA4 failed:', err);
+      }
     }
+    // Always call grantConsent regardless of GA4 configuration — it flushes queued
+    // events when gtag is available, or discards them when GA4 is not configured.
+    // Without this call, the pre-consent event queue would persist in memory for
+    // the page lifetime with no flush path.
+    grantConsent();
   };
 
   const handleDeclineAll = () => {
@@ -86,11 +99,20 @@ export default function CookieConsent() {
     persistConsent(categories);
     setVisible(false);
     if (analytics) {
-      grantConsent();
       const gaMeasurementId = import.meta.env.VITE_GA_MEASUREMENT_ID as string | undefined;
       if (gaMeasurementId) {
-        initGA4(gaMeasurementId);
+        // initGA4 before grantConsent so window.gtag is available when queue flushes.
+        // Wrap in try/catch so a script-load failure does not prevent consent
+        // from being persisted and the queue from being flushed/discarded.
+        try {
+          initGA4(gaMeasurementId);
+        } catch (err) {
+          console.error('[analytics] initGA4 failed:', err);
+        }
       }
+      // Always call grantConsent when analytics is accepted — flushes queued events
+      // when gtag is available, or discards them when GA4 is not configured.
+      grantConsent();
     }
   };
 

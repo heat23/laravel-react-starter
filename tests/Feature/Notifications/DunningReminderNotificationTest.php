@@ -2,6 +2,7 @@
 
 use App\Models\EmailSendLog;
 use App\Models\User;
+use App\Models\UserSetting;
 use App\Notifications\DunningReminderNotification;
 use Illuminate\Support\Facades\Notification;
 
@@ -101,6 +102,30 @@ it('does not send dunning reminders when billing is disabled', function () {
         ->assertSuccessful();
 
     Notification::assertNothingSent();
+});
+
+it('dunning is transactional and must be sent even when user opted out of marketing emails', function () {
+    Notification::fake();
+
+    $user = User::factory()->create([
+        'stripe_id' => 'cus_dunning_optout_test',
+        'email_verified_at' => now(),
+    ]);
+
+    // Opt the user out of marketing emails — dunning is transactional and must ignore this
+    UserSetting::setValue($user->id, 'marketing_emails', false);
+
+    createSubscription($user, [
+        'stripe_status' => 'past_due',
+        'past_due_since' => now()->subDays(4),
+    ]);
+
+    $this->artisan('notifications:send-dunning')
+        ->assertSuccessful();
+
+    Notification::assertSentTo($user, DunningReminderNotification::class, function ($notification) {
+        return $notification->emailNumber === 1;
+    });
 });
 
 it('does not send duplicate dunning reminders', function () {

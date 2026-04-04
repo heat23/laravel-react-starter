@@ -531,3 +531,67 @@ test('logProductEvent handles null user gracefully', function () {
 
     $this->service->logProductEvent('product.null_user');
 });
+
+// ============================================
+// IP anonymization tests
+// ============================================
+
+test('persist anonymizes IP for non-security events when config enabled', function () {
+    config(['services.audit.ip_anonymization' => true]);
+
+    expectLogChannel();
+
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function ($message, $context) {
+            // Non-auth event should have anonymized IP (last octet zeroed)
+            return $message === 'profile.updated'
+                && $context['ip'] === '192.168.1.0';
+        });
+
+    // Simulate a request with a known IP
+    $this->app['request']->server->set('REMOTE_ADDR', '192.168.1.42');
+
+    $user = User::factory()->create();
+    Auth::login($user);
+
+    $this->service->log('profile.updated', ['field' => 'name']);
+});
+
+test('persist keeps full IP for auth events even when anonymization enabled', function () {
+    config(['services.audit.ip_anonymization' => true]);
+
+    expectLogChannel();
+
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function ($message, $context) {
+            // Auth event should retain full IP
+            return $message === 'auth.login'
+                && $context['ip'] === '192.168.1.42';
+        });
+
+    $this->app['request']->server->set('REMOTE_ADDR', '192.168.1.42');
+
+    $user = User::factory()->create();
+    $this->service->logLogin($user);
+});
+
+test('persist does not anonymize IP when config disabled', function () {
+    config(['services.audit.ip_anonymization' => false]);
+
+    expectLogChannel();
+
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function ($message, $context) {
+            return $context['ip'] === '10.0.5.123';
+        });
+
+    $this->app['request']->server->set('REMOTE_ADDR', '10.0.5.123');
+
+    $user = User::factory()->create();
+    Auth::login($user);
+
+    $this->service->log('profile.updated');
+});

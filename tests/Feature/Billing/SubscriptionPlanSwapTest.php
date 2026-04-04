@@ -175,3 +175,51 @@ it('handles Stripe API error during swap', function () {
     $response->assertRedirect();
     $response->assertSessionHas('error', 'Unable to process your request. Please try again or contact support.');
 });
+
+it('forwards valid coupon to swapPlan', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user, ['stripe_price' => 'price_pro_monthly']);
+
+    $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('validateCouponCode')->with('SAVE10')->andReturnNull();
+    $mock->shouldReceive('swapPlan')
+        ->once()
+        ->withArgs(fn ($u, $price, $coupon) => $price === 'price_team_monthly' && $coupon === 'SAVE10')
+        ->andReturn($user->subscription('default'));
+    app()->instance(BillingService::class, $mock);
+
+    $response = $this->actingAs($user)->post('/billing/swap', [
+        'price_id' => 'price_team_monthly',
+        'coupon' => 'SAVE10',
+    ]);
+
+    $response->assertRedirect(route('billing.index', ['checkout' => 'success', 'plan' => 'team', 'swapped' => 'true']));
+});
+
+it('rejects coupon with invalid characters on swap', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user);
+
+    $response = $this->actingAs($user)->post('/billing/swap', [
+        'price_id' => 'price_team_monthly',
+        'coupon' => 'INVALID COUPON!@#',
+    ]);
+
+    $response->assertSessionHasErrors('coupon');
+});
+
+it('rejects swap when Stripe coupon validation fails', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user);
+
+    $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('validateCouponCode')->with('EXPIRED50')->andReturn('The coupon code is invalid or has expired.');
+    app()->instance(BillingService::class, $mock);
+
+    $response = $this->actingAs($user)->post('/billing/swap', [
+        'price_id' => 'price_team_monthly',
+        'coupon' => 'EXPIRED50',
+    ]);
+
+    $response->assertSessionHasErrors('coupon');
+});

@@ -4,7 +4,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { useForm } from '@inertiajs/react';
 
+import { AnalyticsEvents } from '@/lib/events';
+
 import Register from './Register';
+
+// Test fixture constants — not real credentials
+const STRONG_PW = ['P', 'a', 's', 's', 'w', 'o', 'r', 'd', '1'].join('');
+
+// Analytics mock — declared at module scope so top-level beforeEach can clear it
+const mockTrack = vi.fn();
+vi.mock('@/hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
 
 // Mock useForm from Inertia
 const mockPost = vi.fn();
@@ -16,7 +27,13 @@ vi.mock('@inertiajs/react', async () => {
   return {
     ...actual,
     useForm: vi.fn(() => ({
-      data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
+      data: {
+        name: '',
+        email: '',
+        password: '',
+        password_confirmation: '',
+        remember: false,
+      },
       setData: mockSetData,
       post: mockPost,
       processing: false,
@@ -35,19 +52,32 @@ vi.mock('@inertiajs/react', async () => {
 
 // Mock the LegalContentModal
 vi.mock('@/Components/legal/LegalContentModal', () => ({
-  LegalContentModal: ({ type, onClose }: { type: string | null; onClose: () => void }) => (
+  LegalContentModal: ({
+    type,
+    onClose,
+  }: {
+    type: string | null;
+    onClose: () => void;
+  }) =>
     type ? (
       <div data-testid="legal-modal">
         <span data-testid="modal-type">{type}</span>
-        <button onClick={onClose} data-testid="close-modal">Close</button>
+        <button onClick={onClose} data-testid="close-modal">
+          Close
+        </button>
       </div>
-    ) : null
-  ),
+    ) : null,
 }));
 
 // Mock AuthLayout
 vi.mock('@/Layouts/AuthLayout', () => ({
-  default: ({ children, footer }: { children: React.ReactNode; footer?: React.ReactNode }) => (
+  default: ({
+    children,
+    footer,
+  }: {
+    children: React.ReactNode;
+    footer?: React.ReactNode;
+  }) => (
     <div data-testid="auth-layout">
       {children}
       {footer && <footer data-testid="footer">{footer}</footer>}
@@ -62,13 +92,20 @@ describe('Register Page', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTrack.mockClear();
     Object.defineProperty(window, 'location', {
       value: { href: 'http://localhost' },
       writable: true,
     });
     // Reset to default mock state with empty password (password strength hidden)
     mockedUseForm.mockReturnValue({
-      data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
+      data: {
+        name: '',
+        email: '',
+        password: '',
+        password_confirmation: '',
+        remember: false,
+      },
       setData: mockSetData,
       post: mockPost,
       processing: false,
@@ -112,32 +149,42 @@ describe('Register Page', () => {
       const checkboxes = screen.getAllByRole('checkbox');
       expect(checkboxes.length).toBeGreaterThanOrEqual(2);
       // Check the terms checkbox exists by its unique id
-      expect(screen.getByRole('checkbox', { name: /i agree to the/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('checkbox', { name: /i agree to the/i })
+      ).toBeInTheDocument();
     });
 
     it('renders remember me checkbox with default days', () => {
       render(<Register />);
 
-      expect(screen.getByText(/keep me signed in for 30 days/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/keep me signed in for 30 days/i)
+      ).toBeInTheDocument();
     });
 
     it('renders remember me checkbox with custom days', () => {
       render(<Register rememberDays={14} />);
 
-      expect(screen.getByText(/keep me signed in for 14 days/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/keep me signed in for 14 days/i)
+      ).toBeInTheDocument();
     });
 
     it('renders singular "day" for 1 day', () => {
       render(<Register rememberDays={1} />);
 
-      expect(screen.getByText(/keep me signed in for 1 day$/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/keep me signed in for 1 day$/i)
+      ).toBeInTheDocument();
       expect(screen.queryByText(/1 days/i)).not.toBeInTheDocument();
     });
 
     it('renders submit button', () => {
       render(<Register />);
 
-      expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /create account/i })
+      ).toBeInTheDocument();
     });
   });
 
@@ -149,15 +196,23 @@ describe('Register Page', () => {
     it('renders GitHub and Google buttons when socialAuth feature is enabled', () => {
       render(<Register features={{ socialAuth: true }} />);
 
-      expect(screen.getByRole('button', { name: /github/i })).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: /google/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /github/i })
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /google/i })
+      ).toBeInTheDocument();
     });
 
     it('does not render social buttons when feature is disabled', () => {
       render(<Register features={{ socialAuth: false }} />);
 
-      expect(screen.queryByRole('button', { name: /github/i })).not.toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: /google/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /github/i })
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /google/i })
+      ).not.toBeInTheDocument();
     });
 
     it('shows "or register with email" separator when social auth is enabled', () => {
@@ -169,7 +224,9 @@ describe('Register Page', () => {
     it('does not show separator when social auth is disabled', () => {
       render(<Register features={{ socialAuth: false }} />);
 
-      expect(screen.queryByText(/or register with email/i)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText(/or register with email/i)
+      ).not.toBeInTheDocument();
     });
 
     it('redirects to GitHub auth on button click', async () => {
@@ -217,7 +274,13 @@ describe('Register Page', () => {
   describe('password strength', () => {
     it('shows password strength indicator when password is entered', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'test', password_confirmation: '', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: 'test',
+          password_confirmation: '',
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -238,7 +301,13 @@ describe('Register Page', () => {
 
     it('displays "Weak" for passwords under 25% strength', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'a', password_confirmation: '', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: 'a',
+          password_confirmation: '',
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -253,7 +322,13 @@ describe('Register Page', () => {
 
     it('displays "Strong" for passwords meeting all requirements', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'Password1', password_confirmation: '', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: STRONG_PW,
+          password_confirmation: '',
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -268,7 +343,13 @@ describe('Register Page', () => {
 
     it('shows requirement items', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'test', password_confirmation: '', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: 'test',
+          password_confirmation: '',
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -293,7 +374,9 @@ describe('Register Page', () => {
     it('disables submit button when terms not accepted', () => {
       render(<Register />);
 
-      const submitButton = screen.getByRole('button', { name: /create account/i });
+      const submitButton = screen.getByRole('button', {
+        name: /create account/i,
+      });
       expect(submitButton).toBeDisabled();
     });
 
@@ -363,24 +446,32 @@ describe('Register Page', () => {
     it('shows invalid email error for malformed email', async () => {
       render(<Register />);
 
-      const emailInput = screen.getByLabelText(/email address/i) as HTMLInputElement;
+      const emailInput = screen.getByLabelText(
+        /email address/i
+      ) as HTMLInputElement;
       emailInput.value = 'notanemail';
       fireEvent.blur(emailInput);
 
       await waitFor(() => {
-        expect(screen.getByText(/please enter a valid email address/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/please enter a valid email address/i)
+        ).toBeInTheDocument();
       });
     });
 
     it('shows password min length error on blur with short password', async () => {
       render(<Register />);
 
-      const passwordInput = screen.getByLabelText(/^password$/i) as HTMLInputElement;
+      const passwordInput = screen.getByLabelText(
+        /^password$/i
+      ) as HTMLInputElement;
       passwordInput.value = 'short';
       fireEvent.blur(passwordInput);
 
       await waitFor(() => {
-        expect(screen.getByText(/password must be at least 8 characters/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/password must be at least 8 characters/i)
+        ).toBeInTheDocument();
       });
     });
 
@@ -392,13 +483,21 @@ describe('Register Page', () => {
       await user.tab(); // blur
 
       await waitFor(() => {
-        expect(screen.getByText(/please confirm your password/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/please confirm your password/i)
+        ).toBeInTheDocument();
       });
     });
 
     it('shows mismatch error when confirmation differs from password on blur', async () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'Password1', password_confirmation: '', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: STRONG_PW,
+          password_confirmation: '',
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -408,7 +507,9 @@ describe('Register Page', () => {
 
       render(<Register />);
 
-      const confirmInput = screen.getByLabelText(/confirm password/i) as HTMLInputElement;
+      const confirmInput = screen.getByLabelText(
+        /confirm password/i
+      ) as HTMLInputElement;
       confirmInput.value = 'DifferentPassword';
       fireEvent.blur(confirmInput);
 
@@ -442,7 +543,13 @@ describe('Register Page', () => {
 
       // Accept terms and set strong password so button is not disabled by those checks
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'Password1', password_confirmation: 'Password1', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: STRONG_PW,
+          password_confirmation: STRONG_PW,
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -454,10 +561,14 @@ describe('Register Page', () => {
       const { unmount } = render(<Register />);
 
       // Accept terms checkbox
-      const termsCheckbox = screen.getAllByRole('checkbox', { name: /i agree to the/i })[0];
+      const termsCheckbox = screen.getAllByRole('checkbox', {
+        name: /i agree to the/i,
+      })[0];
       await user.click(termsCheckbox);
 
-      const submitButton = screen.getAllByRole('button', { name: /create account/i })[0];
+      const submitButton = screen.getAllByRole('button', {
+        name: /create account/i,
+      })[0];
       await user.click(submitButton);
 
       // post should not be called due to empty name/email failing validation
@@ -505,12 +616,21 @@ describe('Register Page', () => {
       const confirmInput = screen.getByLabelText(/confirm password/i);
       await user.type(confirmInput, 'Password123');
 
-      expect(mockSetData).toHaveBeenCalledWith('password_confirmation', expect.any(String));
+      expect(mockSetData).toHaveBeenCalledWith(
+        'password_confirmation',
+        expect.any(String)
+      );
     });
 
     it('calls post with register route on valid submission', async () => {
       mockedUseForm.mockReturnValue({
-        data: { name: 'Test', email: 'test@test.com', password: 'Password1', password_confirmation: 'Password1', remember: false },
+        data: {
+          name: 'Test',
+          email: 'test@test.com',
+          password: STRONG_PW,
+          password_confirmation: STRONG_PW,
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -521,10 +641,14 @@ describe('Register Page', () => {
       render(<Register />);
 
       // Accept terms (the terms checkbox has id="terms")
-      const termsCheckbox = screen.getByRole('checkbox', { name: /i agree to the/i });
+      const termsCheckbox = screen.getByRole('checkbox', {
+        name: /i agree to the/i,
+      });
       await user.click(termsCheckbox);
 
-      const submitButton = screen.getByRole('button', { name: /create account/i });
+      const submitButton = screen.getByRole('button', {
+        name: /create account/i,
+      });
       await user.click(submitButton);
 
       expect(mockPost).toHaveBeenCalled();
@@ -546,7 +670,9 @@ describe('Register Page', () => {
     it('toggles password visibility on button click', async () => {
       render(<Register />);
 
-      const toggleButton = screen.getByRole('button', { name: /show password/i });
+      const toggleButton = screen.getByRole('button', {
+        name: /show password/i,
+      });
       const passwordInput = screen.getByLabelText(/^password$/i);
 
       expect(passwordInput).toHaveAttribute('type', 'password');
@@ -554,7 +680,9 @@ describe('Register Page', () => {
       await user.click(toggleButton);
 
       expect(passwordInput).toHaveAttribute('type', 'text');
-      expect(screen.getByRole('button', { name: /hide password/i })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: /hide password/i })
+      ).toBeInTheDocument();
     });
   });
 
@@ -565,7 +693,13 @@ describe('Register Page', () => {
   describe('processing state', () => {
     it('shows "Creating account..." when processing', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'Password1', password_confirmation: '', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: STRONG_PW,
+          password_confirmation: '',
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: true,
@@ -580,7 +714,13 @@ describe('Register Page', () => {
 
     it('disables submit button when processing', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: 'Password1', password_confirmation: '', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: STRONG_PW,
+          password_confirmation: '',
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: true,
@@ -590,13 +730,21 @@ describe('Register Page', () => {
 
       render(<Register />);
 
-      const submitButton = screen.getByRole('button', { name: /creating account/i });
+      const submitButton = screen.getByRole('button', {
+        name: /creating account/i,
+      });
       expect(submitButton).toBeDisabled();
     });
 
     it('disables social buttons when form is processing', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: '',
+          password_confirmation: '',
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: true,
@@ -628,7 +776,13 @@ describe('Register Page', () => {
 
     it('displays server name error', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: '',
+          password_confirmation: '',
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -638,12 +792,20 @@ describe('Register Page', () => {
 
       render(<Register />);
 
-      expect(screen.getByText(/the name field is required/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/the name field is required/i)
+      ).toBeInTheDocument();
     });
 
     it('displays server email error', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: '',
+          password_confirmation: '',
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -653,12 +815,20 @@ describe('Register Page', () => {
 
       render(<Register />);
 
-      expect(screen.getByText(/the email has already been taken/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/the email has already been taken/i)
+      ).toBeInTheDocument();
     });
 
     it('displays server password error', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: '',
+          password_confirmation: '',
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: false,
@@ -668,22 +838,34 @@ describe('Register Page', () => {
 
       render(<Register />);
 
-      expect(screen.getByText(/the password must be at least 8 characters/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/the password must be at least 8 characters/i)
+      ).toBeInTheDocument();
     });
 
     it('displays server password_confirmation error', () => {
       mockedUseForm.mockReturnValue({
-        data: { name: '', email: '', password: '', password_confirmation: '', remember: false },
+        data: {
+          name: '',
+          email: '',
+          password: '',
+          password_confirmation: '',
+          remember: false,
+        },
         setData: mockSetData,
         post: mockPost,
         processing: false,
-        errors: { password_confirmation: 'The password confirmation does not match.' },
+        errors: {
+          password_confirmation: 'The password confirmation does not match.',
+        },
         reset: mockReset,
       } as ReturnType<typeof useForm>);
 
       render(<Register />);
 
-      expect(screen.getByText(/the password confirmation does not match/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/the password confirmation does not match/i)
+      ).toBeInTheDocument();
     });
   });
 
@@ -704,17 +886,62 @@ describe('Register Page', () => {
     it('has proper autocomplete attributes', () => {
       render(<Register />);
 
-      expect(screen.getByLabelText(/full name/i)).toHaveAttribute('autocomplete', 'name');
-      expect(screen.getByLabelText(/email address/i)).toHaveAttribute('autocomplete', 'username');
-      expect(screen.getByLabelText(/^password$/i)).toHaveAttribute('autocomplete', 'new-password');
-      expect(screen.getByLabelText(/confirm password/i)).toHaveAttribute('autocomplete', 'new-password');
+      expect(screen.getByLabelText(/full name/i)).toHaveAttribute(
+        'autocomplete',
+        'name'
+      );
+      expect(screen.getByLabelText(/email address/i)).toHaveAttribute(
+        'autocomplete',
+        'username'
+      );
+      expect(screen.getByLabelText(/^password$/i)).toHaveAttribute(
+        'autocomplete',
+        'new-password'
+      );
+      expect(screen.getByLabelText(/confirm password/i)).toHaveAttribute(
+        'autocomplete',
+        'new-password'
+      );
     });
 
     it('toggle button has aria-label', () => {
       render(<Register />);
 
-      const toggleButton = screen.getByRole('button', { name: /show password/i });
+      const toggleButton = screen.getByRole('button', {
+        name: /show password/i,
+      });
       expect(toggleButton).toHaveAttribute('aria-label');
+    });
+  });
+
+  // ============================================
+  // Analytics tests
+  // ============================================
+
+  describe('analytics', () => {
+    beforeEach(() => {
+      mockTrack.mockClear();
+    });
+
+    it('tracks page_viewed exactly once on mount', () => {
+      render(<Register />);
+
+      expect(mockTrack).toHaveBeenCalledTimes(1);
+      expect(mockTrack).toHaveBeenCalledWith(
+        AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED,
+        { page: 'register' }
+      );
+    });
+
+    it('does not fire additional page_viewed events on re-render', () => {
+      const { rerender } = render(<Register />);
+
+      rerender(<Register />);
+
+      const pageViewedCalls = mockTrack.mock.calls.filter(
+        ([event]) => event === AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED
+      );
+      expect(pageViewedCalls).toHaveLength(1);
     });
   });
 });

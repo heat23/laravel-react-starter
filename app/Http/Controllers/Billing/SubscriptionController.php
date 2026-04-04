@@ -71,6 +71,7 @@ class SubscriptionController extends Controller
                 $quantity,
                 route('billing.index', ['checkout' => 'success', 'plan' => $tier]),
                 route('pricing'),
+                $request->validated('coupon'),
             );
 
             return Inertia::location($checkoutUrl);

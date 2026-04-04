@@ -8,9 +8,8 @@ use Illuminate\Support\Facades\RateLimiter;
 beforeEach(function () {
     config(['features.webhooks.enabled' => true]);
     Queue::fake();
-    // Clear all rate limiters for the test IP
-    RateLimiter::clear('127.0.0.1');
-    RateLimiter::clear('webhook-test:127.0.0.1');
+    // Clear prefixed rate limiter keys matching AppServiceProvider's webhook-test definition
+    RateLimiter::clear('webhook-test|127.0.0.1');
 
     if (! Schema::hasTable('webhook_endpoints')) {
         Schema::create('webhook_endpoints', function ($table) {

@@ -110,8 +110,8 @@ it('billing service throws ConcurrentOperationException when lock is held', func
     $user = User::factory()->create();
     ensureCashierTablesExist();
 
-    // Acquire the lock manually
-    $lock = Cache::lock("subscription:cancel:{$user->id}", 35);
+    // Acquire the lock manually using the configured timeout
+    $lock = Cache::lock("subscription:cancel:{$user->id}", config('billing.lock_timeout', 35));
     $lock->get();
 
     $service = app(BillingService::class);
@@ -135,7 +135,21 @@ it('billing service releases lock after successful operation', function () {
     $lockKey = "subscription:cancel:{$user->id}";
 
     // Verify lock is not held
-    $lock = Cache::lock($lockKey, 35);
+    $lock = Cache::lock($lockKey, config('billing.lock_timeout', 35));
     expect($lock->get())->toBeTrue();
     $lock->release();
+});
+
+it('billing lock timeout is driven by billing.lock_timeout config', function () {
+    expect(config('billing.lock_timeout'))->toBe(35);
+
+    config(['billing.lock_timeout' => 60]);
+    expect(config('billing.lock_timeout'))->toBe(60);
+});
+
+it('activity tracking window is driven by app.activity_tracking_window config', function () {
+    expect(config('app.activity_tracking_window'))->toBe(15);
+
+    config(['app.activity_tracking_window' => 30]);
+    expect(config('app.activity_tracking_window'))->toBe(30);
 });

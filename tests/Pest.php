@@ -230,6 +230,7 @@ function registerBillingRoutes(): void
 
     $router->middleware(['web', 'auth', 'verified'])->group(function () use ($router) {
         $router->get('/billing', [BillingController::class, 'index'])->name('billing.index');
+        $router->post('/billing/checkout', [SubscriptionController::class, 'checkout'])->name('billing.checkout');
         $router->post('/billing/subscribe', [SubscriptionController::class, 'subscribe'])->name('billing.subscribe');
         $router->post('/billing/cancel', [SubscriptionController::class, 'cancel'])->name('billing.cancel');
         $router->post('/billing/resume', [SubscriptionController::class, 'resume'])->name('billing.resume');

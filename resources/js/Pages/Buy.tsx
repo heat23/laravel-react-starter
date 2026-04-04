@@ -1,6 +1,11 @@
 import { ArrowRight, CheckCircle2, Clock, Lock, RefreshCcw, ShieldCheck } from 'lucide-react';
 
+import { useEffect } from 'react';
+
 import { Head, Link } from '@inertiajs/react';
+
+import { useAnalytics } from '@/hooks/useAnalytics';
+import { AnalyticsEvents } from '@/lib/events';
 
 import { PublicFooter } from '@/Components/marketing/PublicFooter';
 import { PublicNav } from '@/Components/marketing/PublicNav';
@@ -46,6 +51,12 @@ const Buy: BuyComponent = ({
   templatePrice,
   canonicalUrl,
 }) => {
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'buy' });
+  }, [track]); // mount-only in practice: track is stable (see useAnalytics)
+
   return (
     <>
       <Head title="Buy — Laravel React Starter">
@@ -81,7 +92,7 @@ const Buy: BuyComponent = ({
                 </p>
                 <Button size="lg" className="mt-6 w-full" asChild>
                   {/* Replace this href with your actual payment link (Gumroad, Lemon Squeezy, etc.) */}
-                  <a href="#purchase" onClick={(e) => e.preventDefault()}>
+                  <a href="#purchase" onClick={(e) => { e.preventDefault(); track(AnalyticsEvents.ENGAGEMENT_CTA_CLICKED, { source: 'buy_page', label: 'get_instant_access', page: 'buy' }); }}>
                     Get Instant Access
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </a>
@@ -212,7 +223,7 @@ const Buy: BuyComponent = ({
               <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
                 <Button size="lg" asChild>
                   {/* Replace this href with your actual payment link */}
-                  <a href="#purchase" onClick={(e) => e.preventDefault()}>
+                  <a href="#purchase" onClick={(e) => { e.preventDefault(); track(AnalyticsEvents.ENGAGEMENT_CTA_CLICKED, { source: 'buy_page', label: 'get_instant_access_bottom', page: 'buy' }); }}>
                     Get Instant Access — {templatePrice}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </a>

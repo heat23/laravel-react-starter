@@ -23,6 +23,14 @@ return [
         // before payment processing goes live. Defaults false so billing works immediately on launch.
         'coming_soon' => env('PRO_TIER_COMING_SOON', false),
         // Trial config is in config/plans.php (plans.trial.days, plans.trial.enabled)
+        //
+        // Tax compliance (PRODUCTION REQUIRED in many jurisdictions):
+        // Enable Stripe Tax by setting FEATURE_BILLING_TAX=true and configuring tax settings
+        // in your Stripe Dashboard (stripe.com/tax). Once enabled, BillingService will
+        // pass automatic_tax: { enabled: true } to all new subscriptions.
+        // See app/Services/BillingService.php and the Stripe Tax documentation.
+        // WARNING: Do not enable without verifying your Stripe Tax registration settings first.
+        'tax_enabled' => env('FEATURE_BILLING_TAX', false),
     ],
 
     /*

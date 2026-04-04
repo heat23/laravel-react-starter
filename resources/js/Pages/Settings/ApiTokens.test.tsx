@@ -2,7 +2,15 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+import { AnalyticsEvents } from '@/lib/events';
+
 import ApiTokens from './ApiTokens';
+
+// Analytics mock — declared at module scope so top-level beforeEach can clear it
+const mockTrack = vi.fn();
+vi.mock('@/hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
 
 vi.mock('@inertiajs/react', async () => {
   const actual = await vi.importActual('@inertiajs/react');
@@ -100,6 +108,7 @@ const mockTokens = [
 describe('ApiTokens Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockTrack.mockClear();
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
@@ -151,7 +160,9 @@ describe('ApiTokens Page', () => {
 
     expect(await screen.findByText(/no api tokens/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/create a token to authenticate requests from your scripts/i)
+      screen.getByText(
+        /create a token to authenticate requests from your scripts/i
+      )
     ).toBeInTheDocument();
   });
 
@@ -270,5 +281,39 @@ describe('ApiTokens Page', () => {
         headers: { Accept: 'application/json' },
       })
     );
+  });
+
+  // ============================================
+  // Analytics tests
+  // ============================================
+
+  describe('analytics', () => {
+    beforeEach(() => {
+      mockTrack.mockClear();
+    });
+
+    it('tracks page_viewed exactly once on mount', () => {
+      render(<ApiTokens />);
+
+      const pageViewedCalls = mockTrack.mock.calls.filter(
+        ([event]) => event === AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED
+      );
+      expect(pageViewedCalls).toHaveLength(1);
+      expect(pageViewedCalls[0]).toEqual([
+        AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED,
+        { page: 'api_tokens' },
+      ]);
+    });
+
+    it('does not fire additional page_viewed events on re-render', () => {
+      const { rerender } = render(<ApiTokens />);
+
+      rerender(<ApiTokens />);
+
+      const pageViewedCalls = mockTrack.mock.calls.filter(
+        ([event]) => event === AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED
+      );
+      expect(pageViewedCalls).toHaveLength(1);
+    });
   });
 });

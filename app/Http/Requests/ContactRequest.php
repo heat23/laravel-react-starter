@@ -17,8 +17,8 @@ class ContactRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255'],
+            'name' => ['required', 'string', 'max:255', 'not_regex:/[\r\n\0]/'],
+            'email' => ['required', 'email', 'max:255', 'not_regex:/[\r\n\0]/'],
             'subject' => ['required', 'string', Rule::in([
                 'General inquiry',
                 'Enterprise pricing',

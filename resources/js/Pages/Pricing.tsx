@@ -1,11 +1,22 @@
-import { CheckCircle2, ChevronDown, Lock, RefreshCcw, ShieldCheck, Sparkles, Tag } from 'lucide-react';
+import {
+  CheckCircle2,
+  ChevronDown,
+  Lock,
+  RefreshCcw,
+  ShieldCheck,
+  Sparkles,
+  Tag,
+} from 'lucide-react';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
 
 import { SwapConfirmDialog } from '@/Components/billing/SwapConfirmDialog';
-import { AnnouncementBanner, type AnnouncementBannerProps } from '@/Components/layout/AnnouncementBanner';
+import {
+  AnnouncementBanner,
+  type AnnouncementBannerProps,
+} from '@/Components/layout/AnnouncementBanner';
 import PageHeader from '@/Components/layout/PageHeader';
 import { FaqAccordion } from '@/Components/marketing/FaqAccordion';
 import { PublicFooter } from '@/Components/marketing/PublicFooter';
@@ -20,11 +31,27 @@ import {
   CardHeader,
   CardTitle,
 } from '@/Components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/Components/ui/dialog';
+import { Input } from '@/Components/ui/input';
+import { Label } from '@/Components/ui/label';
 import { LoadingButton } from '@/Components/ui/loading-button';
+import { Textarea } from '@/Components/ui/textarea';
 import { ToggleGroup, ToggleGroupItem } from '@/Components/ui/toggle-group';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { AnalyticsEvents, type BillingPeriod, type PlanKey } from '@/lib/events';
+import {
+  AnalyticsEvents,
+  type BillingPeriod,
+  type PlanKey,
+} from '@/lib/events';
+import { sanitizeHtml } from '@/lib/sanitize';
 import type { PageProps } from '@/types';
 
 interface TierConfig {
@@ -102,8 +129,17 @@ const DEFAULT_FAQS: FaqItem[] = [
 ];
 
 export default function Pricing() {
-  const { tiers, currentPlan, trial, trialEnabled, trialDays, auth, faqs, contactEmail, announcementBanner } =
-    usePage<PricingPageProps>().props;
+  const {
+    tiers,
+    currentPlan,
+    trial,
+    trialEnabled,
+    trialDays,
+    auth,
+    faqs,
+    contactEmail,
+    announcementBanner,
+  } = usePage<PricingPageProps>().props;
   const { track } = useAnalytics();
   const tierEntries = useMemo(() => Object.entries(tiers), [tiers]);
 
@@ -118,16 +154,20 @@ export default function Pricing() {
     );
   }, [tierEntries]);
 
-  const urlParams = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search)
-    : new URLSearchParams();
+  const urlParams =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams();
   const urlPlan = urlParams.get('plan');
   const urlBilling = urlParams.get('billing') as 'monthly' | 'annual' | null;
 
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>(
     () => {
-      if (urlBilling && ['monthly', 'annual'].includes(urlBilling)) return urlBilling;
-      return Object.values(tiers).some((t) => t.price_annual && t.price_annual > 0)
+      if (urlBilling && ['monthly', 'annual'].includes(urlBilling))
+        return urlBilling;
+      return Object.values(tiers).some(
+        (t) => t.price_annual && t.price_annual > 0
+      )
         ? 'annual'
         : 'monthly';
     }
@@ -152,6 +192,14 @@ export default function Pricing() {
     priceId: string | null | undefined;
     priceLabel: string;
   } | null>(null);
+  const [salesDialogOpen, setSalesDialogOpen] = useState(false);
+  const salesForm = useForm({
+    name: '',
+    email: auth.user?.email ?? '',
+    company: '',
+    seats_needed: 10,
+    message: '',
+  });
 
   const annualSavingsPercent = useMemo(() => {
     const proTier = tiers.pro;
@@ -246,7 +294,10 @@ export default function Pricing() {
       {
         '@type': 'Question',
         name: 'How many projects can I deploy with one license?',
-        acceptedAnswer: { '@type': 'Answer', text: 'One license = one production domain.' },
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'One license = one production domain.',
+        },
       },
       {
         '@type': 'Question',
@@ -270,7 +321,9 @@ export default function Pricing() {
   const swapDialog = swapTarget && (
     <SwapConfirmDialog
       open={!!swapTarget}
-      onOpenChange={(open) => { if (!open) setSwapTarget(null); }}
+      onOpenChange={(open) => {
+        if (!open) setSwapTarget(null);
+      }}
       targetPlanKey={swapTarget.planKey}
       targetTierName={swapTarget.tierName}
       priceId={swapTarget.priceId}
@@ -278,6 +331,129 @@ export default function Pricing() {
       currentPlanName={currentPlan ? tiers[currentPlan]?.name : undefined}
       couponCode={couponCode}
     />
+  );
+
+  const salesDialog = (
+    <Dialog open={salesDialogOpen} onOpenChange={setSalesDialogOpen}>
+      <DialogContent className="sm:max-w-[480px]">
+        <DialogHeader>
+          <DialogTitle>Contact Sales</DialogTitle>
+          <DialogDescription>
+            Tell us about your team and we&apos;ll get back to you within one
+            business day.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            salesForm.post(route('contact.sales'), {
+              onSuccess: () => {
+                setSalesDialogOpen(false);
+                salesForm.reset(['name', 'company', 'seats_needed', 'message']);
+              },
+            });
+          }}
+        >
+          <div className="space-y-4 py-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="sales-name">Name</Label>
+              <Input
+                id="sales-name"
+                value={salesForm.data.name}
+                onChange={(e) => salesForm.setData('name', e.target.value)}
+                placeholder="Jane Smith"
+              />
+              {salesForm.errors.name && (
+                <p className="text-sm text-destructive">
+                  {salesForm.errors.name}
+                </p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sales-email">Email</Label>
+              <Input
+                id="sales-email"
+                type="email"
+                value={salesForm.data.email}
+                onChange={(e) => salesForm.setData('email', e.target.value)}
+                placeholder="jane@company.com"
+              />
+              {salesForm.errors.email && (
+                <p className="text-sm text-destructive">
+                  {salesForm.errors.email}
+                </p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sales-company">Company</Label>
+              <Input
+                id="sales-company"
+                value={salesForm.data.company}
+                onChange={(e) => salesForm.setData('company', e.target.value)}
+                placeholder="Acme Inc."
+              />
+              {salesForm.errors.company && (
+                <p className="text-sm text-destructive">
+                  {salesForm.errors.company}
+                </p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sales-seats">Seats needed</Label>
+              <Input
+                id="sales-seats"
+                type="number"
+                min="1"
+                value={salesForm.data.seats_needed}
+                onChange={(e) =>
+                  salesForm.setData(
+                    'seats_needed',
+                    parseInt(e.target.value, 10) || 1
+                  )
+                }
+                placeholder="10"
+              />
+              {salesForm.errors.seats_needed && (
+                <p className="text-sm text-destructive">
+                  {salesForm.errors.seats_needed}
+                </p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sales-message">Message</Label>
+              <Textarea
+                id="sales-message"
+                value={salesForm.data.message}
+                onChange={(e) => salesForm.setData('message', e.target.value)}
+                placeholder="Tell us about your use case..."
+                rows={4}
+              />
+              {salesForm.errors.message && (
+                <p className="text-sm text-destructive">
+                  {salesForm.errors.message}
+                </p>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setSalesDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <LoadingButton
+              type="submit"
+              loading={salesForm.processing}
+              loadingText="Sending..."
+            >
+              Send Message
+            </LoadingButton>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 
   const content = (
@@ -289,7 +465,7 @@ export default function Pricing() {
         />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: licenseFaqSchema }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(licenseFaqSchema) }}
         />
       </Head>
       <PageHeader
@@ -300,7 +476,9 @@ export default function Pricing() {
         <div className="max-w-5xl mx-auto space-y-10">
           {/* Social proof */}
           <p className="text-center text-sm text-muted-foreground">
-            Join <strong className="text-foreground">hundreds of developers</strong> already building with Laravel React Starter.
+            Join{' '}
+            <strong className="text-foreground">hundreds of developers</strong>{' '}
+            already building with Laravel React Starter.
           </p>
 
           {hasAnnualPricing && (
@@ -338,7 +516,10 @@ export default function Pricing() {
           {!hasAnnualPricing && (
             <p className="text-center text-sm text-muted-foreground">
               Switch to annual billing and save 20%.{' '}
-              <a href={`mailto:${salesEmail}`} className="underline hover:text-foreground transition-colors">
+              <a
+                href={`mailto:${salesEmail}`}
+                className="underline hover:text-foreground transition-colors"
+              >
                 Email us to switch.
               </a>
             </p>
@@ -380,8 +561,12 @@ export default function Pricing() {
                 }}
               >
                 <Tag className="h-3.5 w-3.5" />
-                {couponCode ? `Promo code: ${couponCode}` : 'Have a promo code?'}
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${couponVisible ? 'rotate-180' : ''}`} />
+                {couponCode
+                  ? `Promo code: ${couponCode}`
+                  : 'Have a promo code?'}
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${couponVisible ? 'rotate-180' : ''}`}
+                />
               </button>
               {couponVisible && (
                 <div className="mt-2 flex gap-2">
@@ -409,7 +594,8 @@ export default function Pricing() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {tierEntries.map(([key, tier]) => {
               const isCurrent = currentPlan === key;
-              const isEnterprise = tier.price === null || tier.price === undefined;
+              const isEnterprise =
+                tier.price === null || tier.price === undefined;
               const isIntendedPlan = auth.user && urlPlan === key && !isCurrent;
               const pricing = getPrice(tier);
 
@@ -438,18 +624,27 @@ export default function Pricing() {
                   <CardHeader>
                     {isIntendedPlan && (
                       <div className="mb-2">
-                        <Badge variant="success" className="bg-success text-success-foreground">
+                        <Badge
+                          variant="success"
+                          className="bg-success text-success-foreground"
+                        >
                           Complete your upgrade
                         </Badge>
                       </div>
                     )}
-                    {!isIntendedPlan && tier.popular && !isCurrent && !tier.coming_soon && (
-                      <div className="mb-2">
-                        <Badge variant="default" className="bg-primary text-primary-foreground">
-                          Most Popular
-                        </Badge>
-                      </div>
-                    )}
+                    {!isIntendedPlan &&
+                      tier.popular &&
+                      !isCurrent &&
+                      !tier.coming_soon && (
+                        <div className="mb-2">
+                          <Badge
+                            variant="default"
+                            className="bg-primary text-primary-foreground"
+                          >
+                            Most Popular
+                          </Badge>
+                        </div>
+                      )}
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{tier.name}</CardTitle>
                       <div className="flex items-center gap-2">
@@ -477,16 +672,20 @@ export default function Pricing() {
                           {pricing.sublabel}
                         </CardDescription>
                       )}
-                      {tier.per_seat && tier.price != null && tier.price > 0 && tier.min_seats && (
-                        <CardDescription className="text-xs text-muted-foreground">
-                          {billingPeriod === 'annual' && tier.price_annual
-                            ? `$${(tier.price_annual / 12).toFixed(2)}/seat/mo — min ${tier.min_seats} seats`
-                            : `$${tier.price}/seat/mo — starts at $${tier.price * tier.min_seats}/mo for ${tier.min_seats} seats`}
-                        </CardDescription>
-                      )}
+                      {tier.per_seat &&
+                        tier.price != null &&
+                        tier.price > 0 &&
+                        tier.min_seats && (
+                          <CardDescription className="text-xs text-muted-foreground">
+                            {billingPeriod === 'annual' && tier.price_annual
+                              ? `$${(tier.price_annual / 12).toFixed(2)}/seat/mo — min ${tier.min_seats} seats`
+                              : `$${tier.price}/seat/mo — starts at $${tier.price * tier.min_seats}/mo for ${tier.min_seats} seats`}
+                          </CardDescription>
+                        )}
                       {!tier.per_seat && key === 'pro' && (
                         <CardDescription className="text-xs text-muted-foreground">
-                          For one developer. Upgrade to Team to add collaborators.
+                          For one developer. Upgrade to Team to add
+                          collaborators.
                         </CardDescription>
                       )}
                     </div>
@@ -522,15 +721,22 @@ export default function Pricing() {
                           >
                             Self-Serve Checkout ({tier.min_seats}+ seats)
                           </LoadingButton>
-                          <Button asChild className="w-full" variant="ghost" size="sm">
-                            <a href={`mailto:${salesEmail}`} className="text-muted-foreground">
-                              Contact Sales instead
-                            </a>
+                          <Button
+                            className="w-full text-muted-foreground"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSalesDialogOpen(true)}
+                          >
+                            Contact Sales instead
                           </Button>
                         </div>
                       ) : isEnterprise ? (
-                        <Button asChild className="w-full" variant="outline">
-                          <a href={`mailto:${salesEmail}`}>Contact Sales</a>
+                        <Button
+                          className="w-full"
+                          variant="outline"
+                          onClick={() => setSalesDialogOpen(true)}
+                        >
+                          Contact Sales
                         </Button>
                       ) : (
                         <>
@@ -550,44 +756,50 @@ export default function Pricing() {
                             </Button>
                           )}
 
-                          {auth.user &&
-                            !isCurrent &&
-                            key !== 'free' && (
-                              <>
-                                {tier.coming_soon ? (
-                                  <Button
-                                    className="w-full"
-                                    variant="secondary"
-                                    disabled
-                                  >
-                                    Coming Soon
-                                  </Button>
-                                ) : (
-                                  <LoadingButton
-                                    className="w-full"
-                                    onClick={() => handleCheckout(key)}
-                                    loading={checkoutLoading === key}
-                                    loadingText="Processing..."
-                                  >
-                                    {isSubscribed ? 'Switch to' : 'Upgrade to'}{' '}
-                                    {tier.name}
-                                    {billingPeriod === 'annual' && ' (Annual)'}
-                                  </LoadingButton>
-                                )}
-                              </>
-                            )}
+                          {auth.user && !isCurrent && key !== 'free' && (
+                            <>
+                              {tier.coming_soon ? (
+                                <Button
+                                  className="w-full"
+                                  variant="secondary"
+                                  disabled
+                                >
+                                  Coming Soon
+                                </Button>
+                              ) : (
+                                <LoadingButton
+                                  className="w-full"
+                                  onClick={() => handleCheckout(key)}
+                                  loading={checkoutLoading === key}
+                                  loadingText="Processing..."
+                                >
+                                  {isSubscribed ? 'Switch to' : 'Upgrade to'}{' '}
+                                  {tier.name}
+                                  {billingPeriod === 'annual' && ' (Annual)'}
+                                </LoadingButton>
+                              )}
+                            </>
+                          )}
 
                           {auth.user &&
                             !isCurrent &&
                             key === 'free' &&
                             currentPlan !== 'free' && (
-                              <Button asChild className="w-full" variant="outline">
+                              <Button
+                                asChild
+                                className="w-full"
+                                variant="outline"
+                              >
                                 <Link href="/dashboard">Go to Dashboard</Link>
                               </Button>
                             )}
 
                           {auth.user && isCurrent && (
-                            <Button asChild className="w-full" variant="outline">
+                            <Button
+                              asChild
+                              className="w-full"
+                              variant="outline"
+                            >
                               <Link href={route('billing.index')}>
                                 Manage Billing
                               </Link>
@@ -621,19 +833,31 @@ export default function Pricing() {
           {/* Compare links */}
           <p className="mt-2 text-center text-sm text-muted-foreground">
             Evaluating alternatives?{' '}
-            <Link href="/compare/laravel-spark" className="underline hover:text-foreground transition-colors">
+            <Link
+              href="/compare/laravel-spark"
+              className="underline hover:text-foreground transition-colors"
+            >
               Laravel Spark
             </Link>
             {', '}
-            <Link href="/compare/laravel-jetstream" className="underline hover:text-foreground transition-colors">
+            <Link
+              href="/compare/laravel-jetstream"
+              className="underline hover:text-foreground transition-colors"
+            >
               Jetstream
             </Link>
             {', '}
-            <Link href="/compare/saasykit" className="underline hover:text-foreground transition-colors">
+            <Link
+              href="/compare/saasykit"
+              className="underline hover:text-foreground transition-colors"
+            >
               SaaSykit
             </Link>
             {', and '}
-            <Link href="/compare" className="underline hover:text-foreground transition-colors">
+            <Link
+              href="/compare"
+              className="underline hover:text-foreground transition-colors"
+            >
               more comparisons →
             </Link>
           </p>
@@ -663,7 +887,7 @@ export default function Pricing() {
                 {
                   question: 'Can I white-label it for a client?',
                   answer:
-                    'Yes. You can replace the branding, rename the project, and ship it under your client\'s brand. Attribution in the source code is not required. The code you deliver becomes part of your client\'s codebase — they do not need their own license.',
+                    "Yes. You can replace the branding, rename the project, and ship it under your client's brand. Attribution in the source code is not required. The code you deliver becomes part of your client's codebase — they do not need their own license.",
                 },
               ]}
             />
@@ -688,6 +912,7 @@ export default function Pricing() {
         {announcementBanner && <AnnouncementBanner {...announcementBanner} />}
         {content}
         {swapDialog}
+        {salesDialog}
       </DashboardLayout>
     );
   }
@@ -697,6 +922,7 @@ export default function Pricing() {
       {announcementBanner && <AnnouncementBanner {...announcementBanner} />}
       <PublicNav canLogin canRegister currentPath="/pricing" />
       {content}
+      {salesDialog}
       <PublicFooter />
     </div>
   );

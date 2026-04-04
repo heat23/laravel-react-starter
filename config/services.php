@@ -45,7 +45,10 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
-        'analytics_id' => env('GOOGLE_ANALYTICS_ID'),
+        // Falls back to GA4_MEASUREMENT_ID so a single measurement ID configures both
+        // the CSP allowlist and the server-side Measurement Protocol.
+        // Set GOOGLE_ANALYTICS_ID explicitly only when the CSP allowlist must differ.
+        'analytics_id' => env('GOOGLE_ANALYTICS_ID', env('GA4_MEASUREMENT_ID')),
     ],
 
     'github' => [
@@ -83,6 +86,21 @@ return [
         'measurement_id' => env('GA4_MEASUREMENT_ID'),
         'api_secret' => env('GA4_API_SECRET'),
         'enabled' => env('GA4_MEASUREMENT_PROTOCOL_ENABLED', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Audit Log Configuration
+    |--------------------------------------------------------------------------
+    |
+    | ip_anonymization: When true, non-security audit events store anonymized
+    | IPs (last octet zeroed for IPv4, last 80 bits for IPv6). Auth/security
+    | events always retain full IPs for abuse detection.
+    |
+    */
+
+    'audit' => [
+        'ip_anonymization' => env('AUDIT_IP_ANONYMIZATION', false),
     ],
 
 ];

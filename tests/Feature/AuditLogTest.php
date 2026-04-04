@@ -1,8 +1,10 @@
 <?php
 
+use App\Jobs\DispatchAnalyticsEvent;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\AuditService;
+use Illuminate\Support\Facades\Queue;
 
 test('audit log model scopes', function () {
     $user = User::factory()->create();
@@ -104,4 +106,158 @@ test('audit log survives user deletion', function () {
     $log = AuditLog::first();
     $this->assertNotNull($log);
     $this->assertNull($log->user_id);
+});
+
+// GA4 forwarding tests (ANA-010)
+test('audit service dispatches GA4 job for forwarded lifecycle event', function () {
+    Queue::fake();
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $service = new AuditService;
+    $service->log('subscription.created', ['plan' => 'pro']);
+
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === 'subscription.created'
+            && $job->params === ['plan' => 'pro']
+            && $job->userId === $user->id;
+    });
+});
+
+test('audit service does not dispatch GA4 job for non-forwarded event', function () {
+    Queue::fake();
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $service = new AuditService;
+    $service->log('settings.updated', ['key' => 'theme']);
+
+    Queue::assertNotPushed(DispatchAnalyticsEvent::class);
+});
+
+test('audit service does not dispatch GA4 job for forwarded event with no user', function () {
+    Queue::fake();
+
+    // No actingAs — anonymous user
+    $service = new AuditService;
+    $service->log('subscription.created', ['plan' => 'pro']);
+
+    Queue::assertNotPushed(DispatchAnalyticsEvent::class);
+});
+
+test('audit service dispatches GA4 job for all ten forwarded event types', function (string $event) {
+    Queue::fake();
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $service = new AuditService;
+    $service->log($event, []);
+
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($event) {
+        return $job->eventName === $event;
+    });
+})->with([
+    'auth.register',
+    'auth.login',
+    'auth.social_login',
+    'onboarding.completed',
+    'subscription.created',
+    'subscription.canceled',
+    'trial.started',
+    'limit.threshold_50',
+    'limit.threshold_80',
+    'limit.threshold_100',
+]);
+
+// ANA-013: consent gate — server-side GA4 forwarding
+
+test('audit service does not dispatch GA4 when user has explicitly declined analytics consent', function () {
+    Queue::fake();
+
+    $user = User::factory()->create();
+    $user->setSetting(AuditService::ANALYTICS_CONSENT_KEY, false);
+    $this->actingAs($user);
+
+    $service = new AuditService;
+    $service->log('subscription.created', ['plan' => 'pro']);
+
+    Queue::assertNotPushed(DispatchAnalyticsEvent::class);
+});
+
+test('audit service dispatches GA4 when user has explicitly granted analytics consent', function () {
+    Queue::fake();
+
+    $user = User::factory()->create();
+    $user->setSetting(AuditService::ANALYTICS_CONSENT_KEY, true);
+    $this->actingAs($user);
+
+    $service = new AuditService;
+    $service->log('subscription.created', ['plan' => 'pro']);
+
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === 'subscription.created' && $job->userId === $user->id;
+    });
+});
+
+test('audit service dispatches GA4 when user has no analytics consent setting (legitimate interest)', function () {
+    Queue::fake();
+
+    // No setSetting call — consent key is absent (null)
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $service = new AuditService;
+    $service->log('auth.login', []);
+
+    // null consent → legitimate interest → dispatch proceeds
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === 'auth.login' && $job->userId === $user->id;
+    });
+});
+
+// ANA-014: ConsentController persists analytics consent setting
+test('consent endpoint persists analytics decline for authenticated user', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $this->postJson(route('consent.store'), [
+        'categories' => [
+            'necessary' => true,
+            'analytics' => false,
+            'marketing' => false,
+        ],
+    ])->assertJson(['success' => true]);
+
+    // Verify the setting round-trips as a native PHP boolean false (not string or int)
+    $consent = $user->fresh()->getSetting(AuditService::ANALYTICS_CONSENT_KEY);
+    expect($consent)->toBeFalse();
+});
+
+test('consent endpoint persists analytics grant for authenticated user', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $this->postJson(route('consent.store'), [
+        'categories' => [
+            'necessary' => true,
+            'analytics' => true,
+            'marketing' => true,
+        ],
+    ])->assertJson(['success' => true]);
+
+    $consent = $user->fresh()->getSetting(AuditService::ANALYTICS_CONSENT_KEY);
+    expect($consent)->toBeTrue();
+});
+
+test('consent endpoint succeeds without persisting for guest users', function () {
+    $this->postJson(route('consent.store'), [
+        'categories' => [
+            'necessary' => true,
+            'analytics' => false,
+            'marketing' => false,
+        ],
+    ])->assertJson(['success' => true]);
 });
