@@ -35,7 +35,7 @@ export function UpgradePrompt({ prompt }: UpgradePromptProps) {
       <div className="container flex items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-sm text-primary">
           <Sparkles className="h-4 w-4 shrink-0" aria-hidden="true" />
-          <span>You've reached your {limitLabel} limit on the free plan.</span>
+          <span>You've reached your {limitLabel} limit on your current plan.</span>
           <Button asChild size="sm" className="ml-2 h-7 px-3">
             <Link href={prompt.cta_url}>Upgrade to {prompt.plan}</Link>
           </Button>

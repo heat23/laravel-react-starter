@@ -20,7 +20,7 @@ class ContactSalesRequest extends FormRequest
             'email' => ['required', 'email', 'max:255'],
             'company' => ['required', 'string', 'max:255'],
             'seats_needed' => ['required', 'integer', 'min:1'],
-            'message' => ['required', 'string', 'max:2000'],
+            'message' => ['nullable', 'string', 'max:2000'],
         ];
     }
 }

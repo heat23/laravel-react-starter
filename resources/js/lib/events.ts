@@ -62,6 +62,7 @@ export const AnalyticsEvents = {
   API_TOKEN_CREATED: 'api_token.created',
   API_TOKEN_DELETED: 'api_token.deleted',
   CONTACT_SUBMITTED: 'contact.submitted',
+  SALES_INQUIRY_SUBMITTED: 'sales_inquiry.submitted',
   FEEDBACK_SUBMITTED: 'feedback.submitted',
 
   // Feature usage — all features use FEATURE_USED with feature_name property

@@ -24,6 +24,7 @@ it('passes coupon code to createCheckoutSession when provided', function () {
     $mock = Mockery::mock(BillingService::class)->makePartial();
     $mock->shouldReceive('resolveTierFromPrice')->andReturn('pro');
     $mock->shouldReceive('validateSeatCount')->andReturn(null);
+    $mock->shouldReceive('validateCouponCode')->andReturn(null); // null = valid
     $mock->shouldReceive('createCheckoutSession')
         ->once()
         ->andReturnUsing(function ($u, $priceId, $qty, $successUrl, $cancelUrl, $coupon) use (&$capturedCoupon) {

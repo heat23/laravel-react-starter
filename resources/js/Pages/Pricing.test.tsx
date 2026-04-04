@@ -217,7 +217,7 @@ describe('Pricing Page', () => {
 
       render(<Pricing />);
 
-      expect(screen.getByRole('link', { name: /contact sales/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /contact sales/i })).toBeInTheDocument();
     });
 
     it('uses DashboardLayout for authenticated users', () => {

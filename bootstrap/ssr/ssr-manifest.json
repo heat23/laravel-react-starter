@@ -150,6 +150,7 @@
   "resources/js/Pages/Billing/Index.tsx": [],
   "resources/js/Pages/Blog/Index.tsx": [],
   "resources/js/Pages/Blog/Show.tsx": [],
+  "resources/js/Pages/Buy.test.tsx": [],
   "resources/js/Pages/Buy.tsx": [],
   "resources/js/Pages/Changelog.tsx": [],
   "resources/js/Pages/Compare/Index.tsx": [],
@@ -213,6 +214,7 @@
   "resources/js/Pages/Settings/Security.tsx": [],
   "resources/js/Pages/Settings/Webhooks.test.tsx": [],
   "resources/js/Pages/Settings/Webhooks.tsx": [],
+  "resources/js/Pages/Unsubscribe.test.tsx": [],
   "resources/js/Pages/Unsubscribe.tsx": [],
   "resources/js/Pages/Welcome.test.tsx": [],
   "resources/js/Pages/Welcome.tsx": [],
@@ -231,6 +233,7 @@
   "resources/js/lib/analytics.ts": [],
   "resources/js/lib/events.ts": [],
   "resources/js/lib/format.ts": [],
+  "resources/js/lib/sanitize.ts": [],
   "resources/js/lib/utils.ts": [],
   "resources/js/ssr.tsx": []
 }

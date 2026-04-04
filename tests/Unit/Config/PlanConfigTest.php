@@ -78,10 +78,17 @@ it('team annual price default is less than monthly × 12 and represents exactly 
 });
 
 it('pro and team annual price env defaults match expected values', function () {
-    // Explicit defaults prevent silent drift from a bad env file
-    config(['plans.pro.price_annual' => null]);
-    config(['plans.team.price_annual' => null]);
+    // Verify the plans config file has the expected hard-coded env() defaults.
+    // These prevent silent drift when PLAN_*_PRICE_ANNUAL env vars are unset.
+    $plansFile = require base_path('config/plans.php');
 
-    expect(config('plans.pro.price_annual', 194))->toBe(194)
-        ->and(config('plans.team.price_annual', 441))->toBe(441);
+    // Extract the raw env default from the config array (env() returns the default when the var is unset)
+    // We verify the default by checking what the loaded config produces with no env override.
+    putenv('PLAN_PRO_PRICE_ANNUAL');   // unset
+    putenv('PLAN_TEAM_PRICE_ANNUAL');  // unset
+
+    $freshPlans = require base_path('config/plans.php');
+
+    expect($freshPlans['pro']['price_annual'])->toBe(182)
+        ->and($freshPlans['team']['price_annual'])->toBe(470);
 });

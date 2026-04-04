@@ -106,13 +106,11 @@ class SendWinBackEmails extends Command
 
     private function alreadySentEmail(User $user, int $emailNumber): bool
     {
-        // Use a non-digit anchor after the number to avoid matching e.g. :1 inside :10 or :11.
-        // JSON serializes the last key as ":N}" and intermediate keys as ":N,".
-        $pattern = '%"email_number":'.$emailNumber.'[^0-9]%';
-
         return $user->notifications()
             ->where('type', WinBackNotification::class)
-            ->where('data', 'like', $pattern)
-            ->exists();
+            ->get()
+            ->contains(function ($notification) use ($emailNumber) {
+                return ($notification->data['email_number'] ?? null) === $emailNumber;
+            });
     }
 }

@@ -103,7 +103,7 @@ it('submits sales inquiry and stores submission', function () {
 it('validates required fields on sales inquiry form', function () {
     $response = $this->post('/contact/sales', []);
 
-    $response->assertSessionHasErrors(['name', 'email', 'company', 'seats_needed', 'message']);
+    $response->assertSessionHasErrors(['name', 'email', 'company', 'seats_needed']);
 });
 
 it('validates email format on sales inquiry form', function () {

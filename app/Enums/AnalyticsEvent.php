@@ -171,6 +171,7 @@ enum AnalyticsEvent: string
         'api_token.created',
         'api_token.deleted',
         'contact.submitted',
+        'sales_inquiry.submitted',
         'feedback.submitted',
         'feature.used',
         'feature.settings_updated',

@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+
 import { AlertTriangle, Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -35,6 +37,12 @@ export default function Edit({
   timezone: initialTimezone,
 }: EditProps) {
   const { track } = useAnalytics();
+
+  useEffect(() => {
+    track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'profile' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const {
     timezone,
     setTimezone: saveTimezone,

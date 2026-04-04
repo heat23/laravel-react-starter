@@ -49,7 +49,7 @@ class SendTrialEndingReminders extends Command
                 continue;
             }
 
-            $daysRemaining = max(0, (int) now()->diffInDays($user->trial_ends_at, false));
+            $daysRemaining = max(0, (int) ceil(now()->diffInSeconds($user->trial_ends_at) / 86400));
 
             try {
                 $user->notify(new TrialEndingNotification($daysRemaining));

@@ -3,9 +3,6 @@
 use App\Models\Feedback;
 use App\Models\User;
 use App\Notifications\FeedbackReceivedNotification;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 function makeFeedbackUser(string $name, string $email): User
 {
@@ -16,7 +13,7 @@ function makeFeedbackUser(string $name, string $email): User
     return $user;
 }
 
-function makeFeedback(string $type, string $message): Feedback
+function makeFeedbackItem(string $type, string $message): Feedback
 {
     $feedback = new Feedback;
     $feedback->type = $type;
@@ -27,7 +24,7 @@ function makeFeedback(string $type, string $message): Feedback
 
 it('builds mail with correct subject and body', function () {
     $user = makeFeedbackUser('Alice', 'alice@example.com');
-    $feedback = makeFeedback('bug', 'Something is broken.');
+    $feedback = makeFeedbackItem('bug', 'Something is broken.');
     $feedback->setRelation('user', $user);
 
     $notification = new FeedbackReceivedNotification($feedback);
@@ -38,7 +35,7 @@ it('builds mail with correct subject and body', function () {
 });
 
 it('uses Guest when no user is attached', function () {
-    $feedback = makeFeedback('general', 'Anonymous feedback.');
+    $feedback = makeFeedbackItem('general', 'Anonymous feedback.');
     $feedback->setRelation('user', null);
 
     $notification = new FeedbackReceivedNotification($feedback);
@@ -50,7 +47,7 @@ it('uses Guest when no user is attached', function () {
 
 it('strips CRLF from subject when userName contains injection attempt', function () {
     $user = makeFeedbackUser("Alice\r\nBcc: evil@example.com", 'alice@example.com');
-    $feedback = makeFeedback('bug', 'Injection test.');
+    $feedback = makeFeedbackItem('bug', 'Injection test.');
     $feedback->setRelation('user', $user);
 
     $notification = new FeedbackReceivedNotification($feedback);
@@ -60,7 +57,7 @@ it('strips CRLF from subject when userName contains injection attempt', function
 });
 
 it('strips CRLF from subject when type contains injection attempt', function () {
-    $feedback = makeFeedback("bug\r\nBcc: evil@example.com", 'Type injection test.');
+    $feedback = makeFeedbackItem("bug\r\nBcc: evil@example.com", 'Type injection test.');
     $feedback->setRelation('user', null);
 
     $notification = new FeedbackReceivedNotification($feedback);
@@ -71,7 +68,7 @@ it('strips CRLF from subject when type contains injection attempt', function () 
 
 it('strips CRLF from user email in body to prevent injection', function () {
     $user = makeFeedbackUser('Alice', "alice@example.com\r\nX-Injected: header");
-    $feedback = makeFeedback('general', 'Email injection test.');
+    $feedback = makeFeedbackItem('general', 'Email injection test.');
     $feedback->setRelation('user', $user);
 
     $notification = new FeedbackReceivedNotification($feedback);
@@ -84,7 +81,7 @@ it('strips CRLF from user email in body to prevent injection', function () {
 
 it('falls back to Unknown when sanitized name is empty after stripping HTML', function () {
     $user = makeFeedbackUser('<script>alert(1)</script>', 'alice@example.com');
-    $feedback = makeFeedback('bug', 'Name sanitization test.');
+    $feedback = makeFeedbackItem('bug', 'Name sanitization test.');
     $feedback->setRelation('user', $user);
 
     $notification = new FeedbackReceivedNotification($feedback);
