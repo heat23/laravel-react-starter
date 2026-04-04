@@ -24,7 +24,16 @@ Fix LEGAL-001 immediately (visible disclaimer in production):
 Fix OPSRISK-001 + SEC-001 (.env defaults):
   /v update .env.example to default CACHE_STORE=redis and QUEUE_CONNECTION=redis with AppServiceProvider boot warnings when billing is enabled with non-Redis drivers
 
-## Full Audit Report
-- JSON: AUDIT_REPORT_2026-04-03.json (51 findings, 17 areas)
-- Markdown: AUDIT_REPORT_2026-04-03.md
-- Prior batch: saas-audit-results_dfb85618-a29e-4541-b6db-79e85fc31521.json
+## Comprehensive Audit (2026-04-04)
+
+| File | Sprint | Content |
+|------|--------|---------|
+| 09-sprint-1-security-critical.md | Sprint 1 (~2d) | SEC-CRIT-001/002/004, SEC-HIGH-003/004/005/006/012 |
+| 10-sprint-2-security-compliance.md | Sprint 2 (~3d) | SEC-CRIT-003, SEC-HIGH-001/002/008, DEVOPS-HIGH-009, SEC-MED-001/008/018 |
+| 11-sprint-3-test-coverage.md | Sprint 3 (~5d) | TEST-CRIT-005/006, TEST-HIGH-010/011, TEST-MED-011/012 |
+| 12-sprint-4-performance-polish.md | Sprint 4 (~4d) | PERF-HIGH-007, SEC-MED-009/010, UX-MED-019/020/021, DEVOPS-MED-013/014 |
+
+## Full Audit Reports
+- **Comprehensive (2026-04-04):** audit-full-results_76c2377f.json (51 findings), AUDIT_FULL_REPORT_76c2377f.md
+- **Prior (2026-04-03):** AUDIT_REPORT_2026-04-03.json, AUDIT_REPORT_2026-04-03.md
+- **Batch audits:** audit-*-results_dfb85618.json (admin, growth, gtm, launch)
