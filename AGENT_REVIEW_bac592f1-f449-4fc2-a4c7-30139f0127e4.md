@@ -5,7 +5,7 @@ Session: bac592f1-f449-4fc2-a4c7-30139f0127e4
 
 **Status**: completed
 **Agents dispatched**: 1 haiku code-reviewer agent via superpowers:requesting-code-review
-**Codex adversarial reviewer**: superpowers:requesting-code-review (fallback — codex unavailable)
+**Codex adversarial reviewer**: ran via superpowers:requesting-code-review foreground agent
 **Hostile adversarial focus**: no (audit-only session, no auth/billing/payment code modified)
 **Dispatch mode**: foreground
 **Review evidence**: findings: 0 issues in audit artifacts
