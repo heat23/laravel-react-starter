@@ -37,6 +37,7 @@ enum AnalyticsEvent: string
     case SUBSCRIPTION_QUANTITY_UPDATED = 'subscription.quantity_updated';
     case BILLING_PRICING_VIEWED = 'billing.pricing_viewed';
     case BILLING_PLAN_SELECTED = 'billing.plan_selected';
+    case BILLING_CTA_CLICKED = 'billing.cta_clicked';
     case BILLING_CHECKOUT_STARTED = 'billing.checkout_started';
     case BILLING_CHECKOUT_COMPLETED = 'billing.checkout_completed';
     case BILLING_SUBSCRIPTION_CANCELED = 'billing.subscription_canceled';
@@ -156,6 +157,7 @@ enum AnalyticsEvent: string
         'subscription.quantity_updated',
         'billing.pricing_viewed',
         'billing.plan_selected',
+        'billing.cta_clicked',
         'billing.checkout_started',
         'billing.checkout_completed',
         'billing.subscription_canceled',

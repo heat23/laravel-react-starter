@@ -1,4 +1,8 @@
+import { useState } from 'react';
+
 import { router } from '@inertiajs/react';
+
+import { Button } from '@/Components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -7,12 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/Components/ui/dialog';
-import { Button } from '@/Components/ui/button';
 import { LoadingButton } from '@/Components/ui/loading-button';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
-import type { PlanKey } from '@/lib/events';
-import { useState } from 'react';
+import type { BillingPeriod, PlanKey } from '@/lib/events';
 
 interface SwapConfirmDialogProps {
   open: boolean;
@@ -23,6 +25,7 @@ interface SwapConfirmDialogProps {
   priceLabel: string;
   currentPlanName?: string;
   couponCode?: string;
+  billingPeriod?: BillingPeriod;
 }
 
 export function SwapConfirmDialog({
@@ -34,6 +37,7 @@ export function SwapConfirmDialog({
   priceLabel,
   currentPlanName,
   couponCode,
+  billingPeriod,
 }: SwapConfirmDialogProps) {
   const [loading, setLoading] = useState(false);
   const { track } = useAnalytics();
@@ -46,11 +50,15 @@ export function SwapConfirmDialog({
       from_plan: currentPlanName,
       to_plan: targetPlanKey as PlanKey,
       price_id: priceId,
+      billing_period: billingPeriod,
     });
 
     router.post(
       route('billing.swap'),
-      { price_id: priceId, ...(couponCode?.trim() ? { coupon: couponCode.trim() } : {}) },
+      {
+        price_id: priceId,
+        ...(couponCode?.trim() ? { coupon: couponCode.trim() } : {}),
+      },
       {
         onFinish: () => {
           setLoading(false);
@@ -77,12 +85,14 @@ export function SwapConfirmDialog({
 
         <div className="space-y-3 py-2 text-sm text-muted-foreground">
           <p>
-            New plan: <strong className="text-foreground">{targetTierName}</strong> at{' '}
+            New plan:{' '}
+            <strong className="text-foreground">{targetTierName}</strong> at{' '}
             <strong className="text-foreground">{priceLabel}</strong>
           </p>
           <p className="text-xs bg-muted rounded-md px-3 py-2">
-            Changes take effect immediately. Your billing will be prorated — you'll only be charged
-            for the days remaining in the current billing period.
+            Changes take effect immediately. Your billing will be prorated —
+            you'll only be charged for the days remaining in the current billing
+            period.
           </p>
         </div>
 

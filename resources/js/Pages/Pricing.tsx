@@ -244,10 +244,12 @@ export default function Pricing() {
         ? tier.stripe_price_id_annual
         : tier.stripe_price_id;
 
-    track(AnalyticsEvents.BILLING_CHECKOUT_STARTED, {
+    // CTA click fires for all plan button clicks (both new checkout and swap flows).
+    // BILLING_CHECKOUT_STARTED fires later, only when the actual server request begins.
+    track(AnalyticsEvents.BILLING_CTA_CLICKED, {
       plan: planKey as PlanKey,
-      price_id: priceId ?? undefined,
       billing_period: billingPeriod as BillingPeriod,
+      is_upgrade: isSubscribed,
     });
 
     if (isSubscribed) {
@@ -263,6 +265,13 @@ export default function Pricing() {
     }
 
     setCheckoutLoading(planKey);
+
+    track(AnalyticsEvents.BILLING_CHECKOUT_STARTED, {
+      plan: planKey as PlanKey,
+      price_id: priceId ?? undefined,
+      billing_period: billingPeriod as BillingPeriod,
+      source: 'pricing_page',
+    });
 
     // New subscribers go through Stripe Checkout hosted page for card collection.
     // Server creates a Checkout session and redirects via Inertia::location().
@@ -330,6 +339,7 @@ export default function Pricing() {
       priceLabel={swapTarget.priceLabel}
       currentPlanName={currentPlan ? tiers[currentPlan]?.name : undefined}
       couponCode={couponCode}
+      billingPeriod={billingPeriod}
     />
   );
 

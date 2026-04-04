@@ -14,7 +14,8 @@ class IncompletePaymentReminder extends Notification implements ShouldQueue
 
     public function __construct(
         public readonly string $confirmUrl,
-        public readonly int $hoursRemaining
+        public readonly int $hoursRemaining,
+        public readonly bool $urgent = false,
     ) {}
 
     /**
@@ -37,8 +38,12 @@ class IncompletePaymentReminder extends Notification implements ShouldQueue
         $fullName = $notifiable->name ?? '';
         $firstName = explode(' ', $fullName)[0] ?: $fullName ?: 'there';
 
+        $subject = $this->urgent
+            ? "{$appName}: Your subscription expires in ~1 hour"
+            : "{$appName}: Complete your payment to keep your subscription active";
+
         $mail = (new MailMessage)
-            ->subject("{$appName}: Complete your payment to keep your subscription active")
+            ->subject($subject)
             ->greeting("Hi {$firstName},")
             ->line('Your subscription is waiting for payment confirmation.')
             ->line("You have **{$this->hoursRemaining} ".($this->hoursRemaining === 1 ? 'hour' : 'hours').' remaining** before it expires.')
@@ -61,6 +66,7 @@ class IncompletePaymentReminder extends Notification implements ShouldQueue
             'type' => 'incomplete_payment_reminder',
             'confirm_url' => $this->confirmUrl,
             'hours_remaining' => $this->hoursRemaining,
+            'urgent' => $this->urgent,
         ];
     }
 }

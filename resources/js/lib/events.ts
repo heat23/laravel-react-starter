@@ -46,6 +46,7 @@ export const AnalyticsEvents = {
   // Billing
   BILLING_PRICING_VIEWED: 'billing.pricing_viewed',
   BILLING_PLAN_SELECTED: 'billing.plan_selected',
+  BILLING_CTA_CLICKED: 'billing.cta_clicked',
   BILLING_CHECKOUT_STARTED: 'billing.checkout_started',
   BILLING_CHECKOUT_COMPLETED: 'billing.checkout_completed',
   BILLING_SUBSCRIPTION_CANCELED: 'billing.subscription_canceled',
@@ -150,7 +151,9 @@ type _EventPropertyMapEntries = {
   [AnalyticsEvents.AUTH_2FA_ENABLED]: undefined;
   [AnalyticsEvents.AUTH_2FA_DISABLED]: Record<string, never> | undefined;
   [AnalyticsEvents.AUTH_2FA_VERIFIED]: Record<string, never> | undefined;
-  [AnalyticsEvents.AUTH_2FA_RECOVERY_REGENERATED]: Record<string, never> | undefined;
+  [AnalyticsEvents.AUTH_2FA_RECOVERY_REGENERATED]:
+    | Record<string, never>
+    | undefined;
   [AnalyticsEvents.AUTH_SOCIAL_LOGIN]: { provider?: string } | undefined;
   [AnalyticsEvents.AUTH_SOCIAL_DISCONNECTED]: { provider?: string } | undefined;
   [AnalyticsEvents.ONBOARDING_STARTED]: undefined;
@@ -160,38 +163,95 @@ type _EventPropertyMapEntries = {
   [AnalyticsEvents.TRIAL_CONVERTED]: { tier: string } | undefined;
   [AnalyticsEvents.TRIAL_EXPIRED]: Record<string, never> | undefined;
   [AnalyticsEvents.SUBSCRIPTION_CREATED]: { plan?: PlanKey } | undefined;
-  [AnalyticsEvents.SUBSCRIPTION_CANCELED]: { plan?: PlanKey; reason?: string; grace_period_ends?: string } | undefined;
+  [AnalyticsEvents.SUBSCRIPTION_CANCELED]:
+    | { plan?: PlanKey; reason?: string; grace_period_ends?: string }
+    | undefined;
   [AnalyticsEvents.SUBSCRIPTION_RESUMED]: { plan?: PlanKey } | undefined;
-  [AnalyticsEvents.SUBSCRIPTION_SWAPPED]: { from_plan?: string; to_plan?: string } | undefined;
-  [AnalyticsEvents.SUBSCRIPTION_QUANTITY_UPDATED]: { quantity?: number } | undefined;
-  [AnalyticsEvents.BILLING_PRICING_VIEWED]: { user_type?: 'authenticated' | 'anonymous' } | undefined;
-  [AnalyticsEvents.BILLING_PLAN_SELECTED]: { plan: PlanKey; billing_period: BillingPeriod };
-  [AnalyticsEvents.BILLING_CHECKOUT_STARTED]: { plan: PlanKey; price_id?: string; billing_period?: BillingPeriod; source?: string };
-  [AnalyticsEvents.BILLING_CHECKOUT_COMPLETED]: { plan: PlanKey; price_id?: string; billing_period: BillingPeriod };
-  [AnalyticsEvents.BILLING_SUBSCRIPTION_CANCELED]: { reason?: string } | undefined;
-  [AnalyticsEvents.BILLING_SUBSCRIPTION_RESUMED]: { plan?: PlanKey } | undefined;
-  [AnalyticsEvents.BILLING_PLAN_SWAPPED]: { from_plan?: string; to_plan?: string } | undefined;
-  [AnalyticsEvents.BILLING_SWAP_CONFIRMED]: { from_plan?: string; to_plan: string; price_id?: string } | undefined;
+  [AnalyticsEvents.SUBSCRIPTION_SWAPPED]:
+    | { from_plan?: string; to_plan?: string }
+    | undefined;
+  [AnalyticsEvents.SUBSCRIPTION_QUANTITY_UPDATED]:
+    | { quantity?: number }
+    | undefined;
+  [AnalyticsEvents.BILLING_PRICING_VIEWED]:
+    | { user_type?: 'authenticated' | 'anonymous' }
+    | undefined;
+  [AnalyticsEvents.BILLING_PLAN_SELECTED]: {
+    plan: PlanKey;
+    billing_period: BillingPeriod;
+  };
+  [AnalyticsEvents.BILLING_CTA_CLICKED]:
+    | { plan?: PlanKey; billing_period?: BillingPeriod; is_upgrade?: boolean }
+    | undefined;
+  [AnalyticsEvents.BILLING_CHECKOUT_STARTED]: {
+    plan: PlanKey;
+    price_id?: string;
+    billing_period?: BillingPeriod;
+    source?: string;
+  };
+  [AnalyticsEvents.BILLING_CHECKOUT_COMPLETED]: {
+    plan: PlanKey;
+    price_id?: string;
+    billing_period: BillingPeriod;
+  };
+  [AnalyticsEvents.BILLING_SUBSCRIPTION_CANCELED]:
+    | { reason?: string }
+    | undefined;
+  [AnalyticsEvents.BILLING_SUBSCRIPTION_RESUMED]:
+    | { plan?: PlanKey }
+    | undefined;
+  [AnalyticsEvents.BILLING_PLAN_SWAPPED]:
+    | { from_plan?: string; to_plan?: string }
+    | undefined;
+  [AnalyticsEvents.BILLING_SWAP_CONFIRMED]:
+    | { from_plan?: string; to_plan: string; price_id?: string }
+    | undefined;
   [AnalyticsEvents.BILLING_TRIAL_UPGRADE_CLICKED]: { tier: string } | undefined;
   [AnalyticsEvents.BILLING_PAYMENT_FAILED]: { reason?: string } | undefined;
-  [AnalyticsEvents.BILLING_PERIOD_TOGGLED]: { from: BillingPeriod; to: BillingPeriod };
-  [AnalyticsEvents.BILLING_PAYMENT_METHOD_UPDATED]: Record<string, never> | undefined;
+  [AnalyticsEvents.BILLING_PERIOD_TOGGLED]: {
+    from: BillingPeriod;
+    to: BillingPeriod;
+  };
+  [AnalyticsEvents.BILLING_PAYMENT_METHOD_UPDATED]:
+    | Record<string, never>
+    | undefined;
   [AnalyticsEvents.PROFILE_UPDATED]: Record<string, never> | undefined;
   [AnalyticsEvents.API_TOKEN_CREATED]: { token_name?: string } | undefined;
   [AnalyticsEvents.API_TOKEN_DELETED]: { token_name?: string } | undefined;
   [AnalyticsEvents.CONTACT_SUBMITTED]: Record<string, never> | undefined;
   [AnalyticsEvents.FEEDBACK_SUBMITTED]: { type?: string } | undefined;
-  [AnalyticsEvents.FEATURE_USED]: { feature_name: string; is_first_use?: boolean };
-  [AnalyticsEvents.FEATURE_SETTINGS_UPDATED]: { setting_key?: string } | undefined;
+  [AnalyticsEvents.FEATURE_USED]: {
+    feature_name: string;
+    is_first_use?: boolean;
+  };
+  [AnalyticsEvents.FEATURE_SETTINGS_UPDATED]:
+    | { setting_key?: string }
+    | undefined;
   [AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED]: { page: string; section?: string };
-  [AnalyticsEvents.ENGAGEMENT_CTA_CLICKED]: { source: string; label?: string; page?: string };
+  [AnalyticsEvents.ENGAGEMENT_CTA_CLICKED]: {
+    source: string;
+    label?: string;
+    page?: string;
+  };
   [AnalyticsEvents.ENGAGEMENT_CONTACT_FORM_SUBMITTED]: Record<string, never>;
   [AnalyticsEvents.ACTIVATION_MILESTONE]: { trigger: string };
   [AnalyticsEvents.ACCOUNT_DELETED]: { reason?: string } | undefined;
-  [AnalyticsEvents.ERROR_PAGE_VIEWED]: { error_code: number; error_title?: string };
-  [AnalyticsEvents.LIMIT_THRESHOLD_50]: { resource: string; current_value: number };
-  [AnalyticsEvents.LIMIT_THRESHOLD_80]: { resource: string; current_value: number };
-  [AnalyticsEvents.LIMIT_THRESHOLD_100]: { resource: string; current_value: number };
+  [AnalyticsEvents.ERROR_PAGE_VIEWED]: {
+    error_code: number;
+    error_title?: string;
+  };
+  [AnalyticsEvents.LIMIT_THRESHOLD_50]: {
+    resource: string;
+    current_value: number;
+  };
+  [AnalyticsEvents.LIMIT_THRESHOLD_80]: {
+    resource: string;
+    current_value: number;
+  };
+  [AnalyticsEvents.LIMIT_THRESHOLD_100]: {
+    resource: string;
+    current_value: number;
+  };
 };
 
 /**
@@ -213,5 +273,10 @@ export type EventPropertyMap = {
  * names instead of `true`, producing a type error at any usage site.
  * Pure type-level — zero runtime JS emitted.
  */
-type _MissingEvents = Exclude<AnalyticsEventName, keyof _EventPropertyMapEntries>;
-type _AssertNoMissingEvents = _MissingEvents extends never ? true : _MissingEvents;
+type _MissingEvents = Exclude<
+  AnalyticsEventName,
+  keyof _EventPropertyMapEntries
+>;
+type _AssertNoMissingEvents = _MissingEvents extends never
+  ? true
+  : _MissingEvents;

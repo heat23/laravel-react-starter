@@ -33,11 +33,12 @@ class CheckIncompletePayments extends Command
             try {
                 $hoursElapsed = (int) $subscription->created_at->diffInHours(now());
 
-                // Send reminders at 1 hour and 12 hours (using ranges to avoid missing reminders)
+                // Send reminders at 1 hour, 12 hours, and 20-22 hours (urgent)
                 $sendOneHour = $hoursElapsed >= 1 && $hoursElapsed < 2;
                 $sendTwelveHour = $hoursElapsed >= 12 && $hoursElapsed < 13;
+                $sendUrgent = $hoursElapsed >= 19 && $hoursElapsed < 22;
 
-                if (! $sendOneHour && ! $sendTwelveHour) {
+                if (! $sendOneHour && ! $sendTwelveHour && ! $sendUrgent) {
                     continue;
                 }
 
@@ -56,7 +57,8 @@ class CheckIncompletePayments extends Command
 
                 $subscription->user->notify(new IncompletePaymentReminder(
                     confirmUrl: $confirmUrl,
-                    hoursRemaining: $hoursRemaining
+                    hoursRemaining: $hoursRemaining,
+                    urgent: $sendUrgent,
                 ));
 
                 $remindersSent++;
