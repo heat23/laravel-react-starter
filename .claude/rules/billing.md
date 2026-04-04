@@ -1,0 +1,27 @@
+---
+description: Billing domain gotchas — Cashier eager loading, Redis locks, seat constraints
+globs:
+  - app/Services/Billing*
+  - app/Http/Controllers/Billing/**
+  - app/Jobs/CancelOrphanedStripeSubscription*
+  - tests/**/Billing/**
+---
+
+# Billing Gotchas (DO NOT MODIFY WITHOUT READING)
+
+**Why eager loading is required:** Cashier methods like `cancel()` and `swap()` internally access `$subscription->owner` and nested `$subscription->items->subscription` relationships. Without eager loading, each call triggers lazy loading queries, causing N+1 problems and potential race conditions.
+
+**Detection rule:** If you're calling ANY Cashier method (`cancel`, `resume`, `swap`, `updateQuantity`, `noProrate`, `anchorBillingCycleOn`), you MUST eager load first: `$subscription->load('owner', 'items.subscription')`
+
+**Error symptom:** `Attempt to read property "stripe_id" on null` when calling `->cancel()` means `owner` wasn't loaded.
+
+**Pattern to follow:** See `app/Services/BillingService.php` lines 68-70 for correct eager loading pattern.
+
+**Redis locks:** All subscription mutations MUST use `BillingService` methods — direct Cashier calls will cause race conditions. Redis locks (35s timeout) prevent concurrent operations. If lock acquisition fails, operation is rejected with `ConcurrentOperationException`.
+
+**Seat constraints:** Team/Enterprise tiers have min 1, max 50 seats for team tier — validate before subscription creation.
+
+**Billing (Production-Grade):**
+- `BillingService` — Redis-locked subscription mutations (create, cancel, resume, swap)
+- Plan tiers: free, pro, team (3-50 seats), enterprise (custom)
+- Incomplete payment tracking: `subscriptions:check-incomplete` command sends reminders at 1h/12h
