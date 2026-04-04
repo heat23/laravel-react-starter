@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Cashier;
 use Laravel\Cashier\Subscription;
+use Laravel\Cashier\SubscriptionItem;
 use Stripe\Exception\InvalidRequestException as StripeInvalidRequestException;
 
 class BillingService
@@ -237,8 +238,15 @@ class BillingService
      */
     public function validateCouponCode(string $coupon): ?string
     {
+        $cacheKey = 'coupon_valid_'.sha1($coupon);
+
+        if (Cache::has($cacheKey)) {
+            return null;
+        }
+
         try {
             Cashier::stripe()->coupons->retrieve($coupon);
+            Cache::put($cacheKey, true, 60);
 
             return null;
         } catch (StripeInvalidRequestException $e) {
@@ -249,7 +257,7 @@ class BillingService
                 'error' => $e->getMessage(),
             ]);
 
-            return 'Unable to validate coupon code. Please try again.';
+            return 'The coupon code is invalid or has expired.';
         }
     }
 
@@ -306,6 +314,57 @@ class BillingService
         ]);
 
         return null;
+    }
+
+    /**
+     * Preview the proration cost for swapping to a new price using Stripe's upcoming invoice API.
+     *
+     * @return array{amount_due: int, next_billing_date: string|null}
+     *
+     * @throws \InvalidArgumentException When $newPriceId is not a recognised plan price.
+     * @throws \RuntimeException On Stripe API failure.
+     */
+    public function previewSwapProration(User $user, string $newPriceId): array
+    {
+        if ($this->resolveTierFromPrice($newPriceId) === null) {
+            throw new \InvalidArgumentException("Invalid price ID: {$newPriceId}");
+        }
+
+        $subscription = $user->subscription('default');
+        $subscription->setRelation('owner', $user);
+        $subscription->loadMissing('items');
+        /** @var SubscriptionItem $currentItem */
+        $currentItem = $subscription->items->first();
+
+        try {
+            $stripeInvoice = Cashier::stripe()->invoices->createPreview([
+                'customer' => $user->stripe_id,
+                'subscription' => $subscription->stripe_id,
+                'subscription_items' => [
+                    ['id' => $currentItem->stripe_id, 'price' => $newPriceId],
+                ],
+                'subscription_proration_behavior' => 'always_invoice',
+            ]);
+        } catch (StripeInvalidRequestException $e) {
+            Log::warning('Failed to preview swap proration', [
+                'user_id' => $user->id,
+                'error' => 'Invalid request',
+            ]);
+            throw new \RuntimeException('Unable to calculate proration cost. Please try again.');
+        } catch (\Exception $e) {
+            Log::error('Unexpected error previewing swap proration', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            throw new \RuntimeException('An unexpected error occurred. Please contact support.');
+        }
+
+        return [
+            'amount_due' => $stripeInvoice->amount_due,
+            'next_billing_date' => $stripeInvoice->next_payment_attempt
+                ? date('Y-m-d', $stripeInvoice->next_payment_attempt)
+                : null,
+        ];
     }
 
     /**

@@ -32,7 +32,7 @@ describe('AnalyticsEvents sync', () => {
     const eventKeys = Object.keys(AnalyticsEvents);
     // Floor value: the number of events at the time this test was written.
     // This catches accidental bulk deletions. Increase when adding events.
-    expect(eventKeys.length).toBeGreaterThanOrEqual(52);
+    expect(eventKeys.length).toBeGreaterThanOrEqual(53);
   });
 
   it('sorted event names match snapshot (catches accidental deletions)', () => {
@@ -57,6 +57,7 @@ describe('AnalyticsEvents sync', () => {
       'AUTH_VERIFY_EMAIL',
       'BILLING_CHECKOUT_COMPLETED',
       'BILLING_CHECKOUT_STARTED',
+      'BILLING_CTA_CLICKED',
       'BILLING_PAYMENT_FAILED',
       'BILLING_PAYMENT_METHOD_UPDATED',
       'BILLING_PERIOD_TOGGLED',

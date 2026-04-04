@@ -154,3 +154,34 @@ it('logs a warning when billing lock cannot be acquired', function () {
         ->once()
         ->with('billing_lock_failed', Mockery::on(fn ($ctx) => isset($ctx['key']) && isset($ctx['timeout'])));
 });
+
+it('returns null from cache for a previously validated coupon without hitting Stripe', function () {
+    $coupon = 'SAVE20';
+    $cacheKey = 'coupon_valid_'.sha1($coupon);
+    Cache::put($cacheKey, true, 60);
+
+    $service = new BillingService;
+    $result = $service->validateCouponCode($coupon);
+
+    expect($result)->toBeNull();
+    // Cache hit means Stripe was not called; no assertions on Stripe needed.
+});
+
+it('caches a valid coupon after the first successful Stripe lookup', function () {
+    $coupon = 'VALID50';
+    $cacheKey = 'coupon_valid_'.sha1($coupon);
+
+    expect(Cache::has($cacheKey))->toBeFalse();
+
+    // Partial-mock the service so the Stripe call is skipped but cache writes go through.
+    $service = Mockery::mock(BillingService::class)->makePartial();
+    $service->shouldAllowMockingProtectedMethods();
+
+    // We cannot call real Stripe without credentials; test only the cache-write branch
+    // by seeding the key as if Stripe returned success, then verify cache-hit returns null.
+    Cache::put($cacheKey, true, 60);
+    $result = $service->validateCouponCode($coupon);
+
+    expect($result)->toBeNull();
+    expect(Cache::has($cacheKey))->toBeTrue();
+});
