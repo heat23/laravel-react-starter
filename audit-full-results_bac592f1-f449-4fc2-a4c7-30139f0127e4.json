@@ -1,0 +1,503 @@
+{
+  "audit_metadata": {
+    "session_id": "bac592f1-f449-4fc2-a4c7-30139f0127e4",
+    "audit_type": "comprehensive_saas_audit",
+    "audit_depth": "comprehensive",
+    "project": "laravel-react-starter",
+    "stack": "Laravel 12 + Inertia.js v2 + React 18 + TypeScript + Tailwind CSS v4",
+    "date": "2026-04-04",
+    "branch": "main",
+    "commit": "c1f3b44",
+    "files_scanned": {
+      "php": 241,
+      "tsx_ts": 344,
+      "tests": 192,
+      "migrations": 44
+    }
+  },
+  "summary": {
+    "total_findings": 38,
+    "by_severity": {
+      "critical": 0,
+      "high": 5,
+      "medium": 14,
+      "low": 12,
+      "info": 7
+    },
+    "by_category": {
+      "security": 8,
+      "billing": 4,
+      "data_integrity": 3,
+      "frontend": 6,
+      "infrastructure": 7,
+      "testing": 5,
+      "performance": 3,
+      "architecture": 2
+    },
+    "overall_assessment": "Production-ready with strong security posture. No critical vulnerabilities found. 5 high-severity items require attention before GA launch, primarily around input validation gaps and CI pipeline hardening."
+  },
+  "findings": [
+    {
+      "id": "SEC-001",
+      "severity": "HIGH",
+      "category": "security",
+      "title": "Resume endpoint missing FormRequest validation",
+      "file": "app/Http/Controllers/Billing/SubscriptionController.php",
+      "line": 241,
+      "description": "The resume() method accepts a raw Request instead of a dedicated FormRequest. While the endpoint is rate-limited and auth-gated, it lacks the consistent validation pattern used by all other billing mutations (cancel, swap, subscribe). This creates inconsistency in the validation layer and could allow unexpected request body content to be processed.",
+      "recommendation": "Create a ResumeSubscriptionRequest FormRequest to validate the resume endpoint, consistent with CancelSubscriptionRequest and SwapPlanRequest patterns.",
+      "effort": "low"
+    },
+    {
+      "id": "SEC-002",
+      "severity": "HIGH",
+      "category": "security",
+      "title": "Retention coupon endpoint missing FormRequest validation",
+      "file": "app/Http/Controllers/Billing/SubscriptionController.php",
+      "line": 406,
+      "description": "applyRetentionCoupon() uses a raw Request object. Although coupon ID comes from config rather than user input, the method still lacks formal request validation. A malicious request body could include unexpected fields that pass through to logging or audit functions.",
+      "recommendation": "Create an ApplyRetentionCouponRequest FormRequest even if rules are minimal, to maintain the codebase validation pattern and prevent request body pollution.",
+      "effort": "low"
+    },
+    {
+      "id": "SEC-003",
+      "severity": "HIGH",
+      "category": "security",
+      "title": "No password confirmation on billing-critical mutations",
+      "file": "app/Http/Controllers/Billing/SubscriptionController.php",
+      "line": null,
+      "description": "Billing mutations (cancel, swap, subscribe, quantity update) do not require password confirmation. A session hijacking attack or CSRF bypass could trigger subscription changes without the user's explicit password re-entry. Laravel provides password.confirm middleware for exactly this purpose.",
+      "recommendation": "Add password.confirm middleware to the cancel, swap, and subscribe routes, or implement a confirmation dialog with password verification on the frontend before allowing destructive billing actions.",
+      "effort": "medium"
+    },
+    {
+      "id": "SEC-004",
+      "severity": "HIGH",
+      "category": "security",
+      "title": "Health check token transmittable via query string",
+      "file": "config/health.php",
+      "line": 5,
+      "description": "HEALTH_ALLOW_QUERY_TOKEN=true allows the health check token to be passed as a URL query parameter. Query strings are logged in web server access logs, proxy logs, browser history, and Referer headers — all of which can leak the token to unauthorized parties.",
+      "recommendation": "Keep HEALTH_ALLOW_QUERY_TOKEN=false (default) in production. Document that health check authentication should only use the Authorization header or IP allowlist. Add a production environment check that warns if this is enabled.",
+      "effort": "low"
+    },
+    {
+      "id": "SEC-005",
+      "severity": "HIGH",
+      "category": "security",
+      "title": "CSP style-src uses unsafe-inline",
+      "file": "app/Http/Middleware/SecurityHeaders.php",
+      "line": 53,
+      "description": "The Content Security Policy includes style-src 'unsafe-inline' which significantly weakens CSS injection protection. While the comment explains this is required for Tailwind JIT and Radix UI, it reduces the defense-in-depth value of the CSP against style-based attacks.",
+      "recommendation": "Investigate nonce-based style injection for production builds. If not feasible with current Tailwind JIT, document the risk acceptance and ensure form-action and base-uri restrictions remain tight. Consider using a stricter CSP for authenticated pages.",
+      "effort": "high"
+    },
+    {
+      "id": "SEC-006",
+      "severity": "MEDIUM",
+      "category": "security",
+      "title": "Webhook endpoint allows HTTP URLs",
+      "file": "app/Http/Requests/Webhook/CreateWebhookEndpointRequest.php",
+      "line": 19,
+      "description": "The webhook URL validation rule 'url:https,http' allows both HTTP and HTTPS URLs. Outgoing webhook payloads sent over HTTP are transmitted in plaintext, potentially exposing sensitive event data to network observers.",
+      "recommendation": "Change validation to 'url:https' to only allow HTTPS webhook endpoints. If HTTP must be supported for local development, gate the http scheme behind app()->isLocal() check.",
+      "effort": "low"
+    },
+    {
+      "id": "SEC-007",
+      "severity": "MEDIUM",
+      "category": "security",
+      "title": "Incoming webhook provider parameter not validated",
+      "file": "app/Http/Controllers/Webhook/IncomingWebhookController.php",
+      "line": 17,
+      "description": "The incoming webhook route accepts any string as {provider} without validating against a whitelist of supported providers. While VerifyWebhookSignature middleware provides protection, an unsupported provider could bypass signature verification if the middleware fails to handle unknown providers correctly.",
+      "recommendation": "Add a ->whereIn('provider', ['github', 'stripe']) constraint to the route definition, or validate the provider against config('webhooks.providers') in the controller.",
+      "effort": "low"
+    },
+    {
+      "id": "SEC-008",
+      "severity": "MEDIUM",
+      "category": "security",
+      "title": "Webhook secret exposed in API show endpoint",
+      "file": "app/Http/Controllers/Api/WebhookEndpointController.php",
+      "line": 82,
+      "description": "The show() method returns the webhook endpoint secret in the API response. While this is scoped to the authenticated user's own endpoints, returning secrets in GET responses increases the attack surface (browser cache, proxy logs, screen sharing leaks).",
+      "recommendation": "Only return the secret once at creation time (already done in store()). Return a masked version (e.g., '****' + last 4 chars) in show/index responses. Add a dedicated regenerate-secret endpoint if users need to view the secret again.",
+      "effort": "medium"
+    },
+    {
+      "id": "BIL-001",
+      "severity": "MEDIUM",
+      "category": "billing",
+      "title": "Lifecycle transition failures silently swallowed",
+      "file": "app/Services/BillingService.php",
+      "line": 96,
+      "description": "In createSubscription() and cancelSubscription(), lifecycle stage transitions are wrapped in try/catch blocks that silently swallow all exceptions. If the LifecycleService fails, the user's lifecycle stage won't be updated but no one will know — no logging, no alerting.",
+      "recommendation": "Log the exception at warning level inside the catch block so lifecycle transition failures are observable: Log::warning('Lifecycle transition failed', ['user_id' => $user->id, 'error' => $e->getMessage()])",
+      "effort": "low"
+    },
+    {
+      "id": "BIL-002",
+      "severity": "MEDIUM",
+      "category": "billing",
+      "title": "Checkout session created outside Redis lock",
+      "file": "app/Services/BillingService.php",
+      "line": 44,
+      "description": "createCheckoutSession() is not wrapped in the withLock() pattern used by all other billing mutations. While Stripe Checkout sessions are inherently idempotent (user completes only one), concurrent calls could create multiple orphaned sessions, potentially confusing users.",
+      "recommendation": "Wrap createCheckoutSession() in the withLock() pattern consistent with other billing methods, or add a controller-level check preventing concurrent checkout session creation.",
+      "effort": "low"
+    },
+    {
+      "id": "BIL-003",
+      "severity": "MEDIUM",
+      "category": "billing",
+      "title": "Retention coupon can be applied repeatedly",
+      "file": "app/Http/Controllers/Billing/SubscriptionController.php",
+      "line": 406,
+      "description": "applyRetentionCoupon() doesn't check if the user already has a coupon applied or if they've previously received the retention discount. A user could repeatedly apply the retention coupon by making multiple requests within the rate limit window.",
+      "recommendation": "Add a check for existing coupon on the subscription before applying. Track retention coupon usage in user_settings or audit_logs and prevent re-application.",
+      "effort": "medium"
+    },
+    {
+      "id": "BIL-004",
+      "severity": "LOW",
+      "category": "billing",
+      "title": "Payment method update not protected by Redis lock",
+      "file": "app/Services/BillingService.php",
+      "line": 188,
+      "description": "updatePaymentMethod() directly calls Cashier without the withLock() pattern. While payment method updates are less susceptible to race conditions than subscription mutations, concurrent updates could lead to inconsistent state.",
+      "recommendation": "Consider wrapping in withLock() for consistency, though this is lower risk since payment method updates are idempotent.",
+      "effort": "low"
+    },
+    {
+      "id": "DATA-001",
+      "severity": "MEDIUM",
+      "category": "data_integrity",
+      "title": "Contact notification sent synchronously in request lifecycle",
+      "file": "app/Http/Controllers/ContactController.php",
+      "line": 49,
+      "description": "ContactNotification is dispatched synchronously via AnonymousNotifiable in the request lifecycle. If the mail server is slow or unavailable, the user's form submission will timeout or fail, even though the ContactSubmission was already persisted.",
+      "recommendation": "Queue the notification: (new AnonymousNotifiable)->route('mail', $notifyEmail)->notify((new ContactNotification($submission))->afterCommit()). Or dispatch a dedicated job.",
+      "effort": "low"
+    },
+    {
+      "id": "DATA-002",
+      "severity": "MEDIUM",
+      "category": "data_integrity",
+      "title": "Raw SQL queries in LifecycleService not parameterized for table name",
+      "file": "app/Services/LifecycleService.php",
+      "line": 111,
+      "description": "LifecycleService uses DB::select() with raw SQL that references user_stage_history table directly. While the query uses parameterized values (?), the table name is hardcoded. This is safe but makes the query harder to test with different database drivers and bypasses Eloquent's model abstractions.",
+      "recommendation": "Consider creating a UserStageHistory model with Eloquent relationships, or use the query builder for better cross-driver compatibility. This is low-risk but improves maintainability.",
+      "effort": "medium"
+    },
+    {
+      "id": "DATA-003",
+      "severity": "LOW",
+      "category": "data_integrity",
+      "title": "AdminBillingStatsService uses multiple DB::raw with string interpolation",
+      "file": "app/Services/AdminBillingStatsService.php",
+      "line": 180,
+      "description": "Multiple DB::raw() calls with COALESCE and string literals. While none contain user-controlled input (these are admin-only aggregation queries), the pattern is fragile and could introduce SQL injection if future developers add user-controlled parameters.",
+      "recommendation": "Add a code comment noting these queries are admin-only with no user input. Consider using Eloquent selectRaw with bindings where possible for future-proofing.",
+      "effort": "low"
+    },
+    {
+      "id": "FE-001",
+      "severity": "MEDIUM",
+      "category": "frontend",
+      "title": "JSON-LD schema injection uses replace instead of DOMPurify",
+      "file": "resources/js/Components/seo/FaqJsonLd.tsx",
+      "line": 30,
+      "description": "Multiple SEO components (FaqJsonLd, BreadcrumbJsonLd, and Guide pages) use dangerouslySetInnerHTML with only a </script> replacement instead of DOMPurify.sanitize(). While the data flows through JSON.stringify (which escapes HTML entities), this pattern is inconsistent with the project's stated policy of always using DOMPurify for dangerouslySetInnerHTML.",
+      "recommendation": "The current approach is actually safe because JSON.stringify produces HTML-safe output and the </script> replacement handles the only remaining vector. Add a comment explaining why DOMPurify is intentionally omitted (it corrupts valid JSON URLs) to satisfy the project convention.",
+      "effort": "low"
+    },
+    {
+      "id": "FE-002",
+      "severity": "MEDIUM",
+      "category": "frontend",
+      "title": "TODO/FIXME found in production code",
+      "file": "resources/js/Pages/Auth/TwoFactorChallenge.tsx",
+      "line": null,
+      "description": "A TODO/FIXME marker was found in TwoFactorChallenge.tsx. Per project conventions, TODO/FIXME/HACK comments should never be in delivered code.",
+      "recommendation": "Resolve the TODO or remove it if the associated work is complete.",
+      "effort": "low"
+    },
+    {
+      "id": "FE-003",
+      "severity": "LOW",
+      "category": "frontend",
+      "title": "Blog content allows 'class' attribute in DOMPurify allowlist",
+      "file": "resources/js/Pages/Blog/Show.tsx",
+      "line": 131,
+      "description": "The blog post content sanitizer allows the 'class' HTML attribute. While the comment explains this is admin-controlled Markdown content, allowing 'class' could enable CSS-based attacks if blog content source ever changes to user-generated.",
+      "recommendation": "The current implementation is safe with the documented constraint. Consider adding a runtime check that blog content sources are admin-only, or remove 'class' from ALLOWED_ATTR if blog styling can be achieved through prose-* Tailwind classes alone.",
+      "effort": "low"
+    },
+    {
+      "id": "FE-004",
+      "severity": "LOW",
+      "category": "frontend",
+      "title": "Security settings page renders SVG with DOMPurify USE_PROFILES",
+      "file": "resources/js/Pages/Settings/Security.tsx",
+      "line": 173,
+      "description": "The 2FA QR code SVG is rendered via dangerouslySetInnerHTML with DOMPurify's SVG profile. While this is the correct approach, SVG sanitization is complex and the svgFilters profile allows potentially dangerous filter primitives.",
+      "recommendation": "Consider rendering QR codes as PNG/data URI instead of inline SVG to eliminate the SVG sanitization surface entirely. Alternatively, use a React QR code library that renders to canvas.",
+      "effort": "medium"
+    },
+    {
+      "id": "FE-005",
+      "severity": "LOW",
+      "category": "frontend",
+      "title": "No error boundary wrapping application pages",
+      "file": "resources/js/Pages/",
+      "line": null,
+      "description": "No React error boundaries were found wrapping page components. An unhandled JavaScript error in any component will crash the entire application, showing a blank white screen instead of a graceful fallback.",
+      "recommendation": "Add a top-level ErrorBoundary component in the app layout that catches rendering errors and shows a user-friendly error page with a 'reload' button.",
+      "effort": "medium"
+    },
+    {
+      "id": "FE-006",
+      "severity": "LOW",
+      "category": "frontend",
+      "title": "Inconsistent loading state patterns across pages",
+      "file": "resources/js/Pages/",
+      "line": null,
+      "description": "Some pages use LoadingButton while others use manual loading state management. The project has a LoadingButton component but not all async actions use it consistently.",
+      "recommendation": "Audit all form submissions and async actions to ensure consistent use of LoadingButton or the Inertia useForm processing state.",
+      "effort": "medium"
+    },
+    {
+      "id": "INFRA-001",
+      "severity": "MEDIUM",
+      "category": "infrastructure",
+      "title": "PHPStan only runs on pull requests, not on push to main",
+      "file": ".github/workflows/ci.yml",
+      "line": 230,
+      "description": "The code-quality job (which includes PHPStan static analysis and Pint linting) only runs on pull_request events, not on push to main. Direct pushes to main (which shouldn't happen, but could) would bypass static analysis checks.",
+      "recommendation": "Change the code-quality job condition to also run on push to main, or better yet, enforce branch protection rules requiring PR review before merge to main.",
+      "effort": "low"
+    },
+    {
+      "id": "INFRA-002",
+      "severity": "MEDIUM",
+      "category": "infrastructure",
+      "title": "npm audit high-severity advisory is non-blocking",
+      "file": ".github/workflows/ci.yml",
+      "line": 299,
+      "description": "npm audit --audit-level=high uses continue-on-error: true, meaning high-severity npm vulnerabilities won't block merges. While the CLAUDE.md notes this as intentional pre-launch, it should be tightened for production.",
+      "recommendation": "Remove continue-on-error for high-severity audit before production launch. Keep it only for moderate/low advisories.",
+      "effort": "low"
+    },
+    {
+      "id": "INFRA-003",
+      "severity": "MEDIUM",
+      "category": "infrastructure",
+      "title": "JS test coverage step is non-blocking",
+      "file": ".github/workflows/ci.yml",
+      "line": 155,
+      "description": "The JS test coverage generation step uses continue-on-error: true. If coverage generation fails (potentially masking test failures in coverage mode), it won't fail the build.",
+      "recommendation": "Remove continue-on-error or investigate why coverage generation might fail and fix the root cause.",
+      "effort": "low"
+    },
+    {
+      "id": "INFRA-004",
+      "severity": "MEDIUM",
+      "category": "infrastructure",
+      "title": "No automated dependency update tooling configured",
+      "file": null,
+      "line": null,
+      "description": "No Dependabot, Renovate, or similar automated dependency update configuration was found. Composer and npm dependencies will drift out of date and accumulate security vulnerabilities without manual attention.",
+      "recommendation": "Add .github/dependabot.yml or install Renovate to automate dependency update PRs. Configure weekly checks for both composer and npm ecosystems.",
+      "effort": "low"
+    },
+    {
+      "id": "INFRA-005",
+      "severity": "LOW",
+      "category": "infrastructure",
+      "title": "Bundle size check is non-blocking",
+      "file": ".github/workflows/ci.yml",
+      "line": 222,
+      "description": "scripts/check-bundle-size.sh runs with continue-on-error: true. Bundle size regressions won't prevent merges.",
+      "recommendation": "Make bundle size check blocking after establishing baseline thresholds for the production build.",
+      "effort": "low"
+    },
+    {
+      "id": "INFRA-006",
+      "severity": "LOW",
+      "category": "infrastructure",
+      "title": "E2E tests have no dependency on build job",
+      "file": ".github/workflows/ci.yml",
+      "line": 305,
+      "description": "The e2e-tests job builds its own assets independently rather than depending on the build job's artifacts. This means build issues might not be caught before E2E tests duplicate the build step.",
+      "recommendation": "Add needs: [build] to the e2e-tests job and reuse build artifacts via actions/download-artifact, reducing CI time and ensuring build consistency.",
+      "effort": "medium"
+    },
+    {
+      "id": "INFRA-007",
+      "severity": "LOW",
+      "category": "infrastructure",
+      "title": "No branch protection rules enforced via repository configuration",
+      "file": null,
+      "line": null,
+      "description": "While CI runs on push and PR, there's no indication of branch protection rules requiring status checks to pass before merge. Direct pushes to main could bypass all quality gates.",
+      "recommendation": "Configure GitHub branch protection rules requiring all CI status checks to pass and at least one approval before merge to main.",
+      "effort": "low"
+    },
+    {
+      "id": "TEST-001",
+      "severity": "MEDIUM",
+      "category": "testing",
+      "title": "TestCase disables CSRF middleware globally",
+      "file": "tests/TestCase.php",
+      "line": 30,
+      "description": "The base TestCase class disables CSRF validation via withoutMiddleware(ValidateCsrfToken::class) for all tests. This means no test verifies that CSRF protection is actually working correctly on state-changing routes.",
+      "recommendation": "Remove the global CSRF disable. Instead, have tests that need to bypass CSRF call withoutMiddleware() individually. Add specific CSRF protection tests for critical routes (login, billing, admin mutations).",
+      "effort": "medium"
+    },
+    {
+      "id": "TEST-002",
+      "severity": "MEDIUM",
+      "category": "testing",
+      "title": "Rate limit bypass in 2FA test",
+      "file": "tests/Feature/TwoFactor/TwoFactorRecoveryTest.php",
+      "line": 57,
+      "description": "A 2FA test bypasses rate limiting middleware. While sometimes necessary for test performance, this means rate limiting on the 2FA challenge endpoint is never tested.",
+      "recommendation": "Add a dedicated test that verifies rate limiting works correctly on the 2FA challenge endpoint, separately from the functional tests that bypass it.",
+      "effort": "low"
+    },
+    {
+      "id": "TEST-003",
+      "severity": "LOW",
+      "category": "testing",
+      "title": "Local tests use SQLite but CI uses MySQL",
+      "file": "phpunit.xml",
+      "line": null,
+      "description": "Local tests run on SQLite in-memory while CI uses MySQL 8.0. This database driver mismatch can hide driver-specific bugs (date functions, JSON operations, strict mode behavior) that only surface in CI.",
+      "recommendation": "Consider using MySQL for local tests via Docker/Sail for parity with CI, or document known driver-specific behaviors and add driver-aware test assertions.",
+      "effort": "medium"
+    },
+    {
+      "id": "TEST-004",
+      "severity": "LOW",
+      "category": "testing",
+      "title": "No mutation testing in CI pipeline",
+      "file": ".github/workflows/ci.yml",
+      "line": null,
+      "description": "The project has infection.json.dist configured for mutation testing but it's not run in CI. Mutation testing reveals tests that pass but don't actually verify behavior (weak assertions).",
+      "recommendation": "Add a mutation testing step to CI (can be on a scheduled/weekly basis to avoid slowing every PR). Run infection on critical service classes (BillingService, AuthControllers).",
+      "effort": "medium"
+    },
+    {
+      "id": "TEST-005",
+      "severity": "LOW",
+      "category": "testing",
+      "title": "No CSRF protection verification tests",
+      "file": null,
+      "line": null,
+      "description": "With CSRF middleware disabled globally in TestCase, there are no tests verifying CSRF tokens are required on state-changing routes. An accidental CSRF exemption would go undetected.",
+      "recommendation": "Add integration tests that specifically verify CSRF protection on critical routes (billing, profile deletion, admin mutations) by sending requests without CSRF tokens and asserting 419 responses.",
+      "effort": "low"
+    },
+    {
+      "id": "PERF-001",
+      "severity": "LOW",
+      "category": "performance",
+      "title": "AdminDashboardController inline query could be a service method",
+      "file": "app/Http/Controllers/Admin/AdminDashboardController.php",
+      "line": 48,
+      "description": "The dashboard controller contains an inline query with DB::raw for user registration chart data. This query pattern is duplicated in AdminBillingStatsService and could be extracted for reuse and caching.",
+      "recommendation": "Extract the registration chart query to AdminBillingStatsService or a dedicated AdminDashboardService, and cache it with AdminCacheKey.",
+      "effort": "low"
+    },
+    {
+      "id": "PERF-002",
+      "severity": "LOW",
+      "category": "performance",
+      "title": "Webhook deliveries pagination uses take() instead of proper pagination",
+      "file": "app/Http/Controllers/Api/WebhookEndpointController.php",
+      "line": 117,
+      "description": "The deliveries() endpoint uses take(50) instead of cursor or offset pagination. For users with many webhook deliveries, there's no way to paginate beyond the first 50 records.",
+      "recommendation": "Implement cursor-based pagination using paginate() or cursorPaginate() for the deliveries endpoint.",
+      "effort": "low"
+    },
+    {
+      "id": "PERF-003",
+      "severity": "INFO",
+      "category": "performance",
+      "title": "preventLazyLoading properly configured with production fallback",
+      "file": "app/Providers/AppServiceProvider.php",
+      "line": 44,
+      "description": "Model::preventLazyLoading() is enabled with a production-safe fallback that logs warnings instead of throwing exceptions. This is the recommended production configuration.",
+      "recommendation": "No action needed. This is correctly implemented.",
+      "effort": "none"
+    },
+    {
+      "id": "ARCH-001",
+      "severity": "INFO",
+      "category": "architecture",
+      "title": "Comprehensive feature flag system with DB overrides",
+      "file": "app/Services/FeatureFlagService.php",
+      "line": null,
+      "description": "The feature flag system supports config defaults, global overrides, and per-user overrides with proper precedence (per-user > global > config). This is well-architected for a SaaS starter.",
+      "recommendation": "No action needed. Consider adding feature flag analytics (how many users have each flag enabled) for the admin panel.",
+      "effort": "none"
+    },
+    {
+      "id": "ARCH-002",
+      "severity": "INFO",
+      "category": "architecture",
+      "title": "Well-structured admin panel with role-based access",
+      "file": "routes/admin.php",
+      "line": null,
+      "description": "Admin routes properly separate admin vs super_admin actions. Destructive operations (user deactivation, data deletion, cache flush) require super_admin. Feature-gated admin sections only load when features are enabled.",
+      "recommendation": "No action needed. This is correctly implemented.",
+      "effort": "none"
+    },
+    {
+      "id": "INFO-001",
+      "severity": "INFO",
+      "category": "security",
+      "title": "CSRF exception properly scoped to Stripe webhook",
+      "file": "bootstrap/app.php",
+      "line": 54,
+      "description": "validateCsrfTokens(except: ['stripe/webhook']) is correctly limited to only the Stripe webhook route, which has its own signature verification via Cashier.",
+      "recommendation": "No action needed.",
+      "effort": "none"
+    },
+    {
+      "id": "INFO-002",
+      "severity": "INFO",
+      "category": "security",
+      "title": "Comprehensive rate limiting across all sensitive endpoints",
+      "file": "routes/web.php",
+      "line": null,
+      "description": "All auth, billing, admin, and API endpoints have appropriate rate limits applied. Custom named rate limiters are used for webhook tests and consent storage.",
+      "recommendation": "No action needed. Rate limiting is thorough.",
+      "effort": "none"
+    },
+    {
+      "id": "INFO-003",
+      "severity": "INFO",
+      "category": "security",
+      "title": "Impersonation properly safeguarded",
+      "file": "app/Http/Controllers/Admin/AdminImpersonationController.php",
+      "line": null,
+      "description": "Impersonation prevents self-impersonation, admin impersonation, deactivated user impersonation, and nested impersonation. Admin ID is encrypted in session. Stop-impersonation correctly placed outside admin middleware.",
+      "recommendation": "No action needed. Well-implemented.",
+      "effort": "none"
+    },
+    {
+      "id": "INFO-004",
+      "severity": "INFO",
+      "category": "infrastructure",
+      "title": "Comprehensive CI pipeline with 6 parallel jobs",
+      "file": ".github/workflows/ci.yml",
+      "line": null,
+      "description": "CI includes PHP tests, JS tests, build verification, code quality, security audit, and E2E tests. Coverage reporting, TypeScript checking, and ESLint are all included.",
+      "recommendation": "No action needed. Pipeline is well-structured.",
+      "effort": "none"
+    }
+  ]
+}

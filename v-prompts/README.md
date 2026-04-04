@@ -33,7 +33,16 @@ Fix OPSRISK-001 + SEC-001 (.env defaults):
 | 11-sprint-3-test-coverage.md | Sprint 3 (~5d) | TEST-CRIT-005/006, TEST-HIGH-010/011, TEST-MED-011/012 |
 | 12-sprint-4-performance-polish.md | Sprint 4 (~4d) | PERF-HIGH-007, SEC-MED-009/010, UX-MED-019/020/021, DEVOPS-MED-013/014 |
 
+## Comprehensive SaaS Audit (2026-04-04, session bac592f1)
+
+| File | Sprint | Content |
+|------|--------|---------|
+| 13-sprint-1-validation-hardening.md | Sprint 1 (~1d) | SEC-001/002/004/006/007, BIL-001, DATA-001, FE-002 |
+| 14-sprint-2-billing-ci-hardening.md | Sprint 2 (~2-3d) | SEC-003/008, BIL-002/003, TEST-001, INFRA-001-004 |
+| 15-sprint-3-frontend-testing-polish.md | Sprint 3 (~3-4d) | FE-003-006, TEST-002-005, PERF-001/002, INFRA-005-007 |
+
 ## Full Audit Reports
-- **Comprehensive (2026-04-04):** audit-full-results_76c2377f.json (51 findings), AUDIT_FULL_REPORT_76c2377f.md
+- **Comprehensive (2026-04-04, bac592f1):** audit-full-results_bac592f1.json (38 findings), AUDIT_REPORT_bac592f1.md
+- **Comprehensive (2026-04-04, 76c2377f):** audit-full-results_76c2377f.json (51 findings), AUDIT_FULL_REPORT_76c2377f.md
 - **Prior (2026-04-03):** AUDIT_REPORT_2026-04-03.json, AUDIT_REPORT_2026-04-03.md
 - **Batch audits:** audit-*-results_dfb85618.json (admin, growth, gtm, launch)
