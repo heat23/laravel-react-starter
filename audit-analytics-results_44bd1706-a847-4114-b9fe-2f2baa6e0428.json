@@ -1,0 +1,480 @@
+{
+  "audit_type": "analytics",
+  "audit_scope": "full",
+  "session_id": "44bd1706-a847-4114-b9fe-2f2baa6e0428",
+  "generated_at": "2026-04-04T00:00:00Z",
+  "project": "laravel-react-starter",
+  "stack": "Laravel 12 + Inertia.js + React 18 + TypeScript + Tailwind CSS v4",
+  "summary": {
+    "total_findings": 28,
+    "by_severity": {
+      "critical": 1,
+      "high": 5,
+      "medium": 10,
+      "low": 8,
+      "info": 4
+    },
+    "categories": [
+      "event_tracking",
+      "data_integrity",
+      "privacy_compliance",
+      "performance",
+      "observability",
+      "scoring_accuracy",
+      "missing_capabilities",
+      "configuration"
+    ]
+  },
+  "infrastructure_overview": {
+    "ga4_frontend": {
+      "status": "implemented",
+      "files": ["resources/js/lib/ga4.ts", "resources/js/lib/analytics.ts", "resources/js/hooks/useAnalytics.ts"],
+      "notes": "Consent-gated event queue with retry, max 20 events queued pre-consent"
+    },
+    "ga4_backend": {
+      "status": "implemented",
+      "files": ["app/Services/AnalyticsGateway.php", "app/Jobs/DispatchAnalyticsEvent.php"],
+      "notes": "Measurement Protocol with PII blocklist, fire-and-forget, batch support up to 25 events"
+    },
+    "event_taxonomy": {
+      "status": "implemented",
+      "total_events": 97,
+      "categories": 9,
+      "files": ["app/Enums/AnalyticsEvent.php", "resources/js/lib/events.ts"],
+      "sync_tested": true
+    },
+    "audit_logging": {
+      "status": "implemented",
+      "files": ["app/Services/AuditService.php", "app/Models/AuditLog.php", "app/Jobs/PersistAuditLog.php"],
+      "retention_days": 90,
+      "ip_anonymization": "available_but_default_off"
+    },
+    "consent_management": {
+      "status": "implemented",
+      "files": ["resources/js/Components/legal/CookieConsent.tsx", "app/Http/Controllers/Api/ConsentController.php"],
+      "categories": ["necessary", "analytics", "marketing"],
+      "server_side_gate": true
+    },
+    "admin_dashboards": {
+      "status": "implemented",
+      "dashboards": ["product_analytics", "billing_stats", "health_distribution", "lifecycle_funnel"],
+      "caching": "AdminCacheKey enum with 5min/1hr TTLs"
+    },
+    "lead_scoring": {
+      "status": "implemented",
+      "composite_formula": "(engagement * 0.5) + (health * 0.3) + (pql_signal * 0.2)",
+      "mql_threshold": 60,
+      "sql_threshold": 80
+    },
+    "lifecycle_tracking": {
+      "status": "implemented",
+      "stages": ["prospect", "prospect_active", "trial", "subscriber", "churned"],
+      "history_table": true
+    },
+    "retention_metrics": {
+      "status": "implemented",
+      "metrics": ["d7_retention", "d30_retention", "activation_rate", "trial_conversion_rate"]
+    },
+    "data_export": {
+      "status": "implemented",
+      "gdpr_compliant": true,
+      "rate_limited": "3 per 60 minutes"
+    },
+    "csp_headers": {
+      "status": "implemented",
+      "analytics_allowlisted": true,
+      "report_only_in_dev": true
+    }
+  },
+  "findings": [
+    {
+      "id": "ANA-001",
+      "severity": "critical",
+      "category": "data_integrity",
+      "title": "CustomerHealthService queries wrong event name for login counts",
+      "description": "CustomerHealthService.loginFrequencyScore() and primeLoginCountCache() query for event name 'login' but the actual audit log event name is 'auth.login' (defined in AnalyticsEvent::AUTH_LOGIN). This means login frequency score is always 0 for all users, corrupting health scores and downstream lead scores.",
+      "files": [
+        {"path": "app/Services/CustomerHealthService.php", "lines": [237, 261]}
+      ],
+      "impact": "Health scores undercount by up to 25 points for every user. Lead scores (which weight health at 0.3) are systematically deflated. Health distribution dashboard shows inflated 'critical' and 'at_risk' buckets. D7/D30 retention metrics are unaffected (they use last_active_at, not audit logs).",
+      "fix": "Change ->where('event', 'login') to ->where('event', 'auth.login') on lines 237 and 261"
+    },
+    {
+      "id": "ANA-002",
+      "severity": "high",
+      "category": "data_integrity",
+      "title": "ProductAnalyticsService.getSubscriptionEvents() is not cached",
+      "description": "getSubscriptionEvents() runs 3 separate COUNT queries against audit_logs on every admin product analytics page load without caching. All sibling methods in the same service use Cache::remember().",
+      "files": [
+        {"path": "app/Services/ProductAnalyticsService.php", "lines": [141, 159]}
+      ],
+      "impact": "3 uncached queries per admin page load on audit_logs table. Under load or with large audit_logs tables, this causes slow admin dashboard responses.",
+      "fix": "Wrap in Cache::remember() with AdminCacheKey and DEFAULT_TTL, consistent with sibling methods"
+    },
+    {
+      "id": "ANA-003",
+      "severity": "high",
+      "category": "data_integrity",
+      "title": "ProductAnalyticsService.getActivationRate() uses hardcoded cache key",
+      "description": "getActivationRate() uses cache key 'admin:product_analytics:activation_rate' instead of an AdminCacheKey enum value. This key is not invalidated by AdminCacheKey::flushAll() and cannot be managed centrally.",
+      "files": [
+        {"path": "app/Services/ProductAnalyticsService.php", "lines": [83]}
+      ],
+      "impact": "Cache is never invalidated when users complete onboarding or when admin triggers a full cache flush. Stale activation rate displayed indefinitely until TTL expires.",
+      "fix": "Add PRODUCT_ANALYTICS_ACTIVATION_RATE to AdminCacheKey enum and use it here"
+    },
+    {
+      "id": "ANA-004",
+      "severity": "high",
+      "category": "data_integrity",
+      "title": "CustomerHealthService.getHealthDistribution() uses explicit whereNull('deleted_at') on SoftDeletes model",
+      "description": "User model uses SoftDeletes which automatically scopes queries. The explicit whereNull('deleted_at') is redundant when using Eloquent but could mask issues if the scope changes.",
+      "files": [
+        {"path": "app/Services/CustomerHealthService.php", "lines": [165]}
+      ],
+      "impact": "Minor — currently functionally correct but fragile. If SoftDeletes trait were removed, this explicit check would silently diverge from other User queries. More concerning: AdminBillingStatsService uses DB::table('users')->whereNull('deleted_at') which bypasses Eloquent scopes entirely and could miss scope changes.",
+      "fix": "Use User::query() instead of User::whereNull('deleted_at') to leverage the SoftDeletes global scope consistently"
+    },
+    {
+      "id": "ANA-005",
+      "severity": "high",
+      "category": "privacy_compliance",
+      "title": "IP anonymization defaults to OFF (AUDIT_IP_ANONYMIZATION=false)",
+      "description": "GDPR Art. 5(1)(c) data minimisation is implemented but disabled by default. Full IP addresses are stored for all audit events (including non-security events like page views, feature usage) unless operators explicitly enable it.",
+      "files": [
+        {"path": "config/services.php", "lines": [103]},
+        {"path": "app/Services/AuditService.php", "lines": [118]}
+      ],
+      "impact": "EU-deployed instances store full IPs for non-security events by default, potentially violating GDPR data minimisation principle. Operators must know to set AUDIT_IP_ANONYMIZATION=true.",
+      "fix": "Consider defaulting to true for production environments, or at minimum document prominently in deployment checklist"
+    },
+    {
+      "id": "ANA-006",
+      "severity": "high",
+      "category": "scoring_accuracy",
+      "title": "EngagementScoringService counts all user_settings rows including system keys",
+      "description": "featureAdoptionScoreFromCounts() awards 3 points for settingsCount > 0, but user_settings stores system keys like 'onboarding_completed', 'analytics_consent', 'theme', 'timezone'. A user who merely completes onboarding gets settings points without actual feature adoption.",
+      "files": [
+        {"path": "app/Services/EngagementScoringService.php", "lines": [26, 52, 142]}
+      ],
+      "impact": "All onboarded users get at least 3 engagement points for settings they didn't explicitly configure. This inflates engagement scores for inactive but onboarded users.",
+      "fix": "Filter out system setting keys from the count, or use a separate 'has_customized_settings' flag"
+    },
+    {
+      "id": "ANA-007",
+      "severity": "medium",
+      "category": "missing_capabilities",
+      "title": "No Web Vitals (Core Web Vitals) monitoring",
+      "description": "No client-side performance monitoring for LCP, INP, CLS, FCP, or TTFB. The web-vitals library is not installed. SSR file mentions LCP as a benefit but doesn't measure it.",
+      "files": [],
+      "impact": "No visibility into real user performance. Cannot detect performance regressions, slow pages, or layout shifts affecting user experience and SEO.",
+      "fix": "Install web-vitals package, report to GA4 via trackEvent or to a dedicated endpoint"
+    },
+    {
+      "id": "ANA-008",
+      "severity": "medium",
+      "category": "missing_capabilities",
+      "title": "Sentry frontend SDK not integrated despite configuration existing",
+      "description": "config/sentry.php exists with DSN, trace rate, and profile rate configuration. VITE_SENTRY_DSN is documented in .env.example. But no Sentry client initialization exists in the frontend code. Error boundary has an optional onError callback but it's never wired to Sentry.",
+      "files": [
+        {"path": "resources/js/Components/ui/error-boundary.tsx", "lines": [13, 55]}
+      ],
+      "impact": "Frontend JavaScript errors are silently swallowed. No production error visibility for React rendering errors, unhandled promise rejections, or network failures.",
+      "fix": "Initialize @sentry/react in app.tsx, wire error boundary onError to Sentry.captureException"
+    },
+    {
+      "id": "ANA-009",
+      "severity": "medium",
+      "category": "event_tracking",
+      "title": "Subscription cancel/resume events use log() instead of logProductEvent()",
+      "description": "SubscriptionController logs SUBSCRIPTION_CANCELED and SUBSCRIPTION_RESUMED via auditService->log() which doesn't enrich with plan tier, signup cohort, or activation status. SUBSCRIPTION_CREATED correctly uses logProductEvent().",
+      "files": [
+        {"path": "app/Http/Controllers/Billing/SubscriptionController.php", "lines": [201, 258]}
+      ],
+      "impact": "Cancel and resume audit events lack product context (plan_tier, signup_cohort, is_activated), making cohort analysis and churn attribution incomplete.",
+      "fix": "Change to auditService->logProductEvent() for consistency with SUBSCRIPTION_CREATED"
+    },
+    {
+      "id": "ANA-010",
+      "severity": "medium",
+      "category": "event_tracking",
+      "title": "GA4_FORWARDED_EVENTS missing subscription.resumed",
+      "description": "AuditService::GA4_FORWARDED_EVENTS includes subscription.created and subscription.canceled but omits subscription.resumed. Resume is a high-value lifecycle event (win-back) that should reach GA4.",
+      "files": [
+        {"path": "app/Services/AuditService.php", "lines": [27, 38]}
+      ],
+      "impact": "GA4 funnel analysis cannot track win-back conversions. Subscription resume events are only in local audit logs, not in GA4 for cross-channel attribution.",
+      "fix": "Add 'subscription.resumed' to GA4_FORWARDED_EVENTS array"
+    },
+    {
+      "id": "ANA-011",
+      "severity": "medium",
+      "category": "event_tracking",
+      "title": "StripeWebhookController logs raw event names not matching AnalyticsEvent enum",
+      "description": "logWebhookEvent() logs events like 'subscription.created', 'subscription.deleted', 'invoice.payment_failed' as strings, not through the AnalyticsEvent enum. Some names differ from the enum (e.g., 'subscription.deleted' vs AnalyticsEvent::SUBSCRIPTION_CANCELED).",
+      "files": [
+        {"path": "app/Http/Controllers/Billing/StripeWebhookController.php", "lines": [40, 87]}
+      ],
+      "impact": "Webhook-originated events use different event names than user-initiated events, fragmenting analytics. Admin queries for 'subscription.canceled' miss webhook-originated 'subscription.deleted' events.",
+      "fix": "Use AnalyticsEvent enum values or prefix webhook events distinctly (e.g., 'stripe.subscription.deleted')"
+    },
+    {
+      "id": "ANA-012",
+      "severity": "medium",
+      "category": "configuration",
+      "title": "analytics-thresholds.php not consumed by any service",
+      "description": "config/analytics-thresholds.php defines warning/critical thresholds for churn_rate, mrr_drop_percent, and trial_conversion but no service reads these values. They appear to be dead configuration.",
+      "files": [
+        {"path": "config/analytics-thresholds.php", "lines": [1, 7]}
+      ],
+      "impact": "Threshold alerts for churn rate spikes, MRR drops, and low trial conversion are defined but never enforced. No automated alerting when metrics cross warning/critical boundaries.",
+      "fix": "Either implement threshold checking in a scheduled command or remove the dead config"
+    },
+    {
+      "id": "ANA-013",
+      "severity": "medium",
+      "category": "data_integrity",
+      "title": "CustomerHealthService uses static $subscriptionsTableExists cache that persists across tests",
+      "description": "The static property $subscriptionsTableExists is never reset between test cases. In a test suite, the first check determines the cached value for all subsequent tests, potentially causing false positives/negatives.",
+      "files": [
+        {"path": "app/Services/CustomerHealthService.php", "lines": [17, 203, 326]}
+      ],
+      "impact": "Test isolation issue. If a test runs before the subscriptions table migration, all subsequent health score tests in the same process will think the table doesn't exist.",
+      "fix": "Add a static reset method for testing, or use a per-request instance cache instead of static"
+    },
+    {
+      "id": "ANA-014",
+      "severity": "medium",
+      "category": "data_integrity",
+      "title": "ProductAnalyticsService.getSignupTrend() cache key ignores $days parameter",
+      "description": "getSignupTrend() accepts a configurable $days parameter but uses a fixed cache key (PRODUCT_ANALYTICS_SIGNUP_TREND). Calling getSignupTrend(7) then getSignupTrend(30) returns cached 7-day data for both.",
+      "files": [
+        {"path": "app/Services/ProductAnalyticsService.php", "lines": [20, 21]}
+      ],
+      "impact": "If the method is ever called with different $days values, stale/incorrect data is returned. Currently the controller calls with default (7) so no active bug, but the API is misleading.",
+      "fix": "Include $days in the cache key, e.g., AdminCacheKey::PRODUCT_ANALYTICS_SIGNUP_TREND->value . ':' . $days"
+    },
+    {
+      "id": "ANA-015",
+      "severity": "medium",
+      "category": "privacy_compliance",
+      "title": "Cookie consent binary check doesn't validate categorized consent",
+      "description": "Frontend analytics.ts hasConsent() only checks localStorage 'cookie_consent' === 'accepted' (binary). The CookieConsent component stores granular categories in 'cookie_consent_categories'. A user could decline analytics but accept necessary cookies, and the binary check would still block (correct) — but if legacy consent exists as 'accepted' without categories, analytics fires without granular category check.",
+      "files": [
+        {"path": "resources/js/lib/analytics.ts", "lines": [12, 14]},
+        {"path": "resources/views/app.blade.php", "lines": [39, 42]}
+      ],
+      "impact": "Legacy binary consent 'accepted' bypasses the granular analytics category check. Users who accepted cookies before the categorized consent system was deployed get analytics tracking without explicit analytics consent.",
+      "fix": "Update hasConsent() to prefer cookie_consent_categories.analytics when available, falling back to binary check only for legacy users"
+    },
+    {
+      "id": "ANA-016",
+      "severity": "medium",
+      "category": "observability",
+      "title": "No alerting on GA4 Measurement Protocol failures",
+      "description": "AnalyticsGateway logs failures as warnings but there's no escalation path. If GA4 endpoint is down or credentials expire, events silently fail with only log warnings.",
+      "files": [
+        {"path": "app/Services/AnalyticsGateway.php", "lines": [75, 80]}
+      ],
+      "impact": "GA4 data loss goes undetected. Server-side events for registrations, subscriptions, and lifecycle milestones silently stop flowing to GA4 without anyone noticing.",
+      "fix": "Track failure rate in cache counter; alert via notification when failure rate exceeds threshold over time window"
+    },
+    {
+      "id": "ANA-017",
+      "severity": "low",
+      "category": "event_tracking",
+      "title": "Frontend event queue silently drops events when MAX_QUEUE_SIZE (20) exceeded",
+      "description": "trackEvent() silently discards events when the pre-consent queue reaches 20 events. No warning or metric tracks how often this happens.",
+      "files": [
+        {"path": "resources/js/lib/analytics.ts", "lines": [51, 58]}
+      ],
+      "impact": "On pages with many tracked interactions before consent, early funnel events may be lost. No visibility into queue overflow frequency.",
+      "fix": "Log a warning when queue is full. Consider increasing MAX_QUEUE_SIZE or tracking overflow count"
+    },
+    {
+      "id": "ANA-018",
+      "severity": "low",
+      "category": "event_tracking",
+      "title": "A/B testing infrastructure is placeholder-only",
+      "description": "HandleInertiaRequests shares 'experiments' => [] to the frontend. No experiment framework, variant assignment, or outcome tracking exists.",
+      "files": [
+        {"path": "app/Http/Middleware/HandleInertiaRequests.php", "lines": [210]}
+      ],
+      "impact": "Cannot run A/B tests. The placeholder suggests intent but no implementation exists.",
+      "fix": "Implement or remove placeholder to avoid confusion. Consider PostHog, Unleash, or custom feature flag experiments"
+    },
+    {
+      "id": "ANA-019",
+      "severity": "low",
+      "category": "missing_capabilities",
+      "title": "No server-side page view tracking",
+      "description": "Page views are tracked only client-side via GA4 gtag. Users who decline cookies or have JS disabled generate no page view data. Server-side request logging exists (audit logs) but doesn't track page views.",
+      "files": [],
+      "impact": "Page view analytics are biased toward consent-granting users. Cannot measure actual traffic volume including non-consenting visitors.",
+      "fix": "Consider server-side anonymized page view counter (no PII, just route + timestamp) for traffic volume metrics"
+    },
+    {
+      "id": "ANA-020",
+      "severity": "low",
+      "category": "scoring_accuracy",
+      "title": "Lead score composite weights are hardcoded without config",
+      "description": "LeadScoringService uses hardcoded weights (engagement 0.5, health 0.3, PQL 0.2) and thresholds (MQL 60, SQL 80). These cannot be tuned without code changes.",
+      "files": [
+        {"path": "app/Services/LeadScoringService.php", "lines": [10, 12, 31]}
+      ],
+      "impact": "Cannot tune scoring model without deploying code changes. As the product matures and conversion data accumulates, weights will need adjustment.",
+      "fix": "Move weights and thresholds to config/analytics.php for runtime tuning"
+    },
+    {
+      "id": "ANA-021",
+      "severity": "low",
+      "category": "performance",
+      "title": "LeadScoringService.score() triggers multiple individual DB queries",
+      "description": "score() calls both engagementService.score() and healthService.calculateHealthScore() sequentially, plus a separate getPqlSignal() query. For a single user this is 5+ queries with no batch optimization.",
+      "files": [
+        {"path": "app/Services/LeadScoringService.php", "lines": [25, 29]}
+      ],
+      "impact": "Acceptable for single-user scoring but inefficient if called in a loop. No batch scoring method exists at the composite level (EngagementScoringService has scoreBatch but LeadScoringService doesn't).",
+      "fix": "Add scoreBatch() to LeadScoringService that leverages EngagementScoringService.scoreBatch() and CustomerHealthService.primeHealthScoreCaches()"
+    },
+    {
+      "id": "ANA-022",
+      "severity": "low",
+      "category": "data_integrity",
+      "title": "CustomerHealthService retention metrics use different activation definitions",
+      "description": "getActivationRate() defines activated as 'email verified within 7 days of signup'. ProductAnalyticsService.getActivationRate() defines activated as 'onboarding_completed setting exists'. These are different metrics with the same name.",
+      "files": [
+        {"path": "app/Services/CustomerHealthService.php", "lines": [59, 76]},
+        {"path": "app/Services/ProductAnalyticsService.php", "lines": [80, 94]}
+      ],
+      "impact": "Two different 'activation rate' metrics exist with different definitions. Admin dashboard may show conflicting numbers depending on which service is called.",
+      "fix": "Rename one metric to distinguish (e.g., 'email_activation_rate' vs 'onboarding_completion_rate')"
+    },
+    {
+      "id": "ANA-023",
+      "severity": "low",
+      "category": "configuration",
+      "title": "Sentry performance tracing defaults to 0.0 (disabled)",
+      "description": "SENTRY_TRACES_SAMPLE_RATE defaults to 0.0 in config but .env.example suggests 0.1. This means performance monitoring is silently disabled unless operators know to set it.",
+      "files": [
+        {"path": ".env.example", "lines": [295, 296]}
+      ],
+      "impact": "No APM data collected by default. Server-side performance issues go undetected unless operators explicitly enable tracing.",
+      "fix": "Document the tradeoff in deployment checklist. Consider defaulting to 0.01 (1%) for minimal overhead"
+    },
+    {
+      "id": "ANA-024",
+      "severity": "low",
+      "category": "event_tracking",
+      "title": "Duplicate billing event taxonomy (subscription.* vs billing.*)",
+      "description": "AnalyticsEvent enum has both SUBSCRIPTION_CANCELED ('subscription.canceled') and BILLING_SUBSCRIPTION_CANCELED ('billing.subscription_canceled'). Both represent cancellation but from different perspectives (server lifecycle vs user action).",
+      "files": [
+        {"path": "app/Enums/AnalyticsEvent.php", "lines": [34, 42]}
+      ],
+      "impact": "Analysts must query both event names to get complete cancellation picture. EVENT_TAXONOMY.md should clarify when each fires.",
+      "fix": "Document distinction clearly: subscription.* = server-confirmed state change, billing.* = user-initiated UI action"
+    },
+    {
+      "id": "ANA-025",
+      "severity": "info",
+      "category": "observability",
+      "title": "Legal content is placeholder requiring counsel review",
+      "description": "LegalContent.tsx contains explicit disclaimer that privacy policy and terms are templates requiring legal counsel review before production use. The disclaimer correctly lists all data collection practices (GA4, Sentry, audit logs, UTM, session data).",
+      "files": [
+        {"path": "resources/js/Components/legal/LegalContent.tsx", "lines": [5, 37]}
+      ],
+      "impact": "No legal risk if not yet in production. Must be addressed before launch.",
+      "fix": "Engage legal counsel to finalize privacy policy and terms of service before production deployment"
+    },
+    {
+      "id": "ANA-026",
+      "severity": "info",
+      "category": "configuration",
+      "title": "Cookie consent version is 1.0 with no re-consent mechanism",
+      "description": "CookieConsent.tsx stores consent version '1.0' but no code checks whether a version bump should trigger re-consent. If data collection practices change, existing users won't be re-prompted.",
+      "files": [
+        {"path": "resources/js/Components/legal/CookieConsent.tsx"}
+      ],
+      "impact": "Future data collection changes (new third-party integrations, new tracking categories) cannot trigger re-consent for existing users.",
+      "fix": "Add version comparison logic: if stored version < current version, show consent banner again"
+    },
+    {
+      "id": "ANA-027",
+      "severity": "info",
+      "category": "missing_capabilities",
+      "title": "No cohort-based retention analysis beyond D7/D30",
+      "description": "Only D7 and D30 retention are calculated. No weekly/monthly cohort tables, no cohort comparison charts, no retention curve visualization.",
+      "files": [
+        {"path": "app/Services/CustomerHealthService.php", "lines": [106, 132]}
+      ],
+      "impact": "Cannot analyze retention trends over time or compare cohorts. Limited to two point-in-time snapshots.",
+      "fix": "Consider adding cohort retention matrix (week-over-week) for deeper retention analysis"
+    },
+    {
+      "id": "ANA-028",
+      "severity": "info",
+      "category": "missing_capabilities",
+      "title": "No revenue analytics (MRR trend, ARPU, LTV)",
+      "description": "AdminBillingStatsService calculates a point-in-time MRR but there's no MRR trend chart, no ARPU calculation, no customer LTV estimation, and no revenue cohort analysis.",
+      "files": [
+        {"path": "app/Services/AdminBillingStatsService.php"}
+      ],
+      "impact": "Cannot track revenue growth over time, identify high-value customer segments, or project future revenue.",
+      "fix": "Add MRR trend (daily snapshots), ARPU by plan tier, and simple LTV estimation"
+    }
+  ],
+  "strengths": [
+    {
+      "area": "Event taxonomy",
+      "detail": "97 well-organized events across 9 categories with TypeScript type safety and PHP/TS sync tests"
+    },
+    {
+      "area": "PII protection",
+      "detail": "Defence-in-depth PII blocklist in AnalyticsGateway strips 30+ sensitive field names before GA4 transmission"
+    },
+    {
+      "area": "Consent architecture",
+      "detail": "Categorized consent (necessary/analytics/marketing) with server-side persistence, legitimate-interest gate for authenticated server-side events"
+    },
+    {
+      "area": "GDPR data export",
+      "detail": "Complete personal data export with rate limiting, sensitive field exclusion, and audit log truncation"
+    },
+    {
+      "area": "Batch scoring optimization",
+      "detail": "EngagementScoringService.scoreBatch() and CustomerHealthService.primeHealthScoreCaches() minimize N+1 queries for admin dashboards"
+    },
+    {
+      "area": "Lead scoring model",
+      "detail": "Composite scoring with engagement, health, and PQL signals provides actionable MQL/SQL classification"
+    },
+    {
+      "area": "IP anonymization",
+      "detail": "Proper IPv4/IPv6/mapped-IPv6 anonymization with security event exemption and comprehensive test coverage"
+    },
+    {
+      "area": "Data retention",
+      "detail": "Scheduled pruning for audit logs (90d), notifications (30d), and webhooks with configurable retention periods"
+    },
+    {
+      "area": "Cache architecture",
+      "detail": "AdminCacheKey enum centralizes cache key management with appropriate TTLs and flushAll() for bulk invalidation"
+    },
+    {
+      "area": "Frontend event queue",
+      "detail": "Pre-consent event queue with bounded retry prevents event loss during consent/GA4 initialization window"
+    }
+  ],
+  "recommended_priority_order": [
+    "ANA-001: Fix login event name bug in CustomerHealthService (critical, all health scores wrong)",
+    "ANA-002: Cache getSubscriptionEvents() (high, uncached admin queries)",
+    "ANA-003: Fix hardcoded activation rate cache key (high, stale data)",
+    "ANA-010: Add subscription.resumed to GA4 forwarded events (medium, analytics gap)",
+    "ANA-009: Use logProductEvent for cancel/resume (medium, missing context)",
+    "ANA-015: Fix legacy consent bypass for analytics category (medium, privacy)",
+    "ANA-005: Default IP anonymization to true (high, GDPR compliance)",
+    "ANA-008: Integrate Sentry frontend SDK (medium, error visibility)",
+    "ANA-007: Add Core Web Vitals monitoring (medium, performance visibility)",
+    "ANA-012: Implement or remove analytics-thresholds.php (medium, dead config)"
+  ]
+}

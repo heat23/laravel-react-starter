@@ -1,0 +1,562 @@
+{
+  "audit_type": "admin-panel",
+  "audit_depth": "thorough",
+  "session_id": "9a5f84a4-f984-4d4d-8823-88c2aecb8479",
+  "timestamp": "2026-04-04T00:00:00Z",
+  "project": "laravel-react-starter",
+  "summary": {
+    "total_findings": 47,
+    "by_severity": {
+      "critical": 3,
+      "high": 9,
+      "medium": 18,
+      "low": 17
+    },
+    "by_category": {
+      "security": 10,
+      "authorization": 7,
+      "performance": 8,
+      "cache_invalidation": 5,
+      "accessibility": 5,
+      "type_safety": 4,
+      "test_coverage": 6,
+      "ux": 2
+    },
+    "admin_surface": {
+      "controllers": 25,
+      "routes_approx": 80,
+      "frontend_pages": 41,
+      "test_files": 46,
+      "test_lines": 6647
+    }
+  },
+  "findings": [
+    {
+      "id": "ADMIN-001",
+      "severity": "critical",
+      "category": "performance",
+      "title": "N+1 and unbounded memory in getCohortRetention()",
+      "description": "AdminBillingStatsService::getCohortRetention() loads ALL user IDs into memory per cohort via pluck('id'), then executes 4 additional queries per cohort week. With 9 cohorts this produces 72+ queries per request. On 10k+ users, memory spikes are likely.",
+      "file": "app/Services/AdminBillingStatsService.php",
+      "lines": "394-446",
+      "recommendation": "Refactor to use window functions or chunked queries with cursor pagination instead of loading full user ID sets into memory."
+    },
+    {
+      "id": "ADMIN-002",
+      "severity": "critical",
+      "category": "test_coverage",
+      "title": "Zero rate limiting tests for admin endpoints",
+      "description": "Despite extensive throttle middleware (60/min global, 10/min export, 5/min impersonate, etc.), there are zero tests verifying 429 Too Many Requests responses. No concurrent request tests exist.",
+      "file": "tests/Feature/Admin/",
+      "lines": null,
+      "recommendation": "Add rate limit tests for all throttled endpoints: send N+1 requests and assert 429 response. Test X-RateLimit headers."
+    },
+    {
+      "id": "ADMIN-003",
+      "severity": "critical",
+      "category": "authorization",
+      "title": "Form Request authorization misalignment with route middleware",
+      "description": "AdminToggleAdminRequest, AdminToggleActiveRequest, and AdminBulkRestoreRequest routes require super_admin middleware but their Form Requests only check isAdmin(). If middleware chain is bypassed (e.g., testing, route misconfiguration), the weaker check applies.",
+      "file": "app/Http/Requests/Admin/AdminToggleAdminRequest.php",
+      "lines": "10-18",
+      "recommendation": "Align Form Request authorize() to check isSuperAdmin() for operations that require super_admin middleware. Defense-in-depth."
+    },
+    {
+      "id": "ADMIN-004",
+      "severity": "high",
+      "category": "performance",
+      "title": "Inefficient correlated subquery in buildSubscriptionQuery()",
+      "description": "AdminBillingStatsService::buildSubscriptionQuery() uses a correlated subquery (SELECT MIN(si2.id)) repeated on every filtered subscription request. This produces poor query plans on large subscription_items tables.",
+      "file": "app/Services/AdminBillingStatsService.php",
+      "lines": "161-183",
+      "recommendation": "Replace with ROW_NUMBER() window function or a simpler JOIN with GROUP BY to get first item per subscription."
+    },
+    {
+      "id": "ADMIN-005",
+      "severity": "high",
+      "category": "performance",
+      "title": "calculateMrr() iterates all subscriptions calling resolveTierFromPrice()",
+      "description": "MRR calculation loops through all subscription items calling resolveTierFromPrice() per item. If price resolution involves DB lookups, this is an N+1 pattern.",
+      "file": "app/Services/AdminBillingStatsService.php",
+      "lines": "254-284",
+      "recommendation": "Pre-compute a price-to-tier mapping in memory or use a JOIN-based approach to resolve tiers in the SQL query."
+    },
+    {
+      "id": "ADMIN-006",
+      "severity": "high",
+      "category": "cache_invalidation",
+      "title": "Missing cache invalidation for webhook/notification/contact stats",
+      "description": "CacheInvalidationManager has methods for billing, tokens, 2FA, social auth, but lacks methods for webhook stats, notification stats, and contact submission stats. Mutations to these entities leave stale admin dashboard data.",
+      "file": "app/Services/CacheInvalidationManager.php",
+      "lines": null,
+      "recommendation": "Add invalidateWebhooks(), invalidateNotifications(), invalidateContactSubmissions() methods that clear respective AdminCacheKey values and DASHBOARD_STATS."
+    },
+    {
+      "id": "ADMIN-007",
+      "severity": "high",
+      "category": "security",
+      "title": "No audit logging for feature flag changes",
+      "description": "FeatureFlagService::setGlobalOverride() and user override methods don't log changes via AuditService. The changed_by field exists on FeatureFlagOverride model but change history isn't surfaced in admin UI. Feature flag changes are security-sensitive operations.",
+      "file": "app/Services/FeatureFlagService.php",
+      "lines": null,
+      "recommendation": "Add AuditService::log() calls in setGlobalOverride(), removeGlobalOverride(), addUserOverride(), and removeUserOverride() with full change context."
+    },
+    {
+      "id": "ADMIN-008",
+      "severity": "high",
+      "category": "security",
+      "title": "AdminFeatureFlagController::searchUsers() has no rate limiting",
+      "description": "The search-users endpoint for feature flag user targeting has no throttle middleware, unlike other admin endpoints. An admin could enumerate the entire user base via rapid search requests.",
+      "file": "routes/admin.php",
+      "lines": null,
+      "recommendation": "Add throttle:30,1 middleware to the search-users route."
+    },
+    {
+      "id": "ADMIN-009",
+      "severity": "high",
+      "category": "security",
+      "title": "No pagination on searchUsers() results",
+      "description": "AdminFeatureFlagController::searchUsers() returns results without visible pagination. For large user bases, this could return excessive data in a single response.",
+      "file": "app/Http/Controllers/Admin/AdminFeatureFlagController.php",
+      "lines": "172-187",
+      "recommendation": "Add ->limit(20) or paginate results in the search query."
+    },
+    {
+      "id": "ADMIN-010",
+      "severity": "high",
+      "category": "test_coverage",
+      "title": "Missing authorization tests for 6+ admin screens",
+      "description": "AdminScheduleTest, AdminRoadmapTest, AdminProductAnalyticsTest, AdminContactSubmissionsTest, AdminDataHealthTest, AdminEmailSendLogIndexTest lack verified authorization assertion patterns (non-admin 403, super_admin gates).",
+      "file": "tests/Feature/Admin/",
+      "lines": null,
+      "recommendation": "Add non-admin access denial (403) tests and super_admin gate tests for all admin controllers."
+    },
+    {
+      "id": "ADMIN-011",
+      "severity": "high",
+      "category": "test_coverage",
+      "title": "Missing query count assertions for billing/webhook/analytics dashboards",
+      "description": "Only 13 query count assertions exist across 46 test files. Complex dashboard pages (billing stats, webhook delivery, product analytics) have no DB::enableQueryLog() assertions to catch N+1 regressions.",
+      "file": "tests/Feature/Admin/",
+      "lines": null,
+      "recommendation": "Add query count assertions to AdminBillingDashboardTest, AdminWebhooksTest, AdminTokensTest, AdminProductAnalyticsTest."
+    },
+    {
+      "id": "ADMIN-012",
+      "severity": "high",
+      "category": "performance",
+      "title": "engagementService->scoreBatch() potential N+1 in user index",
+      "description": "AdminUsersController::index() calls engagementService->scoreBatch() on the user collection. If scoreBatch() performs per-user queries (e.g., counting logins, checking settings), this is an N+1 on the most-visited admin page.",
+      "file": "app/Http/Controllers/Admin/AdminUsersController.php",
+      "lines": "87",
+      "recommendation": "Verify scoreBatch() implementation uses bulk queries. Add query count assertion in AdminUsersTest."
+    },
+    {
+      "id": "ADMIN-013",
+      "severity": "medium",
+      "category": "security",
+      "title": "AdminSystemController exposes PHP/OS/database version information",
+      "description": "System info page shows PHP version, Laravel version, Node version, OS details, database version, and key package versions. While protected by super_admin middleware, this information aids attackers if the admin account is compromised.",
+      "file": "app/Http/Controllers/Admin/AdminSystemController.php",
+      "lines": null,
+      "recommendation": "Acceptable risk with super_admin protection. Consider logging access to system info page."
+    },
+    {
+      "id": "ADMIN-014",
+      "severity": "medium",
+      "category": "security",
+      "title": "CSV formula injection protection only checks first character",
+      "description": "CsvExport sanitization checks if cell starts with =, +, -, @, tab, or carriage return. However, some CSV injection vectors use embedded formulas after whitespace or in multi-line cells.",
+      "file": "app/Support/CsvExport.php",
+      "lines": "108",
+      "recommendation": "Also sanitize cells containing embedded formula characters after newlines within the cell."
+    },
+    {
+      "id": "ADMIN-015",
+      "severity": "medium",
+      "category": "security",
+      "title": "No specific throttle on AdminHealthController",
+      "description": "Health check endpoint within admin panel uses only the global 60/min throttle. Health checks hit database, cache, queue, and disk, making them expensive to call rapidly.",
+      "file": "routes/admin.php",
+      "lines": null,
+      "recommendation": "Add throttle:10,1 to the admin health check route."
+    },
+    {
+      "id": "ADMIN-016",
+      "severity": "medium",
+      "category": "security",
+      "title": "No throttle on AdminProductAnalyticsController",
+      "description": "Product analytics endpoint runs multiple aggregate queries (signup trends, funnel conversion, activation rates, feature adoption). No specific throttle beyond global 60/min.",
+      "file": "routes/admin.php",
+      "lines": null,
+      "recommendation": "Add throttle:20,1 to the analytics route."
+    },
+    {
+      "id": "ADMIN-017",
+      "severity": "medium",
+      "category": "security",
+      "title": "No throttle on AdminDataHealthController",
+      "description": "Data health checks run multiple diagnostic queries. No specific throttle beyond global 60/min.",
+      "file": "routes/admin.php",
+      "lines": null,
+      "recommendation": "Add throttle:10,1 to the data health route."
+    },
+    {
+      "id": "ADMIN-018",
+      "severity": "medium",
+      "category": "security",
+      "title": "No throttle on AdminScheduleController and AdminConfigController",
+      "description": "Schedule and config endpoints expose system internals. Both use only global 60/min throttle.",
+      "file": "routes/admin.php",
+      "lines": null,
+      "recommendation": "Add throttle:20,1 to schedule and config routes."
+    },
+    {
+      "id": "ADMIN-019",
+      "severity": "medium",
+      "category": "authorization",
+      "title": "AdminToggleAdminRequest has empty rules() array",
+      "description": "The Form Request validates authorization but has no input validation rules. While the route only needs the user ID from the URL, the empty rules could mask issues if the request body is processed.",
+      "file": "app/Http/Requests/Admin/AdminToggleAdminRequest.php",
+      "lines": "18",
+      "recommendation": "Add explicit empty return with a comment explaining no input is expected, or add validation that request body is empty."
+    },
+    {
+      "id": "ADMIN-020",
+      "severity": "medium",
+      "category": "authorization",
+      "title": "No per-resource authorization (only admin/super_admin binary)",
+      "description": "Authorization is binary (admin or super_admin). There's no granular permission system (e.g., admin can manage users but not billing, or admin scoped to specific features).",
+      "file": "app/Http/Middleware/EnsureIsAdmin.php",
+      "lines": null,
+      "recommendation": "Acceptable for current scale. Consider permission-based authorization if admin team grows beyond 3-5 people."
+    },
+    {
+      "id": "ADMIN-021",
+      "severity": "medium",
+      "category": "cache_invalidation",
+      "title": "flushAll() iterates all FeatureFlagOverride users for cache clear",
+      "description": "AdminCacheKey::flushAll() queries distinct user IDs from FeatureFlagOverride and clears cache per-user. On large user bases with many overrides, this becomes expensive.",
+      "file": "app/Enums/AdminCacheKey.php",
+      "lines": "76-83",
+      "recommendation": "Consider using cache tags (if Redis) to flush all user flag caches in one operation, or accept the cost with a warning log for large sets."
+    },
+    {
+      "id": "ADMIN-022",
+      "severity": "medium",
+      "category": "cache_invalidation",
+      "title": "No cache invalidation for audit log event types on new events",
+      "description": "AUDIT_EVENT_TYPES cache stores the list of distinct event types. When a new event type is logged for the first time, the cached list is stale until TTL expires.",
+      "file": "app/Enums/AdminCacheKey.php",
+      "lines": "24",
+      "recommendation": "Invalidate AUDIT_EVENT_TYPES when AuditService logs an event with a type not previously seen, or reduce TTL to 60 seconds."
+    },
+    {
+      "id": "ADMIN-023",
+      "severity": "medium",
+      "category": "cache_invalidation",
+      "title": "Product analytics cache keys added but invalidation not in CacheInvalidationManager",
+      "description": "PRODUCT_ANALYTICS_SIGNUP_TREND, PRODUCT_ANALYTICS_ONBOARDING_FUNNEL, PRODUCT_ANALYTICS_FEATURE_ADOPTION cache keys exist but CacheInvalidationManager has no method to invalidate them on relevant data changes.",
+      "file": "app/Enums/AdminCacheKey.php",
+      "lines": "52-54",
+      "recommendation": "Add invalidateProductAnalytics() method or include these keys in relevant existing invalidation methods."
+    },
+    {
+      "id": "ADMIN-024",
+      "severity": "medium",
+      "category": "performance",
+      "title": "AdminFailedJobsController bulk retry has no concurrency protection",
+      "description": "Bulk retry calls Artisan::call('queue:retry') for each job without locking or rate limiting. Retrying many failed jobs simultaneously could overwhelm the queue worker.",
+      "file": "app/Http/Controllers/Admin/AdminFailedJobsController.php",
+      "lines": null,
+      "recommendation": "Add a batch limit (e.g., max 50 retries per request) and dispatch retries through a dedicated job for rate control."
+    },
+    {
+      "id": "ADMIN-025",
+      "severity": "medium",
+      "category": "performance",
+      "title": "AdminRoadmapController slug generation attempts up to 100 times",
+      "description": "Slug generation for roadmap items uses a loop attempting up to 100 unique slugs on collision. While unlikely to loop many times, the worst case is 100 DB queries.",
+      "file": "app/Http/Controllers/Admin/AdminRoadmapController.php",
+      "lines": "88-98",
+      "recommendation": "Use a deterministic slug strategy (e.g., append ID or UUID) to guarantee uniqueness in one query."
+    },
+    {
+      "id": "ADMIN-026",
+      "severity": "medium",
+      "category": "accessibility",
+      "title": "Sortable column headers missing aria-sort attribute",
+      "description": "SortHeader component announces sort direction visually but doesn't use aria-sort='ascending'|'descending'|'none' for screen readers.",
+      "file": "resources/js/Components/admin/SortHeader.tsx",
+      "lines": null,
+      "recommendation": "Add aria-sort attribute to sortable th elements based on current sort state."
+    },
+    {
+      "id": "ADMIN-027",
+      "severity": "medium",
+      "category": "accessibility",
+      "title": "Focus trap not verified in admin dialog modals",
+      "description": "ConfirmDialog is used extensively in admin pages for destructive actions. Focus trap behavior (preventing Tab from leaving the dialog) needs verification in the Dialog component implementation.",
+      "file": "resources/js/Components/admin/",
+      "lines": null,
+      "recommendation": "Verify Dialog component implements focus trap on open. Radix Dialog should handle this by default — confirm it's not overridden."
+    },
+    {
+      "id": "ADMIN-028",
+      "severity": "medium",
+      "category": "accessibility",
+      "title": "Some table checkboxes missing aria-label",
+      "description": "User table checkboxes use user name in aria-label, but some other admin tables (sessions, failed jobs) may not provide descriptive aria-labels on selection checkboxes.",
+      "file": "resources/js/Pages/Admin/",
+      "lines": null,
+      "recommendation": "Audit all AdminDataTable instances for checkbox aria-label attributes."
+    },
+    {
+      "id": "ADMIN-029",
+      "severity": "medium",
+      "category": "type_safety",
+      "title": "Chart dataKey typed as string instead of keyof T",
+      "description": "AdminAreaChart, AdminBarChart, AdminPieChart accept dataKey as string, not keyof T. This allows passing invalid data keys without TypeScript catching the error.",
+      "file": "resources/js/Components/admin/AdminCharts.tsx",
+      "lines": null,
+      "recommendation": "Change dataKey parameter type from string to keyof T & string."
+    },
+    {
+      "id": "ADMIN-030",
+      "severity": "medium",
+      "category": "type_safety",
+      "title": "Audit log metadata uses unsafe type assertion",
+      "description": "AuditLogs/Show.tsx uses 'as Record<string, { from: unknown; to: unknown }>' type assertion on metadata.changes without runtime validation. If metadata shape differs, this produces runtime errors.",
+      "file": "resources/js/Pages/Admin/AuditLogs/Show.tsx",
+      "lines": "104-107",
+      "recommendation": "Create AuditLogMetadata interface with proper type guards. Use isChangesRecord() type predicate."
+    },
+    {
+      "id": "ADMIN-031",
+      "severity": "medium",
+      "category": "test_coverage",
+      "title": "Weak empty state test coverage",
+      "description": "Only 2 tests verify empty state scenarios in AdminDashboardTest. Most dashboard pages (billing, webhooks, tokens, analytics) have 0-1 empty state tests. Edge cases like filtered-no-results vs no-data-at-all are rarely tested.",
+      "file": "tests/Feature/Admin/",
+      "lines": null,
+      "recommendation": "Add empty state tests for all dashboard pages: no data, filtered no results, and pagination on empty results."
+    },
+    {
+      "id": "ADMIN-032",
+      "severity": "medium",
+      "category": "test_coverage",
+      "title": "Only 1 concurrent admin operation test",
+      "description": "AdminEdgeCaseTest has a single concurrent operation test. Admin operations that modify shared state (toggle admin, bulk deactivate, cache flush) need concurrent access testing.",
+      "file": "tests/Feature/Admin/AdminEdgeCaseTest.php",
+      "lines": "212-227",
+      "recommendation": "Add concurrent tests for: two admins toggling same user, bulk deactivate during impersonation, cache flush during dashboard load."
+    },
+    {
+      "id": "ADMIN-033",
+      "severity": "low",
+      "category": "security",
+      "title": "AdminConfigController exposes all feature flag state including env values",
+      "description": "Config viewer shows feature flag enabled/disabled state and environment name. Protected by admin middleware but provides reconnaissance data.",
+      "file": "app/Http/Controllers/Admin/AdminConfigController.php",
+      "lines": null,
+      "recommendation": "Acceptable risk. Already admin-gated. Consider adding audit logging for config page access."
+    },
+    {
+      "id": "ADMIN-034",
+      "severity": "low",
+      "category": "security",
+      "title": "AdminSessionsController uses DB::table('sessions') direct query",
+      "description": "Direct DB table query on sessions bypasses any potential Model protections. Sessions table is framework-managed, but direct queries could expose raw session data.",
+      "file": "app/Http/Controllers/Admin/AdminSessionsController.php",
+      "lines": "30",
+      "recommendation": "Acceptable for sessions table (no Eloquent model). Ensure session payload is never exposed to frontend."
+    },
+    {
+      "id": "ADMIN-035",
+      "severity": "low",
+      "category": "security",
+      "title": "AdminNotificationsController send() dispatches to all users without pagination",
+      "description": "BroadcastAnnouncementJob dispatches notifications. If recipient is 'all', the job counts users but may iterate all users. The count check exists but the job implementation needs verification.",
+      "file": "app/Http/Controllers/Admin/AdminNotificationsController.php",
+      "lines": "107-112",
+      "recommendation": "Verify BroadcastAnnouncementJob uses chunked iteration for large user bases."
+    },
+    {
+      "id": "ADMIN-036",
+      "severity": "low",
+      "category": "authorization",
+      "title": "Impersonation stop route outside admin middleware by design",
+      "description": "POST /admin/impersonate/stop route is outside admin middleware group because the impersonated user isn't an admin. This is documented and intentional but requires careful route ordering.",
+      "file": "routes/admin.php",
+      "lines": "265-267",
+      "recommendation": "No change needed. Well-documented design decision. Ensure route tests cover this edge case."
+    },
+    {
+      "id": "ADMIN-037",
+      "severity": "low",
+      "category": "authorization",
+      "title": "Two-tier admin system has no role transition audit trail",
+      "description": "When a user is promoted to/from admin or super_admin, the change is logged in audit_logs. However, there's no dedicated role history table for compliance reporting.",
+      "file": "app/Http/Controllers/Admin/AdminUsersController.php",
+      "lines": null,
+      "recommendation": "Acceptable for current scale. Audit logs capture the events. Consider a dedicated role_changes table for compliance-heavy environments."
+    },
+    {
+      "id": "ADMIN-038",
+      "severity": "low",
+      "category": "performance",
+      "title": "AdminWebhooksController uses multiple raw SELECT queries",
+      "description": "Webhook dashboard uses several selectRaw queries with conditional aggregation (SUM(CASE WHEN...)). While cached, the initial computation is query-heavy.",
+      "file": "app/Http/Controllers/Admin/AdminWebhooksController.php",
+      "lines": null,
+      "recommendation": "Acceptable with caching. Consider materialized views if webhook volume exceeds 100k records."
+    },
+    {
+      "id": "ADMIN-039",
+      "severity": "low",
+      "category": "performance",
+      "title": "AdminNpsResponsesController uses CASE WHEN aggregation in single query",
+      "description": "NPS calculation uses CASE WHEN for promoter/passive/detractor counts in a single query. This is actually a good pattern — replaces 3 separate queries.",
+      "file": "app/Http/Controllers/Admin/AdminNpsResponsesController.php",
+      "lines": "57-62",
+      "recommendation": "No change needed. Good query optimization."
+    },
+    {
+      "id": "ADMIN-040",
+      "severity": "low",
+      "category": "ux",
+      "title": "No initial page load skeleton in AdminDataTable",
+      "description": "AdminDataTable shows navigation fade (opacity-50) during Inertia transitions but no skeleton rows during initial page load. First load shows empty state briefly before data appears.",
+      "file": "resources/js/Components/admin/AdminDataTable.tsx",
+      "lines": null,
+      "recommendation": "Add skeleton row placeholders while isNavigating on initial load."
+    },
+    {
+      "id": "ADMIN-041",
+      "severity": "low",
+      "category": "ux",
+      "title": "No stale data indicator on admin dashboards",
+      "description": "Admin dashboard pages don't indicate when cached data was last refreshed. Users may see 5-minute-old stats without knowing they're stale.",
+      "file": "resources/js/Pages/Admin/Dashboard.tsx",
+      "lines": null,
+      "recommendation": "Add 'Last updated X minutes ago' indicator with manual refresh button."
+    },
+    {
+      "id": "ADMIN-042",
+      "severity": "low",
+      "category": "accessibility",
+      "title": "Error message toast not associated with triggering field",
+      "description": "Feature flag toggle errors show as toast notifications rather than inline field errors. Screen reader users may not associate the error with the action they just performed.",
+      "file": "resources/js/Pages/Admin/FeatureFlags/Index.tsx",
+      "lines": null,
+      "recommendation": "Use aria-live region near the triggering element for contextual errors."
+    },
+    {
+      "id": "ADMIN-043",
+      "severity": "low",
+      "category": "accessibility",
+      "title": "No prefers-reduced-motion support for chart animations",
+      "description": "AdminCharts components animate on load and hover. Users with motion sensitivity preferences (prefers-reduced-motion) don't get reduced animations.",
+      "file": "resources/js/Components/admin/AdminCharts.tsx",
+      "lines": null,
+      "recommendation": "Add prefers-reduced-motion media query to disable or reduce chart animations."
+    },
+    {
+      "id": "ADMIN-044",
+      "severity": "low",
+      "category": "type_safety",
+      "title": "useAdminFilters generic spread without type narrowing",
+      "description": "useAdminFilters hook spreads filtersRef.current without validating keys match the generic type T. If backend adds new filter fields, the component won't enforce updates.",
+      "file": "resources/js/hooks/useAdminFilters.ts",
+      "lines": null,
+      "recommendation": "Use Partial<T> or validated object construction instead of spread."
+    },
+    {
+      "id": "ADMIN-045",
+      "severity": "low",
+      "category": "type_safety",
+      "title": "Metadata Record<string, unknown> allows arbitrary keys",
+      "description": "AuditLog metadata is typed as Record<string, unknown> throughout admin types. Accessing nested properties requires unsafe type assertions.",
+      "file": "resources/js/types/admin.ts",
+      "lines": null,
+      "recommendation": "Create discriminated union types for known audit event metadata shapes."
+    },
+    {
+      "id": "ADMIN-046",
+      "severity": "low",
+      "category": "test_coverage",
+      "title": "No search+sort+pagination combination tests",
+      "description": "Admin list pages support search, sort, and pagination simultaneously, but no tests verify the combination works correctly (e.g., search with sort then paginate).",
+      "file": "tests/Feature/Admin/",
+      "lines": null,
+      "recommendation": "Add integration tests combining search, sort direction, and page parameters."
+    },
+    {
+      "id": "ADMIN-047",
+      "severity": "low",
+      "category": "cache_invalidation",
+      "title": "Lifecycle/CRM cache keys defined but invalidation undocumented",
+      "description": "STAGE_FUNNEL, STAGE_VELOCITY, LEAD_SCORES cache keys exist in AdminCacheKey enum but CacheInvalidationManager has no corresponding invalidation methods.",
+      "file": "app/Enums/AdminCacheKey.php",
+      "lines": "57-59",
+      "recommendation": "Add invalidateLifecycle() method or document that these caches rely on TTL-based expiry only."
+    }
+  ],
+  "strengths": [
+    {
+      "area": "Authorization architecture",
+      "detail": "Dual-layer protection with middleware + Form Request authorization. Super_admin escalation for destructive operations. Audit logging of unauthorized access attempts."
+    },
+    {
+      "area": "XSS prevention",
+      "detail": "Zero dangerouslySetInnerHTML usage across all 41 admin pages. All dynamic content rendered through React JSX auto-escaping."
+    },
+    {
+      "area": "CSV injection protection",
+      "detail": "CsvExport sanitizes formula characters (=, +, -, @, tab, CR) in exported data to prevent spreadsheet injection attacks."
+    },
+    {
+      "area": "Failed job secret redaction",
+      "detail": "AdminFailedJobsController sanitizes job payloads/exceptions by redacting passwords, tokens, API keys, Bearer/Basic auth, DSN passwords, and Stripe keys."
+    },
+    {
+      "area": "Impersonation security",
+      "detail": "Impersonation uses encrypted session storage (Crypt::encryptString), prevents self-impersonation, admin-impersonation, and nested impersonation. Stop route validates admin still exists and is active."
+    },
+    {
+      "area": "Frontend component architecture",
+      "detail": "6 shared admin components (AdminDataTable, AdminCharts, AdminStatsGrid, AdminPagination, SortHeader, ImpersonationBanner) with 3 generic hooks (useAdminFilters, useAdminAction, useAdminKeyboardShortcuts)."
+    },
+    {
+      "area": "Dark mode support",
+      "detail": "Full semantic token usage (text-foreground, bg-muted, text-success, etc.) with zero hardcoded color values across all admin pages."
+    },
+    {
+      "area": "TypeScript coverage",
+      "detail": "890+ lines of admin type definitions in types/admin.ts with strict interfaces, discriminated unions, and PaginatedResponse wrapper."
+    },
+    {
+      "area": "Test volume",
+      "detail": "46 admin test files with 6,647 lines of test code. 64+ authorization assertions and 13 query count assertions."
+    },
+    {
+      "area": "Cache strategy",
+      "detail": "Centralized AdminCacheKey enum with two TTL tiers (5min default, 1hr charts). CacheInvalidationManager coordinates cross-domain invalidation."
+    },
+    {
+      "area": "Keyboard accessibility",
+      "detail": "useAdminKeyboardShortcuts hook provides / (search focus), n (next page), p (previous page) with proper input-editing guards."
+    },
+    {
+      "area": "Query optimization patterns",
+      "detail": "CASE WHEN aggregation (NPS), lazyById pagination (billing export), QueryHelper::escapeLike for safe LIKE queries, pessimistic locking for bulk updates."
+    }
+  ],
+  "risk_assessment": {
+    "overall_risk": "medium",
+    "security_posture": "strong",
+    "performance_risk": "medium-high",
+    "test_confidence": "medium",
+    "notes": "Security architecture is solid with defense-in-depth (middleware + Form Request + audit logging). Main risks are performance-related: N+1 queries in billing stats and missing query count test coverage. Rate limiting test gap is a compliance concern but unlikely to cause production issues given admin-only access."
+  }
+}

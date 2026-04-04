@@ -1,0 +1,532 @@
+{
+  "audit_type": "seo",
+  "audit_scope": "full",
+  "session_id": "50cf7e9d-e937-4fb1-91f6-8cfc15f306e1",
+  "generated_at": "2026-04-04T00:00:00Z",
+  "project": "laravel-react-starter",
+  "stack": "Laravel 12 + Inertia.js v2 + React 18 + TypeScript + Tailwind CSS v4",
+  "overall_score": 82,
+  "overall_grade": "B+",
+  "summary": "Production-grade SEO implementation with comprehensive structured data, dynamic sitemap, robots.txt, llms.txt, per-page meta tags on 39 pages, and SSR-ready architecture. Key gaps: missing OG images (referenced but not on disk), no default meta description in base template, missing canonical URLs on 6 high-value public pages, no responsive image attributes (srcset/sizes), no Brotli compression, and no pagination SEO signals.",
+  "dimensions": {
+    "meta_tags_and_head": {
+      "score": 78,
+      "grade": "B+",
+      "findings": [
+        {
+          "id": "SEO-META-001",
+          "severity": "HIGH",
+          "category": "meta_tags",
+          "title": "No default meta description in base Blade template",
+          "description": "app.blade.php has no <meta name=\"description\"> fallback. If a page component fails to set one via Inertia Head, search engines get no description. Google may auto-generate snippets but they'll be suboptimal.",
+          "file": "resources/views/app.blade.php",
+          "recommendation": "Add a default meta description in the <head> that per-page Inertia Head components can override."
+        },
+        {
+          "id": "SEO-META-002",
+          "severity": "HIGH",
+          "category": "meta_tags",
+          "title": "No default og:description in base template",
+          "description": "Open Graph tags in app.blade.php include og:type, og:site_name, og:url, og:image but not og:description. Social shares without per-page overrides will show no description preview.",
+          "file": "resources/views/app.blade.php:19-25",
+          "recommendation": "Add a default og:description meta tag alongside the existing OG tags."
+        },
+        {
+          "id": "SEO-META-003",
+          "severity": "MEDIUM",
+          "category": "meta_tags",
+          "title": "Missing canonical URL overrides on 6 public pages",
+          "description": "Welcome, About, Contact, Pricing, Changelog, and Roadmap pages don't set a per-page canonical via Inertia Head. They rely on the base template's request()->url() canonical which works but won't normalize query strings or trailing slashes.",
+          "affected_pages": ["/", "/about", "/contact", "/pricing", "/changelog", "/roadmap"],
+          "file": "resources/views/app.blade.php:8",
+          "recommendation": "The base template canonical (line 8) provides adequate coverage. For robustness, pass canonicalUrl from controllers for these pages to match the pattern used on all other public pages."
+        },
+        {
+          "id": "SEO-META-004",
+          "severity": "LOW",
+          "category": "meta_tags",
+          "title": "Duplicate canonical tag potential on pages with Inertia Head override",
+          "description": "The base Blade template always emits <link rel=\"canonical\"> (line 8). Pages that also emit a canonical via Inertia Head may produce two canonical tags. Inertia's Head component deduplicates by head-key, but only if the component uses the same element type.",
+          "file": "resources/views/app.blade.php:8",
+          "recommendation": "Verify that Inertia's deduplication handles the Blade-emitted canonical correctly. If not, conditionally emit the base canonical only when no page-level override exists."
+        },
+        {
+          "id": "SEO-META-005",
+          "severity": "INFO",
+          "category": "meta_tags",
+          "title": "Auth/Register pages have meta descriptions",
+          "description": "Login and Register pages include meta descriptions which is good for SEO if these pages are intended to be indexed. However, robots.txt disallows /login and /register, creating a mixed signal.",
+          "affected_pages": ["/login", "/register"],
+          "recommendation": "Decide whether auth pages should be indexed. If not (current robots.txt stance), the meta descriptions are harmless but unnecessary."
+        }
+      ],
+      "strengths": [
+        "Dynamic title tags via Inertia Head on all pages",
+        "39 pages have per-page meta descriptions",
+        "Conditional robots meta: noindex for authenticated users, full index for public",
+        "Dual-layer noindex: meta tag + X-Robots-Tag HTTP header for authenticated pages",
+        "OG and Twitter Card tags with summary_large_image on all public pages",
+        "google-extended meta tag for AI crawler control",
+        "html lang attribute set dynamically from app locale"
+      ]
+    },
+    "structured_data": {
+      "score": 92,
+      "grade": "A",
+      "findings": [
+        {
+          "id": "SEO-SD-001",
+          "severity": "LOW",
+          "category": "structured_data",
+          "title": "BlogPosting schema missing author details",
+          "description": "Blog posts use BlogPosting schema with author as Organization only. Google recommends Person type for author with name, url, and image properties for better rich result eligibility.",
+          "file": "resources/js/Pages/Blog/Show.tsx:60-69",
+          "recommendation": "Add author as Person type with name and url if individual author attribution is relevant."
+        },
+        {
+          "id": "SEO-SD-002",
+          "severity": "LOW",
+          "category": "structured_data",
+          "title": "SoftwareApplication schema has hardcoded screenshot URL",
+          "description": "The SoftwareApplication JSON-LD references a screenshot URL that should be verified to exist and be accessible.",
+          "file": "resources/views/app.blade.php:61-94",
+          "recommendation": "Verify the screenshot URL resolves and consider adding multiple screenshots for richer results."
+        },
+        {
+          "id": "SEO-SD-003",
+          "severity": "INFO",
+          "category": "structured_data",
+          "title": "No Product schema on pricing/buy pages",
+          "description": "The pricing and buy pages could benefit from Product or Offer schema markup for rich snippets showing price in search results.",
+          "affected_pages": ["/pricing", "/buy"],
+          "recommendation": "Add Product or SoftwareApplication+Offer schema to pricing/buy pages."
+        }
+      ],
+      "strengths": [
+        "5 schema types implemented: SoftwareApplication, Organization, FAQPage, BreadcrumbList, BlogPosting",
+        "Article schema on long-form guide pages",
+        "BreadcrumbJsonLd component used on 28 pages with safe script tag escaping",
+        "FaqJsonLd component on feature pages with dynamic Q&A data",
+        "Server-side JSON-LD in Blade for homepage (SoftwareApplication, Organization, FAQPage)",
+        "Dynamic pricing in SoftwareApplication offers when billing enabled",
+        "Proper @context and @type declarations on all schemas"
+      ]
+    },
+    "crawlability_and_indexing": {
+      "score": 88,
+      "grade": "A-",
+      "findings": [
+        {
+          "id": "SEO-CRAWL-001",
+          "severity": "MEDIUM",
+          "category": "crawlability",
+          "title": "Sitemap lastmod dates are hardcoded for static pages",
+          "description": "35+ sitemap URLs use hardcoded lastmod timestamps (e.g., '2026-03-01T00:00:00+00:00'). Only blog posts use actual file modification times. Stale lastmod dates reduce crawl efficiency signals.",
+          "file": "app/Http/Controllers/SeoController.php:136-179",
+          "recommendation": "Consider using deployment timestamps or git commit dates for lastmod on static pages. Blog posts already use file mtime (good)."
+        },
+        {
+          "id": "SEO-CRAWL-002",
+          "severity": "LOW",
+          "category": "crawlability",
+          "title": "No trailing slash normalization middleware",
+          "description": "No middleware enforces consistent trailing slash behavior. URLs with and without trailing slashes may both resolve, creating potential duplicate content signals (mitigated by base canonical tag).",
+          "recommendation": "Add middleware to 301-redirect trailing-slash URLs to non-trailing-slash versions, or vice versa."
+        },
+        {
+          "id": "SEO-CRAWL-003",
+          "severity": "LOW",
+          "category": "crawlability",
+          "title": "No sitemap index for future scalability",
+          "description": "Currently ~40 URLs in a single sitemap.xml. As blog/guide content grows, may exceed single-file limits (50,000 URLs).",
+          "file": "app/Http/Controllers/SeoController.php:124-200",
+          "recommendation": "Not urgent. Consider sitemap index when approaching 1000+ URLs."
+        },
+        {
+          "id": "SEO-CRAWL-004",
+          "severity": "INFO",
+          "category": "crawlability",
+          "title": "Missing /buy page from sitemap.xml",
+          "description": "The /buy page is a public route with meta tags but is not included in the sitemap.",
+          "file": "app/Http/Controllers/SeoController.php:136-179",
+          "recommendation": "Add /buy to the sitemap if it should be indexed."
+        }
+      ],
+      "strengths": [
+        "Dynamic robots.txt with environment awareness (blocks all in non-production)",
+        "Comprehensive disallow rules for authenticated/admin routes",
+        "24-hour cached XML sitemap with 40+ URLs",
+        "Feature-flag-aware sitemap (pricing included only when billing enabled)",
+        "Blog posts use real file mtime for lastmod",
+        "llms.txt implementation following llmstxt.org spec",
+        "Clean semantic URLs on all content pages (no query params)",
+        "Proper 404 error page with navigation links",
+        "SSR-ready architecture ensures content available without JavaScript",
+        "Sitemap reference in robots.txt"
+      ]
+    },
+    "performance_and_core_web_vitals": {
+      "score": 80,
+      "grade": "B+",
+      "findings": [
+        {
+          "id": "SEO-PERF-001",
+          "severity": "HIGH",
+          "category": "performance",
+          "title": "No responsive image attributes (srcset/sizes)",
+          "description": "No images in the codebase use srcset or sizes attributes. Mobile devices download full-size images unnecessarily, impacting LCP and bandwidth. Marketing screenshots and OG images are affected.",
+          "affected_files": ["resources/js/Components/marketing/FeatureScreenshot.tsx", "resources/js/Components/ui/avatar.tsx"],
+          "recommendation": "Add srcset and sizes attributes to the FeatureScreenshot component and any hero/above-fold images. Consider generating multiple image sizes at build time."
+        },
+        {
+          "id": "SEO-PERF-002",
+          "severity": "MEDIUM",
+          "category": "performance",
+          "title": "No Brotli compression configured",
+          "description": "Nginx config only enables gzip. Brotli provides 15-20% better compression ratios for text assets, improving TTFB and overall page weight.",
+          "file": "deploy/nginx-gzip.conf",
+          "recommendation": "Add Brotli compression alongside gzip in nginx configuration."
+        },
+        {
+          "id": "SEO-PERF-003",
+          "severity": "MEDIUM",
+          "category": "performance",
+          "title": "No DNS prefetch for external services",
+          "description": "Only fonts.bunny.net has a preconnect hint. Google Analytics, Stripe JS, and other external services loaded at runtime have no DNS prefetch, adding latency on first use.",
+          "file": "resources/views/app.blade.php:29",
+          "recommendation": "Add dns-prefetch for googletagmanager.com, google-analytics.com, js.stripe.com, and m.stripe.network."
+        },
+        {
+          "id": "SEO-PERF-004",
+          "severity": "LOW",
+          "category": "performance",
+          "title": "No critical CSS inlining for above-fold content",
+          "description": "CSS is loaded as a blocking external stylesheet. Inlining critical above-fold CSS would improve FCP by eliminating a render-blocking request.",
+          "recommendation": "Extract and inline critical CSS for landing pages. Low priority since Tailwind output is typically small (~8-12KB gzipped)."
+        },
+        {
+          "id": "SEO-PERF-005",
+          "severity": "LOW",
+          "category": "performance",
+          "title": "No WebP/AVIF image format usage",
+          "description": "Marketing images are SVG (good for vectors) but OG images and screenshots reference PNG format only. WebP provides 25-35% size reduction over PNG.",
+          "recommendation": "Generate WebP versions of raster images. SVG usage for feature illustrations is already optimal."
+        },
+        {
+          "id": "SEO-PERF-006",
+          "severity": "LOW",
+          "category": "performance",
+          "title": "Font preload for critical weight missing",
+          "description": "Inter 400 weight is used on all pages but only preconnect is specified, not preload. Explicit preload of the primary weight would reduce font swap flash.",
+          "file": "resources/views/app.blade.php:29-30",
+          "recommendation": "Add <link rel=\"preload\" as=\"font\"> for Inter 400 woff2."
+        }
+      ],
+      "strengths": [
+        "Sophisticated Vite vendor chunking (7 chunk groups) preventing monolithic bundles",
+        "Lazy-loaded global components (Toaster, CookieConsent, FlashToasts, Tooltip) with Suspense",
+        "Inertia SSR support with dual-mode hydration (hydrateRoot/createRoot fallback)",
+        "Google Analytics loaded asynchronously with cookie consent gating",
+        "Font-display: swap prevents invisible text during font load",
+        "1-year immutable cache on versioned build assets via nginx",
+        "Image lazy loading with loading=\"lazy\" and decoding=\"async\"",
+        "Width/height attributes on FeatureScreenshot to prevent CLS",
+        "Tailwind v4 auto-purging produces minimal CSS output",
+        "Production builds drop console/debugger statements",
+        "Reduced motion support (prefers-reduced-motion)",
+        "Gzip compression at level 6 with proper Vary header"
+      ]
+    },
+    "content_and_keywords": {
+      "score": 90,
+      "grade": "A",
+      "findings": [
+        {
+          "id": "SEO-CONTENT-001",
+          "severity": "LOW",
+          "category": "content",
+          "title": "Blog has only 3 posts",
+          "description": "The markdown-based blog system is well-implemented but has minimal content. Consistent publishing would significantly improve organic search presence for long-tail keywords.",
+          "file": "resources/content/blog/",
+          "recommendation": "Establish a content calendar. The existing posts target high-value keywords (feature flags, Redis locks, admin panels). Continue this pattern."
+        },
+        {
+          "id": "SEO-CONTENT-002",
+          "severity": "LOW",
+          "category": "content",
+          "title": "Markdown renderer lacks advanced formatting",
+          "description": "BlogController's markdown-to-HTML renderer handles headings, bold, italic, code, links, and paragraphs but lacks tables, blockquotes, ordered lists, and fenced code blocks with syntax highlighting.",
+          "file": "app/Http/Controllers/BlogController.php:154-182",
+          "recommendation": "Consider using a full Markdown parser (league/commonmark) for richer blog content rendering."
+        },
+        {
+          "id": "SEO-CONTENT-003",
+          "severity": "INFO",
+          "category": "content",
+          "title": "No content freshness signals on guide pages",
+          "description": "Guide pages don't display last-updated dates or version numbers. Adding these signals helps search engines assess content freshness.",
+          "recommendation": "Add 'Last updated' dates to guide pages, especially the comparison and tutorial guides."
+        }
+      ],
+      "strengths": [
+        "39 unique page titles with strategic keyword targeting",
+        "39 unique meta descriptions across all public pages",
+        "Competitor keyword targeting in compare pages (Jetstream, Spark, SaaSykit, Wave, etc.)",
+        "Long-tail keywords in guide titles (e.g., 'Laravel Feature Flags Without LaunchDarkly')",
+        "Proper H1-H2-H3 heading hierarchy on all pages (single H1 per page)",
+        "Comprehensive alt text on all images (descriptive, not keyword-stuffed)",
+        "9 comparison pages targeting competitor search queries",
+        "9 long-form guides (18-25 min reading time) targeting tutorial keywords",
+        "FAQ sections on feature pages (eligible for FAQ rich results)",
+        "Internal linking via RelatedContent component on blog and feature pages",
+        "Descriptive anchor text throughout (no generic 'click here' links)",
+        "Content hubs (features, compare, guides, blog) with hub-spoke architecture"
+      ]
+    },
+    "social_and_sharing": {
+      "score": 72,
+      "grade": "B-",
+      "findings": [
+        {
+          "id": "SEO-SOCIAL-001",
+          "severity": "HIGH",
+          "category": "social",
+          "title": "Referenced OG images do not exist on disk",
+          "description": "Controllers pass ogImage paths like 'og/features-billing.png', 'og/guide-saas.png', and 'og-image.png' but these files don't exist in the public directory. Only public/images/og-default.png exists. Social shares from feature/guide/blog pages will show broken or fallback images.",
+          "missing_paths": [
+            "public/og/features-billing.png",
+            "public/og/features-feature-flags.png",
+            "public/og/features-admin-panel.png",
+            "public/og/features-webhooks.png",
+            "public/og/features-2fa.png",
+            "public/og/features-social-auth.png",
+            "public/og/guide-saas.png",
+            "public/og/guide-stripe.png",
+            "public/og/guide-flags.png",
+            "public/og-image.png"
+          ],
+          "recommendation": "Create OG images for all referenced paths (1200x630px recommended). Use a template system for consistency. Alternatively, implement dynamic OG image generation."
+        },
+        {
+          "id": "SEO-SOCIAL-002",
+          "severity": "MEDIUM",
+          "category": "social",
+          "title": "Compare pages have no OG images",
+          "description": "All 9 comparison pages pass no ogImage property. Social shares will fall back to the default OG image which isn't comparison-specific.",
+          "affected_pages": ["/compare/laravel-jetstream", "/compare/laravel-spark", "/compare/saasykit", "/compare/wave", "/compare/shipfast", "/compare/supastarter", "/compare/larafast", "/compare/laravel-vs-nextjs", "/compare/makerkit"],
+          "recommendation": "Add OG images for comparison pages, ideally showing the comparison matchup visually."
+        },
+        {
+          "id": "SEO-SOCIAL-003",
+          "severity": "LOW",
+          "category": "social",
+          "title": "No twitter:site or twitter:creator meta tags",
+          "description": "Twitter Card tags include twitter:card, twitter:title, twitter:description, and twitter:image but not twitter:site or twitter:creator. These associate shares with the project's Twitter account.",
+          "recommendation": "Add twitter:site meta tag with the project's Twitter handle when one exists."
+        },
+        {
+          "id": "SEO-SOCIAL-004",
+          "severity": "LOW",
+          "category": "social",
+          "title": "No social share buttons on content pages",
+          "description": "Blog posts, guides, and comparison pages have no share buttons for Twitter, LinkedIn, or other platforms. Adding share functionality could increase organic backlinks.",
+          "recommendation": "Add lightweight share buttons (using URL-based sharing, not heavy SDKs) to blog and guide pages."
+        }
+      ],
+      "strengths": [
+        "Open Graph tags (type, site_name, url, image) on all pages via base template",
+        "Twitter Card (summary_large_image) configured globally",
+        "Per-page OG title, description, and type overrides via Inertia Head",
+        "Blog posts use og:type 'article' for proper social card rendering",
+        "Default fallback OG image exists (public/images/og-default.png)"
+      ]
+    },
+    "technical_infrastructure": {
+      "score": 85,
+      "grade": "A-",
+      "findings": [
+        {
+          "id": "SEO-TECH-001",
+          "severity": "MEDIUM",
+          "category": "technical",
+          "title": "No www vs non-www redirect enforcement",
+          "description": "No server-side redirect enforces canonical domain (www vs non-www). Both may resolve if DNS allows, creating duplicate content signals despite the canonical tag.",
+          "recommendation": "Add nginx redirect rule or Laravel middleware to 301-redirect the non-preferred domain variant."
+        },
+        {
+          "id": "SEO-TECH-002",
+          "severity": "MEDIUM",
+          "category": "technical",
+          "title": "No rel=prev/next for pagination",
+          "description": "Admin and potentially public paginated views have no rel=prev/next links. While Google deprecated these as ranking signals, they still help crawlers discover paginated content.",
+          "recommendation": "Add rel=prev/next to any user-facing paginated content. Admin-only pagination doesn't need this."
+        },
+        {
+          "id": "SEO-TECH-003",
+          "severity": "LOW",
+          "category": "technical",
+          "title": "No ETag or Last-Modified headers on HTML responses",
+          "description": "HTML responses rely on default Laravel cache headers. Adding ETag or Last-Modified enables conditional requests (304 Not Modified), reducing bandwidth and improving crawl efficiency.",
+          "recommendation": "Add ETag middleware for public pages. Low priority as content changes infrequently."
+        },
+        {
+          "id": "SEO-TECH-004",
+          "severity": "LOW",
+          "category": "technical",
+          "title": "No hreflang tags",
+          "description": "No multi-language support configured. Single-language (English) site. Not a current issue but blocks international SEO if expansion is planned.",
+          "recommendation": "Implement when multi-language support is needed. Not required for English-only sites."
+        },
+        {
+          "id": "SEO-TECH-005",
+          "severity": "INFO",
+          "category": "technical",
+          "title": "HSTS preload not enabled by default",
+          "description": "HSTS is configured with max-age=31536000 and includeSubDomains but preload is gated behind HSTS_PRELOAD env var. Preloading ensures browsers never make an insecure request.",
+          "file": "app/Http/Middleware/SecurityHeaders.php:25-31",
+          "recommendation": "Enable HSTS preload after verifying all subdomains support HTTPS, then submit to hstspreload.org."
+        },
+        {
+          "id": "SEO-TECH-006",
+          "severity": "INFO",
+          "category": "technical",
+          "title": "Cookie consent implementation is SEO-compatible",
+          "description": "CookieConsent component gates Google Analytics on user consent. This is GDPR-compliant but means analytics data may be incomplete for EU visitors.",
+          "file": "resources/js/Components/legal/CookieConsent.tsx",
+          "recommendation": "No action needed. This is correct behavior for privacy compliance."
+        }
+      ],
+      "strengths": [
+        "HTTPS enforced in production via URL::forceScheme('https')",
+        "HSTS with 1-year max-age and includeSubDomains",
+        "Comprehensive security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, Permissions-Policy)",
+        "CSP with nonce-based script security",
+        "1-year immutable cache on versioned build assets",
+        "SSR-ready with Inertia.js (server-rendered HTML for crawlers)",
+        "Proper HTTP status codes (401, 403, 404, 429, 500, 503)",
+        "UTM parameter capture middleware for attribution tracking",
+        "Dynamic locale support (html lang attribute)",
+        "Asset versioning via Vite content hashing"
+      ]
+    }
+  },
+  "findings_summary": {
+    "total": 28,
+    "by_severity": {
+      "HIGH": 4,
+      "MEDIUM": 6,
+      "LOW": 13,
+      "INFO": 5
+    },
+    "by_category": {
+      "meta_tags": 5,
+      "structured_data": 3,
+      "crawlability": 4,
+      "performance": 6,
+      "content": 3,
+      "social": 4,
+      "technical": 6
+    }
+  },
+  "top_priorities": [
+    {
+      "rank": 1,
+      "finding_id": "SEO-SOCIAL-001",
+      "title": "Create missing OG images",
+      "impact": "HIGH — Social shares from 15+ pages show broken/fallback images",
+      "effort": "MEDIUM — Need to create ~10 OG images (1200x630px)",
+      "recommendation": "Generate OG images for all feature, guide, and blog pages. Consider a template-based approach or dynamic OG image generation service."
+    },
+    {
+      "rank": 2,
+      "finding_id": "SEO-META-001",
+      "title": "Add default meta description to base template",
+      "impact": "HIGH — Pages without per-page description have no fallback",
+      "effort": "LOW — Single line addition to app.blade.php",
+      "recommendation": "Add <meta name=\"description\" content=\"...\"> with a generic site description to the base Blade template."
+    },
+    {
+      "rank": 3,
+      "finding_id": "SEO-META-002",
+      "title": "Add default og:description to base template",
+      "impact": "HIGH — Social shares without per-page override show no description",
+      "effort": "LOW — Single line addition to app.blade.php",
+      "recommendation": "Add <meta property=\"og:description\" content=\"...\"> alongside existing OG tags."
+    },
+    {
+      "rank": 4,
+      "finding_id": "SEO-PERF-001",
+      "title": "Add responsive image attributes",
+      "impact": "HIGH — Mobile performance affected by full-size image downloads",
+      "effort": "MEDIUM — Update FeatureScreenshot component, generate image variants",
+      "recommendation": "Add srcset and sizes to FeatureScreenshot and hero images."
+    },
+    {
+      "rank": 5,
+      "finding_id": "SEO-PERF-002",
+      "title": "Enable Brotli compression",
+      "impact": "MEDIUM — 15-20% size reduction over gzip for all text assets",
+      "effort": "LOW — Add Brotli config to nginx",
+      "recommendation": "Add brotli_static on and brotli compression config alongside existing gzip."
+    }
+  ],
+  "page_coverage": {
+    "total_public_pages": 42,
+    "pages_with_title": 42,
+    "pages_with_meta_description": 39,
+    "pages_with_canonical_url": 42,
+    "pages_with_canonical_override": 23,
+    "pages_with_og_tags": 42,
+    "pages_with_breadcrumb_schema": 28,
+    "pages_with_faq_schema": 6,
+    "pages_in_sitemap": 40,
+    "pages_missing_from_sitemap": ["/buy"],
+    "pages_missing_meta_description": ["Dashboard", "Settings/*", "Auth/ConfirmPassword"],
+    "note": "All 42 public pages have base-level canonical via Blade template (request()->url()). 23 pages additionally set explicit canonicalUrl via Inertia props."
+  },
+  "schema_types_implemented": [
+    "SoftwareApplication",
+    "Organization",
+    "FAQPage",
+    "BreadcrumbList",
+    "BlogPosting",
+    "Article"
+  ],
+  "files_audited": [
+    "resources/views/app.blade.php",
+    "app/Http/Controllers/SeoController.php",
+    "app/Http/Controllers/BlogController.php",
+    "app/Http/Controllers/FeaturesController.php",
+    "app/Http/Controllers/CompareController.php",
+    "app/Http/Controllers/GuidesController.php",
+    "app/Http/Controllers/WelcomeController.php",
+    "app/Http/Controllers/ContactController.php",
+    "app/Http/Controllers/LegalController.php",
+    "app/Http/Middleware/SecurityHeaders.php",
+    "app/Http/Middleware/HandleInertiaRequests.php",
+    "app/Http/Middleware/CaptureUtmParameters.php",
+    "app/Providers/AppServiceProvider.php",
+    "bootstrap/app.php",
+    "resources/js/Components/seo/BreadcrumbJsonLd.tsx",
+    "resources/js/Components/seo/FaqJsonLd.tsx",
+    "resources/js/Components/seo/RelatedContent.tsx",
+    "resources/js/Components/marketing/FeatureScreenshot.tsx",
+    "resources/js/Components/marketing/PublicFooter.tsx",
+    "resources/js/Components/legal/CookieConsent.tsx",
+    "resources/js/Pages/Welcome.tsx",
+    "resources/js/Pages/Blog/Index.tsx",
+    "resources/js/Pages/Blog/Show.tsx",
+    "resources/js/app.tsx",
+    "resources/js/ssr.tsx",
+    "resources/css/app.css",
+    "vite.config.ts",
+    "deploy/nginx-gzip.conf",
+    "deploy/nginx-static-cache.conf",
+    "routes/web.php",
+    "config/app.php",
+    "config/features.php",
+    "config/pagination.php",
+    "resources/views/seo/sitemap.blade.php",
+    "package.json"
+  ]
+}

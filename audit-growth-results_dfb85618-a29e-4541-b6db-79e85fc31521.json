@@ -1,0 +1,662 @@
+{
+  "batch": "C",
+  "plg_detected": false,
+  "audits": {
+    "19": {
+      "area": "Activation & Onboarding Flow",
+      "area_score": 7.5,
+      "activation_milestone": "health_score >= 51 AND tokens_count > 0 (instrumented in Dashboard.tsx line 92-101 via ACTIVATION_MILESTONE event with trigger 'api_token_created'). Secondary milestone: health_score >= 76 fires 'health_score_healthy'. Milestone is composite/implicit — not a single named business action.",
+      "steps_to_value": 5,
+      "finding_count": 4,
+      "summary": "The onboarding flow is well-structured: 3-step wizard (welcome/preferences/get-started), full analytics instrumentation, segmentation by use case, context-aware post-onboarding action cards, and a dashboard setup checklist with progress bar. Core gaps are: (1) activation milestone is a composite health score + token heuristic, not a true 'first value' moment; (2) no backend server-side ONBOARDING_STARTED tracking — the event fires client-side only, so bots/JS-disabled users are invisible; (3) the skip-onboarding path bypasses use_case capture entirely; (4) no viral/sharing mechanics after first success.",
+      "findings": [
+        {
+          "id": "ACT-001",
+          "priority": "P1",
+          "confidence": "high",
+          "category": "activation",
+          "title": "Activation milestone is a proxy metric, not a first-value moment",
+          "description": "The activation milestone (Dashboard.tsx lines 92-101) fires when health_score >= 51 AND tokens_count > 0. This is an account-hygiene signal, not a product value moment. A user who creates a token without ever using the API looks 'activated'. There is no event for 'first API call made' or any feature-specific first value event. The EVENT_TAXONOMY.md comment (line 229) explicitly acknowledges this gap: 'Future: AND used 2+ features within first 7 days — requires feature.used event instrumentation.'",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "resources/js/Pages/Dashboard.tsx",
+              "lines": [92, 101],
+              "note": "Activation fires on health_score >= 51 + tokens_count > 0",
+              "proof": "track(AnalyticsEvents.ACTIVATION_MILESTONE, { trigger: 'api_token_created' })"
+            },
+            {
+              "type": "code",
+              "path": "app/Enums/AnalyticsEvent.php",
+              "lines": [107, 109],
+              "note": "FEATURE_USED event exists in enum but is never dispatched from backend",
+              "proof": "case FEATURE_USED = 'feature.used';"
+            },
+            {
+              "type": "code",
+              "path": "docs/EVENT_TAXONOMY.md",
+              "lines": [229, 229],
+              "note": "Team acknowledges feature.used gap in activation metric",
+              "proof": "Future: AND used 2+ features within first 7 days — requires feature.used event instrumentation."
+            }
+          ],
+          "artifacts_affected": ["file::resources/js/Pages/Dashboard.tsx", "file::app/Enums/AnalyticsEvent.php", "file::docs/EVENT_TAXONOMY.md"],
+          "implementation": {
+            "approach": "Dispatch FEATURE_USED from controllers when key features are exercised (API token first use, first webhook call, etc.). Update activation condition to require at least one FEATURE_USED event within 7 days.",
+            "changes": [
+              "Dispatch DispatchAnalyticsEvent::FEATURE_USED from TokenController on first successful API call",
+              "Track feature.used on first webhook delivery in DispatchWebhookJob",
+              "Update Dashboard.tsx activation check to read feature_used_count from server props"
+            ],
+            "verification": [
+              "AnalyticsEventSyncTest still passes",
+              "Admin product analytics funnel shows feature.used in chain"
+            ]
+          },
+          "impact": "high",
+          "effort_hours": 4,
+          "area_score_impact": -1.5
+        },
+        {
+          "id": "ACT-002",
+          "priority": "P2",
+          "confidence": "high",
+          "category": "activation",
+          "title": "ONBOARDING_STARTED fires client-side only — server has no record of onboarding starts",
+          "description": "The ONBOARDING_STARTED event is fired via useAnalytics in a useEffect in Onboarding.tsx (line 51). The backend only records onboarding_completed in user_settings. This means onboarding funnel in ProductAnalyticsService (getOnboardingFunnelConversion) counts 'started' from the audit_logs table (line 55-58), but nothing writes to audit_logs for ONBOARDING_STARTED. The backend funnel query will show 0 for 'started' or be sourced from GA4 forwarding, making server-side funnel data unreliable.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "resources/js/Pages/Onboarding.tsx",
+              "lines": [50, 52],
+              "note": "ONBOARDING_STARTED fires only in React useEffect — no backend write",
+              "proof": "useEffect(() => { track(AnalyticsEvents.ONBOARDING_STARTED); }, [track]);"
+            },
+            {
+              "type": "code",
+              "path": "app/Services/ProductAnalyticsService.php",
+              "lines": [54, 58],
+              "note": "Backend funnel queries audit_logs for onboarding.started — but this event is never written server-side",
+              "proof": "DB::table('audit_logs')->where('event', 'onboarding.started')"
+            }
+          ],
+          "artifacts_affected": ["file::app/Http/Controllers/OnboardingController.php", "file::app/Services/ProductAnalyticsService.php"],
+          "implementation": {
+            "approach": "Add AuditService->log(AnalyticsEvent::ONBOARDING_STARTED) in the OnboardingController show() method so the backend funnel query has a reliable data source.",
+            "changes": [
+              "Dispatch ONBOARDING_STARTED audit log in OnboardingController::show()"
+            ],
+            "verification": [
+              "ProductAnalyticsService funnel returns non-zero started count after a test signup"
+            ]
+          },
+          "impact": "medium",
+          "effort_hours": 1,
+          "area_score_impact": -0.5
+        },
+        {
+          "id": "ACT-003",
+          "priority": "P2",
+          "confidence": "high",
+          "category": "activation",
+          "title": "Skip-onboarding path captures no use_case — loses segmentation data",
+          "description": "handleSkip() (Onboarding.tsx line 77-80) calls completeOnboarding() directly, which POSTs to /onboarding/complete without any prior step logic. If the user skips from step 0, the use_case is never saved to user_settings (the use_case save happens in handleNext at step 0, line 104-110). Analytics gets a 'skipped' step event but the use_case value is empty. This means skip users — likely the most indecisive segment — get no segmentation.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "resources/js/Pages/Onboarding.tsx",
+              "lines": [77, 80],
+              "note": "handleSkip calls completeOnboarding without saving useCase",
+              "proof": "const handleSkip = useCallback(() => { track(AnalyticsEvents.ONBOARDING_STEP_COMPLETED, { step: 'skipped' }); completeOnboarding(); }, [completeOnboarding, track]);"
+            },
+            {
+              "type": "code",
+              "path": "resources/js/Pages/Onboarding.tsx",
+              "lines": [104, 110],
+              "note": "use_case is only saved inside handleNext at step 0 branch",
+              "proof": "if (useCase) { router.post('/api/settings', { key: 'use_case', value: useCase }"
+            }
+          ],
+          "artifacts_affected": ["file::resources/js/Pages/Onboarding.tsx"],
+          "implementation": {
+            "approach": "In handleSkip, if useCase is set, fire the non-blocking /api/settings POST before calling completeOnboarding. Also include use_case in the ONBOARDING_STEP_COMPLETED event properties.",
+            "changes": [
+              "In handleSkip: if useCase is non-empty, post to /api/settings first (non-blocking)",
+              "Add use_case to the skip analytics event properties"
+            ],
+            "verification": [
+              "User who selects use case and clicks Skip has use_case in user_settings"
+            ]
+          },
+          "impact": "low",
+          "effort_hours": 1,
+          "area_score_impact": -0.3
+        },
+        {
+          "id": "ACT-004",
+          "priority": "P3",
+          "confidence": "medium",
+          "category": "activation",
+          "title": "No viral or sharing loop after first-success celebration",
+          "description": "The Step 3 completion screen (Onboarding.tsx lines 225-309) shows a CheckCircle animation and action cards, but has no sharing prompt, referral link, or 'tell a friend' CTA. Given the target audience of solo founders, a low-friction share ('Built with Laravel React Starter') or referral prompt after the success moment would add a PLG viral loop. The dashboard also has no referral mechanism in the explore-next actions (Dashboard.tsx lines 162-166).",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "resources/js/Pages/Onboarding.tsx",
+              "lines": [225, 310],
+              "note": "Completion step has celebration UI but no share/referral CTA",
+              "proof": "No referral, no social share, no 'tell a friend' button in the ActionCard list"
+            },
+            {
+              "type": "code",
+              "path": "resources/js/Pages/Dashboard.tsx",
+              "lines": [161, 166],
+              "note": "exploreActions list has no referral entry",
+              "proof": "const exploreActions = [ ...(features?.webhooks...), ...(features?.apiDocs...), { label: 'View the roadmap', href: '/roadmap' }, { label: 'Submit feedback', href: '#feedback' } ]"
+            }
+          ],
+          "artifacts_affected": ["file::resources/js/Pages/Onboarding.tsx", "file::resources/js/Pages/Dashboard.tsx"],
+          "implementation": {
+            "approach": "Add a 'Share on Twitter/X' link or referral prompt to the onboarding completion step and dashboard explore section. Track clicks via ENGAGEMENT_CTA_CLICKED.",
+            "changes": [
+              "Add social share button to Onboarding step 3 action cards",
+              "Add referral link generator to Dashboard explore section when billing enabled"
+            ],
+            "verification": [
+              "ENGAGEMENT_CTA_CLICKED fires with cta: 'share_onboarding' on click"
+            ]
+          },
+          "impact": "medium",
+          "effort_hours": 3,
+          "area_score_impact": -0.5
+        }
+      ]
+    },
+    "20": {
+      "area": "Analytics & Event Instrumentation",
+      "area_score": 8.0,
+      "finding_count": 4,
+      "summary": "Analytics infrastructure is unusually mature for a starter template: a typed PHP enum with 90+ events, a frontend events.ts counterpart with a sync test, a GA4 Measurement Protocol gateway with PII stripping, async job dispatch, documented EVENT_TAXONOMY.md with funnel definitions, PQL signals (limit.threshold_50/80/100), and an admin ProductAnalyticsService. Critical gaps: (1) FEATURE_USED is never dispatched from any backend controller; (2) limit.threshold_50 exists in the enum and taxonomy but is never fired (only 80 and 100 are fired in Dashboard.tsx); (3) the activation definition in EVENT_TAXONOMY.md is annotated as incomplete; (4) GA4 Measurement Protocol is off by default with no gtag.js client-ID linking — server-side and client-side events have mismatched client_id formats making user journey stitching impossible.",
+      "findings": [
+        {
+          "id": "INST-001",
+          "priority": "P0",
+          "confidence": "high",
+          "category": "analytics",
+          "title": "Server-side client_id uses 'server_{userId}' — breaks GA4 user journey stitching with gtag.js",
+          "description": "AnalyticsGateway.php line 49 sets client_id to 'server_{userId}'. The GA4 Measurement Protocol requires that the client_id match the client-side gtag.js cookie (_ga cookie value, format 'GA1.1.XXXXXXXX.XXXXXXXXXX') for session stitching and funnel continuity. Using a synthetic server-side ID means GA4 treats backend events as a separate anonymous user from the browser session. Subscription, trial, and auth events will show in GA4 but disconnected from the browsing funnel.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "app/Services/AnalyticsGateway.php",
+              "lines": [49, 49],
+              "note": "client_id is synthesized from userId, not the GA4 browser cookie",
+              "proof": "'client_id' => \"server_{$userId}\","
+            }
+          ],
+          "artifacts_affected": ["file::app/Services/AnalyticsGateway.php"],
+          "implementation": {
+            "approach": "Store the GA4 _ga cookie value in user_settings on first page load (via JS), then pass it as the client_id for server-side events. Fall back to 'server_{userId}' only when cookie is unavailable.",
+            "changes": [
+              "Add a client_ga_id column or user_setting key to capture _ga cookie on login",
+              "Pass client_ga_id from user context to DispatchAnalyticsEvent",
+              "Use stored client_ga_id in AnalyticsGateway::send() when available"
+            ],
+            "verification": [
+              "GA4 DebugView shows the same client_id for a browser session and a backend subscription.created event for the same user"
+            ]
+          },
+          "impact": "high",
+          "effort_hours": 4,
+          "area_score_impact": -1.5
+        },
+        {
+          "id": "INST-002",
+          "priority": "P1",
+          "confidence": "high",
+          "category": "analytics",
+          "title": "FEATURE_USED event defined but never dispatched — feature adoption is invisible",
+          "description": "AnalyticsEvent::FEATURE_USED ('feature.used') is declared in the enum (line 108) and included in SHARED_EVENTS (line 173), but a grep of all backend controllers shows zero dispatch calls to this event. No backend controller calls DispatchAnalyticsEvent with FEATURE_USED. The ProductAnalyticsService has no feature usage query. Activation cannot be truly measured (per EVENT_TAXONOMY.md line 229 own admission).",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "app/Enums/AnalyticsEvent.php",
+              "lines": [108, 108],
+              "note": "Event exists in enum",
+              "proof": "case FEATURE_USED = 'feature.used';"
+            },
+            {
+              "type": "missing",
+              "path": "app/Http/Controllers/",
+              "lines": [],
+              "note": "Zero occurrences of FEATURE_USED dispatch across all 29 instrumented controller files",
+              "proof": "grep of DispatchAnalyticsEvent across controllers shows 72 occurrences in 29 files — none are FEATURE_USED"
+            }
+          ],
+          "artifacts_affected": ["file::app/Enums/AnalyticsEvent.php", "file::app/Services/ProductAnalyticsService.php"],
+          "implementation": {
+            "approach": "Dispatch FEATURE_USED from the 3-5 highest-value feature controllers: TokenController (token used), FeedbackController (feedback submitted), SubscriptionController (plan interacted with), WebhookService (webhook delivered).",
+            "changes": [
+              "Add AuditService log(FEATURE_USED, ['feature' => 'api_token']) in TokenController",
+              "Add feature_used_count to ProductAnalyticsService queries",
+              "Define 'activation' in EVENT_TAXONOMY.md as: onboarding.completed + feature.used within 7 days"
+            ],
+            "verification": [
+              "Admin product analytics shows feature.used trend after feature use"
+            ]
+          },
+          "impact": "high",
+          "effort_hours": 3,
+          "area_score_impact": -1.0
+        },
+        {
+          "id": "INST-003",
+          "priority": "P2",
+          "confidence": "high",
+          "category": "analytics",
+          "title": "limit.threshold_50 event exists in enum and taxonomy but is never fired",
+          "description": "AnalyticsEvent::LIMIT_THRESHOLD_50 exists in the enum (line 123) and in EVENT_TAXONOMY.md (line 78) as a PQL signal. However, Dashboard.tsx (lines 117-121) only fires threshold_80 and threshold_100. The 50% signal would be the earliest PQL indicator for proactive upgrade nudges. Missing this means the upgrade nudge arrives only at 80%+ — potentially too late for smooth conversion.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "app/Enums/AnalyticsEvent.php",
+              "lines": [123, 123],
+              "note": "threshold_50 defined",
+              "proof": "case LIMIT_THRESHOLD_50 = 'limit.threshold_50';"
+            },
+            {
+              "type": "code",
+              "path": "resources/js/Pages/Dashboard.tsx",
+              "lines": [117, 122],
+              "note": "Only fires threshold_80 and threshold_100 — threshold_50 is skipped",
+              "proof": "if (info.threshold >= 100) { track(LIMIT_THRESHOLD_100...) } else if (info.threshold >= 80) { track(LIMIT_THRESHOLD_80...) }"
+            }
+          ],
+          "artifacts_affected": ["file::resources/js/Pages/Dashboard.tsx"],
+          "implementation": {
+            "approach": "Add an else-if branch in the limit_warnings loop for threshold >= 50 to fire LIMIT_THRESHOLD_50.",
+            "changes": [
+              "Add else if (info.threshold >= 50) branch in Dashboard.tsx limit warnings loop"
+            ],
+            "verification": [
+              "User at 50% limit sees LIMIT_THRESHOLD_50 in GA4 DebugView"
+            ]
+          },
+          "impact": "medium",
+          "effort_hours": 0.5,
+          "area_score_impact": -0.5
+        },
+        {
+          "id": "INST-004",
+          "priority": "P2",
+          "confidence": "medium",
+          "category": "analytics",
+          "title": "No funnel for NPS survey completion — NPS response rate is unmeasured",
+          "description": "The NpsBanner fires eligibility check and submission via Inertia router, but there is no analytics event for 'nps_survey_shown', 'nps_survey_dismissed', or 'nps_survey_completed'. The admin NPS dashboard (AdminNpsResponsesController) shows aggregated scores but cannot compute survey response rate (responses / eligible shown). Without this, it is impossible to know if low NPS volume is due to few surveys shown or low response rate.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "resources/js/Components/feedback/NpsBanner.tsx",
+              "lines": [27, 41],
+              "note": "handleSubmit fires router.post but no analytics track() call",
+              "proof": "router.post('/nps', { score, comment... }, { onSuccess: () => { setSubmitted(true)... } })"
+            },
+            {
+              "type": "missing",
+              "path": "resources/js/Components/feedback/NpsBanner.tsx",
+              "lines": [],
+              "note": "No useAnalytics import, no track() calls anywhere in the component",
+              "proof": "NpsBanner.tsx has no import for useAnalytics or AnalyticsEvents"
+            }
+          ],
+          "artifacts_affected": ["file::resources/js/Components/feedback/NpsBanner.tsx"],
+          "implementation": {
+            "approach": "Add useAnalytics hook to NpsBanner. Track 'nps_survey_shown' on setVisible(true), 'nps_survey_dismissed' on dismiss, and use FEEDBACK_SUBMITTED on successful submit.",
+            "changes": [
+              "Import useAnalytics and track nps_survey_shown when eligible=true",
+              "Track nps_survey_dismissed when X button clicked",
+              "Track FEEDBACK_SUBMITTED with type:'nps' on successful submission"
+            ],
+            "verification": [
+              "GA4 DebugView shows three NPS events during a survey flow"
+            ]
+          },
+          "impact": "medium",
+          "effort_hours": 1,
+          "area_score_impact": -0.5
+        }
+      ]
+    },
+    "21": {
+      "area": "Pricing & Billing Readiness",
+      "area_score": 7.8,
+      "finding_count": 4,
+      "summary": "Billing is production-grade: Stripe Checkout for new subscribers, swap/cancel/resume with Redis locking, 3-email dunning sequence, 7-day grace period, invoice PDF links, retention coupon, annual/monthly toggle, trial banners, seat billing validation, and a full admin billing dashboard. Gaps: (1) proration amount is not shown to users before confirming a plan swap; (2) the pricing page feature comparison table is missing (only feature lists per card, no cross-plan comparison row); (3) no cancellation survey/exit flow — users can cancel with one click without capturing reason; (4) PaymentFailedNotification says '3 days' but config/plans.php has a 7-day grace period — copy inconsistency creates user trust risk.",
+      "findings": [
+        {
+          "id": "BILL-001",
+          "priority": "P1",
+          "confidence": "high",
+          "category": "billing",
+          "title": "PaymentFailedNotification says 3-day suspension window but plans.php grace period is 7 days",
+          "description": "PaymentFailedNotification.php (line 43) tells the user 'we'll pause your subscription in 3 days if we can't collect payment.' However, config/plans.php line 196 sets past_due_grace_days to 7 (configurable via PAST_DUE_GRACE_DAYS env). This creates a user expectation mismatch: they expect suspension at day 3 but enforcement happens at day 7. This is not merely copy — a user who sees '3 days' may take urgent action while one who experienced the actual 7-day window will lose trust in communications.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "app/Notifications/PaymentFailedNotification.php",
+              "lines": [43, 43],
+              "note": "Hardcoded '3 days' in notification copy",
+              "proof": "->line(\"we'll pause your subscription in 3 days if we can't collect payment.\")"
+            },
+            {
+              "type": "code",
+              "path": "config/plans.php",
+              "lines": [196, 196],
+              "note": "Configurable grace period, defaults to 7 days",
+              "proof": "'past_due_grace_days' => (int) env('PAST_DUE_GRACE_DAYS', 7),"
+            }
+          ],
+          "artifacts_affected": ["file::app/Notifications/PaymentFailedNotification.php", "file::config/plans.php"],
+          "implementation": {
+            "approach": "Replace hardcoded '3 days' with a dynamic value pulled from config('plans.past_due_grace_days'). Pass the grace days as a constructor parameter or read from config inside toMail().",
+            "changes": [
+              "In PaymentFailedNotification::toMail(), replace hardcoded '3 days' with config('plans.past_due_grace_days').' days'"
+            ],
+            "verification": [
+              "Notification copy reflects current config value when PAST_DUE_GRACE_DAYS is changed"
+            ]
+          },
+          "impact": "high",
+          "effort_hours": 0.5,
+          "area_score_impact": -1.0
+        },
+        {
+          "id": "BILL-002",
+          "priority": "P1",
+          "confidence": "high",
+          "category": "billing",
+          "title": "Plan swap shows no proration amount — users upgrade blind",
+          "description": "When an existing subscriber clicks 'Switch to Pro' on Pricing.tsx, a SwapConfirmDialog opens (Pricing.tsx lines 321-334). The dialog shows tier name and price label but does not display the prorated charge or credit amount. Users do not know how much they will be charged immediately. For a downgrade, they don't see when the credit expires. This is a conversion friction point and a trust issue — Stripe Checkout for new subscribers is clear, but the swap path is opaque.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "resources/js/Pages/Pricing.tsx",
+              "lines": [321, 334],
+              "note": "SwapConfirmDialog receives priceLabel but no proration amount",
+              "proof": "setSwapTarget({ planKey, tierName: tier.name, priceId, priceLabel: pricing.label })"
+            },
+            {
+              "type": "missing",
+              "path": "resources/js/Pages/Billing",
+              "lines": [],
+              "note": "No proration endpoint or display in billing pages",
+              "proof": "Grep for 'proration' in Billing pages returns no matches"
+            }
+          ],
+          "artifacts_affected": ["file::resources/js/Pages/Pricing.tsx", "file::app/Http/Controllers/Billing/SubscriptionController.php"],
+          "implementation": {
+            "approach": "Add a /billing/proration-preview endpoint that calls Stripe's upcoming invoice API to calculate the proration amount. Display this in SwapConfirmDialog before confirmation.",
+            "changes": [
+              "Add BillingController::proratePreview() that calls Stripe's invoice.upcoming API",
+              "Pass proration amount to SwapConfirmDialog as a prop",
+              "Display 'You will be charged $X.XX now' in the confirmation dialog"
+            ],
+            "verification": [
+              "SwapConfirmDialog shows actual proration amount for a test plan swap"
+            ]
+          },
+          "impact": "medium",
+          "effort_hours": 5,
+          "area_score_impact": -0.7
+        },
+        {
+          "id": "BILL-003",
+          "priority": "P2",
+          "confidence": "high",
+          "category": "billing",
+          "title": "No cancellation survey — churn reasons are never captured",
+          "description": "The subscription cancellation flow (SubscriptionController::cancel) accepts a cancellation request and shows a retention coupon, but there is no survey asking why the user is cancelling. The cancel button in Billing page likely leads directly to an API call. No CANCEL_REASON event exists in AnalyticsEvent.php. This is a critical growth gap: without churn reason data, no segmented win-back sequences can be built and the retention coupon is offered blindly.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "app/Http/Controllers/Billing/SubscriptionController.php",
+              "lines": [1, 80],
+              "note": "cancel() method accepts cancellation but no survey step",
+              "proof": "CancelSubscriptionRequest is a Form Request — it only validates confirmation, not a reason field"
+            },
+            {
+              "type": "missing",
+              "path": "app/Enums/AnalyticsEvent.php",
+              "lines": [],
+              "note": "No CANCEL_REASON or CHURN_SURVEY_COMPLETED event in the enum",
+              "proof": "Only SUBSCRIPTION_CANCELED and BILLING_SUBSCRIPTION_CANCELED exist; no reason tracking"
+            }
+          ],
+          "artifacts_affected": ["file::app/Http/Controllers/Billing/SubscriptionController.php", "file::resources/js/Pages/Billing"],
+          "implementation": {
+            "approach": "Add an optional 'reason' field to the cancellation request and a pre-cancellation survey modal. Store the reason in a cancel_reason column on subscriptions or as an audit log property. Add CANCEL_REASON to AnalyticsEvent enum.",
+            "changes": [
+              "Add optional cancel_reason to CancelSubscriptionRequest",
+              "Add cancel_reason to SUBSCRIPTION_CANCELED audit log properties",
+              "Add pre-cancellation survey modal in Billing page with 4-5 reason options",
+              "Add CANCEL_REASON event to AnalyticsEvent enum"
+            ],
+            "verification": [
+              "Cancel audit log entry includes cancel_reason property",
+              "Admin can filter subscriptions by cancel reason"
+            ]
+          },
+          "impact": "high",
+          "effort_hours": 5,
+          "area_score_impact": -0.8
+        },
+        {
+          "id": "BILL-004",
+          "priority": "P2",
+          "confidence": "high",
+          "category": "billing",
+          "title": "Pricing page has no cross-tier feature comparison table",
+          "description": "Pricing.tsx renders a grid of plan cards (lines 594-815) where each card has its own feature list. There is no horizontal comparison table showing which features are in each tier side by side. For B2B buyers evaluating Team vs Pro Team, the current layout requires reading two separate cards. The feature lists themselves contain items like 'Everything in Pro' (config/plans.php line 113) which is a weak substitute for an explicit comparison.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "resources/js/Pages/Pricing.tsx",
+              "lines": [594, 815],
+              "note": "Each tier card has its own feature list — no comparison table component",
+              "proof": "<ul className='space-y-2 text-sm'>{(tier.features ?? []).map((feature) => ..."
+            },
+            {
+              "type": "code",
+              "path": "config/plans.php",
+              "lines": [113, 113],
+              "note": "Feature lists use vague 'Everything in Pro' language, not explicit feature matrix",
+              "proof": "'Everything in Pro',"
+            }
+          ],
+          "artifacts_affected": ["file::resources/js/Pages/Pricing.tsx", "file::config/plans.php"],
+          "implementation": {
+            "approach": "Add a collapsible ComparisonTable component below the plan cards. Map explicit boolean features from config/plans.php per tier, render a checkmark grid.",
+            "changes": [
+              "Add a 'comparison' key to each plan in config/plans.php with feature booleans",
+              "Create ComparisonTable component in resources/js/Components/billing/",
+              "Render ComparisonTable below the pricing grid, collapsed by default with expand CTA"
+            ],
+            "verification": [
+              "All 5 tiers render in comparison table with correct feature toggles"
+            ]
+          },
+          "impact": "medium",
+          "effort_hours": 4,
+          "area_score_impact": -0.5
+        }
+      ]
+    },
+    "22": {
+      "area": "Customer Feedback Loop",
+      "area_score": 7.2,
+      "finding_count": 4,
+      "summary": "The feedback infrastructure covers three channels: in-app widget (bug/feature/general), NPS survey with eligibility API and score segmentation, and public roadmap with optimistic voting. Admin side has full CRUD with status workflow (open/in_review/resolved/declined), priority field, admin_notes, bulk actions, CSV export, and FeedbackReceivedNotification to admin email. Key gaps: (1) no close-the-loop notification to users when their feedback is resolved; (2) no deduplication of feature requests against roadmap items — the same feature can exist as feedback and roadmap entry with no linkage; (3) no churn exit survey on cancel; (4) NPS follow-up question is generic ('any additional comments?') with no score-conditional branching (detractors should get 'what went wrong?', promoters should get 'would you refer us?').",
+      "findings": [
+        {
+          "id": "FDBK-001",
+          "priority": "P1",
+          "confidence": "high",
+          "category": "feedback",
+          "title": "No close-the-loop notification to users when feedback is resolved",
+          "description": "AdminFeedbackController::update() (lines 78-100) updates feedback status to 'resolved' and sets resolved_at. There is no notification sent to the submitting user. FeedbackReceivedNotification exists but only notifies the admin. A user who submitted feedback has no way to know it was acted on unless they check back manually. This is a common conversion lever: users notified when their feature request ships are more likely to upgrade or renew.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "app/Http/Controllers/Admin/AdminFeedbackController.php",
+              "lines": [78, 100],
+              "note": "update() changes status to resolved but sends no user notification",
+              "proof": "$feedback->update($validated); ... return back()->with('success', 'Feedback updated.');"
+            },
+            {
+              "type": "code",
+              "path": "app/Notifications/FeedbackReceivedNotification.php",
+              "lines": [1, 71],
+              "note": "Only outbound notification is to admin — no FeedbackResolvedNotification exists",
+              "proof": "Class FeedbackReceivedNotification — no sibling class for user-facing resolution notification"
+            }
+          ],
+          "artifacts_affected": ["file::app/Http/Controllers/Admin/AdminFeedbackController.php", "file::app/Notifications/"],
+          "implementation": {
+            "approach": "Create FeedbackResolvedNotification. In AdminFeedbackController::update(), when status transitions to 'resolved', notify $feedback->user if they have a verified email. Gate behind an 'admin_notes' field — only notify if admin notes are populated (so generic bulk resolves don't spam).",
+            "changes": [
+              "Create app/Notifications/FeedbackResolvedNotification.php",
+              "In AdminFeedbackController::update(), notify user on status -> resolved transition when user exists and email verified and admin_notes not empty",
+              "Add opt-in flag to Feedback model or check user notification preferences"
+            ],
+            "verification": [
+              "User receives email when admin resolves their feedback with notes"
+            ]
+          },
+          "impact": "high",
+          "effort_hours": 3,
+          "area_score_impact": -1.0
+        },
+        {
+          "id": "FDBK-002",
+          "priority": "P2",
+          "confidence": "high",
+          "category": "feedback",
+          "title": "Feature request feedback has no deduplication or linkage to roadmap entries",
+          "description": "The FeedbackWidget (FeedbackWidget.tsx) allows submitting feedback of type 'feature'. AdminFeedbackController shows these in the admin feedback list. AdminRoadmapController manages RoadmapEntry objects with feedbackSubmissions relationship (line 33: withCount('feedbackSubmissions')). However, regular feedback of type 'feature' is not connected to RoadmapEntry. Admin must manually cross-reference feedback and roadmap. There is no 'link this feedback to roadmap item' action or duplicate detection.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "app/Http/Controllers/Admin/AdminRoadmapController.php",
+              "lines": [33, 36],
+              "note": "RoadmapEntry has feedbackSubmissions relation but regular Feedback model is separate",
+              "proof": "RoadmapEntry::withCount('feedbackSubmissions')"
+            },
+            {
+              "type": "code",
+              "path": "resources/js/Components/feedback/FeedbackWidget.tsx",
+              "lines": [25, 29],
+              "note": "Feature request type exists but has no roadmap linkage in submission flow",
+              "proof": "{ value: 'feature', label: 'Feature Request' }"
+            },
+            {
+              "type": "missing",
+              "path": "app/Http/Controllers/Admin/AdminFeedbackController.php",
+              "lines": [],
+              "note": "No 'link to roadmap' action in feedback update or bulk update",
+              "proof": "AdminBulkFeedbackRequest actions: delete, resolve, decline — no 'link to roadmap entry'"
+            }
+          ],
+          "artifacts_affected": ["file::app/Http/Controllers/Admin/AdminFeedbackController.php", "file::app/Http/Controllers/Admin/AdminRoadmapController.php"],
+          "implementation": {
+            "approach": "Add a roadmap_entry_id nullable FK to the feedback table. Add a 'Link to Roadmap' action in the admin feedback detail view. When linked, the feedback upvote appears in the roadmap entry's feedbackSubmissions count.",
+            "changes": [
+              "Add nullable roadmap_entry_id FK migration on feedback table",
+              "Add 'link_to_roadmap' action to AdminUpdateFeedbackRequest",
+              "Add roadmap entry selector in Admin/Feedback/Show page",
+              "Update RoadmapEntry::feedbackSubmissions to include linked feedback"
+            ],
+            "verification": [
+              "Linking feedback to roadmap item increases the roadmap vote count"
+            ]
+          },
+          "impact": "medium",
+          "effort_hours": 4,
+          "area_score_impact": -0.8
+        },
+        {
+          "id": "FDBK-003",
+          "priority": "P2",
+          "confidence": "high",
+          "category": "feedback",
+          "title": "NPS follow-up question is not score-conditional — misses detractor and promoter signals",
+          "description": "NpsBanner.tsx (lines 93-108) shows a single generic textarea 'Any additional comments? (optional)' regardless of the score. Best practice NPS implementations branch the follow-up: detractors (0-6) get 'What could we do better?', passives (7-8) get 'What would make us a 10?', promoters (9-10) get 'What do you love most?' This conditional copy dramatically increases response quality and actionable insight. The current single question yields low-signal open-ended text.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "resources/js/Components/feedback/NpsBanner.tsx",
+              "lines": [93, 108],
+              "note": "Single textarea shown for all scores with no conditional branching",
+              "proof": "{score !== null && ( <textarea placeholder='Any additional comments? (optional)' ..."
+            }
+          ],
+          "artifacts_affected": ["file::resources/js/Components/feedback/NpsBanner.tsx"],
+          "implementation": {
+            "approach": "Derive NPS category from score (0-6=detractor, 7-8=passive, 9-10=promoter) and render a score-appropriate placeholder or label for the comment textarea.",
+            "changes": [
+              "Add computed npsCategory from score in NpsBanner",
+              "Map category to follow-up question: detractor='What could we do better?', passive='What would make us a 10?', promoter='What do you love most?'",
+              "Update placeholder on textarea based on npsCategory"
+            ],
+            "verification": [
+              "Selecting score 3 shows 'What could we do better?', score 9 shows 'What do you love most?'"
+            ]
+          },
+          "impact": "medium",
+          "effort_hours": 1,
+          "area_score_impact": -0.5
+        },
+        {
+          "id": "FDBK-004",
+          "priority": "P2",
+          "confidence": "high",
+          "category": "feedback",
+          "title": "No churn exit survey — cancellation reasons are never captured via feedback channel",
+          "description": "As noted in BILL-003, the cancellation flow has no reason capture. From the feedback loop perspective, this also means the FeedbackController never receives churn survey submissions, the admin feedback list never shows 'why I cancelled' entries, and NPS is not triggered post-cancellation. Cancellation is the highest-signal feedback moment but has no feedback capture at all.",
+          "evidence": [
+            {
+              "type": "missing",
+              "path": "app/Http/Controllers/Billing/SubscriptionController.php",
+              "lines": [],
+              "note": "No FeedbackController call or feedback creation in cancel flow",
+              "proof": "SubscriptionController::cancel() calls BillingService::cancelSubscription() — no feedback creation"
+            },
+            {
+              "type": "missing",
+              "path": "resources/js/Components/feedback/",
+              "lines": [],
+              "note": "No CancellationSurvey component exists",
+              "proof": "Components/feedback/ only contains FeedbackWidget.tsx and NpsBanner.tsx"
+            }
+          ],
+          "artifacts_affected": ["file::app/Http/Controllers/Billing/SubscriptionController.php", "file::resources/js/Pages/Billing"],
+          "implementation": {
+            "approach": "Add a pre-cancellation modal with 5-6 reason options + optional free-text. Submit via FeedbackController with type 'churn_survey'. The cancellation only proceeds after survey submission (or explicit skip). Track FEEDBACK_SUBMITTED with type:'churn_survey'.",
+            "changes": [
+              "Create CancellationSurveyModal component in resources/js/Components/billing/",
+              "Add 'churn_survey' to FeedbackWidget type enum server-side",
+              "Gate cancellation on survey submit or skip in Billing page",
+              "Auto-trigger NPS 14 days post-cancellation for involuntary churn recovery"
+            ],
+            "verification": [
+              "Admin feedback list shows churn_survey type entries after cancellation",
+              "Cancel audit log includes cancel_reason"
+            ]
+          },
+          "impact": "high",
+          "effort_hours": 5,
+          "area_score_impact": -0.7
+        }
+      ]
+    }
+  }
+}

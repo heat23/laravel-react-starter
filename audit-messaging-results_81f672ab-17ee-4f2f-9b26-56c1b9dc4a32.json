@@ -1,0 +1,420 @@
+{
+  "audit_type": "messaging",
+  "audit_scope": "full",
+  "session_id": "81f672ab-17ee-4f2f-9b26-56c1b9dc4a32",
+  "timestamp": "2026-04-04T00:00:00Z",
+  "project": "laravel-react-starter",
+  "summary": {
+    "total_findings": 28,
+    "by_severity": {
+      "critical": 1,
+      "high": 4,
+      "medium": 11,
+      "low": 8,
+      "info": 4
+    },
+    "areas_audited": [
+      "notifications",
+      "email_delivery",
+      "email_verification",
+      "flash_messages",
+      "in_app_notifications",
+      "webhooks",
+      "events_listeners",
+      "queue_configuration",
+      "rate_limiting",
+      "error_messaging",
+      "broadcast_websocket",
+      "unsubscribe_management",
+      "scheduled_commands",
+      "mail_sanitization",
+      "test_coverage"
+    ],
+    "notification_classes_count": 21,
+    "notification_traits": 1,
+    "scheduled_email_commands": 7,
+    "webhook_models": 3,
+    "test_files_covering_messaging": 16
+  },
+  "findings": [
+    {
+      "id": "MSG-001",
+      "severity": "critical",
+      "category": "reliability",
+      "title": "AdminHealthAlertNotification is not queued",
+      "description": "AdminHealthAlertNotification extends Notification but does NOT implement ShouldQueue, unlike all other 20 notification classes. Health alerts run via the admin:health-alert command every 15 minutes. If the mail driver is slow or fails, the command blocks synchronously, delaying the scheduler.",
+      "file": "app/Notifications/AdminHealthAlertNotification.php",
+      "line": 9,
+      "evidence": "class AdminHealthAlertNotification extends Notification — missing 'implements ShouldQueue'",
+      "recommendation": "Add 'implements ShouldQueue' to the class declaration to match the pattern of all other notifications."
+    },
+    {
+      "id": "MSG-002",
+      "severity": "high",
+      "category": "reliability",
+      "title": "No real-time notification delivery — 30s polling only",
+      "description": "NotificationDropdown.tsx uses a hardcoded 30-second polling interval (REFETCH_INTERVAL_MS = 30_000). BROADCAST_CONNECTION is set to 'log' in .env.example. No WebSocket or broadcast infrastructure exists. Users experience up to 30 seconds of notification latency.",
+      "file": "resources/js/Components/notifications/NotificationDropdown.tsx",
+      "line": null,
+      "evidence": "BROADCAST_CONNECTION=log in .env.example; const REFETCH_INTERVAL_MS = 30_000 in NotificationDropdown",
+      "recommendation": "Evaluate adding Pusher/Ably/Laravel Reverb for real-time broadcast. In the interim, make REFETCH_INTERVAL configurable via Inertia shared prop."
+    },
+    {
+      "id": "MSG-003",
+      "severity": "high",
+      "category": "observability",
+      "title": "No monitoring for queued notification failures",
+      "description": "All 20 queued notifications implement ShouldQueue but none define $tries, $maxExceptions, $backoff, or a failed() method. If a notification job fails after the default 1 attempt, it silently moves to the failed_jobs table with no alerting. No Horizon or queue monitoring is configured by default.",
+      "file": "app/Notifications/WelcomeSequenceNotification.php",
+      "line": 11,
+      "evidence": "All notification classes use 'implements ShouldQueue' and 'use Queueable' but define no retry/failure policies",
+      "recommendation": "Add $tries, $backoff, and a failed() method to a base notification class or trait. Consider integrating with AdminHealthAlertNotification for failed job alerting."
+    },
+    {
+      "id": "MSG-004",
+      "severity": "high",
+      "category": "completeness",
+      "title": "No notification preferences UI for end users",
+      "description": "Users can only unsubscribe from marketing emails via the signed URL. There is no settings page where users can manage notification preferences (e.g., which notification types to receive, email vs. in-app). The marketing_emails opt-out is stored in user_settings but there's no UI to toggle it back on.",
+      "file": "app/Http/Controllers/UnsubscribeController.php",
+      "line": null,
+      "evidence": "UserSetting::setValue($user->id, 'marketing_emails', false) — one-way opt-out, no re-subscribe UI",
+      "recommendation": "Add a notification preferences section to the user settings page with toggles for marketing, transactional, and in-app notification categories."
+    },
+    {
+      "id": "MSG-005",
+      "severity": "high",
+      "category": "reliability",
+      "title": "Webhook retry has no jitter — thundering herd risk",
+      "description": "DispatchWebhookJob uses fixed backoff intervals [30, 120, 600] seconds with no random jitter. If a downstream service goes down and recovers, all retrying webhooks will hit it simultaneously at the same backoff interval.",
+      "file": "app/Jobs/DispatchWebhookJob.php",
+      "line": null,
+      "evidence": "public $backoff = [30, 120, 600]; — fixed intervals with no randomization",
+      "recommendation": "Add jitter: public function backoff(): array { return [30 + rand(0, 10), 120 + rand(0, 30), 600 + rand(0, 60)]; }"
+    },
+    {
+      "id": "MSG-006",
+      "severity": "medium",
+      "category": "completeness",
+      "title": "No SMS or push notification channels",
+      "description": "All 21 notification classes only support 'database' and 'mail' channels. No SMS (Twilio/Vonage), push (FCM/APNs), or third-party messaging (Slack/Discord) channels are implemented.",
+      "file": "app/Notifications/",
+      "line": null,
+      "evidence": "All via() methods return only ['database'] or ['database', 'mail']",
+      "recommendation": "Add SMS channel for critical notifications (payment failures, 2FA codes). Consider push for mobile if applicable."
+    },
+    {
+      "id": "MSG-007",
+      "severity": "medium",
+      "category": "security",
+      "title": "Unsubscribe signed URL has no expiration",
+      "description": "The unsubscribe route uses URL::signedRoute() which generates a URL that never expires. A leaked or forwarded email exposes a permanently valid unsubscribe link for that user ID.",
+      "file": "app/Notifications/Concerns/HasUnsubscribeLink.php",
+      "line": null,
+      "evidence": "URL::signedRoute('unsubscribe', ['userId' => $notifiable->id]) — no expiry parameter",
+      "recommendation": "Use URL::temporarySignedRoute('unsubscribe', now()->addDays(30), ['userId' => ...]) to expire links after 30 days."
+    },
+    {
+      "id": "MSG-008",
+      "severity": "medium",
+      "category": "completeness",
+      "title": "No email template preview or testing endpoint",
+      "description": "All notifications use the fluent MailMessage API with no Blade templates. There is no route or command to preview how an email will render before sending. Marketing/product teams cannot review email content without triggering actual sends.",
+      "file": "app/Notifications/",
+      "line": null,
+      "evidence": "All toMail() methods use (new MailMessage)->subject()...->line()... — no preview infrastructure",
+      "recommendation": "Add an artisan command (e.g., emails:preview {notification}) or admin route that renders notification mail content without sending."
+    },
+    {
+      "id": "MSG-009",
+      "severity": "medium",
+      "category": "reliability",
+      "title": "Flash messages lost on client-side navigation",
+      "description": "Flash messages are session-based (single request cycle). If the user navigates away before the toast renders, or if Inertia performs a client-side redirect, the flash message may be lost. useFlashToasts uses useRef to prevent duplicate display but has no persistence layer.",
+      "file": "resources/js/hooks/useFlashToasts.ts",
+      "line": null,
+      "evidence": "const shown = useRef<string | null>(null) — ephemeral tracking with no fallback storage",
+      "recommendation": "Consider storing unshown flash messages in sessionStorage as a fallback, or use Inertia's preserveState to prevent loss during navigation."
+    },
+    {
+      "id": "MSG-010",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "Inconsistent opt-out checking across notification types",
+      "description": "Only lifecycle/marketing commands (SendWelcomeSequence, SendReEngagement, SendWinBack, etc.) check the marketing_emails opt-out preference. Transactional notifications like PaymentFailedNotification and LimitThresholdNotification do not check any opt-out — which is correct for transactional. However, TrialNudgeNotification and ExpansionNudgeNotification are marketing-like but their commands may not check opt-out.",
+      "file": "app/Console/Commands/SendTrialNudges.php",
+      "line": null,
+      "evidence": "Some commands check hasOptedOut(), others do not — no centralized opt-out enforcement",
+      "recommendation": "Create a trait or middleware that categorizes notifications as marketing vs. transactional and enforces opt-out checks at the notification level rather than command level."
+    },
+    {
+      "id": "MSG-011",
+      "severity": "medium",
+      "category": "test_coverage",
+      "title": "No tests for several notification classes",
+      "description": "16 test files cover messaging. However, several notification classes lack dedicated tests: AdminAnnouncementNotification, AdminHealthAlertNotification, ContactNotification, SalesInquiryNotification, InvoluntaryChurnWinBackNotification, LimitThresholdNotification, PaymentActionRequiredNotification, PaymentRecoveredNotification, ExpansionNudgeNotification, IncompletePaymentReminder.",
+      "file": "tests/",
+      "line": null,
+      "evidence": "10 notification classes have no dedicated test file in tests/Feature/Notifications/ or tests/Unit/Notifications/",
+      "recommendation": "Add at minimum unit tests for toMail() and toArray() for each untested notification class."
+    },
+    {
+      "id": "MSG-012",
+      "severity": "medium",
+      "category": "completeness",
+      "title": "No notification batching for bulk sends",
+      "description": "Scheduled commands like SendWelcomeSequence, SendReEngagementEmails iterate over users and dispatch individual notifications. No Laravel Bus::batch() usage for progress tracking, batch failure handling, or rate limiting bulk email dispatches.",
+      "file": "app/Console/Commands/SendWelcomeSequence.php",
+      "line": null,
+      "evidence": "Commands query users then notify() individually in a loop — no batch infrastructure",
+      "recommendation": "Use Bus::batch() for commands sending to many users. This enables progress tracking, batch-level then() callbacks, and controlled concurrency."
+    },
+    {
+      "id": "MSG-013",
+      "severity": "medium",
+      "category": "observability",
+      "title": "EmailSendLog tracks sends but no delivery/bounce tracking",
+      "description": "EmailSendLog records that a notification was sent to a user (preventing duplicates) but does not track delivery status, bounces, or complaint feedback. No integration with mail provider webhooks (SES SNS, Postmark, etc.) for delivery feedback.",
+      "file": "app/Models/EmailSendLog.php",
+      "line": null,
+      "evidence": "EmailSendLog has user_id, sequence_type, email_number — no delivery_status, bounced_at, or complained_at columns",
+      "recommendation": "Integrate with mail provider delivery webhooks (e.g., SES notifications, Postmark webhooks) to track bounces and complaints. Add delivery_status column."
+    },
+    {
+      "id": "MSG-014",
+      "severity": "medium",
+      "category": "reliability",
+      "title": "Notification unread count cache can drift from reality",
+      "description": "The notifications_unread_count shared prop is cached for 60 seconds. When a new notification arrives, the cache may show stale count for up to 60 seconds. Cache invalidation in NotificationController only happens on explicit user actions (mark read, delete) but not on new notification creation.",
+      "file": "app/Http/Middleware/HandleInertiaRequests.php",
+      "line": null,
+      "evidence": "cache()->remember('user:{id}:unread_notif_count', 60, ...) — new notifications don't invalidate this cache",
+      "recommendation": "Invalidate the user's unread_notif_count cache when a new notification is created, or reduce TTL to 15 seconds."
+    },
+    {
+      "id": "MSG-015",
+      "severity": "medium",
+      "category": "completeness",
+      "title": "No webhook delivery retry UI in admin panel",
+      "description": "Failed webhook deliveries can only be retried by re-dispatching the job via artisan or database manipulation. The admin panel shows webhook endpoints but has no 'retry delivery' button for failed deliveries.",
+      "file": "app/Http/Controllers/Admin/",
+      "line": null,
+      "evidence": "No retry endpoint found in admin routes or webhook API routes",
+      "recommendation": "Add a POST /api/webhooks/{endpointId}/deliveries/{deliveryId}/retry endpoint and corresponding admin UI button."
+    },
+    {
+      "id": "MSG-016",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "Two events but limited event-driven architecture",
+      "description": "Only PqlThresholdReached and LeadQualifiedEvent exist as custom events. Key lifecycle actions (subscription created, subscription cancelled, user deactivated, webhook delivery failed) do not fire events, making the system harder to extend with new listeners or integrate with external services.",
+      "file": "app/Events/",
+      "line": null,
+      "evidence": "Only 2 custom events in app/Events/ — no billing or user lifecycle events",
+      "recommendation": "Add events for major lifecycle actions: SubscriptionCreated, SubscriptionCancelled, UserDeactivated, WebhookDeliveryFailed. This enables decoupled extensibility."
+    },
+    {
+      "id": "MSG-017",
+      "severity": "low",
+      "category": "reliability",
+      "title": "Polling interval hardcoded — not configurable per environment",
+      "description": "NotificationDropdown uses a hardcoded 30-second polling interval. In development, a shorter interval would improve iteration speed. In production with many users, 30 seconds may be too aggressive without WebSockets.",
+      "file": "resources/js/Components/notifications/NotificationDropdown.tsx",
+      "line": null,
+      "evidence": "const REFETCH_INTERVAL_MS = 30_000 — not derived from props or config",
+      "recommendation": "Pass polling interval via Inertia shared props from a config value, allowing per-environment tuning."
+    },
+    {
+      "id": "MSG-018",
+      "severity": "low",
+      "category": "consistency",
+      "title": "Mail templates use fluent API only — no rich HTML email support",
+      "description": "All 21 notifications use MailMessage fluent API (line(), greeting(), action()). No Blade or MJML templates exist. This limits email design to the default Laravel mail theme. Marketing emails and branded communications may need richer templates.",
+      "file": "app/Notifications/",
+      "line": null,
+      "evidence": "All toMail() methods use (new MailMessage) fluent builder — zero Blade email templates found",
+      "recommendation": "For marketing-facing emails, consider publishing Laravel's mail templates (php artisan vendor:publish --tag=laravel-mail) and customizing, or adopt MJML for complex layouts."
+    },
+    {
+      "id": "MSG-019",
+      "severity": "low",
+      "category": "security",
+      "title": "Webhook delivery response body stored in database",
+      "description": "DispatchWebhookJob stores the first 1000 characters of webhook endpoint response bodies in webhook_deliveries.response_body. If a webhook endpoint returns sensitive data in its error responses, this could be stored in the database.",
+      "file": "app/Jobs/DispatchWebhookJob.php",
+      "line": null,
+      "evidence": "Substr($response->body(), 0, 1000) stored in response_body column",
+      "recommendation": "Consider redacting or not storing response bodies by default. If needed for debugging, add a configurable retention period and auto-prune."
+    },
+    {
+      "id": "MSG-020",
+      "severity": "low",
+      "category": "test_coverage",
+      "title": "No frontend tests for NotificationDropdown component",
+      "description": "The NotificationDropdown component handles polling, optimistic UI updates, error states, and mark-as-read — all complex UI logic. No Vitest/RTL test file exists for it.",
+      "file": "resources/js/Components/notifications/NotificationDropdown.tsx",
+      "line": null,
+      "evidence": "No corresponding test file found in tests/ for NotificationDropdown",
+      "recommendation": "Add Vitest tests covering: initial fetch, polling behavior, mark-as-read optimistic update, error state, and empty state rendering."
+    },
+    {
+      "id": "MSG-021",
+      "severity": "low",
+      "category": "test_coverage",
+      "title": "No tests for MailSanitizer edge cases",
+      "description": "MailSanitizer.php handles CRLF injection, null bytes, HTML stripping, and markdown escaping. No dedicated test file exists to verify edge cases like nested tags, unicode bypasses, or double-encoding.",
+      "file": "app/Support/MailSanitizer.php",
+      "line": null,
+      "evidence": "No test file matching *MailSaniti* found in tests/",
+      "recommendation": "Add Unit tests for MailSanitizer covering: CRLF sequences, null bytes, nested HTML tags, script/style tags, markdown special characters, and unicode edge cases."
+    },
+    {
+      "id": "MSG-022",
+      "severity": "low",
+      "category": "completeness",
+      "title": "No notification versioning or migration strategy",
+      "description": "Notification data is stored as JSON in the notifications.data column. If a notification class's toArray() structure changes, existing unread notifications may render incorrectly in the UI. No versioning scheme or migration path exists.",
+      "file": "app/Notifications/",
+      "line": null,
+      "evidence": "toArray() methods return unversioned data structures with no 'version' key",
+      "recommendation": "Add a 'version' key to toArray() output. In the frontend, handle missing or old version gracefully with fallback rendering."
+    },
+    {
+      "id": "MSG-023",
+      "severity": "low",
+      "category": "observability",
+      "title": "No email delivery metrics or dashboard",
+      "description": "No centralized view of email send rates, bounce rates, or delivery success rates. EmailSendLog tracks sends but not outcomes. Admin dashboard does not include email health metrics.",
+      "file": "app/Models/EmailSendLog.php",
+      "line": null,
+      "evidence": "No admin route or service for email metrics aggregation",
+      "recommendation": "Add email delivery metrics to admin dashboard: sends/day, bounce rate (requires mail provider integration), unsubscribe rate from EmailSendLog + user_settings data."
+    },
+    {
+      "id": "MSG-024",
+      "severity": "low",
+      "category": "reliability",
+      "title": "PruneReadNotifications command retention period not documented",
+      "description": "PruneReadNotifications is scheduled daily but the retention period for read notifications is not visible in .env.example or config files. Operators cannot easily tune how long read notifications are kept.",
+      "file": "app/Console/Commands/PruneReadNotifications.php",
+      "line": null,
+      "evidence": "Schedule::command('prune-read-notifications')->daily() — retention config unclear",
+      "recommendation": "Add NOTIFICATION_RETENTION_DAYS to .env.example and config/features.php for operator visibility."
+    },
+    {
+      "id": "MSG-025",
+      "severity": "info",
+      "category": "architecture",
+      "title": "21 notification classes — well-structured with dual-channel delivery",
+      "description": "The notification system is comprehensive with 21 classes covering lifecycle, billing, admin, contact, and growth use cases. All use ShouldQueue (except AdminHealthAlertNotification) and support both database and conditional mail channels. The HasUnsubscribeLink trait provides consistent opt-out across marketing emails.",
+      "file": "app/Notifications/",
+      "line": null,
+      "evidence": "21 notification classes, 1 shared trait, consistent via() pattern",
+      "recommendation": "No action needed — strong foundation."
+    },
+    {
+      "id": "MSG-026",
+      "severity": "info",
+      "category": "security",
+      "title": "MailSanitizer prevents header injection and markdown injection",
+      "description": "MailSanitizer provides sanitizeForHeader() and sanitizeForMarkdown() methods used by ContactNotification and SalesInquiryNotification. Strips CRLF, null bytes, and dangerous tag contents. Properly escapes markdown special characters.",
+      "file": "app/Support/MailSanitizer.php",
+      "line": null,
+      "evidence": "sanitizeForHeader() strips CRLF/null; sanitizeForMarkdown() escapes markdown chars",
+      "recommendation": "No action needed — good security practice."
+    },
+    {
+      "id": "MSG-027",
+      "severity": "info",
+      "category": "architecture",
+      "title": "Comprehensive scheduler configuration for email sequences",
+      "description": "routes/console.php defines 13 scheduled commands covering welcome sequences, onboarding, re-engagement, trial nudges, dunning, win-back, lead qualification, and health alerts. Commands are properly gated behind feature flags (billing, admin) and use onOneServer() where appropriate.",
+      "file": "routes/console.php",
+      "line": null,
+      "evidence": "13 Schedule::command() entries with appropriate timing and feature gates",
+      "recommendation": "No action needed — well-organized scheduling."
+    },
+    {
+      "id": "MSG-028",
+      "severity": "info",
+      "category": "security",
+      "title": "Rate limiting applied to all messaging endpoints",
+      "description": "All messaging-related endpoints have rate limiting: contact form (5/min), email verification (6/min), password reset (3/min), notification API (30/min reads, 60/min writes), webhook test (custom), incoming webhooks (120/min), unsubscribe (10/min).",
+      "file": "routes/web.php",
+      "line": null,
+      "evidence": "throttle middleware on all messaging routes including unsubscribe at line 107",
+      "recommendation": "No action needed — comprehensive rate limiting."
+    }
+  ],
+  "coverage_matrix": {
+    "notifications": {
+      "status": "strong",
+      "classes": 21,
+      "channels": ["database", "mail"],
+      "queued": 20,
+      "synchronous": 1,
+      "test_files": 16
+    },
+    "email_delivery": {
+      "status": "adequate",
+      "mailers": ["smtp", "ses", "postmark", "resend", "log"],
+      "sanitization": true,
+      "bounce_tracking": false,
+      "delivery_metrics": false
+    },
+    "email_verification": {
+      "status": "strong",
+      "feature_gated": true,
+      "queued_listener": true,
+      "rate_limited": true,
+      "tested": true
+    },
+    "flash_messages": {
+      "status": "adequate",
+      "library": "sonner",
+      "types": ["success", "error", "warning", "info"],
+      "persistence": false
+    },
+    "in_app_notifications": {
+      "status": "adequate",
+      "feature_gated": true,
+      "polling_interval_ms": 30000,
+      "realtime": false,
+      "cached_unread_count": true
+    },
+    "webhooks_outgoing": {
+      "status": "strong",
+      "hmac_signing": true,
+      "retry_with_backoff": true,
+      "delivery_tracking": true,
+      "jitter": false,
+      "manual_retry_ui": false
+    },
+    "webhooks_incoming": {
+      "status": "strong",
+      "signature_verification": true,
+      "replay_protection": true,
+      "providers": ["github", "stripe"]
+    },
+    "unsubscribe": {
+      "status": "adequate",
+      "signed_urls": true,
+      "rate_limited": true,
+      "url_expiration": false,
+      "resubscribe_ui": false
+    },
+    "scheduled_emails": {
+      "status": "strong",
+      "commands": 7,
+      "scheduler_configured": true,
+      "opt_out_checks": "partial",
+      "idempotent_sends": true
+    },
+    "broadcast_realtime": {
+      "status": "not_implemented",
+      "driver": "log",
+      "websocket_server": false
+    }
+  },
+  "AGENT_REVIEW": "PASS — messaging audit completed with 28 findings (1 critical, 4 high, 11 medium, 8 low, 4 info). Critical: AdminHealthAlertNotification missing ShouldQueue. High: no realtime delivery, no notification retry policies, no user preference UI, webhook retry jitter missing."
+}

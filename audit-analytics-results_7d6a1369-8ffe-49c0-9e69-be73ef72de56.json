@@ -1,0 +1,338 @@
+{
+  "audit_type": "analytics-qa",
+  "audit_scope": "full",
+  "session_id": "7d6a1369-8ffe-49c0-9e69-be73ef72de56",
+  "generated_at": "2026-04-04T00:00:00Z",
+  "project": "laravel-react-starter",
+  "summary": {
+    "overall_grade": "A-",
+    "total_findings": 18,
+    "critical": 1,
+    "high": 3,
+    "medium": 7,
+    "low": 5,
+    "informational": 2,
+    "verdict": "Production-grade analytics implementation with comprehensive GA4 integration, GDPR consent management, PII sanitization, and cross-system event sync. A few gaps in consent withdrawal, CSRF protection on consent endpoint, and event coverage completeness."
+  },
+  "architecture_review": {
+    "grade": "A",
+    "strengths": [
+      "Clean separation: client-side GA4 (gtag) vs server-side Measurement Protocol",
+      "Async event dispatch via DispatchAnalyticsEvent job — external HTTP calls never in request lifecycle",
+      "PII sanitization as defence-in-depth layer in AnalyticsGateway (35+ blocked keys)",
+      "Typed event taxonomy with compile-time exhaustiveness checks (EventPropertyMap)",
+      "Cross-system event sync enforced by AnalyticsEventSyncTest (PHP enum ↔ TS constants)",
+      "Cookie consent with category granularity (necessary/analytics/marketing)",
+      "Event queue with retry logic for pre-consent buffering (max 20 events, 10 retries)",
+      "CSP headers properly allowlist GA domains only in production",
+      "Nonce-based CSP for inline scripts via Vite::cspNonce()",
+      "Server-side consent gating respects explicit decline while forwarding under legitimate interest for unknown consent"
+    ],
+    "concerns": [
+      "No mechanism to revoke/withdraw analytics consent after initial grant — GDPR Art. 7(3) requires withdrawal to be as easy as granting",
+      "Consent API endpoint uses raw fetch() without CSRF token — relies on being outside Sanctum middleware but should include X-XSRF-TOKEN for authenticated users",
+      "getSubscriptionEvents() in ProductAnalyticsService is not cached unlike sibling methods — potential N+1 on admin dashboard"
+    ]
+  },
+  "categories": {
+    "consent_and_privacy": {
+      "grade": "B+",
+      "findings": [
+        {
+          "id": "ANA-001",
+          "severity": "critical",
+          "title": "No consent withdrawal mechanism after initial grant",
+          "description": "Once a user accepts analytics cookies via CookieConsent component, there is no UI to revoke consent. The banner only shows on first visit or version change. GDPR Art. 7(3) requires withdrawal to be as easy as granting consent. Users cannot change their analytics preference after accepting.",
+          "location": "resources/js/Components/legal/CookieConsent.tsx",
+          "recommendation": "Add a 'Cookie Settings' link in the footer or settings page that re-opens the consent preferences panel. On decline-after-accept: clear localStorage consent, call window['ga-disable-G-XXXXX'] = true, and POST updated consent to /api/consent."
+        },
+        {
+          "id": "ANA-002",
+          "severity": "medium",
+          "title": "Consent POST lacks CSRF token for authenticated users",
+          "description": "CookieConsent.tsx uses raw fetch('/api/consent') without X-XSRF-TOKEN header. The route is outside Sanctum CSRF middleware so it works, but authenticated users' consent decisions are persisted to user_settings without CSRF protection, making it theoretically vulnerable to consent-manipulation attacks.",
+          "location": "resources/js/Components/legal/CookieConsent.tsx:44-52",
+          "recommendation": "Include X-XSRF-TOKEN header from document.cookie in the fetch call, or use Inertia router.post() for the consent endpoint."
+        },
+        {
+          "id": "ANA-003",
+          "severity": "low",
+          "title": "Consent version hardcoded without migration strategy",
+          "description": "CONSENT_VERSION is hardcoded as '1.0' in CookieConsent.tsx. When the consent policy changes, incrementing this version will re-show the banner, but there is no documentation or automated mechanism for version bumps.",
+          "location": "resources/js/Components/legal/CookieConsent.tsx:11",
+          "recommendation": "Document the consent version bump procedure in EVENT_TAXONOMY.md or a dedicated CONSENT.md."
+        },
+        {
+          "id": "ANA-004",
+          "severity": "medium",
+          "title": "GA4 script not disabled on consent decline mid-session",
+          "description": "When a user declines analytics after the page loads with GA4 already initialized (e.g., via app.blade.php inline script on page load for returning users), there is no mechanism to disable GA4 tracking for the remainder of the session. The window['ga-disable-G-XXXXX'] = true pattern is not implemented.",
+          "location": "resources/js/lib/ga4.ts, resources/js/Components/legal/CookieConsent.tsx",
+          "recommendation": "On decline, set window['ga-disable-' + measurementId] = true to stop GA4 from collecting data for the rest of the session."
+        }
+      ]
+    },
+    "event_taxonomy": {
+      "grade": "A",
+      "findings": [
+        {
+          "id": "ANA-005",
+          "severity": "low",
+          "title": "SALES_INQUIRY_SUBMITTED event defined but never tracked in frontend pages",
+          "description": "AnalyticsEvents.SALES_INQUIRY_SUBMITTED is defined in events.ts and the PHP enum but no frontend page tracks this event. It appears to be a dead event constant.",
+          "location": "resources/js/lib/events.ts:65",
+          "recommendation": "Either instrument the sales inquiry form to track this event, or remove it from both frontend and backend event definitions to avoid confusion."
+        },
+        {
+          "id": "ANA-006",
+          "severity": "low",
+          "title": "EVENT_TAXONOMY.md property names differ from TypeScript definitions",
+          "description": "EVENT_TAXONOMY.md documents trial.started with properties {plan, trial_ends_at} but TypeScript defines it as {tier, trial_days}. Similarly, limit events use {limit_key, current, max} in docs but {resource, current_value} in TypeScript.",
+          "location": "docs/EVENT_TAXONOMY.md vs resources/js/lib/events.ts",
+          "recommendation": "Synchronize EVENT_TAXONOMY.md property names with the TypeScript EventPropertyMap which is the enforced canonical source."
+        },
+        {
+          "id": "ANA-007",
+          "severity": "informational",
+          "title": "Compile-time exhaustiveness check type is defined but never used",
+          "description": "_AssertNoMissingEvents type is declared in events.ts for compile-time validation but is never referenced in any type assertion or variable declaration, so it provides no actual compile-time guarantee.",
+          "location": "resources/js/lib/events.ts:217",
+          "recommendation": "Add a type assertion: const _: _AssertNoMissingEvents = true as _AssertNoMissingEvents; to force a compile error when events are missing from the property map."
+        }
+      ]
+    },
+    "data_quality": {
+      "grade": "A-",
+      "findings": [
+        {
+          "id": "ANA-008",
+          "severity": "medium",
+          "title": "Server-side client_id uses 'server_{userId}' — not linked to browser GA4 client_id",
+          "description": "AnalyticsGateway generates client_id as 'server_{userId}' which creates a separate identity from the browser's GA4 client_id. This means server-side events and client-side events appear as different users in GA4 reports, breaking user journey attribution.",
+          "location": "app/Services/AnalyticsGateway.php:49",
+          "recommendation": "Capture the GA4 _ga cookie value server-side (via middleware or request) and use it as client_id in Measurement Protocol calls. The user_id field alone is insufficient for session stitching in GA4."
+        },
+        {
+          "id": "ANA-009",
+          "severity": "high",
+          "title": "Duplicate subscription events between billing.* and subscription.* categories",
+          "description": "The event taxonomy has overlapping events: subscription.canceled vs billing.subscription_canceled, subscription.resumed vs billing.subscription_resumed, subscription.swapped vs billing.plan_swapped. Both may fire for the same user action, inflating funnel metrics and causing ambiguous GA4 reports.",
+          "location": "resources/js/lib/events.ts:42-44, 51-53",
+          "recommendation": "Document clearly which events are server-originated (subscription.*) vs frontend-originated (billing.*) and ensure they are never both tracked for the same action. Consider consolidating into a single namespace."
+        },
+        {
+          "id": "ANA-010",
+          "severity": "medium",
+          "title": "ProductAnalyticsService.getSubscriptionEvents() not cached",
+          "description": "Unlike getSignupTrend(), getOnboardingFunnelConversion(), and getFeatureAdoptionByWeek() which are all cached, getSubscriptionEvents() runs 3 uncached COUNT queries against audit_logs on every admin dashboard load.",
+          "location": "app/Services/ProductAnalyticsService.php:141-159",
+          "recommendation": "Wrap in Cache::remember() using an AdminCacheKey constant, consistent with the pattern used by sibling methods."
+        },
+        {
+          "id": "ANA-011",
+          "severity": "medium",
+          "title": "getActivationRate() uses hardcoded cache key instead of AdminCacheKey enum",
+          "description": "getActivationRate() uses the string 'admin:product_analytics:activation_rate' instead of an AdminCacheKey enum value, breaking the centralized cache invalidation pattern (AdminCacheKey::flushAll() won't clear this key).",
+          "location": "app/Services/ProductAnalyticsService.php:83",
+          "recommendation": "Add PRODUCT_ANALYTICS_ACTIVATION_RATE to the AdminCacheKey enum and use it here."
+        }
+      ]
+    },
+    "ga4_integration": {
+      "grade": "A-",
+      "findings": [
+        {
+          "id": "ANA-012",
+          "severity": "high",
+          "title": "Dual GA4 initialization path — app.blade.php inline script AND initGA4() in CookieConsent",
+          "description": "GA4 can be initialized twice: (1) the inline script in app.blade.php runs on page load for returning users with stored consent, and (2) initGA4() in CookieConsent runs on accept. While initGA4() has a double-init guard (if window.gtag return), the inline script in app.blade.php defines its own local gtag function that may not be the same reference as window.gtag, creating potential data layer conflicts.",
+          "location": "resources/views/app.blade.php:35-57, resources/js/lib/ga4.ts:17",
+          "recommendation": "Ensure the inline script in app.blade.php assigns to window.gtag (not just a local var). Currently the function gtag() inside the IIFE is local-scoped, so window.gtag may remain undefined after inline init, causing initGA4's double-init guard to fail and re-initialize."
+        },
+        {
+          "id": "ANA-013",
+          "severity": "medium",
+          "title": "GA4 config call does not set anonymize_ip or cookie_flags",
+          "description": "Neither the inline script nor initGA4() configures GA4 with anonymize_ip: true or cookie_flags: 'SameSite=None;Secure'. While GA4 anonymizes IPs by default since 2023, explicitly setting it documents compliance intent. Cookie flags ensure GA4 cookies work in cross-site iframe contexts.",
+          "location": "resources/js/lib/ga4.ts:29, resources/views/app.blade.php:53",
+          "recommendation": "Add gtag('config', id, { anonymize_ip: true, cookie_flags: 'SameSite=None;Secure' }) to both initialization paths."
+        },
+        {
+          "id": "ANA-014",
+          "severity": "medium",
+          "title": "No GA4 debug mode or validation endpoint usage",
+          "description": "AnalyticsGateway sends to the production /mp/collect endpoint with no option to use /debug/mp/collect for validation. During development, events are silently accepted by GA4 without format validation, making it hard to detect malformed payloads.",
+          "location": "app/Services/AnalyticsGateway.php:10",
+          "recommendation": "Add a debug mode (e.g., GA4_DEBUG_MODE=true) that sends to /debug/mp/collect and logs the validation response. Use this in local/staging environments."
+        }
+      ]
+    },
+    "funnel_accuracy": {
+      "grade": "B+",
+      "findings": [
+        {
+          "id": "ANA-015",
+          "severity": "high",
+          "title": "Login funnel is trivial — single step provides no conversion insight",
+          "description": "The LOGIN funnel in funnels.ts has only one step (AUTH_LOGIN). A single-step funnel cannot measure drop-off or conversion, making it useless for funnel analysis. It should either include attempt/success/failure steps or be removed.",
+          "location": "resources/js/lib/funnels.ts:60-69",
+          "recommendation": "Either expand to include login_page_viewed → login_attempted → login_succeeded → 2fa_challenged → 2fa_verified, or remove the login funnel as it provides no analytical value."
+        },
+        {
+          "id": "ANA-016",
+          "severity": "low",
+          "title": "Onboarding funnel in ProductAnalyticsService counts events not unique users",
+          "description": "getOnboardingFunnelConversion() counts total event occurrences (COUNT(*)) rather than distinct users (COUNT(DISTINCT user_id)). A user who logs in multiple times inflates the 'registered' count relative to 'completed', skewing conversion rates.",
+          "location": "app/Services/ProductAnalyticsService.php:50-55",
+          "recommendation": "Use COUNT(DISTINCT user_id) for each funnel stage to get accurate per-user conversion rates."
+        }
+      ]
+    },
+    "testing_coverage": {
+      "grade": "A",
+      "findings": [
+        {
+          "id": "ANA-017",
+          "severity": "low",
+          "title": "No test for GA4 inline script consent gating in app.blade.php",
+          "description": "The inline GA4 initialization script in app.blade.php has consent-checking logic (reading localStorage) but there are no E2E/integration tests verifying that GA4 does NOT load when consent is declined, or that it DOES load when consent is accepted on page load.",
+          "location": "resources/views/app.blade.php:35-57",
+          "recommendation": "Add Playwright E2E tests that verify: (1) no gtag.js network request when cookie_consent is 'declined', (2) gtag.js loads when cookie_consent_categories.analytics is true."
+        },
+        {
+          "id": "ANA-018",
+          "severity": "informational",
+          "title": "74 files import useAnalytics — extensive instrumentation coverage",
+          "description": "Analytics tracking is instrumented across 74 frontend files covering auth, billing, settings, onboarding, marketing pages, error pages, and admin. This is comprehensive coverage with consistent use of the useAnalytics hook pattern.",
+          "location": "resources/js/",
+          "recommendation": "No action needed — this is a positive finding. Consider periodic audits to ensure new pages also include analytics instrumentation."
+        }
+      ]
+    }
+  },
+  "component_inventory": {
+    "backend": {
+      "services": [
+        "app/Services/AnalyticsGateway.php — GA4 Measurement Protocol HTTP client with PII sanitization",
+        "app/Services/AuditService.php — Event dispatch orchestration with consent gating and GA4 forwarding",
+        "app/Services/ProductAnalyticsService.php — Admin dashboard product metrics (signup trends, funnels, adoption)"
+      ],
+      "jobs": [
+        "app/Jobs/DispatchAnalyticsEvent.php — Async GA4 event forwarding (2 retries, exponential backoff)"
+      ],
+      "middleware": [
+        "app/Http/Middleware/TrackLastActivity.php — User engagement tracking (15min throttle)",
+        "app/Http/Middleware/SecurityHeaders.php — CSP with GA4 domain allowlisting"
+      ],
+      "controllers": [
+        "app/Http/Controllers/Api/ConsentController.php — Cookie consent recording"
+      ],
+      "enums": [
+        "app/Enums/AnalyticsEvent.php — 97 typed event cases with shared events list for cross-system sync"
+      ],
+      "config": [
+        "config/services.php (ga4 section) — Measurement ID, API secret, enabled flag",
+        "config/security.php — CSP configuration for analytics domains"
+      ]
+    },
+    "frontend": {
+      "core_modules": [
+        "resources/js/lib/analytics.ts — Client-side GA4 integration with event queue and consent gating",
+        "resources/js/lib/ga4.ts — Dynamic gtag.js loader with double-init guard",
+        "resources/js/lib/events.ts — 48 typed event constants with property schemas and exhaustiveness checks",
+        "resources/js/lib/funnels.ts — 3 GA4 funnel configurations (signup, trial-to-paid, login)"
+      ],
+      "hooks": [
+        "resources/js/hooks/useAnalytics.ts — React hook wrapping analytics module with user ID sync"
+      ],
+      "components": [
+        "resources/js/Components/legal/CookieConsent.tsx — GDPR consent banner with category preferences"
+      ],
+      "instrumented_pages": 74
+    },
+    "testing": {
+      "backend_tests": [
+        "tests/Unit/Services/AnalyticsGatewayTest.php (45 tests)",
+        "tests/Unit/Jobs/DispatchAnalyticsEventTest.php",
+        "tests/Unit/Enums/AnalyticsEventSyncTest.php",
+        "tests/Feature/Middleware/TrackLastActivityTest.php (6 tests)",
+        "tests/Feature/Api/ConsentControllerTest.php",
+        "tests/Feature/Admin/AdminProductAnalyticsTest.php"
+      ],
+      "frontend_tests": [
+        "resources/js/lib/analytics.test.ts",
+        "resources/js/hooks/useAnalytics.test.ts",
+        "resources/js/lib/events.sync.test.ts",
+        "resources/js/Components/legal/CookieConsent.test.tsx"
+      ]
+    },
+    "documentation": [
+      "docs/EVENT_TAXONOMY.md — Full event catalog with naming conventions and funnel definitions",
+      ".env.example — Comprehensive GA4 setup guide with inline comments"
+    ]
+  },
+  "ga4_forwarded_events": [
+    "auth.register",
+    "auth.login",
+    "auth.social_login",
+    "onboarding.completed",
+    "subscription.created",
+    "subscription.canceled",
+    "trial.started",
+    "limit.threshold_50",
+    "limit.threshold_80",
+    "limit.threshold_100"
+  ],
+  "privacy_controls": {
+    "pii_blocklist_size": 35,
+    "consent_categories": ["necessary", "analytics", "marketing"],
+    "consent_storage": "localStorage + user_settings (authenticated)",
+    "ip_anonymization": "configurable via AUDIT_IP_ANONYMIZATION env var",
+    "data_retention": "90 days default (AUDIT_LOG_RETENTION_DAYS)",
+    "gdpr_legitimate_interest": "Server-side forwarding allowed when consent unknown (Art. 6(1)(f)), blocked on explicit decline"
+  },
+  "recommendations_priority": [
+    {
+      "priority": 1,
+      "finding": "ANA-001",
+      "effort": "medium",
+      "impact": "GDPR compliance risk — consent withdrawal required by Art. 7(3)"
+    },
+    {
+      "priority": 2,
+      "finding": "ANA-012",
+      "effort": "low",
+      "impact": "Dual GA4 init may cause duplicate pageview events and data layer corruption"
+    },
+    {
+      "priority": 3,
+      "finding": "ANA-009",
+      "effort": "medium",
+      "impact": "Duplicate subscription events inflate funnel metrics"
+    },
+    {
+      "priority": 4,
+      "finding": "ANA-008",
+      "effort": "medium",
+      "impact": "Server vs client identity mismatch breaks user journey attribution in GA4"
+    },
+    {
+      "priority": 5,
+      "finding": "ANA-015",
+      "effort": "low",
+      "impact": "Login funnel provides zero analytical value in current form"
+    },
+    {
+      "priority": 6,
+      "finding": "ANA-010",
+      "effort": "low",
+      "impact": "Uncached queries on admin dashboard load"
+    },
+    {
+      "priority": 7,
+      "finding": "ANA-011",
+      "effort": "low",
+      "impact": "Cache key outside centralized invalidation pattern"
+    }
+  ]
+}

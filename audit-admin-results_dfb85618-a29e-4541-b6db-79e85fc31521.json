@@ -1,0 +1,253 @@
+{
+  "batch": "E",
+  "audits": {
+    "24": {
+      "area": "Admin Panel",
+      "area_score": 87,
+      "finding_count": 5,
+      "summary": "The admin panel is exceptionally well-built with consistent authorization layering (admin + super_admin middleware), comprehensive audit logging for all sensitive actions, bulk operations with confirmation dialogs, CSV exports on all major data tables, search/filter/sort on list views, and N+1 protections throughout. Two-tier privilege model (admin vs super_admin) is correctly enforced both in routes and form requests. Impersonation is fully secured with session encryption, admin-cannot-impersonate-admin checks, and audit events for start/stop. Five findings were identified: one security issue (audit log comment claims super_admin restriction but code allows any admin to export), one UX gap (bulk job retry fires without confirmation), one missing rate limit on a JSON search endpoint, and two frontend test coverage gaps (numerous admin pages absent from smoke tests).",
+      "admin_sections_audited": [
+        "Users",
+        "Billing",
+        "Feature Flags",
+        "Impersonation",
+        "Health",
+        "Audit Logs",
+        "System Info",
+        "Failed Jobs",
+        "Product Analytics",
+        "Cache Management",
+        "Session Manager",
+        "Notifications",
+        "Schedule Viewer",
+        "Data Health",
+        "Config Viewer",
+        "Webhooks",
+        "Tokens",
+        "Social Auth",
+        "Two-Factor",
+        "NPS Responses",
+        "Email Send Log",
+        "Contact Submissions",
+        "Feedback",
+        "Roadmap"
+      ],
+      "findings": [
+        {
+          "id": "ADM-001",
+          "priority": "P1",
+          "confidence": "high",
+          "category": "security",
+          "title": "Audit log export accessible to all admins despite comment claiming super_admin restriction",
+          "description": "The export comment in `AdminAuditLogController` explicitly states 'Access is already restricted to super-admin users who can view the same data via the UI.' This is factually incorrect. The route `/admin/audit-logs/export` has no `super_admin` middleware, and `AdminExportRequest::authorize()` returns `$this->user()?->isAdmin() === true` — not `isSuperAdmin()`. Any regular admin can download the full audit log CSV which contains IP addresses, user-agent strings, before/after state diffs for all admin actions, impersonation events, and changes to other admins' accounts. The comment was clearly written to justify skipping field redaction, based on a security assumption that is not implemented.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "app/Http/Controllers/Admin/AdminAuditLogController.php",
+              "lines": [60, 72],
+              "note": "Comment claims super_admin restriction",
+              "proof": "* Access is already restricted to super-admin users"
+            },
+            {
+              "type": "code",
+              "path": "app/Http/Requests/Admin/AdminExportRequest.php",
+              "lines": [9, 11],
+              "note": "authorize() uses isAdmin(), not isSuperAdmin()",
+              "proof": "return $this->user()?->isAdmin() === true;"
+            },
+            {
+              "type": "code",
+              "path": "routes/admin.php",
+              "lines": [135, 139],
+              "note": "Route has throttle:10,1 only, no super_admin middleware",
+              "proof": "Route::get('/audit-logs/export', ...) ->middleware('throttle:10,1')"
+            }
+          ],
+          "artifacts_affected": [
+            "file::app/Http/Controllers/Admin/AdminAuditLogController.php",
+            "file::app/Http/Requests/Admin/AdminExportRequest.php",
+            "file::routes/admin.php"
+          ],
+          "implementation": {
+            "approach": "Add `super_admin` middleware to the audit-logs export route in routes/admin.php, and update AdminExportRequest::authorize() to check isSuperAdmin(). Alternatively, create a dedicated AdminAuditLogExportRequest with isSuperAdmin() authorization. Update the comment to match reality.",
+            "changes": [
+              "routes/admin.php: Add 'super_admin' middleware to /audit-logs/export route",
+              "app/Http/Requests/Admin/AdminExportRequest.php: Change isAdmin() to isSuperAdmin() OR create AdminAuditLogExportRequest",
+              "app/Http/Controllers/Admin/AdminAuditLogController.php: Fix misleading comment"
+            ],
+            "verification": [
+              "Test that regular admin GET /admin/audit-logs/export returns 403",
+              "Test that super_admin can still export",
+              "Test that the audit log UI export button is hidden for non-super admins"
+            ]
+          },
+          "impact": "medium",
+          "effort_hours": 1,
+          "area_score_impact": -5
+        },
+        {
+          "id": "ADM-002",
+          "priority": "P2",
+          "confidence": "high",
+          "category": "ux",
+          "title": "Bulk job retry fires without confirmation dialog",
+          "description": "On the Failed Jobs Index page, the 'Retry Selected' bulk action fires immediately when clicked via `onClick={bulkRetry}` with no confirmation dialog. This is inconsistent with the 'Delete Selected' button which correctly opens a `ConfirmDialog` before executing. Bulk-retrying a large number of jobs could flood the queue unexpectedly. The `bulkRetry` callback calls `router.post('/admin/failed-jobs/bulk-retry', ...)` directly.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "resources/js/Pages/Admin/FailedJobs/Index.tsx",
+              "lines": [73, 82],
+              "note": "bulkRetry fires immediately without confirmation",
+              "proof": "const bulkRetry = useCallback(() => { router.post('/admin/failed-jobs/bulk-retry', ...)"
+            },
+            {
+              "type": "code",
+              "path": "resources/js/Pages/Admin/FailedJobs/Index.tsx",
+              "lines": [132, 133],
+              "note": "Retry button has no confirmation gate, delete button does",
+              "proof": "<Button size=\"sm\" variant=\"outline\" onClick={bulkRetry}>Retry Selected</Button>"
+            }
+          ],
+          "artifacts_affected": [
+            "file::resources/js/Pages/Admin/FailedJobs/Index.tsx"
+          ],
+          "implementation": {
+            "approach": "Add a second ConfirmDialog for bulk retry (similar pattern to bulk delete). Add `bulkRetryConfirmOpen` state, wire 'Retry Selected' to open it, and call `bulkRetry` only from `onConfirm`.",
+            "changes": [
+              "resources/js/Pages/Admin/FailedJobs/Index.tsx: Add bulkRetryConfirmOpen state",
+              "resources/js/Pages/Admin/FailedJobs/Index.tsx: Gate Retry Selected button behind confirm dialog",
+              "resources/js/Pages/Admin/FailedJobs/Index.tsx: Make bulkRetry return Promise<void> for ConfirmDialog compatibility"
+            ],
+            "verification": [
+              "Click 'Retry Selected' — confirm dialog appears",
+              "Dismiss dialog — no retry occurs",
+              "Confirm — retries execute and selection is cleared"
+            ]
+          },
+          "impact": "low",
+          "effort_hours": 1,
+          "area_score_impact": -2
+        },
+        {
+          "id": "ADM-003",
+          "priority": "P2",
+          "confidence": "high",
+          "category": "security",
+          "title": "Feature flag search-users JSON endpoint has no dedicated rate limit",
+          "description": "The `/admin/feature-flags/search-users` route has no route-level throttle middleware beyond the outer group's `throttle:60,1`. This endpoint hits the database on every request and returns user names/emails. While 60 req/min per IP is the outer bound, all other admin search/lookup endpoints that return user PII have dedicated tighter throttles. The `getTargetedUsers` endpoint (GET `/admin/feature-flags/{flag}/users`) also lacks a per-flag throttle.",
+          "evidence": [
+            {
+              "type": "code",
+              "path": "routes/admin.php",
+              "lines": [188, 189],
+              "note": "No throttle middleware on search-users",
+              "proof": "Route::get('/feature-flags/search-users', ...) ->name('feature-flags.search-users');"
+            },
+            {
+              "type": "pattern",
+              "path": "routes/admin.php",
+              "lines": [173, 175],
+              "note": "getTargetedUsers also lacks per-route throttle",
+              "proof": "Route::get('/feature-flags/{flag}/users', ...) ->where('flag', '[a-z_]+') ->name('feature-flags.users');"
+            }
+          ],
+          "artifacts_affected": [
+            "file::routes/admin.php"
+          ],
+          "implementation": {
+            "approach": "Add `throttle:30,1` middleware to search-users and getTargetedUsers routes, consistent with other read-heavy endpoints like /users/show (throttle:30,1).",
+            "changes": [
+              "routes/admin.php: Add ->middleware('throttle:30,1') to feature-flags/search-users route",
+              "routes/admin.php: Add ->middleware('throttle:30,1') to feature-flags/{flag}/users GET route"
+            ],
+            "verification": [
+              "Verify search-users returns 429 after 30 rapid requests",
+              "Existing functionality still works within normal usage"
+            ]
+          },
+          "impact": "low",
+          "effort_hours": 0.5,
+          "area_score_impact": -2
+        },
+        {
+          "id": "ADM-004",
+          "priority": "P3",
+          "confidence": "high",
+          "category": "ops",
+          "title": "16 admin pages absent from UI smoke tests",
+          "description": "The admin smoke test file (`__smoke-tests__.test.tsx`) covers 19 pages but 16 admin pages are not represented. Missing pages: `Dashboard` (main admin dashboard — has its own `.test.tsx` but not in smoke suite), `ProductAnalytics`, `NpsResponses/Index`, `EmailSendLogs/Index`, `ContactSubmissions/Index`, `ContactSubmissions/Show`, `Roadmap/Index`, `Roadmap/Create`, `Sessions/Index`, `Schedule/Index`, `Cache/Index`, `Users/Create`, `Feedback/Index`, `Feedback/Show`, `Webhooks/Endpoints`, `Webhooks/IncomingWebhooks`, `Webhooks/DeliveryDetail`. The smoke tests are the first line of defense against component import errors and rendering crashes.",
+          "evidence": [
+            {
+              "type": "missing",
+              "path": "resources/js/Pages/Admin/__smoke-tests__.test.tsx",
+              "lines": [85, 547],
+              "note": "Only 19 pages covered out of 35 total admin pages",
+              "proof": "Pages not imported: ProductAnalytics, NpsResponses, EmailSendLogs, ContactSubmissions, Roadmap, Sessions, Schedule, Cache, Users/Create, Feedback, Webhooks/Endpoints, Webhooks/IncomingWebhooks, Webhooks/DeliveryDetail"
+            }
+          ],
+          "artifacts_affected": [
+            "file::resources/js/Pages/Admin/__smoke-tests__.test.tsx"
+          ],
+          "implementation": {
+            "approach": "Add describe blocks and basic render tests for the 16 missing pages, following the existing pattern of dynamic import + minimal prop scaffolding + `screen.getByRole` or `screen.getByText` assertion.",
+            "changes": [
+              "resources/js/Pages/Admin/__smoke-tests__.test.tsx: Add tests for ProductAnalytics, NpsResponses, EmailSendLogs, ContactSubmissions (Index+Show), Roadmap (Index+Create), Sessions, Schedule, Cache, Users/Create, Feedback (Index+Show), Webhooks (Endpoints+IncomingWebhooks+DeliveryDetail)"
+            ],
+            "verification": [
+              "npm test -- --filter=smoke-tests passes with all new cases green",
+              "No new TypeScript errors introduced"
+            ]
+          },
+          "impact": "low",
+          "effort_hours": 3,
+          "area_score_impact": -2
+        },
+        {
+          "id": "ADM-005",
+          "priority": "P3",
+          "confidence": "medium",
+          "category": "crud",
+          "title": "NPS responses are read-only with no delete capability",
+          "description": "The NPS responses admin section has only `index` and `export` routes — there is no delete or bulk-delete. For a SaaS starter template this is a minor gap; product teams frequently need to purge test NPS responses or remove responses from internal team members. The pattern used by Contact Submissions (delete route with super_admin middleware) and Feedback (delete route with super_admin) would apply. This is lower priority because NPS data can be managed at DB level if needed, but it limits the template's operational completeness.",
+          "evidence": [
+            {
+              "type": "pattern",
+              "path": "routes/admin.php",
+              "lines": [122, 126],
+              "note": "NPS routes: export and index only, no delete",
+              "proof": "Route::get('/nps-responses/export', ...) Route::get('/nps-responses', ...)"
+            },
+            {
+              "type": "pattern",
+              "path": "routes/admin.php",
+              "lines": [106, 120],
+              "note": "Contact submissions has delete as reference pattern",
+              "proof": "Route::delete('/contact-submissions/{contactSubmission}', ...) ->middleware(['throttle:10,1', 'super_admin'])"
+            }
+          ],
+          "artifacts_affected": [
+            "file::app/Http/Controllers/Admin/AdminNpsResponsesController.php",
+            "file::routes/admin.php",
+            "file::resources/js/Pages/Admin/NpsResponses/Index.tsx"
+          ],
+          "implementation": {
+            "approach": "Add `destroy` method to AdminNpsResponsesController and a corresponding DELETE route with super_admin middleware. Add a confirm dialog in the UI for single-row delete. Optionally add bulk-delete following the feedback pattern.",
+            "changes": [
+              "app/Http/Controllers/Admin/AdminNpsResponsesController.php: Add destroy() method with audit log",
+              "routes/admin.php: Add DELETE /nps-responses/{npsResponse} with throttle:10,1 and super_admin",
+              "resources/js/Pages/Admin/NpsResponses/Index.tsx: Add delete action with confirm dialog"
+            ],
+            "verification": [
+              "super_admin can delete an NPS response",
+              "Regular admin gets 403 on delete attempt",
+              "Audit log records deletion"
+            ]
+          },
+          "impact": "low",
+          "effort_hours": 2,
+          "area_score_impact": -1
+        }
+      ]
+    }
+  }
+}

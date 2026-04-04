@@ -1,0 +1,441 @@
+{
+  "audit_type": "messaging-qa",
+  "session_id": "dfec0dbe-51c0-44c5-8273-e6fc40f112da",
+  "timestamp": "2026-04-04T00:00:00Z",
+  "scope": "full",
+  "project": "laravel-react-starter",
+  "summary": {
+    "total_findings": 34,
+    "by_severity": {
+      "critical": 2,
+      "high": 8,
+      "medium": 14,
+      "low": 10
+    },
+    "categories_audited": [
+      "notifications",
+      "email_templates",
+      "flash_messages",
+      "toast_frontend",
+      "in_app_notifications",
+      "webhooks",
+      "queue_messaging",
+      "event_listeners",
+      "scheduled_commands",
+      "stripe_webhooks",
+      "accessibility",
+      "test_coverage"
+    ]
+  },
+  "infrastructure_overview": {
+    "notification_classes": 21,
+    "notification_classes_queued": 20,
+    "notification_classes_not_queued": 1,
+    "notification_channels": ["mail", "database"],
+    "mail_sanitizer_usage": 3,
+    "scheduled_email_commands": 8,
+    "webhook_jobs": 1,
+    "frontend_toast_library": "sonner",
+    "flash_message_types": ["success", "error", "warning", "info"],
+    "feature_flag_gated": true,
+    "queue_driver": "database",
+    "email_dedup_system": true
+  },
+  "findings": [
+    {
+      "id": "MSG-001",
+      "severity": "critical",
+      "category": "security",
+      "title": "MailSanitizer not used in all user-input notifications",
+      "description": "Only 3 of 21 notification classes use MailSanitizer (ContactNotification, FeedbackReceivedNotification, SalesInquiryNotification). Notifications that accept user-sourced data without sanitization are vulnerable to email header injection.",
+      "files": [
+        "app/Notifications/ContactNotification.php",
+        "app/Notifications/FeedbackReceivedNotification.php",
+        "app/Notifications/SalesInquiryNotification.php"
+      ],
+      "recommendation": "Audit all notifications that include user-supplied strings in subject or body. Apply MailSanitizer::sanitizeForHeader() to subjects and MailSanitizer::sanitizeMarkdown() to body content."
+    },
+    {
+      "id": "MSG-002",
+      "severity": "critical",
+      "category": "test_coverage",
+      "title": "ContactNotification and SalesInquiryNotification have zero test coverage",
+      "description": "These two notifications handle external user input (contact forms, enterprise sales inquiries) with email sanitization logic, but have no tests. ContactNotification uses MailSanitizer which is untested for this notification. SalesInquiryNotification has optional fields (seatsNeeded, message) with no validation tests.",
+      "files": [
+        "app/Notifications/ContactNotification.php",
+        "app/Notifications/SalesInquiryNotification.php"
+      ],
+      "recommendation": "Write feature tests covering: correct channels, email subject/body content, sanitization of user input, handling of optional fields, ShouldQueue verification."
+    },
+    {
+      "id": "MSG-003",
+      "severity": "high",
+      "category": "reliability",
+      "title": "AdminHealthAlertNotification does not implement ShouldQueue",
+      "description": "AdminHealthAlertNotification is the only notification class that does not implement ShouldQueue. Health alerts are sent synchronously, which could block the command if mail delivery is slow or fails.",
+      "files": ["app/Notifications/AdminHealthAlertNotification.php"],
+      "recommendation": "Add 'implements ShouldQueue' and 'use Queueable' to ensure health alerts don't block the artisan command."
+    },
+    {
+      "id": "MSG-004",
+      "severity": "high",
+      "category": "maintainability",
+      "title": "No email templates — all 21 notifications use inline MailMessage builders",
+      "description": "Every notification hardcodes email content via MailMessage->line()/action() chains. No Blade templates exist in resources/views/mail/. Changing global email styling, header, footer, or branding requires editing 21+ files.",
+      "files": ["app/Notifications/"],
+      "recommendation": "Create shared Blade email templates for common layouts (transactional, marketing, alert). Use toMailUsing() or custom Mailable classes for complex emails."
+    },
+    {
+      "id": "MSG-005",
+      "severity": "high",
+      "category": "reliability",
+      "title": "Email sequence collision risk between overlapping scheduled commands",
+      "description": "Multiple daily commands target overlapping user segments: SendWelcomeSequence (day 1-3), SendOnboardingReminders (day 1,3,7), SendReEngagementEmails (inactive users), SendTrialNudges, SendTrialEndingReminders. While EmailSendLog provides dedup within a sequence, cross-sequence coordination is fragile. A user could receive welcome + onboarding + trial emails on the same day.",
+      "files": [
+        "app/Console/Commands/SendWelcomeSequence.php",
+        "app/Console/Commands/SendOnboardingReminders.php",
+        "app/Console/Commands/SendReEngagementEmails.php",
+        "app/Console/Commands/SendTrialNudges.php",
+        "app/Console/Commands/SendTrialEndingReminders.php"
+      ],
+      "recommendation": "Implement a global daily email throttle per user (e.g., max 2 non-transactional emails/day). Add cross-sequence dedup checks in each command."
+    },
+    {
+      "id": "MSG-006",
+      "severity": "high",
+      "category": "reliability",
+      "title": "Webhook re-delivery mechanism missing after final retry exhaustion",
+      "description": "DispatchWebhookJob retries 3 times with backoff (30s, 120s, 600s). After exhaustion, deliveries are marked 'failed' permanently. No admin UI or API to replay failed deliveries. No dead letter queue or alerting for persistent failures.",
+      "files": [
+        "app/Jobs/DispatchWebhookJob.php",
+        "app/Services/WebhookService.php"
+      ],
+      "recommendation": "Add admin endpoint to retry failed deliveries. Consider a dead letter notification for endpoints with high failure rates."
+    },
+    {
+      "id": "MSG-007",
+      "severity": "high",
+      "category": "ux",
+      "title": "Notification feature flag defaults to OFF — users never see in-app notifications without explicit enablement",
+      "description": "FEATURE_NOTIFICATIONS defaults to false in config/features.php. The full notification infrastructure (21 classes, database channel, dropdown UI) exists but is invisible to users by default. Only email channel works without the flag.",
+      "files": ["config/features.php"],
+      "recommendation": "Consider defaulting to true, or document prominently that in-app notifications require explicit enablement."
+    },
+    {
+      "id": "MSG-008",
+      "severity": "high",
+      "category": "test_coverage",
+      "title": "4 notifications have only indirect test coverage",
+      "description": "PaymentActionRequiredNotification, PaymentRecoveredNotification, ExpansionNudgeNotification, and LimitThresholdNotification are only tested via UnsubscribeLinkTest (which verifies unsubscribe links exist, not notification behavior). No tests verify their email content, channel selection, or database payload.",
+      "files": [
+        "app/Notifications/PaymentActionRequiredNotification.php",
+        "app/Notifications/PaymentRecoveredNotification.php",
+        "app/Notifications/ExpansionNudgeNotification.php",
+        "app/Notifications/LimitThresholdNotification.php"
+      ],
+      "recommendation": "Write dedicated feature tests covering: mail subject/body, channel logic (verified vs unverified users), database payload structure, edge cases."
+    },
+    {
+      "id": "MSG-009",
+      "severity": "high",
+      "category": "test_coverage",
+      "title": "AdminAnnouncementNotification has no direct tests",
+      "description": "AdminAnnouncementNotification is tested only indirectly through AdminNotificationsTest.php which tests the broadcast job, not the notification class itself. No tests verify mail content, channel selection, or toArray payload.",
+      "files": ["app/Notifications/AdminAnnouncementNotification.php"],
+      "recommendation": "Add dedicated unit/feature test for notification class behavior."
+    },
+    {
+      "id": "MSG-010",
+      "severity": "high",
+      "category": "test_coverage",
+      "title": "InvoluntaryChurnWinBackNotification only tested via unsubscribe link test",
+      "description": "This notification is sent with a 3-day delay on involuntary churn (subscription.deleted webhook). The delay behavior, email content, and win-back CTA are not tested.",
+      "files": ["app/Notifications/InvoluntaryChurnWinBackNotification.php"],
+      "recommendation": "Write test covering: delay verification, email content with plan name, win-back CTA URL, channel selection."
+    },
+    {
+      "id": "MSG-011",
+      "severity": "medium",
+      "category": "dead_code",
+      "title": "Radix UI toast primitives component is unused",
+      "description": "resources/js/Components/ui/toast.tsx defines a full Radix UI toast system but is never imported anywhere in the codebase. The app exclusively uses Sonner for toasts. This is dead code.",
+      "files": ["resources/js/Components/ui/toast.tsx"],
+      "recommendation": "Remove the unused Radix toast component to reduce bundle size and eliminate confusion."
+    },
+    {
+      "id": "MSG-012",
+      "severity": "medium",
+      "category": "accessibility",
+      "title": "Flash toasts lack explicit aria-live wrapper",
+      "description": "useFlashToasts dispatches Sonner toasts but relies on Sonner's internal aria-live handling. Sonner adds an aria-live region by default, but its behavior is not verified in tests. The 12 components with aria-live regions cover other concerns but not the global toast area.",
+      "files": [
+        "resources/js/hooks/useFlashToasts.ts",
+        "resources/js/Components/ui/sonner.tsx"
+      ],
+      "recommendation": "Verify Sonner's aria-live behavior in tests. Consider wrapping Toaster with an explicit aria-live='polite' region as a safety net."
+    },
+    {
+      "id": "MSG-013",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "Inconsistent error feedback: some pages use flash messages, others use direct toast calls",
+      "description": "Controllers return flash messages (session flash), but some frontend components bypass this and call toast.error()/toast.success() directly (ApiTokens, Webhooks, NotificationDropdown). This creates two parallel feedback systems that behave differently.",
+      "files": [
+        "resources/js/Pages/Settings/ApiTokens.tsx",
+        "resources/js/Pages/Settings/Webhooks.tsx",
+        "resources/js/Components/notifications/NotificationDropdown.tsx"
+      ],
+      "recommendation": "Standardize on flash messages from backend for server-triggered feedback. Reserve direct toast calls for purely client-side operations (clipboard copy, optimistic UI)."
+    },
+    {
+      "id": "MSG-014",
+      "severity": "medium",
+      "category": "reliability",
+      "title": "Stripe webhook out-of-order events are logged but not re-queued",
+      "description": "StripeWebhookController uses last_webhook_at to reject out-of-order events. Rejected events are only logged as warnings. If Stripe delivers events out of order (common under load), notifications could be silently lost.",
+      "files": ["app/Http/Controllers/Billing/StripeWebhookController.php"],
+      "recommendation": "Consider queuing rejected events for delayed reprocessing, or implement idempotent handling that works regardless of event order."
+    },
+    {
+      "id": "MSG-015",
+      "severity": "medium",
+      "category": "reliability",
+      "title": "Notification unread count cached for 60 seconds — stale badge counts",
+      "description": "Unread notification count is cached for 60 seconds via cache()->remember(). After marking notifications as read, the cache is invalidated, but new incoming notifications won't update the badge for up to 60 seconds.",
+      "files": [
+        "app/Http/Middleware/HandleInertiaRequests.php",
+        "resources/js/Components/notifications/NotificationDropdown.tsx"
+      ],
+      "recommendation": "Consider reducing cache TTL to 15-30 seconds, or invalidate cache when new notifications are created (in the notification send pipeline)."
+    },
+    {
+      "id": "MSG-016",
+      "severity": "medium",
+      "category": "reliability",
+      "title": "No queue priority routing — all notifications use default queue",
+      "description": "All 21 queued notifications dispatch to the default queue. Payment-critical notifications (PaymentFailedNotification, PaymentActionRequiredNotification) compete with marketing emails (WelcomeSequenceNotification, ReEngagementNotification) for processing.",
+      "files": ["app/Notifications/"],
+      "recommendation": "Route transactional/payment notifications to a 'high' priority queue. Route marketing emails to a 'low' queue. Configure workers to process high queue first."
+    },
+    {
+      "id": "MSG-017",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "Flash message usage inconsistent across controllers",
+      "description": "Some controllers consistently set flash messages for success/error states while others redirect without feedback. No standard flash message convention is enforced.",
+      "files": [
+        "app/Http/Controllers/OnboardingController.php",
+        "app/Http/Controllers/Settings/"
+      ],
+      "recommendation": "Establish a flash message convention: all mutation endpoints should flash success on success and error on failure. Create a trait or base controller method for consistent flash messaging."
+    },
+    {
+      "id": "MSG-018",
+      "severity": "medium",
+      "category": "test_coverage",
+      "title": "Frontend toast integration untested",
+      "description": "sonner.test.tsx tests component rendering but not toast dispatch behavior. No tests verify that flash messages from the backend trigger visible toasts. No tests for toast dismissal, stacking, or interaction.",
+      "files": [
+        "resources/js/Components/ui/sonner.test.tsx",
+        "resources/js/hooks/useFlashToasts.ts"
+      ],
+      "recommendation": "Add integration tests that verify: flash props trigger correct toast type, multiple flash types display simultaneously, toast dedup works."
+    },
+    {
+      "id": "MSG-019",
+      "severity": "medium",
+      "category": "reliability",
+      "title": "Event listeners lack consistent error handling",
+      "description": "SendPqlUpgradeNudge and LeadQualifiedListener have try/catch with logging. But SendEmailVerificationNotification and StartUserTrial listeners do not wrap operations in try/catch. A failed verification email could leave users in a broken state.",
+      "files": [
+        "app/Listeners/SendEmailVerificationNotification.php",
+        "app/Listeners/StartUserTrial.php",
+        "app/Listeners/SendPqlUpgradeNudge.php"
+      ],
+      "recommendation": "Add try/catch with logging to all listeners. Failed non-critical operations should log and continue, not throw."
+    },
+    {
+      "id": "MSG-020",
+      "severity": "medium",
+      "category": "ux",
+      "title": "No global form-level error summary component",
+      "description": "Form validation errors are only shown inline below individual fields. When a form has many errors or server-side validation failures, users may not see errors for off-screen fields. No summary banner at the top of forms.",
+      "files": ["resources/js/Components/InputError.tsx"],
+      "recommendation": "Create a FormErrorSummary component that lists all current form errors at the top of the form with anchor links to each field."
+    },
+    {
+      "id": "MSG-021",
+      "severity": "medium",
+      "category": "accessibility",
+      "title": "EmptyState uses role='status' incorrectly",
+      "description": "EmptyState component uses role='status' which is intended for live regions that announce dynamic updates. Static empty states should use semantic headings or role='presentation'.",
+      "files": ["resources/js/Components/ui/empty-state.tsx"],
+      "recommendation": "Remove role='status' from EmptyState. Use semantic heading hierarchy instead."
+    },
+    {
+      "id": "MSG-022",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "Loading state indicators inconsistent across components",
+      "description": "Some data-loading components show skeleton loaders (ApiTokens, DataTable), while others show plain 'Loading...' text (NotificationDropdown). Inconsistent loading UX patterns.",
+      "files": [
+        "resources/js/Components/notifications/NotificationDropdown.tsx",
+        "resources/js/Components/ui/data-table.tsx"
+      ],
+      "recommendation": "Standardize on skeleton loaders for all data-loading states."
+    },
+    {
+      "id": "MSG-023",
+      "severity": "medium",
+      "category": "reliability",
+      "title": "Mail failover config uses hardcoded retry_after without env override",
+      "description": "Failover mailer configuration hardcodes retry_after=60 without an environment variable override. In production, the retry interval may need tuning based on mail provider SLAs.",
+      "files": ["config/mail.php"],
+      "recommendation": "Add MAIL_FAILOVER_RETRY_AFTER env var with default of 60."
+    },
+    {
+      "id": "MSG-024",
+      "severity": "medium",
+      "category": "observability",
+      "title": "No notification delivery metrics or monitoring",
+      "description": "No logging of notification send success/failure rates. No metrics on email delivery, bounce rates, or notification channel health. Failed queue jobs are the only signal of delivery issues.",
+      "files": ["app/Notifications/"],
+      "recommendation": "Add structured logging for notification dispatch (notification_type, channel, user_id, status). Consider a notification_logs table or integration with email delivery tracking."
+    },
+    {
+      "id": "MSG-025",
+      "severity": "low",
+      "category": "dead_code",
+      "title": "Radix toast primitives (@radix-ui/react-toast) are a dependency but unused",
+      "description": "The @radix-ui/react-toast package is installed and a component exists at Components/ui/toast.tsx, but nothing imports it. The app uses Sonner exclusively for toasts.",
+      "files": ["resources/js/Components/ui/toast.tsx"],
+      "recommendation": "Remove @radix-ui/react-toast from package.json and delete the unused component file."
+    },
+    {
+      "id": "MSG-026",
+      "severity": "low",
+      "category": "ux",
+      "title": "Silent success for some async operations",
+      "description": "Some operations complete without user feedback. Marking notifications as read, for example, provides no confirmation toast. Users may not be sure the action succeeded.",
+      "files": ["resources/js/Components/notifications/NotificationDropdown.tsx"],
+      "recommendation": "Add subtle success feedback (visual animation or brief toast) for all user-initiated actions."
+    },
+    {
+      "id": "MSG-027",
+      "severity": "low",
+      "category": "ux",
+      "title": "Toast position fixed at top-right may overlay mobile content",
+      "description": "Sonner Toaster is positioned at top-right without responsive adjustments. On mobile viewports, toasts may overlap navigation or important content.",
+      "files": ["resources/js/Components/ui/sonner.tsx"],
+      "recommendation": "Consider position='bottom-center' on mobile viewports or make position responsive."
+    },
+    {
+      "id": "MSG-028",
+      "severity": "low",
+      "category": "maintainability",
+      "title": "Notification classes use hardcoded route names without null-safety",
+      "description": "Action buttons in notifications use route() helper (e.g., route('billing.index')) without checking if the route exists. If billing feature flag is disabled, route generation could fail during notification rendering.",
+      "files": ["app/Notifications/"],
+      "recommendation": "Add route existence checks or wrap route() calls in try/catch for feature-gated routes."
+    },
+    {
+      "id": "MSG-029",
+      "severity": "low",
+      "category": "scalability",
+      "title": "BroadcastAnnouncementJob chunks at 200 but no rate limiting",
+      "description": "BroadcastAnnouncementJob sends notifications in chunks of 200 users. For large user bases, this could overwhelm the mail provider without rate limiting between chunks.",
+      "files": ["app/Jobs/BroadcastAnnouncementJob.php"],
+      "recommendation": "Add sleep or rate limiting between chunks. Consider using a dedicated 'broadcast' queue with lower worker concurrency."
+    },
+    {
+      "id": "MSG-030",
+      "severity": "low",
+      "category": "ux",
+      "title": "No SMS or push notification channels",
+      "description": "Only mail and database channels are used. No SMS, push notification, or Slack channels configured. This limits the notification delivery options for critical alerts.",
+      "files": ["app/Notifications/"],
+      "recommendation": "For a starter template this is acceptable. Document as a future enhancement if multi-channel delivery is needed."
+    },
+    {
+      "id": "MSG-031",
+      "severity": "low",
+      "category": "test_coverage",
+      "title": "useFlashToasts has tests but lacks edge case coverage",
+      "description": "useFlashToasts.test.ts covers basic flash types and dedup but doesn't test: rapid sequential flashes, flash during page navigation, flash with HTML content, very long message strings.",
+      "files": ["resources/js/hooks/useFlashToasts.test.ts"],
+      "recommendation": "Add edge case tests for rapid fire flashes and navigation-during-flash scenarios."
+    },
+    {
+      "id": "MSG-032",
+      "severity": "low",
+      "category": "observability",
+      "title": "Admin health alert thresholds not in .env.example",
+      "description": "AdminHealthAlertCommand uses config values with hardcoded defaults (10 failed jobs, 25% webhook failure rate). These thresholds are not documented in .env.example.",
+      "files": ["app/Console/Commands/AdminHealthAlertCommand.php"],
+      "recommendation": "Add threshold env vars to .env.example with documentation."
+    },
+    {
+      "id": "MSG-033",
+      "severity": "low",
+      "category": "consistency",
+      "title": "HasUnsubscribeLink trait only covers marketing notifications",
+      "description": "The HasUnsubscribeLink concern provides unsubscribe links for queued notifications. 17 of 21 notifications use it, but transactional notifications (PaymentFailed, PaymentActionRequired) also include it, which may confuse users who cannot unsubscribe from payment alerts.",
+      "files": [
+        "app/Notifications/Concerns/HasUnsubscribeLink.php",
+        "tests/Feature/Notifications/UnsubscribeLinkTest.php"
+      ],
+      "recommendation": "Differentiate between marketing and transactional unsubscribe. Transactional notifications should either omit unsubscribe or clarify it only affects marketing emails."
+    },
+    {
+      "id": "MSG-034",
+      "severity": "low",
+      "category": "ux",
+      "title": "Error boundary not applied to page-level components by default",
+      "description": "ErrorBoundary component exists but is opt-in via withErrorBoundary() HOC. A crash in any page component shows React's default error screen instead of the graceful recovery UI.",
+      "files": ["resources/js/Components/ui/error-boundary.tsx"],
+      "recommendation": "Wrap the Inertia page resolver with ErrorBoundary as a default safety net."
+    }
+  ],
+  "test_coverage_summary": {
+    "total_notification_classes": 21,
+    "thoroughly_tested": 15,
+    "partially_tested": 4,
+    "untested": 2,
+    "untested_notifications": [
+      "ContactNotification",
+      "SalesInquiryNotification"
+    ],
+    "partially_tested_notifications": [
+      "PaymentActionRequiredNotification",
+      "PaymentRecoveredNotification",
+      "ExpansionNudgeNotification",
+      "LimitThresholdNotification"
+    ],
+    "frontend_toast_tests": "component_only",
+    "flash_message_tests": "partial",
+    "notification_api_tests": "complete"
+  },
+  "architecture_notes": {
+    "strengths": [
+      "All 20/21 notifications properly implement ShouldQueue",
+      "EmailSendLog provides per-sequence dedup for scheduled emails",
+      "HasUnsubscribeLink trait provides consistent unsubscribe across 17 notifications",
+      "MailSanitizer provides header injection and XSS protection (used in 3 notifications)",
+      "Comprehensive unsubscribe link test covers 17 notification classes",
+      "NotificationController is feature-gated and has full test coverage",
+      "Sonner toast integration with Inertia flash is clean and well-tested",
+      "12 components properly use aria-live regions",
+      "BillingAlertBanner uses role=alert with aria-live=polite correctly",
+      "LoadingButton provides aria-busy for screen readers"
+    ],
+    "weaknesses": [
+      "No shared email templates — 21 inline MailMessage builders",
+      "MailSanitizer adoption is only 14% (3/21 notifications)",
+      "No queue priority routing for payment vs marketing emails",
+      "No delivery metrics or notification observability",
+      "Cross-sequence email throttling is absent",
+      "Unused Radix toast component adds dead code",
+      "Inconsistent error feedback patterns (flash vs direct toast)"
+    ]
+  }
+}

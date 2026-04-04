@@ -1,0 +1,833 @@
+{
+  "audit_type": "growth",
+  "audit_scope": "full",
+  "session_id": "930f65c9-b159-4bc0-ade3-c25331c7e5ab",
+  "generated_at": "2026-04-04T00:00:00Z",
+  "project": "laravel-react-starter",
+  "stack": "Laravel 12 + Inertia.js v2 + React 18 + TypeScript + Tailwind CSS v4",
+  "overall_score": 78,
+  "overall_grade": "B+",
+  "summary": "Production-grade SaaS growth stack with strong foundations across SEO, onboarding, monetization, and retention. Major gaps in team/org features, referral system, PWA support, and A/B testing infrastructure limit expansion revenue potential.",
+  "dimensions": {
+    "seo_and_discoverability": {
+      "score": 88,
+      "grade": "A",
+      "summary": "Comprehensive SEO foundation with SSR, structured data, sitemap, robots.txt, llms.txt, canonical URLs, and auth-aware indexing. Minor gaps in Web Vitals monitoring and image optimization.",
+      "strengths": [
+        {
+          "id": "SEO-S1",
+          "title": "Full SSR via Inertia server-side rendering",
+          "detail": "resources/js/ssr.tsx configured with ReactDOMServer, vite.config.ts SSR build, ensuring crawlers see fully-rendered HTML.",
+          "impact": "high"
+        },
+        {
+          "id": "SEO-S2",
+          "title": "Comprehensive structured data (JSON-LD)",
+          "detail": "SoftwareApplication, Organization, FAQPage, BreadcrumbList, BlogPosting, and Article schemas implemented across pages. BreadcrumbJsonLd.tsx and FaqJsonLd.tsx reusable components.",
+          "impact": "high"
+        },
+        {
+          "id": "SEO-S3",
+          "title": "Dynamic sitemap with caching",
+          "detail": "SeoController generates sitemap.xml with priority levels, change frequencies, and dynamic blog post entries. 24-hour cache TTL.",
+          "impact": "high"
+        },
+        {
+          "id": "SEO-S4",
+          "title": "Auth-aware robot directives",
+          "detail": "app.blade.php serves noindex/nofollow for authenticated users, index/follow with rich snippet directives for public visitors. Prevents dashboard/profile indexing.",
+          "impact": "medium"
+        },
+        {
+          "id": "SEO-S5",
+          "title": "llms.txt AI training directive",
+          "detail": "SeoController serves /llms.txt per llmstxt.org specification listing authorized/unauthorized content for AI crawlers.",
+          "impact": "low"
+        },
+        {
+          "id": "SEO-S6",
+          "title": "Per-page meta tags and OpenGraph",
+          "detail": "All marketing pages set custom og:title, og:description, og:image, Twitter cards. Default OG image at public/images/og-default.png.",
+          "impact": "high"
+        },
+        {
+          "id": "SEO-S7",
+          "title": "Semantic slug-based URL structure",
+          "detail": "/blog/{slug}, /features/{feature}, /guides/{guide}, /compare/{competitor} — all named routes via Ziggy.",
+          "impact": "medium"
+        }
+      ],
+      "findings": [
+        {
+          "id": "SEO-F1",
+          "severity": "low",
+          "category": "performance",
+          "title": "No Web Vitals monitoring",
+          "detail": "No web-vitals npm package integrated. Core Web Vitals (LCP, FID, CLS) not tracked or sent to GA4.",
+          "recommendation": "Install web-vitals package and forward metrics to GA4 via custom events.",
+          "effort": "small"
+        },
+        {
+          "id": "SEO-F2",
+          "severity": "low",
+          "category": "image_optimization",
+          "title": "Missing image optimization metadata",
+          "detail": "No width/height attributes on all images, no WebP/AVIF format variants, no responsive srcset patterns.",
+          "recommendation": "Add width/height to prevent CLS, implement responsive images with srcset for marketing pages.",
+          "effort": "medium"
+        },
+        {
+          "id": "SEO-F3",
+          "severity": "info",
+          "category": "seo",
+          "title": "No structured pricing schema",
+          "detail": "Pricing page lacks Offer or AggregateOffer schema markup.",
+          "recommendation": "Add AggregateOffer JSON-LD to /pricing page for rich results.",
+          "effort": "small"
+        },
+        {
+          "id": "SEO-F4",
+          "severity": "info",
+          "category": "seo",
+          "title": "No trailing slash policy enforcement",
+          "detail": "No middleware or redirect to enforce /page vs /page/ consistency. Could cause duplicate content.",
+          "recommendation": "Add middleware to canonicalize URL trailing slashes.",
+          "effort": "small"
+        },
+        {
+          "id": "SEO-F5",
+          "severity": "info",
+          "category": "seo",
+          "title": "Single sitemap without index",
+          "detail": "Works for current ~100 URLs but won't scale. No sitemap_index.xml for splitting by content type.",
+          "recommendation": "Implement sitemap index when URL count exceeds 500.",
+          "effort": "small"
+        }
+      ]
+    },
+    "onboarding_and_activation": {
+      "score": 90,
+      "grade": "A",
+      "summary": "Exceptional onboarding with 3-step wizard, lifecycle tracking, health scoring, engagement scoring, welcome email sequences, and session data migration. Minor gaps in guided tours and progressive disclosure.",
+      "strengths": [
+        {
+          "id": "ONB-S1",
+          "title": "3-step onboarding wizard with use-case capture",
+          "detail": "OnboardingController + Onboarding.tsx: Welcome → Preferences → Get Started. Captures use_case (saas_founder, agency, internal_tool, evaluating), timezone, theme. Context-aware CTAs based on use case and feature flags.",
+          "impact": "high"
+        },
+        {
+          "id": "ONB-S2",
+          "title": "7-stage lifecycle management",
+          "detail": "LifecycleService tracks VISITOR → TRIAL → ACTIVATED → PAYING → EXPANSION / AT_RISK → CHURNED with transition history, reason tracking, and days-in-stage metadata.",
+          "impact": "high"
+        },
+        {
+          "id": "ONB-S3",
+          "title": "Dual health + engagement scoring",
+          "detail": "CustomerHealthService (login frequency, feature adoption, billing status, profile completion) and EngagementScoringService (login recency, features, onboarding, account age) both 0-100 with batch optimization.",
+          "impact": "high"
+        },
+        {
+          "id": "ONB-S4",
+          "title": "Welcome email sequence (3 emails)",
+          "detail": "WelcomeSequenceNotification: Welcome aboard → 3 things to try → Advanced features. Feature-aware content, checks enabled features before mentioning.",
+          "impact": "medium"
+        },
+        {
+          "id": "ONB-S5",
+          "title": "Lead scoring with MQL/SQL thresholds",
+          "detail": "LeadScoringService: composite formula (engagement*0.5 + health*0.3 + pql_signal*0.2). MQL at 60, SQL at 80. QualifyLeads command runs batched scoring.",
+          "impact": "high"
+        },
+        {
+          "id": "ONB-S6",
+          "title": "Onboarding middleware guard",
+          "detail": "EnsureOnboardingCompleted middleware redirects incomplete users. Feature-gated, checks user_settings.onboarding_completed timestamp.",
+          "impact": "medium"
+        },
+        {
+          "id": "ONB-S7",
+          "title": "Session data migration service",
+          "detail": "SessionDataMigrationService migrates guest session data on registration. Pattern documented and integrated into registration flow.",
+          "impact": "medium"
+        }
+      ],
+      "findings": [
+        {
+          "id": "ONB-F1",
+          "severity": "medium",
+          "category": "ux",
+          "title": "No guided feature tours",
+          "detail": "No step-by-step feature discovery system (Shepherd.js, Intro.js). Only basic info-tooltips exist. First-time users don't get contextual guidance on dashboard features.",
+          "recommendation": "Implement lightweight feature tour for first dashboard visit using a tour library or custom step-through component.",
+          "effort": "medium"
+        },
+        {
+          "id": "ONB-F2",
+          "severity": "low",
+          "category": "engagement",
+          "title": "No progressive feature disclosure",
+          "detail": "Features don't unlock progressively based on milestones. All enabled features are visible immediately regardless of adoption level.",
+          "recommendation": "Consider revealing advanced features (webhooks, API tokens) only after basic setup completion.",
+          "effort": "medium"
+        },
+        {
+          "id": "ONB-F3",
+          "severity": "low",
+          "category": "engagement",
+          "title": "No automated NPS trigger post-onboarding",
+          "detail": "NpsSurveyController exists with eligibility logic but no automatic trigger after onboarding completion.",
+          "recommendation": "Trigger NPS eligibility check 7 days after onboarding_completed timestamp.",
+          "effort": "small"
+        },
+        {
+          "id": "ONB-F4",
+          "severity": "info",
+          "category": "ux",
+          "title": "No video onboarding or interactive demos",
+          "detail": "No embedded video guides, animated GIFs, or interactive product demos in the onboarding flow.",
+          "recommendation": "Add optional video embed to onboarding step 1 for visual learners.",
+          "effort": "small"
+        }
+      ]
+    },
+    "conversion_and_monetization": {
+      "score": 82,
+      "grade": "A-",
+      "summary": "Production-grade billing with Stripe Cashier, 5-tier pricing, trial management, dunning recovery, retention coupons, and annual/monthly toggle. Gaps in abandoned checkout recovery, churn reason analytics, and LTV/CAC tracking.",
+      "strengths": [
+        {
+          "id": "MON-S1",
+          "title": "5-tier pricing with per-seat billing",
+          "detail": "Free → Pro ($19/mo) → Pro Team ($39/seat/mo) → Team ($49/seat/mo) → Enterprise. Annual 20% discount. A/B variant pricing for Pro tier. Coming-soon soft-launch mode.",
+          "impact": "high"
+        },
+        {
+          "id": "MON-S2",
+          "title": "Redis-locked subscription mutations",
+          "detail": "BillingService wraps all Stripe operations in Redis locks (35s timeout) + DB transactions. Prevents concurrent race conditions on create, swap, cancel, resume, quantity update.",
+          "impact": "high"
+        },
+        {
+          "id": "MON-S3",
+          "title": "Comprehensive dunning with 3-stage escalation",
+          "detail": "DunningReminderNotification: gentle → urgency → final notice. PaymentActionRequiredNotification for 3DS. PaymentRecoveredNotification on success. InvoluntaryChurnWinBackNotification 3 days post-cancel. Grace period configurable (7 days default).",
+          "impact": "high"
+        },
+        {
+          "id": "MON-S4",
+          "title": "Retention coupon on cancellation",
+          "detail": "CancelSubscriptionDialog offers 20% off 3 months (configurable RETENTION_COUPON_ID) when user selects cancellation reason. Applied via applyRetentionCoupon() endpoint.",
+          "impact": "medium"
+        },
+        {
+          "id": "MON-S5",
+          "title": "Trial-to-paid conversion pipeline",
+          "detail": "14-day configurable trial granting Pro tier access. Urgency alerts (color-coded: info/warning/urgent). Trial expiration cleanup. TRIAL_CONVERTED analytics event. CheckExpiredTrials command.",
+          "impact": "high"
+        },
+        {
+          "id": "MON-S6",
+          "title": "PQL-based upgrade prompts",
+          "detail": "UpgradePrompt.tsx triggers at 50%, 80%, 100% plan limit thresholds. PQL_THRESHOLD events feed into lead scoring. Next-tier calculation automatic.",
+          "impact": "medium"
+        }
+      ],
+      "findings": [
+        {
+          "id": "MON-F1",
+          "severity": "high",
+          "category": "revenue",
+          "title": "No abandoned checkout recovery",
+          "detail": "No mechanism to detect and recover abandoned Stripe Checkout sessions. Users who start checkout but don't complete are lost without follow-up.",
+          "recommendation": "Listen to checkout.session.expired Stripe webhook and send recovery email with direct checkout link.",
+          "effort": "medium"
+        },
+        {
+          "id": "MON-F2",
+          "severity": "medium",
+          "category": "analytics",
+          "title": "No LTV/CAC calculation",
+          "detail": "AdminBillingStatsService tracks MRR, churn rate, trial conversion but not Customer Lifetime Value or Customer Acquisition Cost.",
+          "recommendation": "Calculate LTV = (ARPU * gross_margin) / churn_rate. Track CAC by acquisition_channel from UTM data.",
+          "effort": "medium"
+        },
+        {
+          "id": "MON-F3",
+          "severity": "medium",
+          "category": "analytics",
+          "title": "No churn reason analytics",
+          "detail": "Cancellation dialog collects reason/feedback but no aggregation, trending, or admin dashboard for churn reasons.",
+          "recommendation": "Add admin view aggregating cancellation reasons with trend charts. Feed into product decisions.",
+          "effort": "medium"
+        },
+        {
+          "id": "MON-F4",
+          "severity": "medium",
+          "category": "ux",
+          "title": "No downgrade friction or feature-loss warnings",
+          "detail": "Plan swaps execute immediately without warning users about features they'll lose. No data migration or grace period for downgrade.",
+          "recommendation": "Show feature comparison diff on downgrade. Warn about data that may become inaccessible (e.g., tokens over new limit).",
+          "effort": "medium"
+        },
+        {
+          "id": "MON-F5",
+          "severity": "low",
+          "category": "revenue",
+          "title": "No expansion revenue tracking",
+          "detail": "Seat upgrades and plan swaps logged but no aggregate 'expansion MRR' metric or net revenue retention calculation.",
+          "recommendation": "Add expansion MRR = sum of upgrade revenue - contraction revenue to AdminBillingStatsService.",
+          "effort": "small"
+        },
+        {
+          "id": "MON-F6",
+          "severity": "low",
+          "category": "billing",
+          "title": "No invoice customization",
+          "detail": "Invoices use default Cashier/DomPDF template. No company logo, custom footer, or tax ID display.",
+          "recommendation": "Configure Cashier invoice renderer with branding in config/cashier.php.",
+          "effort": "small"
+        }
+      ]
+    },
+    "retention_and_engagement": {
+      "score": 85,
+      "grade": "A",
+      "summary": "Enterprise-grade retention system with 21 notification classes, 4-email re-engagement sequences, 3-email win-back campaigns, lifecycle automation, health/engagement scoring, and multi-channel delivery. NPS and feedback loops integrated.",
+      "strengths": [
+        {
+          "id": "RET-S1",
+          "title": "21 notification classes with dual-channel delivery",
+          "detail": "Email + database (in-app) channels for all campaigns. HasUnsubscribeLink trait. Conditional routing based on email verification status.",
+          "impact": "high"
+        },
+        {
+          "id": "RET-S2",
+          "title": "4-email re-engagement sequence",
+          "detail": "SendReEngagementEmails command: day 7 gentle check-in, day 14 feedback request, day 21 account status, day 30 value tip. A/B variant for high-engagement users (score >= 60). Stops if user re-engages.",
+          "impact": "high"
+        },
+        {
+          "id": "RET-S3",
+          "title": "3-email win-back campaign",
+          "detail": "SendWinBackEmails command: day 3 feedback + reactivate, day 14 what's new, day 30 final gentle reminder. Deduplication via EmailSendLog.",
+          "impact": "high"
+        },
+        {
+          "id": "RET-S4",
+          "title": "D7 and D30 retention rate tracking",
+          "detail": "CustomerHealthService calculates retention rates: % of users active by day 7 (created 7-10 days ago) and day 30 (created 30-33 days ago).",
+          "impact": "medium"
+        },
+        {
+          "id": "RET-S5",
+          "title": "NPS survey with cooldown and eligibility",
+          "detail": "NpsResponse model: 0-10 score, 90-day cooldown, eligibility checks (verified email, 7+ days old). Categories: Promoter/Passive/Detractor.",
+          "impact": "medium"
+        },
+        {
+          "id": "RET-S6",
+          "title": "Public roadmap with community voting",
+          "detail": "RoadmapEntry model with vote counts. Authenticated users can upvote. Status badges (Planned, In Progress, Completed). Feedback links to roadmap items.",
+          "impact": "medium"
+        },
+        {
+          "id": "RET-S7",
+          "title": "Changelog with version acknowledgment",
+          "detail": "ChangelogController serves JSON changelog. Tracks last-seen version per user via UserSetting. Enables 'what's new' badge.",
+          "impact": "medium"
+        }
+      ],
+      "findings": [
+        {
+          "id": "RET-F1",
+          "severity": "medium",
+          "category": "engagement",
+          "title": "No cohort-based email segmentation",
+          "detail": "Fixed email sequences without dynamic segmentation by feature adoption, usage patterns, engagement score, or days since signup.",
+          "recommendation": "Add segment-based email variants that personalize content based on engagement score bands and feature adoption state.",
+          "effort": "large"
+        },
+        {
+          "id": "RET-F2",
+          "severity": "low",
+          "category": "engagement",
+          "title": "No gamification or achievement system",
+          "detail": "No badges, points, streaks, or milestone celebrations. Score visualization exists in admin but not user-facing.",
+          "recommendation": "Add lightweight milestone celebrations (first API call, 10th webhook delivery, etc.) as toast notifications.",
+          "effort": "medium"
+        },
+        {
+          "id": "RET-F3",
+          "severity": "low",
+          "category": "engagement",
+          "title": "No proactive at-risk intervention",
+          "detail": "Lifecycle stage tracks AT_RISK but no automated intervention triggers when health score drops below threshold.",
+          "recommendation": "Trigger personalized outreach (email + in-app) when health score drops below 25 for 7+ days.",
+          "effort": "medium"
+        },
+        {
+          "id": "RET-F4",
+          "severity": "info",
+          "category": "engagement",
+          "title": "No Slack notification integration for internal events",
+          "detail": "Events logged to audit logs but no Slack webhook for real-time team alerts on signup, churn, or payment events.",
+          "recommendation": "Add Slack webhook dispatch for high-value events (new paid subscription, churn, payment failure).",
+          "effort": "small"
+        }
+      ]
+    },
+    "content_and_gtm": {
+      "score": 83,
+      "grade": "A-",
+      "summary": "Rich content marketing stack with blog, 9 guides, 8 competitor comparisons, 6 feature pages, changelog, and roadmap. GA4 dual-side analytics with 127+ events. UTM tracking and lead scoring. Missing A/B testing and i18n.",
+      "strengths": [
+        {
+          "id": "GTM-S1",
+          "title": "9 long-form SEO guides covering SaaS topics",
+          "detail": "GuidesController serves guides from 12-25 min read time covering Laravel SaaS, Stripe billing, feature flags, starter kit comparison, build vs buy, 2FA, webhooks, tenancy.",
+          "impact": "high"
+        },
+        {
+          "id": "GTM-S2",
+          "title": "8 competitor comparison pages",
+          "detail": "CompareController: Jetstream, Spark, SaaSyKit, Wave, Shipfast, Supastarter, Larafast, Makerkit. Configurable template pricing from .env.",
+          "impact": "high"
+        },
+        {
+          "id": "GTM-S3",
+          "title": "GA4 server + client analytics with 127+ events",
+          "detail": "AnalyticsGateway: Measurement Protocol with PII sanitization and batch sending. Client-side: cookie consent gating, event queue, retry logic. Events synced between PHP enum and TypeScript.",
+          "impact": "high"
+        },
+        {
+          "id": "GTM-S4",
+          "title": "First-touch UTM attribution pipeline",
+          "detail": "CaptureUtmParameters middleware stores utm_source/medium/campaign/content/term to session. Persisted to user_settings on registration. Emails append UTM params to CTAs.",
+          "impact": "medium"
+        },
+        {
+          "id": "GTM-S5",
+          "title": "Product analytics admin dashboard",
+          "detail": "ProductAnalyticsService: signup trend, onboarding funnel with conversion rates, activation rate, feature adoption top 10, subscription events.",
+          "impact": "medium"
+        },
+        {
+          "id": "GTM-S6",
+          "title": "Markdown blog with frontmatter and caching",
+          "detail": "BlogController parses /resources/content/blog/*.md with YAML frontmatter. 1-hour index cache. Blog posts include BlogPosting JSON-LD.",
+          "impact": "medium"
+        }
+      ],
+      "findings": [
+        {
+          "id": "GTM-F1",
+          "severity": "medium",
+          "category": "experimentation",
+          "title": "No A/B testing infrastructure",
+          "detail": "No experiment framework for testing onboarding flows, email subject lines, pricing page variants, or CTA copy. Only a single A/B pricing variant in config/plans.php.",
+          "recommendation": "Implement lightweight experiment assignment (user_id % N) with event tracking to measure conversion by variant.",
+          "effort": "large"
+        },
+        {
+          "id": "GTM-F2",
+          "severity": "low",
+          "category": "content",
+          "title": "Only 3 blog posts published",
+          "detail": "Blog infrastructure is solid but content volume is minimal (3 posts). Guides (9) are more developed.",
+          "recommendation": "Prioritize publishing 2-4 blog posts per month targeting long-tail keywords from guide topics.",
+          "effort": "ongoing"
+        },
+        {
+          "id": "GTM-F3",
+          "severity": "low",
+          "category": "i18n",
+          "title": "No multi-language content support",
+          "detail": "All marketing content is English-only. No i18n framework integrated. formatCurrency supports locale parameter but no translation system.",
+          "recommendation": "Defer i18n until international expansion is planned. Current English-only is appropriate for launch.",
+          "effort": "large"
+        },
+        {
+          "id": "GTM-F4",
+          "severity": "info",
+          "category": "attribution",
+          "title": "No multi-touch attribution",
+          "detail": "First-touch UTM only. No tracking of subsequent touchpoints before conversion.",
+          "recommendation": "Store attribution events array in user_settings for multi-touch analysis.",
+          "effort": "medium"
+        }
+      ]
+    },
+    "virality_and_referrals": {
+      "score": 25,
+      "grade": "D",
+      "summary": "Weakest dimension. No referral system, no invite flow, no social sharing buttons, no affiliate program. Social auth exists for login but not for viral growth. Roadmap voting provides minimal community-driven virality.",
+      "strengths": [
+        {
+          "id": "VIR-S1",
+          "title": "Public roadmap with community voting",
+          "detail": "RoadmapEntry model with authenticated voting. Creates sense of community ownership and gives users a reason to share the roadmap.",
+          "impact": "low"
+        },
+        {
+          "id": "VIR-S2",
+          "title": "Shareable content pages",
+          "detail": "Blog, guides, comparisons, changelog are public pages with OG tags suitable for social sharing.",
+          "impact": "low"
+        },
+        {
+          "id": "VIR-S3",
+          "title": "Social auth infrastructure",
+          "detail": "SocialAuthService supports Google, GitHub, Facebook, Discord. OAuth framework could be extended for share/invite flows.",
+          "impact": "low"
+        }
+      ],
+      "findings": [
+        {
+          "id": "VIR-F1",
+          "severity": "high",
+          "category": "growth",
+          "title": "No referral or invite system",
+          "detail": "No referral codes, invite links, or friend-get-friend mechanics. No infrastructure for tracking referral attribution.",
+          "recommendation": "Implement referral system: unique referral code per user, 2-sided incentive (referrer gets credit, referee gets discount), tracking via user_settings + referral_conversions table.",
+          "effort": "large"
+        },
+        {
+          "id": "VIR-F2",
+          "severity": "medium",
+          "category": "growth",
+          "title": "No social sharing buttons",
+          "detail": "Content pages have OG tags but no share buttons for Twitter, LinkedIn, or copy-link on blog, guides, or changelog.",
+          "recommendation": "Add lightweight share component to blog posts, guides, and comparison pages.",
+          "effort": "small"
+        },
+        {
+          "id": "VIR-F3",
+          "severity": "medium",
+          "category": "growth",
+          "title": "No team invite flow",
+          "detail": "Per-seat billing exists but no mechanism for existing team members to invite colleagues. Seat addition is admin-only via quantity update.",
+          "recommendation": "Build team invite flow: generate invite link → email invitation → accept/join → auto-assign seat.",
+          "effort": "large"
+        },
+        {
+          "id": "VIR-F4",
+          "severity": "low",
+          "category": "growth",
+          "title": "No affiliate or partner program",
+          "detail": "No affiliate tracking, commission management, or partner portal.",
+          "recommendation": "Defer until post-PMF. Consider third-party affiliate platform (Rewardful, PartnerStack) over custom build.",
+          "effort": "large"
+        }
+      ]
+    },
+    "technical_growth_infrastructure": {
+      "score": 72,
+      "grade": "B",
+      "summary": "Strong security headers, rate limiting, error tracking, and health monitoring. Code splitting and lazy loading well-implemented. Missing PWA support, image optimization pipeline, and frontend error tracking.",
+      "strengths": [
+        {
+          "id": "TECH-S1",
+          "title": "Comprehensive security headers and CSP",
+          "detail": "SecurityHeaders middleware: nosniff, DENY framing, strict referrer, permissions policy. Nonce-based CSP with report-only mode. HSTS with optional preload.",
+          "impact": "high"
+        },
+        {
+          "id": "TECH-S2",
+          "title": "Granular rate limiting (80+ throttle configs)",
+          "detail": "Per-endpoint throttling: auth 3-10/min, contact 3-5/min, API 20-120/min. Login brute-force protection. RateLimitHeaders middleware for API clients.",
+          "impact": "high"
+        },
+        {
+          "id": "TECH-S3",
+          "title": "Sentry + structured logging with request tracing",
+          "detail": "Sentry PHP SDK with breadcrumbs, trace sampling, profiling. RequestIdMiddleware generates UUID shared with logging + Sentry scope.",
+          "impact": "high"
+        },
+        {
+          "id": "TECH-S4",
+          "title": "Multi-check health endpoint",
+          "detail": "HealthCheckService: DB, cache, queue size, disk usage checks with configurable thresholds. Bearer token + IP allowlist auth. 5s cache TTL.",
+          "impact": "medium"
+        },
+        {
+          "id": "TECH-S5",
+          "title": "Sophisticated code splitting",
+          "detail": "vite.config.ts: manual vendor chunks (React core, Radix UI, charting, icons). Lazy loading via import.meta.glob. Bundle analyzer integration.",
+          "impact": "medium"
+        },
+        {
+          "id": "TECH-S6",
+          "title": "Lazy loading prevention in production",
+          "detail": "Model::preventLazyLoading() enforced in production. Catches N+1 queries before they reach users.",
+          "impact": "medium"
+        }
+      ],
+      "findings": [
+        {
+          "id": "TECH-F1",
+          "severity": "medium",
+          "category": "pwa",
+          "title": "No PWA support",
+          "detail": "No service worker, no web app manifest, no offline fallback, no install prompt, no push notifications. Zero PWA infrastructure.",
+          "recommendation": "Add basic manifest.json and service worker for offline fallback page and asset caching. Defer push notifications.",
+          "effort": "medium"
+        },
+        {
+          "id": "TECH-F2",
+          "severity": "medium",
+          "category": "monitoring",
+          "title": "No frontend error tracking",
+          "detail": "VITE_SENTRY_DSN env var exists but Sentry is not initialized in React app. Frontend errors are invisible.",
+          "recommendation": "Initialize Sentry browser SDK in resources/js/app.tsx with error boundary integration.",
+          "effort": "small"
+        },
+        {
+          "id": "TECH-F3",
+          "severity": "low",
+          "category": "performance",
+          "title": "No image optimization pipeline",
+          "detail": "No WebP/AVIF generation, no responsive images, no image CDN. Marketing page images served as-is.",
+          "recommendation": "Add vite-imagetools or sharp-based build step for automatic WebP conversion and responsive variants.",
+          "effort": "medium"
+        },
+        {
+          "id": "TECH-F4",
+          "severity": "low",
+          "category": "email",
+          "title": "No email deliverability setup guidance",
+          "detail": "Multiple mailers configured (Postmark, Resend, SES) but no SPF/DKIM/DMARC documentation, no bounce handling, no complaint webhook handlers.",
+          "recommendation": "Document DNS records (SPF, DKIM, DMARC) in deployment guide. Add SES bounce/complaint webhook handlers if using SES.",
+          "effort": "medium"
+        },
+        {
+          "id": "TECH-F5",
+          "severity": "low",
+          "category": "accessibility",
+          "title": "No automated accessibility testing",
+          "detail": "Radix UI provides solid a11y foundation but no jest-axe, axe-core, or pa11y testing to catch regressions.",
+          "recommendation": "Add jest-axe assertions to component tests for key pages (pricing, dashboard, onboarding).",
+          "effort": "small"
+        }
+      ]
+    },
+    "expansion_and_self_serve": {
+      "score": 55,
+      "grade": "C+",
+      "summary": "Strong single-user billing and admin panel. Per-seat pricing configured for team tiers. Critical gap: no team/organization model, no member management, no shared workspace. Blocks B2B expansion revenue.",
+      "strengths": [
+        {
+          "id": "EXP-S1",
+          "title": "Comprehensive admin panel (20+ controllers)",
+          "detail": "User management with impersonation, billing analytics, token/webhook monitoring, failed jobs, audit logs, NPS, feedback, roadmap, feature flags, health checks, data export.",
+          "impact": "high"
+        },
+        {
+          "id": "EXP-S2",
+          "title": "Per-seat billing with quantity management",
+          "detail": "Team tiers (pro_team: 2-4 seats, team: 2-50 seats) with updateQuantity() method. Min/max seat validation.",
+          "impact": "medium"
+        },
+        {
+          "id": "EXP-S3",
+          "title": "Developer platform (API tokens + webhooks)",
+          "detail": "Sanctum token management with plan-based limits. Outgoing webhooks with HMAC signing, delivery tracking. Scribe API docs (feature-gated).",
+          "impact": "medium"
+        },
+        {
+          "id": "EXP-S4",
+          "title": "Feature flag admin with per-user overrides",
+          "detail": "FeatureFlagService resolves per-user > global > config. Admin UI for runtime flag management with reason + changed_by tracking.",
+          "impact": "medium"
+        }
+      ],
+      "findings": [
+        {
+          "id": "EXP-F1",
+          "severity": "critical",
+          "category": "expansion",
+          "title": "No team/organization model",
+          "detail": "Per-seat pricing is configured but no Team/Organization model, no member management, no shared workspace, no team roles (owner/admin/member). Config/plans.php mentions 'team member management' and 'shared projects with role-based access' as features but code doesn't implement them.",
+          "recommendation": "Build team infrastructure: teams table, team_user pivot with role, team invitation system, team-scoped resources. This is prerequisite for B2B growth.",
+          "effort": "large"
+        },
+        {
+          "id": "EXP-F2",
+          "severity": "high",
+          "category": "expansion",
+          "title": "No team invite or member management flow",
+          "detail": "Seat upgrades happen via quantity update but no mechanism for existing members to invite colleagues or manage team membership.",
+          "recommendation": "Build: invite link generation → email invitation → accept/join flow → auto-assign seat → team settings page.",
+          "effort": "large"
+        },
+        {
+          "id": "EXP-F3",
+          "severity": "medium",
+          "category": "expansion",
+          "title": "No usage-based or add-on revenue",
+          "detail": "Only flat-rate and per-seat pricing. No metered billing, overage charges, or purchasable add-ons.",
+          "recommendation": "Evaluate if API call metering or storage-based pricing could drive expansion. Stripe supports metered billing via subscription items.",
+          "effort": "large"
+        },
+        {
+          "id": "EXP-F4",
+          "severity": "medium",
+          "category": "security",
+          "title": "No SSO/SAML for enterprise tier",
+          "detail": "Enterprise tier lists SSO as a feature but no implementation exists. Social auth is not enterprise SSO.",
+          "recommendation": "Implement SAML SSO via laravel-saml2 or similar package for enterprise customers.",
+          "effort": "large"
+        },
+        {
+          "id": "EXP-F5",
+          "severity": "low",
+          "category": "developer_experience",
+          "title": "No API key rotation mechanism",
+          "detail": "Sanctum tokens can be created and revoked but no automatic rotation, expiry warnings, or key regeneration UI.",
+          "recommendation": "Add token expiry display and 'regenerate' button that creates new token + revokes old one atomically.",
+          "effort": "small"
+        }
+      ]
+    }
+  },
+  "cross_cutting_findings": [
+    {
+      "id": "CC-1",
+      "severity": "critical",
+      "title": "Team features advertised but not implemented",
+      "detail": "Plan configuration and pricing page reference team member management, shared projects, and role-based access. Database has per-seat billing. But no Team model, no member management, no shared resources exist in code. This is misleading to customers and blocks B2B expansion.",
+      "dimensions_affected": ["expansion_and_self_serve", "conversion_and_monetization", "virality_and_referrals"],
+      "recommendation": "Either implement team features or remove references from plan descriptions to avoid false advertising."
+    },
+    {
+      "id": "CC-2",
+      "severity": "high",
+      "title": "No referral loop to amplify paid growth",
+      "detail": "Strong acquisition (content, SEO) and monetization but no viral coefficient. Paid users have no mechanism to bring in new users organically.",
+      "dimensions_affected": ["virality_and_referrals", "retention_and_engagement", "content_and_gtm"],
+      "recommendation": "Implement 2-sided referral system as highest-ROI growth investment after team features."
+    },
+    {
+      "id": "CC-3",
+      "severity": "medium",
+      "title": "Analytics rich but lacks experiment framework",
+      "detail": "127+ events tracked with GA4 dual-side, lead scoring, health scoring, lifecycle tracking. But no way to run controlled experiments to optimize conversion.",
+      "dimensions_affected": ["content_and_gtm", "onboarding_and_activation", "conversion_and_monetization"],
+      "recommendation": "Build lightweight experiment framework using user_id hash for assignment. Track variant in analytics events."
+    },
+    {
+      "id": "CC-4",
+      "severity": "medium",
+      "title": "Frontend monitoring blind spot",
+      "detail": "Backend has Sentry + structured logging + request tracing. Frontend has VITE_SENTRY_DSN configured but not initialized. JavaScript errors invisible to operations.",
+      "dimensions_affected": ["technical_growth_infrastructure", "retention_and_engagement"],
+      "recommendation": "Initialize Sentry browser SDK in app.tsx. Add error boundary with user-friendly fallback."
+    }
+  ],
+  "priority_roadmap": [
+    {
+      "priority": 1,
+      "title": "Implement team/organization infrastructure",
+      "findings": ["EXP-F1", "EXP-F2", "CC-1"],
+      "rationale": "Per-seat billing exists but teams don't. This blocks all B2B expansion revenue and makes team tier pricing misleading.",
+      "effort": "large",
+      "impact": "critical"
+    },
+    {
+      "priority": 2,
+      "title": "Build referral system",
+      "findings": ["VIR-F1", "CC-2"],
+      "rationale": "Highest-ROI growth lever missing. Strong product but zero viral coefficient means linear growth only.",
+      "effort": "large",
+      "impact": "high"
+    },
+    {
+      "priority": 3,
+      "title": "Abandoned checkout recovery",
+      "findings": ["MON-F1"],
+      "rationale": "Direct revenue recovery with minimal effort. Listen to Stripe webhook, send email.",
+      "effort": "medium",
+      "impact": "high"
+    },
+    {
+      "priority": 4,
+      "title": "Frontend error tracking (Sentry browser SDK)",
+      "findings": ["TECH-F2", "CC-4"],
+      "rationale": "Quick win. Config exists, just needs initialization. Eliminates frontend monitoring blind spot.",
+      "effort": "small",
+      "impact": "medium"
+    },
+    {
+      "priority": 5,
+      "title": "Social sharing buttons on content pages",
+      "findings": ["VIR-F2"],
+      "rationale": "Quick win to amplify existing content marketing investment. OG tags already configured.",
+      "effort": "small",
+      "impact": "medium"
+    },
+    {
+      "priority": 6,
+      "title": "A/B testing framework",
+      "findings": ["GTM-F1", "CC-3"],
+      "rationale": "Rich analytics data exists but no experiment framework to optimize conversion. Needed before scaling acquisition spend.",
+      "effort": "large",
+      "impact": "high"
+    },
+    {
+      "priority": 7,
+      "title": "LTV/CAC and churn reason analytics",
+      "findings": ["MON-F2", "MON-F3"],
+      "rationale": "Unit economics visibility needed for sustainable growth. Data already collected, needs aggregation.",
+      "effort": "medium",
+      "impact": "medium"
+    },
+    {
+      "priority": 8,
+      "title": "Guided feature tours for onboarding",
+      "findings": ["ONB-F1"],
+      "rationale": "Improves activation rate. Health scoring infrastructure ready to measure impact.",
+      "effort": "medium",
+      "impact": "medium"
+    },
+    {
+      "priority": 9,
+      "title": "PWA basic support",
+      "findings": ["TECH-F1"],
+      "rationale": "Manifest.json and offline fallback improve mobile experience and enable install prompt.",
+      "effort": "medium",
+      "impact": "low"
+    },
+    {
+      "priority": 10,
+      "title": "Automated accessibility testing",
+      "findings": ["TECH-F5"],
+      "rationale": "Radix UI provides foundation but no regression testing. Quick to add jest-axe to existing test suite.",
+      "effort": "small",
+      "impact": "low"
+    }
+  ],
+  "statistics": {
+    "total_findings": 38,
+    "by_severity": {
+      "critical": 2,
+      "high": 4,
+      "medium": 14,
+      "low": 13,
+      "info": 5
+    },
+    "by_dimension": {
+      "seo_and_discoverability": 5,
+      "onboarding_and_activation": 4,
+      "conversion_and_monetization": 6,
+      "retention_and_engagement": 4,
+      "content_and_gtm": 4,
+      "virality_and_referrals": 4,
+      "technical_growth_infrastructure": 5,
+      "expansion_and_self_serve": 5
+    },
+    "total_strengths": 41,
+    "cross_cutting_findings": 4,
+    "priority_roadmap_items": 10
+  }
+}
