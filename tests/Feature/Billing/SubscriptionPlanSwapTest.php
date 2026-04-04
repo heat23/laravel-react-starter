@@ -223,3 +223,61 @@ it('rejects swap when Stripe coupon validation fails', function () {
 
     $response->assertSessionHasErrors('coupon');
 });
+
+// swap preview tests
+
+it('returns proration preview for subscribed user', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user, ['stripe_price' => 'price_pro_monthly']);
+
+    $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('previewSwapProration')
+        ->once()
+        ->withArgs(fn ($u, $price) => $price === 'price_team_monthly')
+        ->andReturn(['amount_due' => 1500, 'next_billing_date' => '2026-05-01T00:00:00+0000']);
+    app()->instance(BillingService::class, $mock);
+
+    $response = $this->actingAs($user)->getJson('/billing/swap/preview?price_id=price_team_monthly');
+
+    $response->assertOk()
+        ->assertJsonStructure(['amount_due', 'next_billing_date'])
+        ->assertJsonPath('amount_due', 1500);
+});
+
+it('returns 500 when Stripe proration preview fails', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user);
+
+    $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('previewSwapProration')
+        ->once()
+        ->andThrow(new ApiConnectionException('Stripe unavailable'));
+    app()->instance(BillingService::class, $mock);
+
+    $response = $this->actingAs($user)->getJson('/billing/swap/preview?price_id=price_team_monthly');
+
+    $response->assertStatus(500);
+});
+
+it('returns 400 for swap preview when user has no subscription', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+
+    $response = $this->actingAs($user)->getJson('/billing/swap/preview?price_id=price_team_monthly');
+
+    $response->assertStatus(400);
+});
+
+it('returns 422 for swap preview when price_id is missing', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user);
+
+    $response = $this->actingAs($user)->getJson('/billing/swap/preview');
+
+    $response->assertStatus(422);
+});
+
+it('returns 401 for swap preview when unauthenticated', function () {
+    $response = $this->getJson('/billing/swap/preview?price_id=price_team_monthly');
+
+    $response->assertStatus(401);
+});

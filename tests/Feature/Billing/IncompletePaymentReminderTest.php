@@ -98,6 +98,38 @@ it('does not send duplicate reminders within 30 minutes', function () {
     Notification::assertNothingSent();
 });
 
+it('sends urgent reminder for subscriptions at 20 hour mark', function () {
+    Notification::fake();
+
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user, [
+        'stripe_status' => 'incomplete',
+        'created_at' => now()->subHours(20),
+    ]);
+
+    $this->artisan('subscriptions:check-incomplete')
+        ->assertExitCode(0);
+
+    Notification::assertSentTo($user, IncompletePaymentReminder::class, function ($notification) {
+        return $notification->urgent === true && $notification->hoursRemaining === 3;
+    });
+});
+
+it('does not send reminder for subscriptions between 13 and 19 hours old', function () {
+    Notification::fake();
+
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user, [
+        'stripe_status' => 'incomplete',
+        'created_at' => now()->subHours(16),
+    ]);
+
+    $this->artisan('subscriptions:check-incomplete')
+        ->assertExitCode(0);
+
+    Notification::assertNothingSent();
+});
+
 it('skips non-incomplete subscriptions', function () {
     Notification::fake();
 
