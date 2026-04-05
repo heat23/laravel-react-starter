@@ -59,11 +59,14 @@ return [
         'popular' => true,
         'stripe_price_monthly' => env('STRIPE_PRICE_PRO'),
         'stripe_price_annual' => env('STRIPE_PRICE_PRO_ANNUAL'),
+        // A/B test variant Stripe price ID. Must be set alongside PLAN_PRO_PRICE_MONTHLY_VARIANT.
+        // When set, variant-cohort users are charged this price instead of STRIPE_PRICE_PRO.
+        'stripe_price_monthly_variant' => env('STRIPE_PRICE_PRO_VARIANT'),
         'price_monthly' => env('PLAN_PRO_PRICE_MONTHLY', 19),
         // DISPLAY-ONLY: actual charge is determined by the Stripe price object tied to STRIPE_PRICE_PRO_ANNUAL.
         // These MUST be kept in sync whenever pricing changes — update the Stripe price object first, then this default.
         'price_annual' => env('PLAN_PRO_PRICE_ANNUAL', 182), // $182/yr = 20% off ($19 × 12 = $228)
-        // A/B test variant: set PLAN_PRO_PRICE_MONTHLY_VARIANT to test a different price point.
+        // A/B test variant: set PLAN_PRO_PRICE_MONTHLY_VARIANT to test a different display price point.
         // When null, no experiment is active. When set, 50% of users see the variant price.
         'price_monthly_variant' => env('PLAN_PRO_PRICE_MONTHLY_VARIANT'),
         'per_seat' => false,

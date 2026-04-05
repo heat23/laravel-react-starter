@@ -398,3 +398,70 @@ it('dashboard stats include activation_rate_all_time key', function () {
 
     expect($stats)->toHaveKeys(['activation_rate', 'activation_rate_all_time']);
 });
+
+// ─── buildSubscriptionQuery portable-subquery tests (DB-01) ───
+
+it('getFilteredSubscriptions returns subscriptions with first item price (portable subquery)', function () {
+    config(['plans.pro.stripe_price_monthly' => 'price_pro_monthly']);
+
+    $service = app(AdminBillingStatsService::class);
+
+    $user = User::factory()->create(['name' => 'Alice', 'email' => 'alice@example.com']);
+    createSubscription($user, ['stripe_price' => 'price_pro_monthly']);
+
+    $result = $service->getFilteredSubscriptions([]);
+
+    expect($result->total())->toBe(1);
+    $row = $result->items()[0];
+    expect($row['user_name'])->toBe('Alice');
+    expect($row['user_email'])->toBe('alice@example.com');
+    expect($row['stripe_status'])->toBe('active');
+});
+
+it('getFilteredSubscriptions picks only the first item for each subscription', function () {
+    $service = app(AdminBillingStatsService::class);
+
+    $user = User::factory()->create();
+    $sub = createSubscription($user, ['stripe_price' => 'price_pro_monthly']);
+
+    // Add a second item to the subscription
+    $sub->items()->create([
+        'stripe_id' => 'si_second',
+        'stripe_product' => 'prod_second',
+        'stripe_price' => 'price_pro_annual',
+        'quantity' => 1,
+    ]);
+
+    $result = $service->getFilteredSubscriptions([]);
+
+    // Must return exactly one row per subscription, not one per item
+    expect($result->total())->toBe(1);
+});
+
+it('getFilteredSubscriptions returns deleted-user placeholder for soft-deleted owners', function () {
+    $service = app(AdminBillingStatsService::class);
+
+    $user = User::factory()->create();
+    createSubscription($user);
+    $user->forceDelete();
+
+    $result = $service->getFilteredSubscriptions([]);
+
+    expect($result->total())->toBe(1);
+    expect($result->items()[0]['user_name'])->toBe('[Deleted User]');
+    expect($result->items()[0]['user_email'])->toBe('');
+});
+
+it('getFilteredSubscriptions filters by search term on SQLite', function () {
+    $service = app(AdminBillingStatsService::class);
+
+    $match = User::factory()->create(['name' => 'SearchableUser', 'email' => 'find@example.com']);
+    $other = User::factory()->create(['name' => 'OtherUser', 'email' => 'skip@example.com']);
+    createSubscription($match);
+    createSubscription($other);
+
+    $result = $service->getFilteredSubscriptions(['search' => 'Searchable']);
+
+    expect($result->total())->toBe(1);
+    expect($result->items()[0]['user_name'])->toBe('SearchableUser');
+});

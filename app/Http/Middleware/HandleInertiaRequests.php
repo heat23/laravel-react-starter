@@ -34,7 +34,7 @@ class HandleInertiaRequests extends Middleware
      */
     private function getLimitWarnings(User $user): array
     {
-        return cache()->remember("user:{$user->id}:limit_warnings", 60, function () use ($user) {
+        return cache()->remember("user:{$user->id}:limit_warnings", 300, function () use ($user) {
             $planLimitService = app(PlanLimitService::class);
             $warnings = [];
 
@@ -201,7 +201,7 @@ class HandleInertiaRequests extends Middleware
             'notifications_unread_count' => fn () => $features['notifications'] && $user
                 ? cache()->remember(
                     "user:{$user->id}:unread_notif_count",
-                    60,
+                    300,
                     fn () => $user->unreadNotifications()->count()
                 )
                 : 0,

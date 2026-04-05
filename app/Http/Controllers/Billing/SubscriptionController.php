@@ -19,6 +19,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Laravel\Cashier\Cashier;
 use Laravel\Cashier\Exceptions\IncompletePayment;
 use Stripe\Exception\ApiErrorException;
 use Symfony\Component\HttpFoundation\Response;
@@ -128,13 +129,16 @@ class SubscriptionController extends Controller
 
             $tierConfig = config("plans.{$tier}");
             $amount = (float) ($tierConfig['price_monthly'] ?? 0) * $quantity;
+            $isVariantPrice = ($tierConfig['stripe_price_monthly_variant'] ?? null) !== null
+                && $priceId === $tierConfig['stripe_price_monthly_variant'];
 
-            $this->auditService->logProductEvent(AnalyticsEvent::SUBSCRIPTION_CREATED, $user, [
+            $this->auditService->logProductEvent(AnalyticsEvent::SUBSCRIPTION_CREATED, $user, array_filter([
                 'price_id' => $priceId,
                 'tier' => $tier,
                 'quantity' => $quantity,
                 'amount' => $amount,
-            ]);
+                'ab_variant' => $isVariantPrice ? 'pro_monthly_variant' : null,
+            ], fn ($v) => $v !== null));
 
             // Emit TRIAL_CONVERTED if the user was on our local trial when they subscribed.
             // Clear trial_ends_at so CheckExpiredTrials never fires TRIAL_EXPIRED for them.
@@ -284,6 +288,41 @@ class SubscriptionController extends Controller
             }
 
             return back()->with('error', $this->friendlyStripeError($e));
+        }
+    }
+
+    /**
+     * Preview proration cost for a plan swap using Stripe's invoice preview API.
+     * Returns amount_due (in cents) and next_billing_date so the UI can show exact charges.
+     */
+    public function swapPreview(Request $request): JsonResponse
+    {
+        $request->validate(['price_id' => ['required', 'string']]);
+
+        $user = $request->user();
+        $user->loadMissing('subscriptions.items');
+
+        if (! $user->subscribed('default')) {
+            return response()->json(['message' => 'No active subscription.'], 400);
+        }
+
+        $subscription = $user->subscription('default');
+        if (! $subscription->items->first()) {
+            return response()->json(['message' => 'Subscription item not found.'], 400);
+        }
+
+        try {
+            $preview = $this->billingService->previewSwapProration($user, $request->input('price_id'));
+
+            return response()->json($preview);
+        } catch (ApiErrorException $e) {
+            Log::warning('Stripe proration preview failed', [
+                'user_id' => $user->id,
+                'price_id' => $request->input('price_id'),
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json(['message' => 'Unable to fetch proration preview.'], 500);
         }
     }
 

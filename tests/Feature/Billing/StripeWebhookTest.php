@@ -1,7 +1,10 @@
 <?php
 
+use App\Enums\AnalyticsEvent;
+use App\Jobs\DispatchAnalyticsEvent;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
 use Laravel\Cashier\Subscription;
 
@@ -479,4 +482,87 @@ it('does not throw when subscription customer does not exist in the database', f
     ]);
 
     postStripeWebhook($payload)->assertOk();
+});
+
+// ============================================
+// Analytics event dispatch (ANA-002)
+// ============================================
+
+it('dispatches SUBSCRIPTION_CREATED analytics event on customer.subscription.created', function () {
+    Queue::fake();
+
+    $user = User::factory()->create(['stripe_id' => 'cus_ana_created']);
+
+    $payload = createStripeWebhookPayload('customer.subscription.created', [
+        'id' => 'sub_ana_created',
+        'customer' => 'cus_ana_created',
+        'status' => 'active',
+        'items' => ['data' => [['id' => 'si_ana1', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+        'current_period_end' => now()->addMonth()->timestamp,
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === AnalyticsEvent::SUBSCRIPTION_CREATED->value
+            && $job->userId === $user->id;
+    });
+});
+
+it('dispatches SUBSCRIPTION_CANCELED analytics event on customer.subscription.deleted', function () {
+    Queue::fake();
+
+    $user = User::factory()->create(['stripe_id' => 'cus_ana_deleted']);
+    createSubscription($user, ['stripe_id' => 'sub_ana_deleted']);
+
+    $payload = createStripeWebhookPayload('customer.subscription.deleted', [
+        'id' => 'sub_ana_deleted',
+        'customer' => 'cus_ana_deleted',
+        'status' => 'canceled',
+        'items' => ['data' => [['id' => 'si_ana2', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === AnalyticsEvent::SUBSCRIPTION_CANCELED->value
+            && $job->userId === $user->id;
+    });
+});
+
+it('dispatches BILLING_PAYMENT_FAILED analytics event on invoice.payment_failed', function () {
+    Queue::fake();
+
+    $user = User::factory()->create(['stripe_id' => 'cus_ana_failed']);
+
+    $payload = createStripeWebhookPayload('invoice.payment_failed', [
+        'id' => 'in_ana_failed',
+        'customer' => 'cus_ana_failed',
+        'amount_due' => 1900,
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === AnalyticsEvent::BILLING_PAYMENT_FAILED->value
+            && $job->userId === $user->id;
+    });
+});
+
+it('does not dispatch analytics event when stripe customer has no local user', function () {
+    Queue::fake();
+
+    $payload = createStripeWebhookPayload('customer.subscription.created', [
+        'id' => 'sub_ana_no_user',
+        'customer' => 'cus_no_local_user_xyz',
+        'status' => 'active',
+        'items' => ['data' => [['id' => 'si_ana3', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+        'current_period_end' => now()->addMonth()->timestamp,
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    Queue::assertNotPushed(DispatchAnalyticsEvent::class, function ($job) {
+        return $job->eventName === AnalyticsEvent::SUBSCRIPTION_CREATED->value;
+    });
 });

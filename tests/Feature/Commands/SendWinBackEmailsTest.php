@@ -1,11 +1,11 @@
 <?php
 
+use App\Models\EmailSendLog;
 use App\Models\User;
 use App\Models\UserSetting;
 use App\Notifications\WinBackNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -100,13 +100,8 @@ it('does not send duplicate win-back emails', function () {
         'ends_at' => now()->subDays(4),
     ]);
 
-    // Insert a notification record to simulate having already sent win-back email 1
-    $user->notifications()->create([
-        'id' => Str::uuid(),
-        'type' => WinBackNotification::class,
-        'data' => ['type' => 'win_back', 'email_number' => 1, 'actionUrl' => '/pricing'],
-        'read_at' => null,
-    ]);
+    // Use EmailSendLog to simulate having already sent win-back email 1
+    EmailSendLog::record($user->id, 'win_back', 1);
 
     Notification::fake();
 
@@ -114,4 +109,24 @@ it('does not send duplicate win-back emails', function () {
         ->assertSuccessful();
 
     Notification::assertNotSentTo($user, WinBackNotification::class);
+});
+
+it('records win-back email in EmailSendLog after sending', function () {
+    Notification::fake();
+
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+        'stripe_id' => 'cus_winback_log',
+    ]);
+
+    createSubscription($user, [
+        'stripe_status' => 'canceled',
+        'ends_at' => now()->subDays(4),
+    ]);
+
+    $this->artisan('emails:send-win-back')
+        ->assertSuccessful();
+
+    Notification::assertSentTo($user, WinBackNotification::class);
+    expect(EmailSendLog::alreadySent($user->id, 'win_back', 1))->toBeTrue();
 });

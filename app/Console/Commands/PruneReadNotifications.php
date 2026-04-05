@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class PruneReadNotifications extends Command
 {
-    protected $signature = 'prune-read-notifications {--days=30 : Number of days to retain read notifications}';
+    protected $signature = 'prune-read-notifications {--days=60 : Number of days to retain read notifications}';
 
     protected $description = 'Delete read notifications older than the retention period';
 

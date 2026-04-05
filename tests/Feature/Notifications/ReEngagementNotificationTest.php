@@ -63,6 +63,21 @@ it('email 2 CTA links to billing portal for paid users', function () {
     expect($mailMessage->actionUrl)->toBe(route('billing.portal'));
 });
 
+it('email 3 uses generic fallback changelog text when none provided', function () {
+    config(['app.changelog_item' => null]);
+
+    $notification = new ReEngagementNotification(3);
+    $user = User::factory()->create();
+
+    $mailMessage = $notification->toMail($user);
+
+    $body = collect($mailMessage->introLines)->join(' ');
+
+    expect($body)
+        ->not->toContain('smarter activity tracking')
+        ->toContain('recent improvements');
+});
+
 it('includes correct database payload', function () {
     $notification = new ReEngagementNotification(3, isPaidUser: true);
     $user = User::factory()->create();

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\EmailSendLog;
 use App\Models\User;
 use App\Models\UserSetting;
 use App\Notifications\WinBackNotification;
@@ -15,13 +16,6 @@ class SendWinBackEmails extends Command
 
     protected $description = 'Send win-back emails to recently canceled subscribers';
 
-    /** @var array<int, array{days: int, maxDays: int}> */
-    private const EMAIL_SCHEDULE = [
-        1 => ['days' => 3, 'maxDays' => 5],
-        2 => ['days' => 14, 'maxDays' => 17],
-        3 => ['days' => 30, 'maxDays' => 33],
-    ];
-
     public function handle(): int
     {
         if (! config('features.billing.enabled')) {
@@ -32,8 +26,11 @@ class SendWinBackEmails extends Command
 
         $totalSent = 0;
 
-        foreach (self::EMAIL_SCHEDULE as $emailNumber => $schedule) {
-            $sent = $this->sendEmailNumber($emailNumber, $schedule['days'], $schedule['maxDays']);
+        /** @var array<int, array{days: int, max_days: int}> $emailSchedule */
+        $emailSchedule = config('email-sequences.win_back');
+
+        foreach ($emailSchedule as $emailNumber => $schedule) {
+            $sent = $this->sendEmailNumber($emailNumber, $schedule['days'], $schedule['max_days']);
             $totalSent += $sent;
         }
 
@@ -77,6 +74,7 @@ class SendWinBackEmails extends Command
 
             try {
                 $user->notify(new WinBackNotification($emailNumber));
+                EmailSendLog::record($user->id, 'win_back', $emailNumber);
                 $sent++;
 
                 Log::info('Win-back email sent', [
@@ -106,11 +104,6 @@ class SendWinBackEmails extends Command
 
     private function alreadySentEmail(User $user, int $emailNumber): bool
     {
-        return $user->notifications()
-            ->where('type', WinBackNotification::class)
-            ->get()
-            ->contains(function ($notification) use ($emailNumber) {
-                return ($notification->data['email_number'] ?? null) === $emailNumber;
-            });
+        return EmailSendLog::alreadySent($user->id, 'win_back', $emailNumber);
     }
 }

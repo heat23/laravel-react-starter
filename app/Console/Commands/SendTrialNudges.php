@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\AnalyticsEvent;
+use App\Jobs\DispatchAnalyticsEvent;
 use App\Models\EmailSendLog;
 use App\Models\User;
 use App\Models\UserSetting;
@@ -25,9 +27,19 @@ class SendTrialNudges extends Command
         }
 
         $totalSent = 0;
-        $totalSent += $this->sendEmail(1, now()->addDays(6), now()->addDays(8));   // 7 days left
-        $totalSent += $this->sendEmail(2, now()->addDays(2), now()->addDays(4));   // 3 days left
-        $totalSent += $this->sendEmail(3, now()->subDays(2), now());               // just expired
+
+        /** @var array<int, array{window_start: int, window_end: int}> $schedule */
+        $schedule = config('email-sequences.trial_nudge');
+
+        foreach ($schedule as $emailNumber => $window) {
+            $windowStart = $window['window_start'] >= 0
+                ? now()->addDays($window['window_start'])
+                : now()->subDays(abs($window['window_start']));
+            $windowEnd = $window['window_end'] >= 0
+                ? now()->addDays($window['window_end'])
+                : now()->subDays(abs($window['window_end']));
+            $totalSent += $this->sendEmail($emailNumber, $windowStart, $windowEnd);
+        }
 
         $this->info("Sent {$totalSent} trial nudge emails.");
 
@@ -62,6 +74,11 @@ class SendTrialNudges extends Command
             try {
                 $user->notify(new TrialNudgeNotification($emailNumber, $user->trial_ends_at));
                 EmailSendLog::record($user->id, 'trial_nudge', $emailNumber);
+                DispatchAnalyticsEvent::dispatch(
+                    AnalyticsEvent::LIFECYCLE_EMAIL_SENT->value,
+                    ['email_type' => 'trial_nudge', 'email_number' => $emailNumber],
+                    $user->id,
+                );
                 $sent++;
 
                 Log::info('Trial nudge email sent', [

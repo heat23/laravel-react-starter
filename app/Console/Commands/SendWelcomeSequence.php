@@ -15,18 +15,15 @@ class SendWelcomeSequence extends Command
 
     protected $description = 'Send day-1 and day-3 follow-up emails in the welcome sequence (email 1 is sent by the Registered event listener)';
 
-    /** @var array<int, array{days: int, maxDays: int}> */
-    private const EMAIL_SCHEDULE = [
-        2 => ['days' => 1, 'maxDays' => 2],
-        3 => ['days' => 3, 'maxDays' => 5],
-    ];
-
     public function handle(): int
     {
         $totalSent = 0;
 
-        foreach (self::EMAIL_SCHEDULE as $emailNumber => $schedule) {
-            $sent = $this->sendEmailNumber($emailNumber, $schedule['days'], $schedule['maxDays']);
+        /** @var array<int, array{days: int, max_days: int}> $emailSchedule */
+        $emailSchedule = config('email-sequences.welcome_sequence');
+
+        foreach ($emailSchedule as $emailNumber => $schedule) {
+            $sent = $this->sendEmailNumber($emailNumber, $schedule['days'], $schedule['max_days']);
             $totalSent += $sent;
         }
 

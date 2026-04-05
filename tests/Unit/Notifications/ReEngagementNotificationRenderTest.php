@@ -2,9 +2,6 @@
 
 use App\Models\User;
 use App\Notifications\ReEngagementNotification;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-
-uses(RefreshDatabase::class);
 
 it('renders email 1 — gentle check-in', function () {
     $user = User::factory()->create();

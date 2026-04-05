@@ -46,7 +46,7 @@ class LeadScoringService
         return self::SQL_THRESHOLD;
     }
 
-    private function getPqlSignal(int $userId): int
+    protected function getPqlSignal(int $userId): int
     {
         $hasPqlEvent = DB::table('audit_logs')
             ->where('user_id', $userId)

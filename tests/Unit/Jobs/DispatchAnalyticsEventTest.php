@@ -57,7 +57,7 @@ test('job is dispatched to the queue', function () {
     });
 });
 
-test('dispatch() defers execution — AnalyticsGateway::send() is not called synchronously', function () {
+test('dispatch() defers execution — AnalyticsGateway::sendBatch() is not called synchronously', function () {
     Queue::fake();
 
     $gateway = Mockery::spy(AnalyticsGateway::class);
@@ -69,40 +69,40 @@ test('dispatch() defers execution — AnalyticsGateway::send() is not called syn
         return $job->eventName === 'subscription.created'
             && $job->userId === 99;
     });
-    $gateway->shouldNotHaveReceived('send');
+    $gateway->shouldNotHaveReceived('sendBatch');
 });
 
 // ============================================
 // handle() — AnalyticsGateway invocation
 // ============================================
 
-test('handle delegates to AnalyticsGateway with correct arguments', function () {
+test('handle delegates to AnalyticsGateway::sendBatch with correct arguments', function () {
     $gateway = Mockery::mock(AnalyticsGateway::class);
-    $gateway->shouldReceive('send')
+    $gateway->shouldReceive('sendBatch')
         ->once()
-        ->with('billing.subscription_canceled', ['reason' => 'user'], 55);
+        ->with([['name' => 'billing.subscription_canceled', 'params' => ['reason' => 'user']]], 55);
 
     $job = new DispatchAnalyticsEvent('billing.subscription_canceled', ['reason' => 'user'], 55);
     $job->handle($gateway);
 });
 
-test('handle passes empty params array to gateway', function () {
+test('handle passes empty params array to gateway via sendBatch', function () {
     $gateway = Mockery::mock(AnalyticsGateway::class);
-    $gateway->shouldReceive('send')
+    $gateway->shouldReceive('sendBatch')
         ->once()
-        ->with('auth.logout', [], 1);
+        ->with([['name' => 'auth.logout', 'params' => []]], 1);
 
     $job = new DispatchAnalyticsEvent('auth.logout', [], 1);
     $job->handle($gateway);
 });
 
-test('handle passes all params unchanged to gateway', function () {
+test('handle passes all params unchanged to gateway via sendBatch', function () {
     $params = ['plan' => 'pro', 'billing_period' => 'monthly', 'amount' => 1900];
 
     $gateway = Mockery::mock(AnalyticsGateway::class);
-    $gateway->shouldReceive('send')
+    $gateway->shouldReceive('sendBatch')
         ->once()
-        ->with('subscription.created', $params, 12);
+        ->with([['name' => 'subscription.created', 'params' => $params]], 12);
 
     $job = new DispatchAnalyticsEvent('subscription.created', $params, 12);
     $job->handle($gateway);

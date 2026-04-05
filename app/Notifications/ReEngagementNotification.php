@@ -125,7 +125,7 @@ class ReEngagementNotification extends Notification implements ShouldQueue
     {
         $appName = config('app.name');
 
-        $changelogItem = 'smarter activity tracking and faster load times across the board';
+        $changelogItem = config('app.changelog_item') ?? 'recent improvements';
 
         $ctaUrl = $this->dashboardUrl('reengagement_winback', 3);
 

@@ -13,6 +13,8 @@ class AdminToggleAdminRequest extends FormRequest
 
     public function rules(): array
     {
+        // This action accepts no user input. The target user is identified via the route
+        // parameter only. Authorization is enforced exclusively by authorize() above.
         return [];
     }
 }

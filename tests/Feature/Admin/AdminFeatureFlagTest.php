@@ -444,3 +444,52 @@ it('search-users returns empty array when no users match', function () {
     $response->assertStatus(200);
     expect($response->json())->toBe([]);
 });
+
+// super_admin enforcement: regular admins cannot perform mutations
+
+it('regular admin cannot update global feature flag override', function () {
+    $admin = User::factory()->admin()->create(['super_admin' => false]);
+
+    $this->actingAs($admin)
+        ->patch('/admin/feature-flags/billing', ['enabled' => true])
+        ->assertForbidden();
+});
+
+it('regular admin cannot remove global feature flag override', function () {
+    $admin = User::factory()->admin()->create(['super_admin' => false]);
+
+    $this->actingAs($admin)
+        ->delete('/admin/feature-flags/billing')
+        ->assertForbidden();
+});
+
+it('regular admin cannot add user feature flag override', function () {
+    $admin = User::factory()->admin()->create(['super_admin' => false]);
+    $targetUser = User::factory()->create();
+
+    $this->actingAs($admin)
+        ->post('/admin/feature-flags/billing/users', [
+            'user_id' => $targetUser->id,
+            'enabled' => true,
+        ])
+        ->assertForbidden();
+});
+
+it('regular admin cannot remove user feature flag override', function () {
+    $admin = User::factory()->admin()->create(['super_admin' => false]);
+    $targetUser = User::factory()->create();
+
+    FeatureFlagOverride::create(['flag' => 'billing', 'user_id' => $targetUser->id, 'enabled' => true]);
+
+    $this->actingAs($admin)
+        ->delete("/admin/feature-flags/billing/users/{$targetUser->id}")
+        ->assertForbidden();
+});
+
+it('regular admin cannot remove all user feature flag overrides', function () {
+    $admin = User::factory()->admin()->create(['super_admin' => false]);
+
+    $this->actingAs($admin)
+        ->delete('/admin/feature-flags/billing/users')
+        ->assertForbidden();
+});

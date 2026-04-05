@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\AnalyticsEvent;
+use App\Jobs\DispatchAnalyticsEvent;
 use App\Models\EmailSendLog;
 use App\Models\Subscription;
 use App\Models\User;
@@ -15,13 +17,6 @@ class SendDunningReminders extends Command
 
     protected $description = 'Send dunning reminder emails to users with past-due subscriptions';
 
-    /** @var array<int, array{days: int, maxDays: int}> */
-    private const EMAIL_SCHEDULE = [
-        1 => ['days' => 3, 'maxDays' => 5],
-        2 => ['days' => 7, 'maxDays' => 10],
-        3 => ['days' => 12, 'maxDays' => 15],
-    ];
-
     public function handle(): int
     {
         if (! config('features.billing.enabled')) {
@@ -32,8 +27,11 @@ class SendDunningReminders extends Command
 
         $totalSent = 0;
 
-        foreach (self::EMAIL_SCHEDULE as $emailNumber => $schedule) {
-            $sent = $this->sendEmailNumber($emailNumber, $schedule['days'], $schedule['maxDays']);
+        /** @var array<int, array{days: int, max_days: int}> $emailSchedule */
+        $emailSchedule = config('email-sequences.dunning');
+
+        foreach ($emailSchedule as $emailNumber => $schedule) {
+            $sent = $this->sendEmailNumber($emailNumber, $schedule['days'], $schedule['max_days']);
             $totalSent += $sent;
         }
 
@@ -70,6 +68,11 @@ class SendDunningReminders extends Command
             try {
                 $user->notify(new DunningReminderNotification($emailNumber, $planName));
                 EmailSendLog::record($user->id, 'dunning_reminder', $emailNumber);
+                DispatchAnalyticsEvent::dispatch(
+                    AnalyticsEvent::LIFECYCLE_EMAIL_SENT->value,
+                    ['email_type' => 'dunning_reminder', 'email_number' => $emailNumber],
+                    $user->id,
+                );
                 $sent++;
 
                 Log::info('Dunning reminder sent', [

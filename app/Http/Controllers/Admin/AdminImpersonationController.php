@@ -20,6 +20,11 @@ class AdminImpersonationController extends Controller
 
     public function start(Request $request, User $user): RedirectResponse
     {
+        // Defense-in-depth: EnsureIsSuperAdmin middleware enforces this before reaching the controller.
+        if (! $request->user()?->isSuperAdmin()) {
+            abort(403, 'Unauthorized. Super-admin access required.');
+        }
+
         if ($request->session()->has('admin_impersonating_from')) {
             return back()->with('error', 'Already impersonating a user. Stop current impersonation first.');
         }

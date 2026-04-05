@@ -23,20 +23,15 @@ class SendReEngagementEmails extends Command
         parent::__construct();
     }
 
-    /** @var array<int, array{days: int, maxDays: int}> */
-    private const EMAIL_SCHEDULE = [
-        1 => ['days' => 7, 'maxDays' => 9],
-        2 => ['days' => 14, 'maxDays' => 16],
-        3 => ['days' => 21, 'maxDays' => 23],
-        4 => ['days' => 30, 'maxDays' => 35],
-    ];
-
     public function handle(): int
     {
         $totalSent = 0;
 
-        foreach (self::EMAIL_SCHEDULE as $emailNumber => $schedule) {
-            $sent = $this->sendEmailNumber($emailNumber, $schedule['days'], $schedule['maxDays']);
+        /** @var array<int, array{days: int, max_days: int}> $emailSchedule */
+        $emailSchedule = config('email-sequences.re_engagement');
+
+        foreach ($emailSchedule as $emailNumber => $schedule) {
+            $sent = $this->sendEmailNumber($emailNumber, $schedule['days'], $schedule['max_days']);
             $totalSent += $sent;
         }
 

@@ -53,14 +53,14 @@ it('calculates activation rate for recent users', function () {
     ]);
 
     $service = new CustomerHealthService;
-    $rate = $service->getActivationRate();
+    $rate = $service->getEmailVerificationRate();
 
     expect($rate)->toBe(60.0);
 });
 
 it('returns zero activation rate when no users', function () {
     $service = new CustomerHealthService;
-    $rate = $service->getActivationRate();
+    $rate = $service->getEmailVerificationRate();
 
     expect($rate)->toBe(0.0);
 });

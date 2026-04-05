@@ -415,4 +415,86 @@ class UserTest extends TestCase
 
         $this->assertEquals($timestamp->format('Y-m-d H:i:s'), $user->fresh()->last_login_at->format('Y-m-d H:i:s'));
     }
+
+    // ============================================
+    // Two-tier admin role method tests
+    // ============================================
+
+    public function test_is_admin_returns_true_when_is_admin_is_true(): void
+    {
+        $user = User::factory()->admin()->create();
+
+        $this->assertTrue($user->isAdmin());
+    }
+
+    public function test_is_admin_returns_false_when_is_admin_is_false(): void
+    {
+        $user = User::factory()->create(['is_admin' => false]);
+
+        $this->assertFalse($user->isAdmin());
+    }
+
+    public function test_is_super_admin_returns_true_when_super_admin_is_true(): void
+    {
+        $user = User::factory()->superAdmin()->create();
+
+        $this->assertTrue($user->isSuperAdmin());
+    }
+
+    public function test_is_super_admin_returns_false_when_super_admin_is_false(): void
+    {
+        $user = User::factory()->create(['super_admin' => false]);
+
+        $this->assertFalse($user->isSuperAdmin());
+    }
+
+    public function test_is_admin_returns_false_for_user_with_only_super_admin_set(): void
+    {
+        // isAdmin() checks is_admin column specifically; super_admin alone is insufficient
+        $user = User::factory()->create();
+        \DB::table('users')->where('id', $user->id)->update(['super_admin' => true, 'is_admin' => false]);
+        $user->refresh();
+
+        $this->assertFalse($user->isAdmin());
+    }
+
+    // ============================================
+    // Mass assignment protection for admin fields
+    // ============================================
+
+    public function test_is_admin_is_not_mass_assignable(): void
+    {
+        $user = User::factory()->create(['is_admin' => false]);
+
+        // Attempting mass assignment should be silently ignored (guarded field)
+        $user->fill(['is_admin' => true]);
+        $user->save();
+
+        $this->assertFalse($user->fresh()->is_admin);
+    }
+
+    public function test_super_admin_is_not_mass_assignable(): void
+    {
+        $user = User::factory()->create(['super_admin' => false]);
+
+        // Attempting mass assignment should be silently ignored (guarded field)
+        $user->fill(['super_admin' => true]);
+        $user->save();
+
+        $this->assertFalse($user->fresh()->super_admin);
+    }
+
+    public function test_is_admin_not_in_fillable_list(): void
+    {
+        $user = new User;
+
+        $this->assertNotContains('is_admin', $user->getFillable());
+    }
+
+    public function test_super_admin_not_in_fillable_list(): void
+    {
+        $user = new User;
+
+        $this->assertNotContains('super_admin', $user->getFillable());
+    }
 }

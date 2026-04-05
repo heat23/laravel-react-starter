@@ -88,6 +88,9 @@ export const AnalyticsEvents = {
   LIMIT_THRESHOLD_50: 'limit.threshold_50',
   LIMIT_THRESHOLD_80: 'limit.threshold_80',
   LIMIT_THRESHOLD_100: 'limit.threshold_100',
+
+  // Lifecycle
+  LIFECYCLE_EMAIL_SENT: 'lifecycle.email_sent',
 } as const;
 
 /**
@@ -252,6 +255,8 @@ type _EventPropertyMapEntries = {
     resource: string;
     current_value: number;
   };
+  // Server-side only — no client-side properties required
+  [AnalyticsEvents.LIFECYCLE_EMAIL_SENT]: Record<string, never> | undefined;
 };
 
 /**

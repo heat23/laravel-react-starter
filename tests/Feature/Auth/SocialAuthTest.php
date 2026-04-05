@@ -4,6 +4,7 @@ namespace Tests\Feature\Auth;
 
 use App\Models\SocialAccount;
 use App\Models\User;
+use App\Models\UserSetting;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
@@ -227,5 +228,71 @@ class SocialAuthTest extends TestCase
         $response = $this->delete(route('social.disconnect', 'google'));
 
         $response->assertRedirect(route('login'));
+    }
+
+    public function test_utm_data_persisted_to_user_settings_for_new_social_registration(): void
+    {
+        $this->skipIfRoutesNotRegistered();
+
+        if (! class_exists(Socialite::class)) {
+            $this->markTestSkipped('Socialite package not installed.');
+        }
+
+        $socialUser = Mockery::mock(\Laravel\Socialite\Contracts\User::class);
+        $socialUser->shouldReceive('getId')->andReturn('google-new-'.uniqid());
+        $socialUser->shouldReceive('getEmail')->andReturn('newuser@example.com');
+        $socialUser->shouldReceive('getName')->andReturn('New User');
+        $socialUser->shouldReceive('getAvatar')->andReturn(null);
+
+        $driver = Mockery::mock(Provider::class);
+        $driver->shouldReceive('user')->andReturn($socialUser);
+
+        Socialite::shouldReceive('driver')
+            ->with('google')
+            ->andReturn($driver);
+
+        $response = $this->withSession(['utm_data' => [
+            'utm_source' => 'google',
+            'utm_medium' => 'cpc',
+            'utm_campaign' => 'launch',
+        ]])->get(route('social.callback', 'google'));
+
+        $response->assertRedirect();
+
+        $user = User::where('email', 'newuser@example.com')->firstOrFail();
+
+        $this->assertEquals('google', UserSetting::getValue($user->id, 'utm_source'));
+        $this->assertEquals('cpc', UserSetting::getValue($user->id, 'utm_medium'));
+        $this->assertEquals('launch', UserSetting::getValue($user->id, 'utm_campaign'));
+    }
+
+    public function test_utm_data_not_persisted_for_existing_social_login(): void
+    {
+        $this->skipIfRoutesNotRegistered();
+
+        if (! class_exists(Socialite::class)) {
+            $this->markTestSkipped('Socialite package not installed.');
+        }
+
+        $user = User::factory()->create();
+
+        $socialUser = Mockery::mock(\Laravel\Socialite\Contracts\User::class);
+        $socialUser->shouldReceive('getId')->andReturn('google-existing-'.uniqid());
+        $socialUser->shouldReceive('getEmail')->andReturn($user->email);
+        $socialUser->shouldReceive('getName')->andReturn($user->name);
+        $socialUser->shouldReceive('getAvatar')->andReturn(null);
+
+        $driver = Mockery::mock(Provider::class);
+        $driver->shouldReceive('user')->andReturn($socialUser);
+
+        Socialite::shouldReceive('driver')
+            ->with('google')
+            ->andReturn($driver);
+
+        $this->withSession(['utm_data' => ['utm_source' => 'twitter']])
+            ->get(route('social.callback', 'google'));
+
+        // Existing users should not have UTM overwritten
+        $this->assertNull(UserSetting::getValue($user->id, 'utm_source'));
     }
 }

@@ -74,13 +74,15 @@ class ProductAnalyticsService
     }
 
     /**
-     * Activation rate: % of users who have completed onboarding.
+     * Onboarding completion rate: % of users who have completed onboarding.
      * Reads from user_settings table where key = onboarding_completed.
+     * Distinct from CustomerHealthService::getEmailVerificationRate() which measures
+     * email verification within 7 days of signup.
      */
-    public function getActivationRate(): array
+    public function getOnboardingCompletionRate(): array
     {
         return Cache::remember(
-            'admin:product_analytics:activation_rate',
+            AdminCacheKey::PRODUCT_ANALYTICS_ONBOARDING_COMPLETION->value,
             AdminCacheKey::DEFAULT_TTL,
             function () {
                 $totalUsers = User::count();

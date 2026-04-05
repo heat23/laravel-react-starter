@@ -36,9 +36,23 @@ class PricingController extends Controller
             $priceMonthly = $tierConfig['price_monthly'] ?? null;
             $priceAnnual = $tierConfig['price_annual'] ?? null;
 
-            // Apply A/B variant price for Pro tier when variant is configured and visitor is in cohort
-            if ($tierKey === 'pro' && $isVariantCohort && isset($tierConfig['price_monthly_variant'])) {
-                $priceMonthly = $tierConfig['price_monthly_variant'];
+            // Apply A/B variant prices for Pro tier when variant is configured and visitor is in cohort.
+            // Both the display price and the Stripe price ID must swap atomically — never show a variant
+            // display price while billing at the control Stripe price ID, or vice versa.
+            if ($tierKey === 'pro' && $isVariantCohort) {
+                // Monthly variant: only swap when BOTH the display price and the Stripe price ID are set.
+                if (! empty($tierConfig['stripe_price_monthly_variant']) && isset($tierConfig['price_monthly_variant'])) {
+                    $priceMonthly = $tierConfig['price_monthly_variant'];
+                    $stripeMonthlyPriceId = $tierConfig['stripe_price_monthly_variant'];
+                }
+
+                // Annual variant: only swap when BOTH the display price and the Stripe price ID are set.
+                // If stripe_price_annual_variant is absent, annual billing stays at the control price and
+                // annual display price is unchanged — no partial swap occurs.
+                if (! empty($tierConfig['stripe_price_annual_variant']) && isset($tierConfig['price_annual_variant'])) {
+                    $priceAnnual = $tierConfig['price_annual_variant'];
+                    $stripeAnnualPriceId = $tierConfig['stripe_price_annual_variant'];
+                }
             }
 
             // Enterprise self-serve: when a Stripe price is configured but no price_monthly

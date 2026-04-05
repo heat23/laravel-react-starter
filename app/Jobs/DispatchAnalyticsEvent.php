@@ -29,7 +29,10 @@ class DispatchAnalyticsEvent implements ShouldQueue
 
     public function handle(AnalyticsGateway $gateway): void
     {
-        $gateway->send($this->eventName, $this->params, $this->userId);
+        $gateway->sendBatch(
+            [['name' => $this->eventName, 'params' => $this->params]],
+            $this->userId,
+        );
     }
 
     public function failed(\Throwable $e): void

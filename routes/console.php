@@ -11,7 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('audit:prune --days=90')->daily()->onOneServer();
 Schedule::command('sanctum:prune-expired')->daily()->onOneServer();
 Schedule::command('webhooks:prune-stale')->daily()->onOneServer();
-Schedule::command('prune-read-notifications')->daily()->onOneServer();
+Schedule::command('prune-read-notifications --days=30')->daily()->onOneServer();
 
 // Lifecycle email sequences
 Schedule::command('emails:send-welcome-sequence')->dailyAt('09:00');

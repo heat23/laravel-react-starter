@@ -20,7 +20,7 @@ class CreateTokenRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'abilities' => 'array|max:10',
+            'abilities' => 'array|min:1|max:10',
             'abilities.*' => ['string', Rule::in(['read', 'write', 'delete'])],
             'expires_at' => 'nullable|date|after:now|before:'.now()->addYear()->format('Y-m-d'),
         ];
@@ -33,6 +33,7 @@ class CreateTokenRequest extends FormRequest
     {
         return [
             'abilities.*.in' => 'Invalid permission. Allowed values: read, write, delete.',
+            'abilities.min' => 'At least one permission must be specified.',
             'abilities.max' => 'You can assign up to 10 permissions per token.',
             'name.required' => 'Please provide a name for this token.',
             'expires_at.after' => 'Expiration date must be in the future.',

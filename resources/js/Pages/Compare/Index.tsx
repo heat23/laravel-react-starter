@@ -6,6 +6,7 @@ import { Head, Link } from '@inertiajs/react';
 
 import { Logo, TextLogo } from '@/Components/branding/Logo';
 import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
+import { JsonLd } from '@/Components/seo/JsonLd';
 import { Button } from '@/Components/ui/button';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
@@ -175,28 +176,73 @@ const criteria = [
   },
 ];
 
-export default function CompareIndex({ title, metaDescription, appUrl, breadcrumbs }: CompareIndexProps) {
+export default function CompareIndex({
+  title,
+  metaDescription,
+  appUrl,
+  breadcrumbs,
+}: CompareIndexProps) {
   const { track } = useAnalytics();
 
   useEffect(() => {
     track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'compare-index' });
   }, [track]);
 
-  const itemListSchema = JSON.stringify({
+  const itemListSchema = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: 'Laravel SaaS Starter Kit Comparisons',
     itemListElement: [
-      { '@type': 'ListItem', position: 1, url: `${appUrl}/compare/larafast`, name: 'Laravel React Starter vs Larafast' },
-      { '@type': 'ListItem', position: 2, url: `${appUrl}/compare/saasykit`, name: 'Laravel React Starter vs SaaSyKit' },
-      { '@type': 'ListItem', position: 3, url: `${appUrl}/compare/wave`, name: 'Laravel React Starter vs Wave' },
-      { '@type': 'ListItem', position: 4, url: `${appUrl}/compare/laravel-spark`, name: 'Laravel React Starter vs Laravel Spark' },
-      { '@type': 'ListItem', position: 5, url: `${appUrl}/compare/laravel-jetstream`, name: 'Laravel React Starter vs Laravel Jetstream' },
-      { '@type': 'ListItem', position: 6, url: `${appUrl}/compare/shipfast`, name: 'Laravel React Starter vs ShipFast' },
-      { '@type': 'ListItem', position: 7, url: `${appUrl}/compare/supastarter`, name: 'Laravel React Starter vs SupaStarter' },
-      { '@type': 'ListItem', position: 8, url: `${appUrl}/compare/makerkit`, name: 'Laravel React Starter vs MakerKit' },
+      {
+        '@type': 'ListItem',
+        position: 1,
+        url: `${appUrl}/compare/larafast`,
+        name: 'Laravel React Starter vs Larafast',
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        url: `${appUrl}/compare/saasykit`,
+        name: 'Laravel React Starter vs SaaSyKit',
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        url: `${appUrl}/compare/wave`,
+        name: 'Laravel React Starter vs Wave',
+      },
+      {
+        '@type': 'ListItem',
+        position: 4,
+        url: `${appUrl}/compare/laravel-spark`,
+        name: 'Laravel React Starter vs Laravel Spark',
+      },
+      {
+        '@type': 'ListItem',
+        position: 5,
+        url: `${appUrl}/compare/laravel-jetstream`,
+        name: 'Laravel React Starter vs Laravel Jetstream',
+      },
+      {
+        '@type': 'ListItem',
+        position: 6,
+        url: `${appUrl}/compare/shipfast`,
+        name: 'Laravel React Starter vs ShipFast',
+      },
+      {
+        '@type': 'ListItem',
+        position: 7,
+        url: `${appUrl}/compare/supastarter`,
+        name: 'Laravel React Starter vs SupaStarter',
+      },
+      {
+        '@type': 'ListItem',
+        position: 8,
+        url: `${appUrl}/compare/makerkit`,
+        name: 'Laravel React Starter vs MakerKit',
+      },
     ],
-  });
+  };
 
   return (
     <>
@@ -210,10 +256,7 @@ export default function CompareIndex({ title, metaDescription, appUrl, breadcrum
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={metaDescription} />
         {breadcrumbs && <BreadcrumbJsonLd breadcrumbs={breadcrumbs} />}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: itemListSchema.replace(/<\/script>/gi, '<\\/script>') }}
-        />
+        <JsonLd data={itemListSchema} />
       </Head>
 
       <div className="min-h-screen bg-background">
@@ -224,10 +267,16 @@ export default function CompareIndex({ title, metaDescription, appUrl, breadcrum
             <TextLogo className="text-xl font-bold" />
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link
+              href="/pricing"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
               Pricing
             </Link>
-            <Link href="/guides/saas-starter-kit-comparison-2026" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <Link
+              href="/guides/saas-starter-kit-comparison-2026"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
               Buyer's Guide
             </Link>
           </div>
@@ -240,8 +289,9 @@ export default function CompareIndex({ title, metaDescription, appUrl, breadcrum
               Laravel SaaS Starter Kit Comparison 2026
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-              Nine Laravel (and Laravel-adjacent) SaaS boilerplates, compared side by side.
-              Find the right starting point for your stack, budget, and production requirements.
+              Nine Laravel (and Laravel-adjacent) SaaS boilerplates, compared
+              side by side. Find the right starting point for your stack,
+              budget, and production requirements.
             </p>
             <div className="mt-6">
               <Link
@@ -255,14 +305,18 @@ export default function CompareIndex({ title, metaDescription, appUrl, breadcrum
           </header>
 
           {/* Criteria */}
-          <section className="mx-auto max-w-4xl" aria-labelledby="criteria-heading">
+          <section
+            className="mx-auto max-w-4xl"
+            aria-labelledby="criteria-heading"
+          >
             <h2 id="criteria-heading" className="text-2xl font-bold mb-2">
               What Separates Good SaaS Starter Kits from Bare Scaffolding
             </h2>
             <p className="text-muted-foreground mb-8">
-              Most &ldquo;starter kits&rdquo; are scaffolding — they give you auth and a layout,
-              then leave the hard parts to you. A production-ready SaaS kit ships all of the
-              following out of the box:
+              Most &ldquo;starter kits&rdquo; are scaffolding — they give you
+              auth and a layout, then leave the hard parts to you. A
+              production-ready SaaS kit ships all of the following out of the
+              box:
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               {criteria.map((item) => (
@@ -270,21 +324,30 @@ export default function CompareIndex({ title, metaDescription, appUrl, breadcrum
                   key={item.title}
                   className="flex gap-3 rounded-xl border border-border bg-card p-4"
                 >
-                  <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden="true" />
+                  <CheckCircle2
+                    className="mt-0.5 h-5 w-5 shrink-0 text-success"
+                    aria-hidden="true"
+                  />
                   <div>
                     <p className="font-semibold text-sm">{item.title}</p>
-                    <p className="text-sm text-muted-foreground mt-0.5">{item.description}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {item.description}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
             <p className="mt-6 text-sm text-muted-foreground">
-              Laravel React Starter hits all eight. Most competitors hit two to four.
+              Laravel React Starter hits all eight. Most competitors hit two to
+              four.
             </p>
           </section>
 
           {/* Comparison Cards */}
-          <section className="mx-auto mt-20 max-w-5xl" aria-labelledby="cards-heading">
+          <section
+            className="mx-auto mt-20 max-w-5xl"
+            aria-labelledby="cards-heading"
+          >
             <h2 id="cards-heading" className="text-2xl font-bold mb-8">
               Side-by-Side Comparison Cards
             </h2>
@@ -304,7 +367,9 @@ export default function CompareIndex({ title, metaDescription, appUrl, breadcrum
                     </div>
                   )}
                   <h3 className="font-semibold text-base">{kit.name}</h3>
-                  <p className="mt-1 text-xs text-muted-foreground">{kit.stack}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {kit.stack}
+                  </p>
 
                   <dl className="mt-4 space-y-2 flex-1 text-sm">
                     <div className="flex justify-between gap-2">
@@ -315,25 +380,41 @@ export default function CompareIndex({ title, metaDescription, appUrl, breadcrum
                       <dt className="text-muted-foreground">Billing</dt>
                       <dd>
                         {kit.billing === true ? (
-                          <CheckCircle2 className="h-4 w-4 text-success" aria-label="Yes" />
+                          <CheckCircle2
+                            className="h-4 w-4 text-success"
+                            aria-label="Yes"
+                          />
                         ) : kit.billing === false ? (
-                          <XCircle className="h-4 w-4 text-destructive" aria-label="No" />
+                          <XCircle
+                            className="h-4 w-4 text-destructive"
+                            aria-label="No"
+                          />
                         ) : (
-                          <span className="text-muted-foreground text-xs">{kit.billing}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {kit.billing}
+                          </span>
                         )}
                       </dd>
                     </div>
                     <div className="flex justify-between gap-2">
                       <dt className="text-muted-foreground">Tests</dt>
-                      <dd className="font-medium text-right text-xs">{kit.tests}</dd>
+                      <dd className="font-medium text-right text-xs">
+                        {kit.tests}
+                      </dd>
                     </div>
                     <div className="flex justify-between gap-2">
                       <dt className="text-muted-foreground">Open source</dt>
                       <dd>
                         {kit.openSource ? (
-                          <CheckCircle2 className="h-4 w-4 text-success" aria-label="Yes" />
+                          <CheckCircle2
+                            className="h-4 w-4 text-success"
+                            aria-label="Yes"
+                          />
                         ) : (
-                          <XCircle className="h-4 w-4 text-muted-foreground" aria-label="No" />
+                          <XCircle
+                            className="h-4 w-4 text-muted-foreground"
+                            aria-label="No"
+                          />
                         )}
                       </dd>
                     </div>
@@ -355,12 +436,15 @@ export default function CompareIndex({ title, metaDescription, appUrl, breadcrum
 
           {/* Editorial recommendation */}
           <section className="mx-auto mt-20 max-w-2xl rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-            <h2 className="text-2xl font-bold">Our Top Pick for Laravel Teams</h2>
+            <h2 className="text-2xl font-bold">
+              Our Top Pick for Laravel Teams
+            </h2>
             <p className="mt-4 text-muted-foreground">
-              For teams committed to the Laravel + React + TypeScript stack, Laravel React Starter
-              is the only option that ships production billing, a custom React admin panel, 90+
-              tests, PHPStan static analysis, and 11 feature flags together. Every other kit
-              requires significant additions before it&apos;s genuinely production-ready.
+              For teams committed to the Laravel + React + TypeScript stack,
+              Laravel React Starter is the only option that ships production
+              billing, a custom React admin panel, 90+ tests, PHPStan static
+              analysis, and 11 feature flags together. Every other kit requires
+              significant additions before it&apos;s genuinely production-ready.
             </p>
             <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Button asChild size="lg">
@@ -383,11 +467,22 @@ export default function CompareIndex({ title, metaDescription, appUrl, breadcrum
           <div className="container">
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
               <p className="text-sm text-muted-foreground">
-                &copy; {new Date().getFullYear()} Laravel React Starter. All rights reserved.
+                &copy; {new Date().getFullYear()} Laravel React Starter. All
+                rights reserved.
               </p>
               <nav className="flex items-center gap-4 text-sm text-muted-foreground">
-                <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-                <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+                <Link
+                  href="/terms"
+                  className="hover:text-foreground transition-colors"
+                >
+                  Terms
+                </Link>
+                <Link
+                  href="/privacy"
+                  className="hover:text-foreground transition-colors"
+                >
+                  Privacy
+                </Link>
               </nav>
             </div>
           </div>

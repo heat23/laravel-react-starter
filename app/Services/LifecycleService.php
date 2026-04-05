@@ -92,7 +92,11 @@ class LifecycleService
     /**
      * Get median days between stage pairs for last 90 days.
      *
-     * @return array<string, float|null>
+     * Uses true median (not mean) so outliers like a user stuck in trial for
+     * 200 days do not skew the result. Median computed in PHP after fetching
+     * raw per-transition durations to remain cross-DB compatible.
+     *
+     * @return array<string, float>
      */
     public function getStageVelocity(): array
     {
@@ -105,22 +109,33 @@ class LifecycleService
 
             $driver = DB::getDriverName();
             $diffExpr = $driver === 'sqlite'
-                ? "CAST((julianday('now') - julianday(prev.created_at)) AS INTEGER)"
+                ? 'CAST((julianday(curr.created_at) - julianday(prev.created_at)) AS INTEGER)'
                 : 'TIMESTAMPDIFF(DAY, prev.created_at, curr.created_at)';
 
             $rows = DB::select("
-                SELECT curr.from_stage, curr.to_stage, AVG({$diffExpr}) as avg_days
+                SELECT curr.from_stage, curr.to_stage, {$diffExpr} as days
                 FROM user_stage_history curr
                 JOIN user_stage_history prev ON prev.user_id = curr.user_id
                     AND prev.to_stage = curr.from_stage
                 WHERE curr.created_at >= ?
-                GROUP BY curr.from_stage, curr.to_stage
             ", [now()->subDays(90)]);
 
-            $result = [];
+            /** @var array<string, list<float>> $grouped */
+            $grouped = [];
             foreach ($rows as $row) {
                 $key = "{$row->from_stage}_to_{$row->to_stage}";
-                $result[$key] = round((float) $row->avg_days, 1);
+                $grouped[$key][] = (float) $row->days;
+            }
+
+            $result = [];
+            foreach ($grouped as $key => $values) {
+                sort($values);
+                $count = count($values);
+                $mid = (int) floor($count / 2);
+                $median = $count % 2 === 0
+                    ? ($values[$mid - 1] + $values[$mid]) / 2.0
+                    : $values[$mid];
+                $result[$key] = round($median, 1);
             }
 
             return $result;

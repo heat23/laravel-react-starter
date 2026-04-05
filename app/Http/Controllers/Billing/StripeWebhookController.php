@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Enums\AnalyticsEvent;
 use App\Enums\LifecycleStage;
+use App\Jobs\DispatchAnalyticsEvent;
 use App\Models\EmailSendLog;
 use App\Models\Subscription;
 use App\Models\User;
@@ -39,6 +41,14 @@ class StripeWebhookController extends WebhookController
 
         $this->logWebhookEvent('subscription.created', $payload);
         $this->invalidatePlanCache($payload);
+
+        $customerId = $payload['data']['object']['customer'] ?? null;
+        if ($customerId) {
+            $user = User::where('stripe_id', $customerId)->first();
+            if ($user) {
+                $this->dispatchWebhookAnalyticsEvent($user, AnalyticsEvent::SUBSCRIPTION_CREATED);
+            }
+        }
 
         return $response;
     }
@@ -89,12 +99,16 @@ class StripeWebhookController extends WebhookController
         ]);
         $this->invalidatePlanCache($payload);
 
-        // Dispatch win-back notification for involuntary churn (payment failure exhaustion)
-        if ($cancellationReason === 'payment_failed') {
-            $customerId = $payload['data']['object']['customer'] ?? null;
-            if ($customerId) {
-                $user = User::where('stripe_id', $customerId)->first();
-                if ($user && ! EmailSendLog::alreadySent($user->id, 'involuntary_churn_win_back', 1)) {
+        $customerId = $payload['data']['object']['customer'] ?? null;
+        if ($customerId) {
+            $user = User::where('stripe_id', $customerId)->first();
+            if ($user) {
+                $this->dispatchWebhookAnalyticsEvent($user, AnalyticsEvent::SUBSCRIPTION_CANCELED, [
+                    'churn_type' => $churnType,
+                ]);
+
+                // Dispatch win-back notification for involuntary churn (payment failure exhaustion)
+                if ($cancellationReason === 'payment_failed' && ! EmailSendLog::alreadySent($user->id, 'involuntary_churn_win_back', 1)) {
                     $user->notify((new InvoluntaryChurnWinBackNotification)->delay(now()->addDays(3)));
                     EmailSendLog::record($user->id, 'involuntary_churn_win_back', 1);
                 }
@@ -165,6 +179,10 @@ class StripeWebhookController extends WebhookController
                         $subscription->save();
                     }
                 }
+
+                $this->dispatchWebhookAnalyticsEvent($user, AnalyticsEvent::BILLING_PAYMENT_FAILED, [
+                    'invoice_id' => $payload['data']['object']['id'] ?? null,
+                ]);
             }
         }
 
@@ -261,6 +279,21 @@ class StripeWebhookController extends WebhookController
             ], $extraMeta));
         } catch (\Throwable) {
             // Audit logging should never break webhook processing
+        }
+    }
+
+    /**
+     * Dispatch a billing analytics event for a known user, bypassing the
+     * AuditService routing which uses Auth::id() (null in webhook context).
+     *
+     * @param  array<string, mixed>  $params
+     */
+    private function dispatchWebhookAnalyticsEvent(User $user, AnalyticsEvent $event, array $params = []): void
+    {
+        try {
+            DispatchAnalyticsEvent::dispatch($event->value, $params, $user->id);
+        } catch (\Throwable) {
+            // Analytics dispatch should never break webhook processing
         }
     }
 }

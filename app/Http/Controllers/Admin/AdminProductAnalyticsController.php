@@ -14,7 +14,7 @@ class AdminProductAnalyticsController extends Controller
         return Inertia::render('Admin/ProductAnalytics', [
             'signup_trend' => $analytics->getSignupTrend(7),
             'onboarding_funnel' => $analytics->getOnboardingFunnelConversion(),
-            'activation' => $analytics->getActivationRate(),
+            'activation' => $analytics->getOnboardingCompletionRate(),
             'feature_adoption' => $analytics->getFeatureAdoptionByWeek(),
             'subscription_events' => $analytics->getSubscriptionEvents(),
         ]);

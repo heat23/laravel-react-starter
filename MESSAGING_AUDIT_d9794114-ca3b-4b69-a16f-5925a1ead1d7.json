@@ -1,0 +1,812 @@
+{
+  "audit_type": "messaging_qa",
+  "session_id": "d9794114-ca3b-4b69-a16f-5925a1ead1d7",
+  "audit_date": "2026-04-05",
+  "scope": "full",
+  "summary": {
+    "total_findings": 38,
+    "critical": 3,
+    "high": 6,
+    "medium": 11,
+    "low": 10,
+    "info": 8,
+    "overall_health": "FAIR",
+    "verdict": "Messaging infrastructure is architecturally sound with centralized EmailSendLog dedup, queued notifications, and feature-gated scheduling. Three critical issues require immediate attention: OnboardingReminder missing email verification gate, WinBack using fragile notifications-table dedup instead of EmailSendLog, and 6 lifecycle commands lacking test coverage."
+  },
+  "infrastructure_inventory": {
+    "lifecycle_commands": [
+      {
+        "command": "emails:send-welcome-sequence",
+        "class": "SendWelcomeSequence",
+        "file": "app/Console/Commands/SendWelcomeSequence.php",
+        "schedule": "dailyAt('09:00')",
+        "emails_in_sequence": 3,
+        "dedup_mechanism": "EmailSendLog",
+        "opt_out_check": true,
+        "idempotent": true,
+        "has_test": true,
+        "test_file": "tests/Feature/Commands/SendWelcomeSequenceTest.php"
+      },
+      {
+        "command": "emails:send-trial-nudges",
+        "class": "SendTrialNudges",
+        "file": "app/Console/Commands/SendTrialNudges.php",
+        "schedule": "dailyAt('10:00')",
+        "feature_gate": "FEATURE_BILLING",
+        "emails_in_sequence": 3,
+        "dedup_mechanism": "EmailSendLog",
+        "opt_out_check": true,
+        "idempotent": true,
+        "has_test": true,
+        "test_file": "tests/Feature/Commands/SendTrialNudgesTest.php"
+      },
+      {
+        "command": "notifications:send-onboarding",
+        "class": "SendOnboardingReminders",
+        "file": "app/Console/Commands/SendOnboardingReminders.php",
+        "schedule": "dailyAt('11:00')",
+        "emails_in_sequence": 3,
+        "dedup_mechanism": "EmailSendLog",
+        "opt_out_check": true,
+        "idempotent": true,
+        "has_test": false,
+        "test_file": null
+      },
+      {
+        "command": "emails:send-re-engagement",
+        "class": "SendReEngagementEmails",
+        "file": "app/Console/Commands/SendReEngagementEmails.php",
+        "schedule": "weekly()->mondays()->at('09:00')",
+        "emails_in_sequence": 4,
+        "dedup_mechanism": "EmailSendLog",
+        "opt_out_check": true,
+        "idempotent": true,
+        "has_test": true,
+        "test_file": "tests/Feature/Commands/SendReEngagementEmailsTest.php"
+      },
+      {
+        "command": "notifications:send-dunning",
+        "class": "SendDunningReminders",
+        "file": "app/Console/Commands/SendDunningReminders.php",
+        "schedule": "daily()",
+        "feature_gate": "FEATURE_BILLING",
+        "emails_in_sequence": 3,
+        "dedup_mechanism": "EmailSendLog",
+        "opt_out_check": false,
+        "opt_out_note": "Intentional: dunning emails are transactional/billing-critical",
+        "idempotent": true,
+        "has_test": false,
+        "test_file": null
+      },
+      {
+        "command": "emails:send-win-back",
+        "class": "SendWinBackEmails",
+        "file": "app/Console/Commands/SendWinBackEmails.php",
+        "schedule": "dailyAt('10:30')",
+        "feature_gate": "FEATURE_BILLING",
+        "emails_in_sequence": 3,
+        "dedup_mechanism": "notifications_table",
+        "dedup_note": "NON-STANDARD: Uses notifications table query instead of EmailSendLog. Fragile if notifications are pruned.",
+        "opt_out_check": true,
+        "idempotent": false,
+        "idempotent_note": "Notification-based dedup is fragile; could duplicate if notifications pruned by prune-read-notifications command",
+        "has_test": true,
+        "test_file": "tests/Feature/Commands/SendWinBackEmailsTest.php"
+      },
+      {
+        "command": "trial:send-reminders",
+        "class": "SendTrialEndingReminders",
+        "file": "app/Console/Commands/SendTrialEndingReminders.php",
+        "schedule": "REMOVED_FROM_SCHEDULE",
+        "schedule_note": "Removed to prevent double-sends. SendTrialNudges owns all trial windows.",
+        "emails_in_sequence": 1,
+        "dedup_mechanism": "UserSetting",
+        "dedup_note": "NON-STANDARD: Uses UserSetting trial_reminder_sent_at with isToday() check instead of EmailSendLog",
+        "opt_out_check": false,
+        "idempotent": true,
+        "has_test": true,
+        "test_file": "tests/Feature/Commands/SendTrialEndingRemindersTest.php"
+      },
+      {
+        "command": "trials:check-expired",
+        "class": "CheckExpiredTrials",
+        "file": "app/Console/Commands/CheckExpiredTrials.php",
+        "schedule": "dailyAt('06:00')",
+        "feature_gate": "PLANS_TRIAL_ENABLED",
+        "emails_in_sequence": 0,
+        "purpose": "Logs TRIAL_EXPIRED analytics event only",
+        "dedup_mechanism": "AuditLog exclusion query",
+        "idempotent": true,
+        "has_test": false,
+        "test_file": null,
+        "partial_coverage": "tests/Feature/Billing/TrialAnalyticsTest.php"
+      }
+    ],
+    "scoring_commands": [
+      {
+        "command": "users:compute-scores",
+        "class": "ComputeUserScores",
+        "file": "app/Console/Commands/ComputeUserScores.php",
+        "schedule": "dailyAt('02:00')",
+        "purpose": "Compute health_score, engagement_score for all users",
+        "has_test": false
+      },
+      {
+        "command": "emails:qualify-leads",
+        "class": "QualifyLeads",
+        "file": "app/Console/Commands/QualifyLeads.php",
+        "schedule": "dailyAt('07:00')",
+        "purpose": "Lead scoring and MQL/SQL qualification events",
+        "has_test": false
+      }
+    ],
+    "monitoring_commands": [
+      {
+        "command": "admin:health-alert",
+        "class": "AdminHealthAlertCommand",
+        "file": "app/Console/Commands/AdminHealthAlertCommand.php",
+        "schedule": "everyFifteenMinutes()",
+        "feature_gate": "FEATURE_ADMIN",
+        "has_test": true,
+        "test_file": "tests/Feature/Commands/AdminHealthAlertTest.php"
+      },
+      {
+        "command": "subscriptions:check-incomplete",
+        "schedule": "hourly()",
+        "feature_gate": "FEATURE_BILLING",
+        "purpose": "Find failed payments, send reminders at 1h/12h"
+      }
+    ],
+    "pruning_commands": [
+      {
+        "command": "prune-read-notifications",
+        "class": "PruneReadNotifications",
+        "file": "app/Console/Commands/PruneReadNotifications.php",
+        "schedule": "daily()",
+        "default_retention_days": 30,
+        "has_test": false,
+        "warning": "Pruning read notifications breaks WinBack dedup which queries notifications table"
+      },
+      {
+        "command": "audit:prune --days=90",
+        "schedule": "daily()"
+      },
+      {
+        "command": "webhooks:prune-stale",
+        "schedule": "daily()"
+      },
+      {
+        "command": "sanctum:prune-expired",
+        "schedule": "daily()"
+      }
+    ],
+    "notification_classes": {
+      "total": 22,
+      "lifecycle_notifications": [
+        {
+          "class": "WelcomeSequenceNotification",
+          "file": "app/Notifications/WelcomeSequenceNotification.php",
+          "channels": ["database", "mail"],
+          "should_queue": true,
+          "has_unsubscribe": true,
+          "checks_verified_email": true,
+          "email_variants": 3,
+          "subjects": [
+            "Welcome aboard!",
+            "3 things to try first",
+            "Features you might not have found yet"
+          ],
+          "content_quality": "GOOD"
+        },
+        {
+          "class": "TrialNudgeNotification",
+          "file": "app/Notifications/TrialNudgeNotification.php",
+          "channels": ["database", "mail"],
+          "should_queue": true,
+          "has_unsubscribe": true,
+          "checks_verified_email": true,
+          "email_variants": 3,
+          "subjects": [
+            "{daysLeft} days left in your trial",
+            "Dynamic: ends today/tomorrow/{N} days",
+            "Your trial has ended"
+          ],
+          "content_quality": "GOOD"
+        },
+        {
+          "class": "OnboardingReminderNotification",
+          "file": "app/Notifications/OnboardingReminderNotification.php",
+          "channels": ["mail"],
+          "channels_note": "CRITICAL BUG: Only mail channel, no database fallback, no hasVerifiedEmail check",
+          "should_queue": true,
+          "has_unsubscribe": true,
+          "checks_verified_email": false,
+          "email_variants": 3,
+          "content_quality": "GOOD_BUT_DELIVERY_BUG"
+        },
+        {
+          "class": "ReEngagementNotification",
+          "file": "app/Notifications/ReEngagementNotification.php",
+          "channels": ["database", "mail"],
+          "should_queue": true,
+          "has_unsubscribe": true,
+          "checks_verified_email": true,
+          "email_variants": 5,
+          "variant_note": "Score-based branching: high-intent (>=60) vs standard, paid vs free",
+          "content_quality": "GOOD_WITH_ISSUES",
+          "issues": [
+            "Email 3 UTM campaign param says 'reengagement_winback' instead of 'reengagement'",
+            "Hardcoded changelog text in email 3 body"
+          ]
+        },
+        {
+          "class": "DunningReminderNotification",
+          "file": "app/Notifications/DunningReminderNotification.php",
+          "channels": ["database", "mail"],
+          "should_queue": true,
+          "has_unsubscribe": true,
+          "checks_verified_email": true,
+          "email_variants": 3,
+          "escalation": ["gentle_reminder", "pause_warning", "final_cancellation_notice"],
+          "content_quality": "GOOD"
+        },
+        {
+          "class": "WinBackNotification",
+          "file": "app/Notifications/WinBackNotification.php",
+          "channels": ["database", "mail"],
+          "should_queue": true,
+          "has_unsubscribe": true,
+          "checks_verified_email": true,
+          "email_variants": 3,
+          "content_quality": "GOOD"
+        },
+        {
+          "class": "IncompletePaymentReminder",
+          "file": "app/Notifications/IncompletePaymentReminder.php",
+          "channels": ["database", "mail"],
+          "should_queue": true,
+          "has_unsubscribe": true,
+          "checks_verified_email": true,
+          "email_variants": 2,
+          "content_quality": "GOOD"
+        },
+        {
+          "class": "AdminHealthAlertNotification",
+          "file": "app/Notifications/AdminHealthAlertNotification.php",
+          "channels": ["mail"],
+          "should_queue": false,
+          "should_queue_note": "Should implement ShouldQueue to avoid blocking scheduler",
+          "has_unsubscribe": false,
+          "checks_verified_email": true,
+          "content_quality": "ACCEPTABLE"
+        }
+      ],
+      "other_notifications": [
+        "AdminAnnouncementNotification",
+        "ContactNotification",
+        "ExpansionNudgeNotification",
+        "FeedbackReceivedNotification",
+        "InvoluntaryChurnWinBackNotification",
+        "LimitThresholdNotification",
+        "PaymentActionRequiredNotification",
+        "PaymentFailedNotification",
+        "PaymentRecoveredNotification",
+        "RefundProcessedNotification",
+        "SalesInquiryNotification",
+        "TrialEndingNotification",
+        "UpgradeNudgeNotification"
+      ]
+    },
+    "dedup_system": {
+      "primary": {
+        "model": "EmailSendLog",
+        "file": "app/Models/EmailSendLog.php",
+        "table": "email_send_logs",
+        "unique_constraint": ["user_id", "sequence_type", "email_number"],
+        "methods": {
+          "alreadySent": "Static check: returns bool",
+          "record": "Static insert with UniqueConstraintViolationException catch, returns false on duplicate"
+        },
+        "race_condition_safe": true,
+        "used_by": ["SendWelcomeSequence", "SendTrialNudges", "SendOnboardingReminders", "SendReEngagementEmails", "SendDunningReminders"]
+      },
+      "non_standard_mechanisms": [
+        {
+          "command": "SendWinBackEmails",
+          "mechanism": "notifications table query",
+          "risk": "HIGH — notifications pruned after 30 days by prune-read-notifications",
+          "recommendation": "Migrate to EmailSendLog"
+        },
+        {
+          "command": "SendTrialEndingReminders",
+          "mechanism": "UserSetting trial_reminder_sent_at with isToday() check",
+          "risk": "MEDIUM — allows re-send on different day, not email-number-based",
+          "recommendation": "Command removed from schedule, so risk is contained. Migrate if re-enabled."
+        }
+      ]
+    },
+    "opt_out_system": {
+      "mechanism": "UserSetting key 'marketing_emails' (default: true = opted in)",
+      "unsubscribe_controller": "app/Http/Controllers/UnsubscribeController.php",
+      "unsubscribe_route": "/unsubscribe/{userId}",
+      "security": "Signed URL via URL::signedRoute()",
+      "trait": "app/Notifications/Concerns/HasUnsubscribeLink.php",
+      "trait_used_by": "18 of 22 notification classes",
+      "granularity": "ALL_OR_NOTHING",
+      "granularity_note": "Single toggle disables all marketing sequences; no per-campaign opt-out"
+    },
+    "analytics_pipeline": {
+      "gateway": "app/Services/AnalyticsGateway.php",
+      "event_enum": "app/Enums/AnalyticsEvent.php",
+      "event_count": 95,
+      "dispatch_job": "app/Jobs/DispatchAnalyticsEvent.php",
+      "destination": "GA4 Measurement Protocol",
+      "pii_filter": "34-key blocklist enforced before send",
+      "batch_limit": 25,
+      "retry_config": {"tries": 2, "backoff_seconds": [10, 60]},
+      "utm_capture": "app/Http/Middleware/CaptureUtmParameters.php",
+      "utm_strategy": "first_touch_session"
+    },
+    "lifecycle_stages": {
+      "enum": "app/Enums/LifecycleStage.php",
+      "stages": ["VISITOR", "TRIAL", "ACTIVATED", "PAYING", "AT_RISK", "CHURNED", "EXPANSION"],
+      "history_model": "app/Models/UserStageHistory.php",
+      "transition_service": "app/Services/LifecycleService.php",
+      "side_effects_on_churn": "Queues WinBackNotification with 24h delay"
+    },
+    "scoring_services": [
+      {
+        "service": "EngagementScoringService",
+        "file": "app/Services/EngagementScoringService.php",
+        "range": "0-100",
+        "dimensions": ["login_recency_25", "feature_adoption_25", "onboarding_completion_25", "account_maturity_25"],
+        "batch_optimized": true
+      },
+      {
+        "service": "CustomerHealthService",
+        "file": "app/Services/CustomerHealthService.php",
+        "range": "0-100",
+        "dimensions": ["login_frequency_25", "feature_adoption_25", "billing_status_25", "profile_completion_25"],
+        "brackets": {"healthy": ">=76", "moderate": "51-75", "at_risk": "26-50", "critical": "0-25"},
+        "retention_metrics": ["activation_rate", "trial_conversion_rate", "d7_retention", "d30_retention"]
+      },
+      {
+        "service": "LeadScoringService",
+        "file": "app/Services/LeadScoringService.php",
+        "purpose": "MQL/SQL qualification scoring"
+      }
+    ],
+    "queue_config": {
+      "default_driver": "database",
+      "retry_after_seconds": 90,
+      "all_notifications_queued": true,
+      "exception": "AdminHealthAlertNotification not queued"
+    }
+  },
+  "findings": [
+    {
+      "id": "MSG-001",
+      "severity": "CRITICAL",
+      "category": "delivery_bug",
+      "title": "OnboardingReminderNotification missing hasVerifiedEmail check and database channel",
+      "file": "app/Notifications/OnboardingReminderNotification.php",
+      "description": "via() returns ['mail'] only. Does not check hasVerifiedEmail() before adding mail channel. No database channel fallback. If user has unverified email, notification is silently lost.",
+      "impact": "Onboarding emails may be sent to unverified addresses or lost entirely",
+      "fix": "Add database channel and hasVerifiedEmail() gate matching pattern in all other lifecycle notifications"
+    },
+    {
+      "id": "MSG-002",
+      "severity": "CRITICAL",
+      "category": "dedup_inconsistency",
+      "title": "WinBack command uses notifications table for dedup instead of EmailSendLog",
+      "file": "app/Console/Commands/SendWinBackEmails.php",
+      "line_range": "107-115",
+      "description": "SendWinBackEmails.alreadySentEmail() queries the notifications table for WinBackNotification with matching email_number, while all other commands use EmailSendLog. The prune-read-notifications command deletes read notifications after 30 days, which would destroy the dedup state and allow duplicate sends.",
+      "impact": "Win-back emails may be re-sent to users who already received them if notifications are pruned",
+      "fix": "Migrate to EmailSendLog::alreadySent() and EmailSendLog::record() pattern"
+    },
+    {
+      "id": "MSG-003",
+      "severity": "CRITICAL",
+      "category": "test_coverage",
+      "title": "6 lifecycle commands have zero test coverage",
+      "commands_missing_tests": [
+        "SendOnboardingReminders",
+        "SendDunningReminders",
+        "CheckExpiredTrials",
+        "ComputeUserScores",
+        "QualifyLeads",
+        "PruneReadNotifications"
+      ],
+      "description": "These commands handle email dedup, scoring, and data pruning with no automated verification. Regressions in dedup logic, recipient queries, or opt-out checks would go undetected.",
+      "impact": "Bugs in untested commands could cause duplicate emails, missed sends, or incorrect scoring"
+    },
+    {
+      "id": "MSG-004",
+      "severity": "HIGH",
+      "category": "dedup_inconsistency",
+      "title": "SendTrialEndingReminders uses non-standard UserSetting dedup",
+      "file": "app/Console/Commands/SendTrialEndingReminders.php",
+      "line_range": "45-50",
+      "description": "Uses UserSetting 'trial_reminder_sent_at' with isToday() check instead of EmailSendLog. This allows re-sends on subsequent days and is not email-number-based. Risk is contained since command is removed from schedule, but code remains in codebase.",
+      "impact": "Low (command not scheduled), but could cause issues if re-enabled",
+      "fix": "Either delete the command or migrate to EmailSendLog if re-enabling"
+    },
+    {
+      "id": "MSG-005",
+      "severity": "HIGH",
+      "category": "data_integrity",
+      "title": "Notification pruning conflicts with WinBack dedup mechanism",
+      "file": "app/Console/Commands/PruneReadNotifications.php",
+      "description": "prune-read-notifications deletes read notifications after 30 days. SendWinBackEmails queries the notifications table for dedup. Win-back email 3 is sent at day 30 post-cancellation — exactly when earlier dedup records may be pruned. Race condition between pruning and dedup check.",
+      "impact": "Win-back email 1 or 2 could be re-sent after notification pruning",
+      "fix": "Migrate WinBack to EmailSendLog (resolves both MSG-002 and MSG-005)"
+    },
+    {
+      "id": "MSG-006",
+      "severity": "HIGH",
+      "category": "utm_tracking",
+      "title": "ReEngagement email 3 has wrong UTM campaign parameter",
+      "file": "app/Notifications/ReEngagementNotification.php",
+      "description": "Email 3 uses campaign parameter 'reengagement_winback' instead of 'reengagement'. This is a copy-paste error that corrupts funnel analytics attribution.",
+      "impact": "Re-engagement email 3 traffic misattributed to win-back campaign in GA4",
+      "fix": "Change UTM campaign from 'reengagement_winback' to 'reengagement'"
+    },
+    {
+      "id": "MSG-007",
+      "severity": "HIGH",
+      "category": "test_coverage",
+      "title": "EmailSendLog model has no unit tests",
+      "file": "app/Models/EmailSendLog.php",
+      "description": "No tests for EmailSendLog::alreadySent() or EmailSendLog::record() methods. The record() method handles UniqueConstraintViolationException for race conditions — this critical dedup safety net is untested.",
+      "impact": "Regressions in the dedup system's core model would go undetected"
+    },
+    {
+      "id": "MSG-008",
+      "severity": "HIGH",
+      "category": "test_coverage",
+      "title": "LifecycleService has no tests",
+      "file": "app/Services/LifecycleService.php",
+      "description": "No test file exists for LifecycleService. This service handles stage transitions, audit logging, cache invalidation, and triggers win-back notifications on churn. All side effects are untested.",
+      "impact": "Stage transition bugs, missing audit logs, or failed win-back triggers would go undetected"
+    },
+    {
+      "id": "MSG-009",
+      "severity": "HIGH",
+      "category": "test_coverage",
+      "title": "LeadScoringService has no tests",
+      "file": "app/Services/LeadScoringService.php",
+      "description": "No test file exists for LeadScoringService. The QualifyLeads command depends on this service to compute scores that trigger MQL/SQL qualification events.",
+      "impact": "Incorrect lead scores could trigger false qualification events or miss legitimate leads"
+    },
+    {
+      "id": "MSG-010",
+      "severity": "MEDIUM",
+      "category": "content_quality",
+      "title": "ReEngagement email 3 has hardcoded changelog text",
+      "file": "app/Notifications/ReEngagementNotification.php",
+      "description": "Email 3 body includes hardcoded text: 'smarter activity tracking and faster load times across the board'. This will become stale and inaccurate over time.",
+      "impact": "Users receive outdated 'what's new' messaging",
+      "fix": "Move to config value or query actual changelog"
+    },
+    {
+      "id": "MSG-011",
+      "severity": "MEDIUM",
+      "category": "reliability",
+      "title": "AdminHealthAlertNotification is not queued",
+      "file": "app/Notifications/AdminHealthAlertNotification.php",
+      "description": "Does not implement ShouldQueue. Health alerts run every 15 minutes via scheduler. Synchronous email sending blocks the scheduler thread during SMTP handshake.",
+      "impact": "Scheduler delay if mail server is slow; could cascade to delay other scheduled commands",
+      "fix": "Add 'implements ShouldQueue' and 'use Queueable'"
+    },
+    {
+      "id": "MSG-012",
+      "severity": "MEDIUM",
+      "category": "opt_out",
+      "title": "No per-campaign unsubscribe granularity",
+      "description": "Single 'marketing_emails' UserSetting toggle controls all lifecycle sequences. Users cannot opt out of re-engagement emails while keeping onboarding emails.",
+      "impact": "Users who unsubscribe from one sequence lose all lifecycle communications",
+      "fix": "Add per-sequence opt-out keys (e.g., 'marketing_emails.re_engagement', 'marketing_emails.win_back')"
+    },
+    {
+      "id": "MSG-013",
+      "severity": "MEDIUM",
+      "category": "test_coverage",
+      "title": "UnsubscribeController has no HTTP endpoint test",
+      "file": "app/Http/Controllers/UnsubscribeController.php",
+      "description": "UnsubscribeLinkTest.php tests that the HasUnsubscribeLink trait generates links, but no test exercises the actual /unsubscribe/{userId} HTTP endpoint to verify signed URL validation, UserSetting mutation, and response rendering.",
+      "impact": "Broken unsubscribe flow would not be detected by tests"
+    },
+    {
+      "id": "MSG-014",
+      "severity": "MEDIUM",
+      "category": "test_coverage",
+      "title": "EngagementScoringService has partial test coverage",
+      "file": "tests/Unit/Services/EngagementScoringServiceTest.php",
+      "description": "Tests exist but only cover onboarding bonus logic. Login recency scoring (0-25), feature adoption scoring (0-25), and account maturity scoring (0-25) are untested.",
+      "impact": "Scoring regressions in 3 of 4 dimensions would go undetected"
+    },
+    {
+      "id": "MSG-015",
+      "severity": "MEDIUM",
+      "category": "test_coverage",
+      "title": "CustomerHealthService has partial test coverage",
+      "file": "tests/Unit/Services/CustomerHealthServiceTest.php",
+      "description": "Tests exist but only cover basic scoring, email verification, password set, and activation rate. Login frequency, billing status, and retention metrics (d7/d30) are untested.",
+      "impact": "Health score regressions and retention metric bugs would go undetected"
+    },
+    {
+      "id": "MSG-016",
+      "severity": "MEDIUM",
+      "category": "reliability",
+      "title": "Re-engagement hasReengaged() allows unnecessary sends when prior email not logged",
+      "file": "app/Console/Commands/SendReEngagementEmails.php",
+      "line_range": "127-142",
+      "description": "hasReengaged() queries EmailSendLog for prior email sent_at and compares to last_active_at. If prior email log entry is not found (e.g., first re-engagement email skipped due to opt-out), method returns false and allows the current email to send.",
+      "impact": "Users may receive email 2/3/4 without having received email 1, creating a confusing sequence"
+    },
+    {
+      "id": "MSG-017",
+      "severity": "MEDIUM",
+      "category": "scheduling",
+      "title": "No EmailSendLog pruning command exists",
+      "description": "email_send_logs table grows indefinitely. All other log tables have pruning commands (audit:prune, prune-read-notifications, webhooks:prune-stale). EmailSendLog rows are needed for dedup but old entries (>1 year) are no longer actionable.",
+      "impact": "Unbounded table growth in production",
+      "fix": "Add email-send-logs:prune command with safe retention period (e.g., 365 days)"
+    },
+    {
+      "id": "MSG-018",
+      "severity": "MEDIUM",
+      "category": "content_quality",
+      "title": "DunningReminder plan name fallback is silent",
+      "file": "app/Console/Commands/SendDunningReminders.php",
+      "line_range": "98-109",
+      "description": "resolvePlanName() iterates config('plans.tiers') to find matching stripe_price. If not found, falls back to 'your plan' string with no logging. Missed plan names indicate config/Stripe drift.",
+      "impact": "Dunning emails may show generic 'your plan' instead of actual plan name without ops visibility",
+      "fix": "Add Log::warning() when plan name resolution falls back to default"
+    },
+    {
+      "id": "MSG-019",
+      "severity": "MEDIUM",
+      "category": "analytics",
+      "title": "ReEngagement toArray() missing userScore and variant type",
+      "file": "app/Notifications/ReEngagementNotification.php",
+      "description": "toArray() for database channel does not store userScore or campaignVariant. In-app notification display cannot reconstruct the behavioral branching logic or show score-appropriate content.",
+      "impact": "In-app notification display may not match email content"
+    },
+    {
+      "id": "MSG-020",
+      "severity": "MEDIUM",
+      "category": "cross_sequence",
+      "title": "Welcome-to-onboarding cross-sequence dedup may cause gaps",
+      "file": "app/Console/Commands/SendOnboardingReminders.php",
+      "line_range": "139-140",
+      "description": "Onboarding email 1 is skipped if welcome_sequence email 2 was already sent. This prevents overlap but means users who received welcome email 2 never get explicit onboarding guidance.",
+      "impact": "Users who received welcome email 2 may miss onboarding-specific instructions"
+    },
+    {
+      "id": "MSG-021",
+      "severity": "LOW",
+      "category": "content_quality",
+      "title": "AdminHealthAlert not personalized",
+      "file": "app/Notifications/AdminHealthAlertNotification.php",
+      "description": "Uses hardcoded 'Health Check Alert' greeting instead of $notifiable->name. All other notifications personalize greetings.",
+      "fix": "Use $notifiable->name in greeting"
+    },
+    {
+      "id": "MSG-022",
+      "severity": "LOW",
+      "category": "scheduling",
+      "title": "SendTrialEndingReminders command still exists despite being removed from schedule",
+      "file": "app/Console/Commands/SendTrialEndingReminders.php",
+      "description": "Command was removed from routes/console.php to prevent double-sends with SendTrialNudges, but the command class, notification class, and test file remain. Dead code in codebase.",
+      "fix": "Delete command, notification, and test if permanently superseded by SendTrialNudges"
+    },
+    {
+      "id": "MSG-023",
+      "severity": "LOW",
+      "category": "reliability",
+      "title": "WinBack email 3 at day 30 may race with notification pruning at day 30",
+      "file": "app/Console/Commands/SendWinBackEmails.php",
+      "description": "Win-back email 3 targets subscriptions canceled 30-33 days ago. prune-read-notifications runs daily with 30-day retention. If win-back email 1 was sent and read at day 3, its notification is pruned at day 33 — exactly in the win-back email 3 window.",
+      "impact": "Timing-dependent duplicate potential for win-back email 1 after pruning",
+      "note": "Resolved if MSG-002 fix (migrate to EmailSendLog) is applied"
+    },
+    {
+      "id": "MSG-024",
+      "severity": "LOW",
+      "category": "analytics",
+      "title": "UTM capture is first-touch only with no last-touch attribution",
+      "file": "app/Http/Middleware/CaptureUtmParameters.php",
+      "description": "UTM parameters are captured only on first visit (session-based first-touch). No last-touch or multi-touch attribution model available for conversion analysis.",
+      "impact": "Cannot attribute conversions to most recent marketing touchpoint"
+    },
+    {
+      "id": "MSG-025",
+      "severity": "LOW",
+      "category": "content_quality",
+      "title": "Welcome email 1 sent via event listener, emails 2-3 via scheduled command",
+      "description": "WelcomeSequenceNotification email 1 is dispatched synchronously by SendWelcomeNotification listener on Registered event. Emails 2-3 are sent by the scheduled SendWelcomeSequence command. This split makes the sequence harder to reason about and test as a unit.",
+      "impact": "Maintenance complexity; edge case if listener fails but command succeeds"
+    },
+    {
+      "id": "MSG-026",
+      "severity": "LOW",
+      "category": "scheduling",
+      "title": "Re-engagement emails run weekly but other sequences run daily",
+      "file": "routes/console.php",
+      "description": "SendReEngagementEmails runs weekly (Mondays 09:00) while all other lifecycle commands run daily. Users who become inactive on Tuesday won't receive their 7-day re-engagement email until the following Monday (up to 13 days delay).",
+      "impact": "Re-engagement timing is imprecise, reducing effectiveness"
+    },
+    {
+      "id": "MSG-027",
+      "severity": "LOW",
+      "category": "reliability",
+      "title": "No retry logic in lifecycle commands for individual notification failures",
+      "description": "All lifecycle commands have try/catch blocks that log errors and continue, but failed individual sends are not retried. The notification itself is queued (ShouldQueue), so queue retry handles transport failures, but if the EmailSendLog::record() call fails after notify(), the notification may be sent but not logged.",
+      "impact": "Edge case: notification sent but dedup not recorded could cause re-send on next command run"
+    },
+    {
+      "id": "MSG-028",
+      "severity": "LOW",
+      "category": "analytics",
+      "title": "AnalyticsEvent enum has 95+ events but no event documentation",
+      "file": "app/Enums/AnalyticsEvent.php",
+      "description": "95+ analytics events are defined but there is no documentation mapping events to their triggers, expected frequency, or downstream dashboards. Shared events sync test exists but no semantic validation.",
+      "impact": "Difficult for analytics consumers to understand event taxonomy"
+    },
+    {
+      "id": "MSG-029",
+      "severity": "LOW",
+      "category": "opt_out",
+      "title": "Signed unsubscribe URLs have no expiration",
+      "file": "app/Notifications/Concerns/HasUnsubscribeLink.php",
+      "description": "URL::signedRoute() without expiration parameter creates permanent signed URLs. Old emails from months/years ago will still have working unsubscribe links, which could be a security consideration if user IDs are sequential.",
+      "impact": "Low security risk — unsubscribe is a benign action, but permanent URLs are a mild information leak"
+    },
+    {
+      "id": "MSG-030",
+      "severity": "LOW",
+      "category": "test_coverage",
+      "title": "No integration test for complete email sequence lifecycle",
+      "description": "Individual command tests exist but no test verifies a complete user journey through sequences (registration → welcome → onboarding → trial nudge → re-engagement → dunning → win-back). Cross-sequence dedup logic is untested at the integration level.",
+      "impact": "Cross-sequence edge cases (overlapping windows, dedup interactions) may have bugs"
+    },
+    {
+      "id": "MSG-031",
+      "severity": "INFO",
+      "category": "architecture",
+      "title": "Email infrastructure uses notification system exclusively (no Mailable classes)",
+      "description": "All email sending is done via Notification classes with toMail() method. No Mail/Mailable classes exist. This is a valid architectural choice but means all emails must go through the notification pipeline."
+    },
+    {
+      "id": "MSG-032",
+      "severity": "INFO",
+      "category": "architecture",
+      "title": "All lifecycle notifications use both database and mail channels (except OnboardingReminder)",
+      "description": "Standard pattern: database channel always included, mail channel gated by hasVerifiedEmail(). OnboardingReminderNotification is the exception (MSG-001)."
+    },
+    {
+      "id": "MSG-033",
+      "severity": "INFO",
+      "category": "architecture",
+      "title": "LifecycleService auto-queues WinBackNotification on churn transition with 24h delay",
+      "file": "app/Services/LifecycleService.php",
+      "description": "When a user transitions to CHURNED stage, WinBackNotification is queued with 24-hour delay. This is in addition to the scheduled SendWinBackEmails command. Potential for double-send if both paths trigger."
+    },
+    {
+      "id": "MSG-034",
+      "severity": "INFO",
+      "category": "architecture",
+      "title": "Analytics pipeline has PII sanitization with 34-key blocklist",
+      "file": "app/Services/AnalyticsGateway.php",
+      "description": "AnalyticsGateway strips 34 PII keys before sending to GA4 Measurement Protocol. Comprehensive and well-tested."
+    },
+    {
+      "id": "MSG-035",
+      "severity": "INFO",
+      "category": "scheduling",
+      "title": "Schedule timing creates logical sequence: scoring → qualification → emails",
+      "description": "02:00 compute-scores → 06:00 check-expired → 07:00 qualify-leads → 09:00 welcome/re-engagement → 10:00 trial-nudges → 10:30 win-back → 11:00 onboarding. Scoring feeds into qualification which feeds into email targeting."
+    },
+    {
+      "id": "MSG-036",
+      "severity": "INFO",
+      "category": "config",
+      "title": "Analytics thresholds configured but only partially wired",
+      "file": "config/analytics-thresholds.php",
+      "description": "Defines churn_rate, mrr_drop_percent, trial_conversion thresholds. AdminHealthAlertCommand references health thresholds but not all analytics-thresholds keys are wired to alerts."
+    },
+    {
+      "id": "MSG-037",
+      "severity": "INFO",
+      "category": "architecture",
+      "title": "LifecycleStage enum defines 7 stages with clear funnel ordering",
+      "description": "VISITOR → TRIAL → ACTIVATED → PAYING → EXPANSION with AT_RISK → CHURNED as churn path. Well-structured lifecycle model."
+    },
+    {
+      "id": "MSG-038",
+      "severity": "INFO",
+      "category": "architecture",
+      "title": "Engagement and health scoring services are batch-optimized",
+      "description": "Both EngagementScoringService.scoreBatch() and CustomerHealthService.primeHealthScoreCaches() use batch queries to avoid N+1. ComputeUserScores processes in chunks of 200."
+    }
+  ],
+  "test_coverage_matrix": {
+    "commands": {
+      "tested": ["SendWelcomeSequence", "SendTrialNudges", "SendReEngagementEmails", "SendWinBackEmails", "SendTrialEndingReminders", "AdminHealthAlertCommand"],
+      "untested": ["SendOnboardingReminders", "SendDunningReminders", "CheckExpiredTrials", "ComputeUserScores", "QualifyLeads", "PruneReadNotifications"],
+      "coverage_percent": 50
+    },
+    "services": {
+      "tested": ["AnalyticsGateway", "EngagementScoringService (partial)", "CustomerHealthService (partial)"],
+      "untested": ["LifecycleService", "LeadScoringService"],
+      "coverage_percent": 40
+    },
+    "models": {
+      "tested": [],
+      "untested": ["EmailSendLog (alreadySent/record methods)"],
+      "coverage_percent": 0
+    },
+    "controllers": {
+      "tested": ["AdminEmailSendLogController"],
+      "untested": ["UnsubscribeController (HTTP endpoint)"],
+      "coverage_percent": 50
+    },
+    "notifications": {
+      "tested": ["WelcomeSequenceNotification", "TrialNudgeNotification", "OnboardingReminderNotification", "ReEngagementNotification", "DunningReminderNotification", "UnsubscribeLink (trait)"],
+      "untested_as_unit": ["WinBackNotification", "AdminHealthAlertNotification", "IncompletePaymentReminder"],
+      "coverage_percent": 65
+    }
+  },
+  "recommendations_priority": [
+    {
+      "priority": 1,
+      "effort": "small",
+      "findings": ["MSG-001"],
+      "action": "Fix OnboardingReminderNotification via() to add database channel and hasVerifiedEmail check"
+    },
+    {
+      "priority": 2,
+      "effort": "medium",
+      "findings": ["MSG-002", "MSG-005", "MSG-023"],
+      "action": "Migrate SendWinBackEmails to use EmailSendLog instead of notifications table"
+    },
+    {
+      "priority": 3,
+      "effort": "large",
+      "findings": ["MSG-003", "MSG-007", "MSG-008", "MSG-009"],
+      "action": "Add test coverage for untested commands (SendOnboardingReminders, SendDunningReminders) and services (LifecycleService, LeadScoringService, EmailSendLog)"
+    },
+    {
+      "priority": 4,
+      "effort": "small",
+      "findings": ["MSG-006", "MSG-010"],
+      "action": "Fix ReEngagement UTM campaign param and hardcoded changelog text"
+    },
+    {
+      "priority": 5,
+      "effort": "small",
+      "findings": ["MSG-011"],
+      "action": "Add ShouldQueue to AdminHealthAlertNotification"
+    },
+    {
+      "priority": 6,
+      "effort": "medium",
+      "findings": ["MSG-013", "MSG-014", "MSG-015"],
+      "action": "Add UnsubscribeController HTTP test and expand scoring service test coverage"
+    },
+    {
+      "priority": 7,
+      "effort": "medium",
+      "findings": ["MSG-017"],
+      "action": "Create EmailSendLog pruning command with 365-day retention"
+    },
+    {
+      "priority": 8,
+      "effort": "small",
+      "findings": ["MSG-004", "MSG-022"],
+      "action": "Delete or deprecate SendTrialEndingReminders and TrialEndingNotification if permanently superseded"
+    }
+  ]
+}

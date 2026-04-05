@@ -85,4 +85,31 @@ return [
         'table' => 'failed_jobs',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Notification Dispatch Throttling
+    |--------------------------------------------------------------------------
+    |
+    | Lifecycle notification jobs (welcome sequences, dunning, trial nudges,
+    | win-back) are dispatched to the "notifications" queue so their worker
+    | concurrency can be controlled independently from the default queue.
+    |
+    | To throttle notification throughput, run a dedicated worker with a lower
+    | concurrency limit:
+    |
+    |   php artisan queue:work --queue=notifications --max-jobs=200 --sleep=3
+    |
+    | For Redis-backed queues, use Bus::rateLimiter() in AppServiceProvider to
+    | cap notification jobs per time window:
+    |
+    |   Bus::rateLimiter('notifications', function (object $job) {
+    |       return Limit::perMinute(60);
+    |   });
+    |
+    | The database driver does not support native rate limiting; worker-level
+    | concurrency (separate worker process + --max-jobs) is the correct
+    | mechanism when QUEUE_CONNECTION=database.
+    |
+    */
+
 ];

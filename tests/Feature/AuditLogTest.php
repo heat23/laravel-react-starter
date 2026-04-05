@@ -147,7 +147,7 @@ test('audit service does not dispatch GA4 job for forwarded event with no user',
     Queue::assertNotPushed(DispatchAnalyticsEvent::class);
 });
 
-test('audit service dispatches GA4 job for all ten forwarded event types', function (string $event) {
+test('audit service dispatches GA4 job for all forwarded event types', function (string $event) {
     Queue::fake();
 
     $user = User::factory()->create();
@@ -170,7 +170,41 @@ test('audit service dispatches GA4 job for all ten forwarded event types', funct
     'limit.threshold_50',
     'limit.threshold_80',
     'limit.threshold_100',
+    'billing.payment_failed',
+    'billing.payment_method_updated',
 ]);
+
+// ANA-007: payment failure and recovery events forwarded to GA4
+test('audit service dispatches GA4 job for billing.payment_failed', function () {
+    Queue::fake();
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $service = new AuditService;
+    $service->log('billing.payment_failed', ['plan' => 'pro', 'amount' => 2900]);
+
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === 'billing.payment_failed'
+            && $job->params === ['plan' => 'pro', 'amount' => 2900]
+            && $job->userId === $user->id;
+    });
+});
+
+test('audit service dispatches GA4 job for billing.payment_method_updated (recovery signal)', function () {
+    Queue::fake();
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $service = new AuditService;
+    $service->log('billing.payment_method_updated', []);
+
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === 'billing.payment_method_updated'
+            && $job->userId === $user->id;
+    });
+});
 
 // ANA-013: consent gate — server-side GA4 forwarding
 

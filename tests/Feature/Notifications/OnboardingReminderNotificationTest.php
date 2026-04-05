@@ -35,13 +35,22 @@ it('sends onboarding email 3 with help offer', function () {
     expect($mailMessage->actionUrl)->toBe(route('dashboard'));
 });
 
-it('uses mail channel only for onboarding reminders', function () {
+it('includes database and mail channels for verified users', function () {
     $notification = new OnboardingReminderNotification(emailNumber: 1);
     $user = User::factory()->create(['email_verified_at' => now()]);
 
     $channels = $notification->via($user);
 
-    expect($channels)->toBe(['mail']);
+    expect($channels)->toBe(['database', 'mail']);
+});
+
+it('uses only database channel for unverified users', function () {
+    $notification = new OnboardingReminderNotification(emailNumber: 1);
+    $user = User::factory()->create(['email_verified_at' => null]);
+
+    $channels = $notification->via($user);
+
+    expect($channels)->toBe(['database']);
 });
 
 it('includes email number in database payload', function () {

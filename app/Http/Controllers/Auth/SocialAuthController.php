@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Enums\AnalyticsEvent;
 use App\Http\Controllers\Controller;
+use App\Models\UserSetting;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
 use App\Services\SocialAuthService;
@@ -92,7 +93,17 @@ class SocialAuthController extends Controller
 
         // Log registration for new social auth users (Fix FUNNEL-004)
         if ($user->wasRecentlyCreated) {
-            $this->auditService->logRegistration($user);
+            // Persist first-touch UTM attribution captured by CaptureUtmParameters middleware.
+            // Registration via social auth bypasses RegisteredUserController, so UTM data
+            // must be read from session and persisted here to ensure attribution is not lost.
+            $utmData = $request->session()->get('utm_data');
+            if (is_array($utmData)) {
+                foreach ($utmData as $key => $value) {
+                    UserSetting::setValue($user->id, $key, $value);
+                }
+            }
+
+            $this->auditService->logRegistration($user, is_array($utmData) ? $utmData : []);
             session()->flash('new_registration', true);
             session()->flash('social_provider', $provider);
         }

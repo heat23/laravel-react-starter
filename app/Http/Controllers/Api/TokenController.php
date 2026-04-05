@@ -79,7 +79,7 @@ class TokenController extends Controller
 
         $token = $user->createToken(
             $request->validated('name'),
-            $request->validated('abilities', ['*']),
+            $request->validated('abilities', ['read']),
             $expiresAt,
         );
 

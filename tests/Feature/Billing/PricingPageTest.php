@@ -143,6 +143,69 @@ it('enterprise tier passes null price to hide rack rate', function () {
     );
 });
 
+it('shows control monthly price and Stripe ID when variant Stripe price is absent', function () {
+    // Simulate cohort 1 (variant) visitor but no stripe_price_monthly_variant configured.
+    // display price and Stripe price ID must both remain at control values.
+    config(['plans.pro.price_monthly_variant' => 15]);
+    // stripe_price_monthly_variant intentionally NOT set
+
+    // Use a session ID that hashes to cohort 1 (isVariantCohort = true).
+    // crc32 of 'variant-seed-1' => abs(crc32('variant-seed-1')) % 2 === 1
+    $cohortOneSeed = collect(range(1, 10000))->first(fn ($i) => (abs(crc32((string) $i)) % 2) === 1);
+
+    $user = User::factory()->create(['id' => $cohortOneSeed, 'email_verified_at' => now()]);
+
+    $response = $this->actingAs($user)->get('/pricing');
+
+    $controlMonthly = config('plans.pro.price_monthly');
+    $controlStripeId = config('plans.pro.stripe_price_monthly');
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('tiers.pro.price', $controlMonthly)
+        ->where('tiers.pro.stripe_price_id', $controlStripeId)
+    );
+});
+
+it('swaps both monthly display price and Stripe ID atomically for variant cohort', function () {
+    $variantPrice = 15;
+    $variantStripeId = 'price_test_variant_monthly';
+
+    config(['plans.pro.price_monthly_variant' => $variantPrice]);
+    config(['plans.pro.stripe_price_monthly_variant' => $variantStripeId]);
+
+    // Pick user ID in cohort 1 (variant cohort).
+    $cohortOneSeed = collect(range(1, 10000))->first(fn ($i) => (abs(crc32((string) $i)) % 2) === 1);
+
+    $user = User::factory()->create(['id' => $cohortOneSeed, 'email_verified_at' => now()]);
+
+    $response = $this->actingAs($user)->get('/pricing');
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('tiers.pro.price', $variantPrice)
+        ->where('tiers.pro.stripe_price_id', $variantStripeId)
+    );
+});
+
+it('shows control annual price and Stripe ID when annual variant Stripe price is absent', function () {
+    // Annual variant display price is set but stripe_price_annual_variant is not — no swap should occur.
+    config(['plans.pro.price_annual_variant' => 120]);
+    // stripe_price_annual_variant intentionally NOT set
+
+    $cohortOneSeed = collect(range(1, 10000))->first(fn ($i) => (abs(crc32((string) $i)) % 2) === 1);
+
+    $user = User::factory()->create(['id' => $cohortOneSeed, 'email_verified_at' => now()]);
+
+    $response = $this->actingAs($user)->get('/pricing');
+
+    $controlAnnual = config('plans.pro.price_annual');
+    $controlStripeAnnualId = config('plans.pro.stripe_price_annual');
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('tiers.pro.price_annual', $controlAnnual)
+        ->where('tiers.pro.stripe_price_id_annual', $controlStripeAnnualId)
+    );
+});
+
 it('pro description contains outcome language', function () {
     $response = $this->get('/pricing');
 

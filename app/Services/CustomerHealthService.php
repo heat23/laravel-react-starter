@@ -54,9 +54,11 @@ class CustomerHealthService
     }
 
     /**
-     * Get activation rate: % of users who verified email within 7 days of signup.
+     * Get email verification rate: % of users (last 30 days) who verified email within 7 days of signup.
+     * Distinct from ProductAnalyticsService::getOnboardingCompletionRate() which measures
+     * onboarding wizard completion.
      */
-    public function getActivationRate(): float
+    public function getEmailVerificationRate(): float
     {
         return Cache::remember('metrics:activation_rate', AdminCacheKey::DEFAULT_TTL, function () {
             $totalUsers = User::where('created_at', '>=', now()->subDays(30))->count();

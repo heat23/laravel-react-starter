@@ -141,21 +141,49 @@ class ApiTokenControllerTest extends TestCase
         ]);
     }
 
-    public function test_store_defaults_to_all_abilities(): void
+    public function test_store_defaults_to_read_ability_when_no_abilities_provided(): void
     {
         $user = User::factory()->create();
 
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/tokens', [
-                'name' => 'Full Access Token',
+                'name' => 'Default Token',
             ]);
 
         $response->assertOk();
 
         $this->assertDatabaseHas('personal_access_tokens', [
-            'name' => 'Full Access Token',
-            'abilities' => json_encode(['*']),
+            'name' => 'Default Token',
+            'abilities' => json_encode(['read']),
         ]);
+    }
+
+    public function test_store_rejects_empty_abilities_array(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/tokens', [
+                'name' => 'Empty Abilities Token',
+                'abilities' => [],
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['abilities']);
+    }
+
+    public function test_store_rejects_wildcard_ability(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/tokens', [
+                'name' => 'Wildcard Token',
+                'abilities' => ['*'],
+            ]);
+
+        $response->assertUnprocessable()
+            ->assertJsonValidationErrors(['abilities.0']);
     }
 
     public function test_store_requires_name(): void

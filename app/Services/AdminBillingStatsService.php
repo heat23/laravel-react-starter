@@ -158,9 +158,13 @@ class AdminBillingStatsService
      */
     public function buildSubscriptionQuery(array $validated): Builder
     {
-        $firstItem = DB::table('subscription_items as si')
-            ->select('si.subscription_id', 'si.stripe_price')
-            ->whereRaw('si.id = (SELECT MIN(si2.id) FROM subscription_items AS si2 WHERE si2.subscription_id = si.subscription_id)');
+        $firstItem = DB::table('subscription_items')
+            ->select('subscription_id', 'stripe_price')
+            ->whereIn('id', function ($sub) {
+                $sub->from('subscription_items')
+                    ->selectRaw('MIN(id)')
+                    ->groupBy('subscription_id');
+            });
 
         $query = DB::table('subscriptions')
             ->leftJoin('users', function ($join) {

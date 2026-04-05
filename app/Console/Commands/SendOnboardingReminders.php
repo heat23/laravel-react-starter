@@ -16,13 +16,6 @@ class SendOnboardingReminders extends Command
 
     protected $description = 'Send onboarding reminder emails to users who haven\'t completed setup';
 
-    /** @var array<int, array{days: int, maxDays: int}> */
-    private const EMAIL_SCHEDULE = [
-        1 => ['days' => 1, 'maxDays' => 2],
-        2 => ['days' => 3, 'maxDays' => 5],
-        3 => ['days' => 7, 'maxDays' => 10],
-    ];
-
     public function handle(): int
     {
         // Onboarding reminder emails are sent regardless of whether the wizard UI is enabled.
@@ -31,8 +24,11 @@ class SendOnboardingReminders extends Command
 
         $totalSent = 0;
 
-        foreach (self::EMAIL_SCHEDULE as $emailNumber => $schedule) {
-            $sent = $this->sendEmailNumber($emailNumber, $schedule['days'], $schedule['maxDays'], $onboardingEnabled);
+        /** @var array<int, array{days: int, max_days: int}> $emailSchedule */
+        $emailSchedule = config('email-sequences.onboarding');
+
+        foreach ($emailSchedule as $emailNumber => $schedule) {
+            $sent = $this->sendEmailNumber($emailNumber, $schedule['days'], $schedule['max_days'], $onboardingEnabled);
             $totalSent += $sent;
         }
 

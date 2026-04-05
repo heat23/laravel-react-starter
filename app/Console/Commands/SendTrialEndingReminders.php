@@ -22,11 +22,13 @@ class SendTrialEndingReminders extends Command
             return self::SUCCESS;
         }
 
+        $daysBeforeExpiry = (int) config('email-sequences.trial_ending.days_before_expiry', 3);
+
         $users = User::query()
             ->whereNotNull('trial_ends_at')
             ->whereNotNull('email_verified_at')
             ->where('trial_ends_at', '>', now())
-            ->where('trial_ends_at', '<=', now()->addDays(3))
+            ->where('trial_ends_at', '<=', now()->addDays($daysBeforeExpiry))
             ->with('subscriptions')
             ->get();
 

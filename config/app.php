@@ -96,4 +96,18 @@ return [
 
     'activity_tracking_window' => (int) env('ACTIVITY_TRACKING_WINDOW', 15),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Re-engagement Changelog Item
+    |--------------------------------------------------------------------------
+    |
+    | The feature or improvement to highlight in re-engagement email #3
+    | ("One thing changed since you last logged in"). Set APP_CHANGELOG_ITEM
+    | in your environment to customise the message. Operators should update
+    | this each time a notable release ships.
+    |
+    */
+
+    'changelog_item' => env('APP_CHANGELOG_ITEM', 'smarter activity tracking and faster load times across the board'),
+
 ];

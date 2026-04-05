@@ -32,7 +32,7 @@ describe('AnalyticsEvents sync', () => {
     const eventKeys = Object.keys(AnalyticsEvents);
     // Floor value: the number of events at the time this test was written.
     // This catches accidental bulk deletions. Increase when adding events.
-    expect(eventKeys.length).toBeGreaterThanOrEqual(53);
+    expect(eventKeys.length).toBeGreaterThanOrEqual(54);
   });
 
   it('sorted event names match snapshot (catches accidental deletions)', () => {
@@ -76,6 +76,7 @@ describe('AnalyticsEvents sync', () => {
       'FEATURE_SETTINGS_UPDATED',
       'FEATURE_USED',
       'FEEDBACK_SUBMITTED',
+      'LIFECYCLE_EMAIL_SENT',
       'LIMIT_THRESHOLD_100',
       'LIMIT_THRESHOLD_50',
       'LIMIT_THRESHOLD_80',

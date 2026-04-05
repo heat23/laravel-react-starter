@@ -5,25 +5,35 @@
  * These are intentionally lightweight - full interaction testing is done in dedicated test files.
  */
 
-import { render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock window.location before imports (needed by useAdminFilters)
 beforeEach(() => {
-  delete (window as any).location;
-  (window as any).location = { search: "", pathname: "/admin" };
+  delete (window as unknown as Record<string, unknown>).location;
+  (window as unknown as Record<string, unknown>).location = {
+    search: '',
+    pathname: '/admin',
+  };
 });
 
 // Mock Inertia
-vi.mock("@inertiajs/react", async () => {
-  const actual = await vi.importActual("@inertiajs/react");
+vi.mock('@inertiajs/react', async () => {
+  const actual = await vi.importActual('@inertiajs/react');
   return {
     ...actual,
     Head: ({ title }: { title: string }) => <title>{title}</title>,
     usePage: vi.fn(() => ({
-      url: "/admin",
+      url: '/admin',
       props: {
-        auth: { user: { id: 1, name: "Admin", email: "admin@test.com", is_admin: true } },
+        auth: {
+          user: {
+            id: 1,
+            name: 'Admin',
+            email: 'admin@test.com',
+            is_admin: true,
+          },
+        },
         features: {
           billing: true,
           socialAuth: true,
@@ -54,22 +64,36 @@ vi.mock("@inertiajs/react", async () => {
 });
 
 // Mock useTheme
-vi.mock("@/Components/theme/use-theme", () => ({
-  useTheme: vi.fn(() => ({ theme: "system", setTheme: vi.fn(), resolvedTheme: "light" })),
+vi.mock('@/Components/theme/use-theme', () => ({
+  useTheme: vi.fn(() => ({
+    theme: 'system',
+    setTheme: vi.fn(),
+    resolvedTheme: 'light',
+  })),
 }));
 
 // Mock CountUp
-vi.mock("@/Components/ui/count-up", () => ({
+vi.mock('@/Components/ui/count-up', () => ({
   CountUp: ({ end }: { end: number }) => <span>{end}</span>,
 }));
 
 // Mock Recharts
-vi.mock("recharts", () => ({
-  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  AreaChart: ({ children }: { children: React.ReactNode }) => <div data-testid="area-chart">{children}</div>,
-  BarChart: ({ children }: { children: React.ReactNode }) => <div data-testid="bar-chart">{children}</div>,
-  PieChart: ({ children }: { children: React.ReactNode }) => <div data-testid="pie-chart">{children}</div>,
-  LineChart: ({ children }: { children: React.ReactNode }) => <div data-testid="line-chart">{children}</div>,
+vi.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  AreaChart: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="area-chart">{children}</div>
+  ),
+  BarChart: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="bar-chart">{children}</div>
+  ),
+  PieChart: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="pie-chart">{children}</div>
+  ),
+  LineChart: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="line-chart">{children}</div>
+  ),
   Area: () => null,
   Bar: () => null,
   Pie: () => null,
@@ -82,10 +106,10 @@ vi.mock("recharts", () => ({
   Legend: () => null,
 }));
 
-describe("Admin UI Smoke Tests", () => {
-  describe("Users Pages", () => {
-    it("renders Users Index page", async () => {
-      const UsersIndex = (await import("./Users/Index")).default;
+describe('Admin UI Smoke Tests', () => {
+  describe('Users Pages', () => {
+    it('renders Users Index page', async () => {
+      const UsersIndex = (await import('./Users/Index')).default;
 
       render(
         <UsersIndex
@@ -93,11 +117,11 @@ describe("Admin UI Smoke Tests", () => {
             data: [
               {
                 id: 1,
-                name: "Test User",
-                email: "test@example.com",
-                email_verified_at: "2026-01-01",
+                name: 'Test User',
+                email: 'test@example.com',
+                email_verified_at: '2026-01-01',
                 is_admin: false,
-                created_at: "2026-01-01",
+                created_at: '2026-01-01',
                 deleted_at: null,
                 last_login_at: null,
                 tokens_count: 0,
@@ -115,25 +139,27 @@ describe("Admin UI Smoke Tests", () => {
         />
       );
 
-      expect(screen.getByRole("heading", { name: "Users", level: 1 })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Users', level: 1 })
+      ).toBeInTheDocument();
     });
 
-    it("renders Users Show page", async () => {
-      const UsersShow = (await import("./Users/Show")).default;
+    it('renders Users Show page', async () => {
+      const UsersShow = (await import('./Users/Show')).default;
 
       render(
         <UsersShow
           user={{
             id: 1,
-            name: "Test User",
-            email: "test@example.com",
-            email_verified_at: "2026-01-01",
+            name: 'Test User',
+            email: 'test@example.com',
+            email_verified_at: '2026-01-01',
             is_admin: false,
-            created_at: "2026-01-01",
+            created_at: '2026-01-01',
             deleted_at: null,
             last_login_at: null,
             has_password: true,
-            signup_source: "direct",
+            signup_source: 'direct',
             tokens_count: 0,
           }}
           recent_audit_logs={[]}
@@ -142,13 +168,15 @@ describe("Admin UI Smoke Tests", () => {
         />
       );
 
-      expect(screen.getByRole("heading", { name: "Test User", level: 1 })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Test User', level: 1 })
+      ).toBeInTheDocument();
     });
   });
 
-  describe("Audit Logs Pages", () => {
-    it("renders Audit Logs Index page", async () => {
-      const AuditLogsIndex = (await import("./AuditLogs/Index")).default;
+  describe('Audit Logs Pages', () => {
+    it('renders Audit Logs Index page', async () => {
+      const AuditLogsIndex = (await import('./AuditLogs/Index')).default;
 
       render(
         <AuditLogsIndex
@@ -161,40 +189,42 @@ describe("Admin UI Smoke Tests", () => {
             from: 0,
             to: 0,
           }}
-          eventTypes={["auth.login", "auth.logout"]}
+          eventTypes={['auth.login', 'auth.logout']}
           filters={{}}
         />
       );
 
-      expect(screen.getByRole("heading", { name: "Audit Logs", level: 1 })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Audit Logs', level: 1 })
+      ).toBeInTheDocument();
     });
 
-    it("renders Audit Logs Show page", async () => {
-      const AuditLogsShow = (await import("./AuditLogs/Show")).default;
+    it('renders Audit Logs Show page', async () => {
+      const AuditLogsShow = (await import('./AuditLogs/Show')).default;
 
       render(
         <AuditLogsShow
           auditLog={{
             id: 1,
-            event: "auth.login",
+            event: 'auth.login',
             user_id: 1,
-            user_name: "Test User",
-            user_email: "test@example.com",
-            ip: "192.168.1.1",
-            user_agent: "Mozilla/5.0",
+            user_name: 'Test User',
+            user_email: 'test@example.com',
+            ip: '192.168.1.1',
+            user_agent: 'Mozilla/5.0',
             data: {},
-            created_at: "2026-02-13T10:00:00Z",
+            created_at: '2026-02-13T10:00:00Z',
           }}
         />
       );
 
-      expect(screen.getByText("auth.login")).toBeInTheDocument();
+      expect(screen.getByText('auth.login')).toBeInTheDocument();
     });
   });
 
-  describe("Billing Pages", () => {
-    it("renders Billing Dashboard page", async () => {
-      const BillingDashboard = (await import("./Billing/Dashboard")).default;
+  describe('Billing Pages', () => {
+    it('renders Billing Dashboard page', async () => {
+      const BillingDashboard = (await import('./Billing/Dashboard')).default;
 
       render(
         <BillingDashboard
@@ -227,11 +257,12 @@ describe("Admin UI Smoke Tests", () => {
         />
       );
 
-      expect(screen.getByText("Billing Overview")).toBeInTheDocument();
+      expect(screen.getByText('Billing Overview')).toBeInTheDocument();
     });
 
-    it("renders Billing Subscriptions page", async () => {
-      const BillingSubscriptions = (await import("./Billing/Subscriptions")).default;
+    it('renders Billing Subscriptions page', async () => {
+      const BillingSubscriptions = (await import('./Billing/Subscriptions'))
+        .default;
 
       render(
         <BillingSubscriptions
@@ -245,78 +276,82 @@ describe("Admin UI Smoke Tests", () => {
             to: 0,
           }}
           filters={{}}
-          statuses={["active", "canceled"]}
-          tiers={["free", "pro", "team"]}
+          statuses={['active', 'canceled']}
+          tiers={['free', 'pro', 'team']}
         />
       );
 
-      expect(screen.getByRole("heading", { name: "Subscriptions", level: 1 })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Subscriptions', level: 1 })
+      ).toBeInTheDocument();
     });
 
-    it("renders Billing Show page", async () => {
-      const BillingShow = (await import("./Billing/Show")).default;
+    it('renders Billing Show page', async () => {
+      const BillingShow = (await import('./Billing/Show')).default;
 
       render(
         <BillingShow
           subscription={{
             id: 1,
             user_id: 1,
-            user_name: "Test User",
-            user_email: "test@example.com",
-            stripe_id: "sub_test123",
-            stripe_status: "active",
-            tier: "pro",
+            user_name: 'Test User',
+            user_email: 'test@example.com',
+            stripe_id: 'sub_test123',
+            stripe_status: 'active',
+            tier: 'pro',
             quantity: 1,
             trial_ends_at: null,
             ends_at: null,
-            created_at: "2026-01-01",
+            created_at: '2026-01-01',
           }}
           items={[]}
           audit_logs={[]}
         />
       );
 
-      expect(screen.getByText("sub_test123")).toBeInTheDocument();
+      expect(screen.getByText('sub_test123')).toBeInTheDocument();
     });
   });
 
-  describe("Config & System Pages", () => {
-    it("renders Config page", async () => {
-      const Config = (await import("./Config")).default;
+  describe('Config & System Pages', () => {
+    it('renders Config page', async () => {
+      const Config = (await import('./Config')).default;
 
       render(
         <Config
           feature_flags={[
-            { key: "billing", enabled: true, env_var: "FEATURE_BILLING" },
-            { key: "admin", enabled: true, env_var: "FEATURE_ADMIN" },
+            { key: 'billing', enabled: true, env_var: 'FEATURE_BILLING' },
+            { key: 'admin', enabled: true, env_var: 'FEATURE_ADMIN' },
           ]}
           warnings={[]}
-          environment={{ APP_NAME: "Test App", APP_ENV: "testing" }}
+          environment={{ APP_NAME: 'Test App', APP_ENV: 'testing' }}
         />
       );
 
-      expect(screen.getByRole("heading", { name: "Configuration", level: 1 })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Configuration', level: 1 })
+      ).toBeInTheDocument();
     });
 
-    it("renders System page", async () => {
-      const System = (await import("./System")).default;
+    it('renders System page', async () => {
+      const System = (await import('./System')).default;
 
       render(
         <System
           system={{
-            php_version: "8.3.0",
-            laravel_version: "12.0.0",
-            node_version: "20.0.0",
+            php_version: '8.3.0',
+            laravel_version: '12.0.0',
+            node_version: '20.0.0',
             server: {
-              os: "Linux",
-              server_software: "nginx",
+              os: 'Linux',
+              server_software: 'nginx',
             },
             database: {
-              driver: "mysql",
-              version: "8.0",
+              driver: 'mysql',
+              version: '8.0',
             },
             queue: {
-              driver: "redis",
+              driver: 'redis',
               pending_jobs: 0,
               failed_jobs: 0,
             },
@@ -325,32 +360,45 @@ describe("Admin UI Smoke Tests", () => {
         />
       );
 
-      expect(screen.getByRole("heading", { name: "System Info", level: 1 })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'System Info', level: 1 })
+      ).toBeInTheDocument();
     });
 
-    it("renders Health page", async () => {
-      const Health = (await import("./Health")).default;
+    it('renders Health page', async () => {
+      const Health = (await import('./Health')).default;
 
       render(
         <Health
           health={{
-            status: "healthy",
-            timestamp: "2026-02-13T10:00:00Z",
+            status: 'healthy',
+            timestamp: '2026-02-13T10:00:00Z',
             checks: {
-              database: { status: "healthy", message: "Connection successful", response_time_ms: 5 },
-              cache: { status: "healthy", message: "Redis responding", response_time_ms: 2 },
+              database: {
+                status: 'healthy',
+                message: 'Connection successful',
+                response_time_ms: 5,
+              },
+              cache: {
+                status: 'healthy',
+                message: 'Redis responding',
+                response_time_ms: 2,
+              },
             },
           }}
         />
       );
 
-      expect(screen.getByRole("heading", { name: "Health Status", level: 1 })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Health Status', level: 1 })
+      ).toBeInTheDocument();
     });
   });
 
-  describe("Feature Dashboards", () => {
-    it("renders Notifications Dashboard", async () => {
-      const NotificationsDashboard = (await import("./Notifications/Dashboard")).default;
+  describe('Feature Dashboards', () => {
+    it('renders Notifications Dashboard', async () => {
+      const NotificationsDashboard = (await import('./Notifications/Dashboard'))
+        .default;
 
       render(
         <NotificationsDashboard
@@ -360,18 +408,24 @@ describe("Admin UI Smoke Tests", () => {
             read: 75,
             read_rate: 75,
             sent_last_7d: 50,
-            by_type: [{ type: "info", count: 50 }, { type: "success", count: 50 }],
+            by_type: [
+              { type: 'info', count: 50 },
+              { type: 'success', count: 50 },
+            ],
           }}
           volume_chart={[]}
           recent_notifications={[]}
         />
       );
 
-      expect(screen.getByRole("heading", { name: "Notifications", level: 1 })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Notifications', level: 1 })
+      ).toBeInTheDocument();
     });
 
-    it("renders Social Auth Dashboard", async () => {
-      const SocialAuthDashboard = (await import("./SocialAuth/Dashboard")).default;
+    it('renders Social Auth Dashboard', async () => {
+      const SocialAuthDashboard = (await import('./SocialAuth/Dashboard'))
+        .default;
 
       render(
         <SocialAuthDashboard
@@ -384,11 +438,11 @@ describe("Admin UI Smoke Tests", () => {
         />
       );
 
-      expect(screen.getByText("Social Authentication")).toBeInTheDocument();
+      expect(screen.getByText('Social Authentication')).toBeInTheDocument();
     });
 
-    it("renders Tokens Dashboard", async () => {
-      const TokensDashboard = (await import("./Tokens/Dashboard")).default;
+    it('renders Tokens Dashboard', async () => {
+      const TokensDashboard = (await import('./Tokens/Dashboard')).default;
 
       render(
         <TokensDashboard
@@ -401,11 +455,14 @@ describe("Admin UI Smoke Tests", () => {
         />
       );
 
-      expect(screen.getByRole("heading", { name: "API Tokens", level: 1 })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'API Tokens', level: 1 })
+      ).toBeInTheDocument();
     });
 
-    it("renders TwoFactor Dashboard", async () => {
-      const TwoFactorDashboard = (await import("./TwoFactor/Dashboard")).default;
+    it('renders TwoFactor Dashboard', async () => {
+      const TwoFactorDashboard = (await import('./TwoFactor/Dashboard'))
+        .default;
 
       render(
         <TwoFactorDashboard
@@ -417,11 +474,11 @@ describe("Admin UI Smoke Tests", () => {
         />
       );
 
-      expect(screen.getByText("Two-Factor Authentication")).toBeInTheDocument();
+      expect(screen.getByText('Two-Factor Authentication')).toBeInTheDocument();
     });
 
-    it("renders Webhooks Dashboard", async () => {
-      const WebhooksDashboard = (await import("./Webhooks/Dashboard")).default;
+    it('renders Webhooks Dashboard', async () => {
+      const WebhooksDashboard = (await import('./Webhooks/Dashboard')).default;
 
       render(
         <WebhooksDashboard
@@ -439,13 +496,13 @@ describe("Admin UI Smoke Tests", () => {
         />
       );
 
-      expect(screen.getByText("Webhooks Overview")).toBeInTheDocument();
+      expect(screen.getByText('Webhooks Overview')).toBeInTheDocument();
     });
   });
 
-  describe("Failed Jobs Pages", () => {
-    it("renders Failed Jobs Index", async () => {
-      const FailedJobsIndex = (await import("./FailedJobs/Index")).default;
+  describe('Failed Jobs Pages', () => {
+    it('renders Failed Jobs Index', async () => {
+      const FailedJobsIndex = (await import('./FailedJobs/Index')).default;
 
       render(
         <FailedJobsIndex
@@ -453,12 +510,12 @@ describe("Admin UI Smoke Tests", () => {
             data: [
               {
                 id: 1,
-                uuid: "abc-123-uuid",
-                connection: "redis",
-                queue: "default",
-                payload_summary: "App\\Jobs\\TestJob",
-                failed_at: "2026-03-20T10:00:00Z",
-                exception_summary: "RuntimeException: Something went wrong",
+                uuid: 'abc-123-uuid',
+                connection: 'redis',
+                queue: 'default',
+                payload_summary: 'App\\Jobs\\TestJob',
+                failed_at: '2026-03-20T10:00:00Z',
+                exception_summary: 'RuntimeException: Something went wrong',
               },
             ],
             current_page: 1,
@@ -468,52 +525,54 @@ describe("Admin UI Smoke Tests", () => {
             from: 1,
             to: 1,
           }}
-          queues={["default", "emails"]}
+          queues={['default', 'emails']}
           filters={{}}
         />
       );
 
-      expect(screen.getByRole("heading", { name: "Failed Jobs", level: 1 })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Failed Jobs', level: 1 })
+      ).toBeInTheDocument();
     });
 
-    it("renders Failed Jobs Show", async () => {
-      const FailedJobShow = (await import("./FailedJobs/Show")).default;
+    it('renders Failed Jobs Show', async () => {
+      const FailedJobShow = (await import('./FailedJobs/Show')).default;
 
       render(
         <FailedJobShow
           job={{
             id: 1,
-            uuid: "abc-123-uuid",
-            connection: "redis",
-            queue: "default",
-            payload_summary: "App\\Jobs\\TestJob",
+            uuid: 'abc-123-uuid',
+            connection: 'redis',
+            queue: 'default',
+            payload_summary: 'App\\Jobs\\TestJob',
             payload: '{"displayName":"App\\\\Jobs\\\\TestJob"}',
-            exception: "RuntimeException: Something went wrong\n  at line 1",
-            failed_at: "2026-03-20T10:00:00Z",
+            exception: 'RuntimeException: Something went wrong\n  at line 1',
+            failed_at: '2026-03-20T10:00:00Z',
           }}
         />
       );
 
-      expect(screen.getByText("abc-123-uuid")).toBeInTheDocument();
+      expect(screen.getByText('abc-123-uuid')).toBeInTheDocument();
     });
   });
 
-  describe("Feature Flags Page", () => {
-    it("renders Feature Flags Index", async () => {
-      const FeatureFlagsIndex = (await import("./FeatureFlags/Index")).default;
+  describe('Feature Flags Page', () => {
+    it('renders Feature Flags Index', async () => {
+      const FeatureFlagsIndex = (await import('./FeatureFlags/Index')).default;
 
       render(
         <FeatureFlagsIndex
           flags={[
             {
-              flag: "billing",
+              flag: 'billing',
               env_default: true,
               global_override: null,
               effective: true,
               user_override_count: 0,
             },
             {
-              flag: "social_auth",
+              flag: 'social_auth',
               env_default: false,
               global_override: true,
               effective: true,
@@ -523,25 +582,37 @@ describe("Admin UI Smoke Tests", () => {
         />
       );
 
-      expect(screen.getByRole("heading", { name: "Feature Flags", level: 1 })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Feature Flags', level: 1 })
+      ).toBeInTheDocument();
     });
   });
 
-  describe("Data Health Page", () => {
-    it("renders Data Health", async () => {
-      const DataHealth = (await import("./DataHealth")).default;
+  describe('Data Health Page', () => {
+    it('renders Data Health', async () => {
+      const DataHealth = (await import('./DataHealth')).default;
 
       render(
         <DataHealth
           checks={{
-            orphaned_tokens: { status: "ok", count: 0, description: "No orphaned tokens found" },
-            missing_settings: { status: "warning", count: 3, description: "Users missing default settings" },
+            orphaned_tokens: {
+              status: 'ok',
+              count: 0,
+              description: 'No orphaned tokens found',
+            },
+            missing_settings: {
+              status: 'warning',
+              count: 3,
+              description: 'Users missing default settings',
+            },
           }}
           ran_at="2026-03-20T10:00:00Z"
         />
       );
 
-      expect(screen.getByRole("heading", { name: "Data Health", level: 1 })).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Data Health', level: 1 })
+      ).toBeInTheDocument();
     });
   });
 });

@@ -120,6 +120,9 @@ enum AnalyticsEvent: string
     // Errors (frontend-originated, GA4-forwarded)
     case ERROR_PAGE_VIEWED = 'error.page_viewed';
 
+    // Lifecycle email sends (server-side only, not forwarded to GA4)
+    case LIFECYCLE_EMAIL_SENT = 'lifecycle.email_sent';
+
     // Limit (PQL signals)
     case LIMIT_THRESHOLD_50 = 'limit.threshold_50';
     case LIMIT_THRESHOLD_80 = 'limit.threshold_80';
@@ -185,6 +188,7 @@ enum AnalyticsEvent: string
         'limit.threshold_50',
         'limit.threshold_80',
         'limit.threshold_100',
+        'lifecycle.email_sent',
     ];
 
     /**

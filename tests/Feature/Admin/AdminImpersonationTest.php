@@ -197,7 +197,7 @@ it('logs out when admin lost admin status during impersonation', function () {
 });
 
 it('returns 404 for non-existent user impersonation', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $this->actingAs($admin)->post('/admin/users/99999/impersonate')->assertStatus(404);
 });
