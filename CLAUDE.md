@@ -142,7 +142,7 @@ php artisan lifecycle:send-trial-ending     # Notify users of approaching trial 
 php artisan lifecycle:send-trial-nudges     # Trial conversion nudges
 php artisan lifecycle:send-welcome          # Welcome email sequence
 php artisan lifecycle:send-win-back         # Win-back emails to churned users
-php artisan notifications:prune-read        # Delete old read notifications
+php artisan prune-read-notifications        # Delete old read notifications
 scripts/init.sh                             # First-time setup
 ```
 

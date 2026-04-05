@@ -1,3 +1,5 @@
+Model: haiku
+
 ## Agent Review — 5ec83c9d-0a30-452f-a236-4d7d9c064be1
 
 - Status: completed
