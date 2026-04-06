@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\EmailSendLog;
 use App\Models\User;
 use App\Models\UserSetting;
 use App\Notifications\TrialEndingNotification;
@@ -44,10 +45,8 @@ class SendTrialEndingReminders extends Command
                 continue;
             }
 
-            // Dedup: skip if already notified today
-            $settingKey = 'trial_reminder_sent_at';
-            $lastSent = UserSetting::getValue($user->id, $settingKey);
-            if ($lastSent && now()->parse($lastSent)->isToday()) {
+            // Dedup: skip if already sent this reminder
+            if (EmailSendLog::alreadySent($user->id, 'trial_ending_reminder', 1)) {
                 continue;
             }
 
@@ -55,7 +54,7 @@ class SendTrialEndingReminders extends Command
 
             try {
                 $user->notify(new TrialEndingNotification($daysRemaining));
-                UserSetting::setValue($user->id, $settingKey, now()->toISOString());
+                EmailSendLog::record($user->id, 'trial_ending_reminder', 1);
                 $sent++;
 
                 Log::info('trial_ending_reminder_sent', [

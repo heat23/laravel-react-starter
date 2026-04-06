@@ -116,7 +116,7 @@ export default function BillingIndex() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [resumeDialogOpen, setResumeDialogOpen] = useState(false);
   const [checkoutSuccess, setCheckoutSuccess] = useState(false);
-  const [planSwapped, setPlanSwapped] = useState(false);
+  const [_planSwapped, setPlanSwapped] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [trialUpgradeLoading, setTrialUpgradeLoading] = useState(false);
 
@@ -156,7 +156,11 @@ export default function BillingIndex() {
       track(AnalyticsEvents.BILLING_CHECKOUT_COMPLETED, {
         plan: (subscription?.name ?? 'unknown') as PlanKey,
         price_id: subscription?.priceId ?? undefined,
-        billing_period: (subscription?.priceId?.includes('annual') || subscription?.priceId?.includes('yearly')) ? 'annual' : 'monthly',
+        billing_period:
+          subscription?.priceId?.includes('annual') ||
+          subscription?.priceId?.includes('yearly')
+            ? 'annual'
+            : 'monthly',
       });
 
       params.delete('checkout');
@@ -224,14 +228,15 @@ export default function BillingIndex() {
               <AlertDescription>
                 Based on how you&apos;ve been using the product, you look like a
                 great fit for a Pro or Team plan. If you have questions before
-                upgrading, we&apos;re happy to walk you through the right option.{' '}
+                upgrading, we&apos;re happy to walk you through the right
+                option.{' '}
                 <a
                   href={`mailto:${encodeURIComponent(contactEmail)}?subject=Upgrade%20question`}
                   className="underline font-medium rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   Email us
-                </a>
-                {' '}or{' '}
+                </a>{' '}
+                or{' '}
                 <Link
                   href="/pricing"
                   className="underline font-medium rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
@@ -243,65 +248,71 @@ export default function BillingIndex() {
             </Alert>
           )}
 
-          {platformTrial && (() => {
-            const isUrgent = platformTrial.daysRemaining <= 2;
-            const isWarning = !isUrgent && platformTrial.daysRemaining <= 7;
-            return (
-              <Alert
-                className={
-                  isUrgent
-                    ? 'border-destructive/30 bg-destructive/5'
-                    : isWarning
-                      ? 'border-warning/30 bg-warning/5'
-                      : 'border-primary/20 bg-primary/5'
-                }
-              >
-                <Info
-                  className={`h-4 w-4 ${isUrgent ? 'text-destructive' : isWarning ? 'text-warning' : 'text-primary'}`}
-                />
-                <AlertTitle>
-                  {isUrgent
-                    ? 'Trial expires soon — upgrade today to keep access'
-                    : 'Pro Trial Active'}
-                </AlertTitle>
-                <AlertDescription>
-                  You have <strong>{platformTrial.daysRemaining} day{platformTrial.daysRemaining !== 1 ? 's' : ''}</strong>{' '}
-                  remaining{isUrgent ? '' : ` to explore all Pro features`}. Trial expires on{' '}
-                  <strong>{formatDate(platformTrial.endsAt)}</strong>.{' '}
-                  {proPriceId ? (
-                    <LoadingButton
-                      size="sm"
-                      className="ml-1"
-                      loading={trialUpgradeLoading}
-                      loadingText="Processing..."
-                      onClick={() => {
-                        setTrialUpgradeLoading(true);
-                        track(AnalyticsEvents.BILLING_CHECKOUT_STARTED, {
-                          plan: 'pro',
-                          source: 'trial_billing_page',
-                        } as Parameters<typeof track>[1]);
-                        router.post(
-                          route('billing.checkout'),
-                          { price_id: proPriceId },
-                          { onFinish: () => setTrialUpgradeLoading(false) }
-                        );
-                      }}
-                    >
-                      Subscribe to keep access
-                    </LoadingButton>
-                  ) : (
-                    <Link
-                      href="/pricing"
-                      className="underline font-medium rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      Upgrade now
-                    </Link>
-                  )}{' '}
-                  {!proPriceId && 'to keep access after your trial ends.'}
-                </AlertDescription>
-              </Alert>
-            );
-          })()}
+          {platformTrial &&
+            (() => {
+              const isUrgent = platformTrial.daysRemaining <= 2;
+              const isWarning = !isUrgent && platformTrial.daysRemaining <= 7;
+              return (
+                <Alert
+                  className={
+                    isUrgent
+                      ? 'border-destructive/30 bg-destructive/5'
+                      : isWarning
+                        ? 'border-warning/30 bg-warning/5'
+                        : 'border-primary/20 bg-primary/5'
+                  }
+                >
+                  <Info
+                    className={`h-4 w-4 ${isUrgent ? 'text-destructive' : isWarning ? 'text-warning' : 'text-primary'}`}
+                  />
+                  <AlertTitle>
+                    {isUrgent
+                      ? 'Trial expires soon — upgrade today to keep access'
+                      : 'Pro Trial Active'}
+                  </AlertTitle>
+                  <AlertDescription>
+                    You have{' '}
+                    <strong>
+                      {platformTrial.daysRemaining} day
+                      {platformTrial.daysRemaining !== 1 ? 's' : ''}
+                    </strong>{' '}
+                    remaining{isUrgent ? '' : ` to explore all Pro features`}.
+                    Trial expires on{' '}
+                    <strong>{formatDate(platformTrial.endsAt)}</strong>.{' '}
+                    {proPriceId ? (
+                      <LoadingButton
+                        size="sm"
+                        className="ml-1"
+                        loading={trialUpgradeLoading}
+                        loadingText="Processing..."
+                        onClick={() => {
+                          setTrialUpgradeLoading(true);
+                          track(AnalyticsEvents.BILLING_CHECKOUT_STARTED, {
+                            plan: 'pro',
+                            source: 'trial_billing_page',
+                          } as Parameters<typeof track>[1]);
+                          router.post(
+                            route('billing.checkout'),
+                            { price_id: proPriceId },
+                            { onFinish: () => setTrialUpgradeLoading(false) }
+                          );
+                        }}
+                      >
+                        Subscribe to keep access
+                      </LoadingButton>
+                    ) : (
+                      <Link
+                        href="/pricing"
+                        className="underline font-medium rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      >
+                        Upgrade now
+                      </Link>
+                    )}{' '}
+                    {!proPriceId && 'to keep access after your trial ends.'}
+                  </AlertDescription>
+                </Alert>
+              );
+            })()}
 
           {incompletePayment && (
             <Alert variant="destructive">

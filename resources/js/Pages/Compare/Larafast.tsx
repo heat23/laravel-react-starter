@@ -4,13 +4,13 @@ import { useEffect } from 'react';
 
 import { Head, Link } from '@inertiajs/react';
 
-import { ComparisonTable } from '@/Components/compare/ComparisonTable';
 import { Logo, TextLogo } from '@/Components/branding/Logo';
+import { ComparisonTable } from '@/Components/compare/ComparisonTable';
 import { BreadcrumbJsonLd } from '@/Components/seo/BreadcrumbJsonLd';
 import { JsonLd } from '@/Components/seo/JsonLd';
+import { Button } from '@/Components/ui/button';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
-import { Button } from '@/Components/ui/button';
 import type { ComparisonPageProps } from '@/types/index';
 
 const DATE_PUBLISHED = '2026-03-20';

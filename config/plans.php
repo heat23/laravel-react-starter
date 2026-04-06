@@ -69,6 +69,11 @@ return [
         // A/B test variant: set PLAN_PRO_PRICE_MONTHLY_VARIANT to test a different display price point.
         // When null, no experiment is active. When set, 50% of users see the variant price.
         'price_monthly_variant' => env('PLAN_PRO_PRICE_MONTHLY_VARIANT'),
+        // A/B test annual variant: set PLAN_PRO_PRICE_ANNUAL_VARIANT + STRIPE_PRICE_PRO_ANNUAL_VARIANT to
+        // test a different annual price point. Both keys must be set for the annual swap to occur.
+        // When absent, annual billing stays at the control price for all cohorts.
+        'stripe_price_annual_variant' => env('STRIPE_PRICE_PRO_ANNUAL_VARIANT'),
+        'price_annual_variant' => env('PLAN_PRO_PRICE_ANNUAL_VARIANT'),
         'per_seat' => false,
         'limits' => [
             'projects' => null, // unlimited
@@ -218,6 +223,6 @@ return [
     'trial' => [
         'enabled' => env('TRIAL_ENABLED', true),
         'days' => (int) env('TRIAL_DAYS', 14),
-        'tier' => 'pro', // which tier to grant during trial
+        'tier' => env('TRIAL_TIER', 'pro'), // which tier to grant during trial
     ],
 ];

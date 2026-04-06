@@ -153,6 +153,21 @@ class ReEngagementNotification extends Notification implements ShouldQueue
             ->line('Questions? Just reply to this email.');
     }
 
+    private function campaignVariant(): string
+    {
+        if ($this->userScore >= 60 && in_array($this->emailNumber, [1, 2], true)) {
+            return 'upgrade_cta';
+        }
+
+        return match ($this->emailNumber) {
+            1 => 'gentle_check_in',
+            2 => 'feedback_request',
+            3 => 'account_status',
+            4 => 'value_tip',
+            default => 'gentle_check_in',
+        };
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -162,6 +177,8 @@ class ReEngagementNotification extends Notification implements ShouldQueue
             'type' => "re_engagement_{$this->emailNumber}",
             'email_number' => $this->emailNumber,
             'is_paid' => $this->isPaidUser,
+            'user_score' => $this->userScore,
+            'campaign_variant' => $this->campaignVariant(),
         ];
     }
 }

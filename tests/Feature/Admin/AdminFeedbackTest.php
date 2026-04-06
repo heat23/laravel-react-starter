@@ -169,6 +169,92 @@ it('feedback from soft-deleted users loads correctly on index', function () {
         ->assertOk();
 });
 
+// ── Export ────────────────────────────────────────────────────────────────────
+
+it('export requires admin', function () {
+    $user = User::factory()->create();
+    $this->actingAs($user)
+        ->get('/admin/feedback/export')
+        ->assertForbidden();
+});
+
+it('export returns csv for admin', function () {
+    $admin = User::factory()->admin()->create();
+    makeFeedback(['type' => 'bug', 'status' => 'open', 'message' => 'a reproducible crash']);
+
+    $response = $this->actingAs($admin)
+        ->get('/admin/feedback/export');
+
+    $response->assertOk();
+    $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+    $response->assertHeader('Content-Disposition', 'attachment; filename=feedback-'.now()->format('Y-m-d').'.csv');
+
+    $body = $response->streamedContent();
+    expect(strlen($body))->toBeGreaterThan(0);
+    expect($body)->toContain('ID,Type,Status,Priority,Message')
+        ->and($body)->toContain('bug')
+        ->and($body)->toContain('a reproducible crash');
+});
+
+it('export returns only header row when no records match filters', function () {
+    $admin = User::factory()->admin()->create();
+    makeFeedback(['type' => 'bug', 'status' => 'open']);
+
+    $response = $this->actingAs($admin)
+        ->get('/admin/feedback/export?type=feature&status=resolved');
+
+    $response->assertOk();
+    $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+    $response->assertHeader('Content-Disposition', 'attachment; filename=feedback-'.now()->format('Y-m-d').'.csv');
+
+    $body = $response->streamedContent();
+    expect(strlen($body))->toBeGreaterThan(0);
+    $lines = array_filter(explode("\n", trim($body)));
+    expect($body)->toContain('ID,Type,Status,Priority,Message')
+        ->and(count($lines))->toBe(1);
+});
+
+it('export validates type enum', function () {
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin)
+        ->getJson('/admin/feedback/export?type=invalid')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['type']);
+});
+
+it('export validates status enum', function () {
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin)
+        ->getJson('/admin/feedback/export?status=invalid')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['status']);
+});
+
+it('export rejects search exceeding max length', function () {
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin)
+        ->getJson('/admin/feedback/export?search='.str_repeat('a', 101))
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['search']);
+});
+
+it('export accepts valid type and status filters', function () {
+    $admin = User::factory()->admin()->create();
+    makeFeedback(['type' => 'feature', 'status' => 'in_review', 'message' => 'matching record']);
+    makeFeedback(['type' => 'bug', 'status' => 'open', 'message' => 'excluded record']);
+
+    $response = $this->actingAs($admin)
+        ->get('/admin/feedback/export?type=feature&status=in_review');
+
+    $response->assertOk();
+    $response->assertHeader('Content-Disposition', 'attachment; filename=feedback-'.now()->format('Y-m-d').'.csv');
+
+    $body = $response->streamedContent();
+    expect(strlen($body))->toBeGreaterThan(0);
+    expect($body)->toContain('matching record')
+        ->and($body)->not->toContain('excluded record');
+});
+
 // ── Cache invalidation ────────────────────────────────────────────────────────
 
 it('update invalidates the dashboard stats cache', function () {

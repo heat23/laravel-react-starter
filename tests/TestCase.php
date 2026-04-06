@@ -2,11 +2,30 @@
 
 namespace Tests;
 
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * Create the application from this worktree's bootstrap/app.php.
+     *
+     * Overrides the framework default which uses Application::inferBasePath()
+     * — that method follows the symlinked vendor/ back to the main repo root,
+     * causing tests to load the main repo's routes/config instead of the
+     * worktree's own files. __DIR__ always resolves to the worktree.
+     */
+    public function createApplication(): Application
+    {
+        $app = require __DIR__.'/../bootstrap/app.php';
+
+        $app->make(Kernel::class)->bootstrap();
+
+        return $app;
+    }
+
     /**
      * Setup the test case.
      *

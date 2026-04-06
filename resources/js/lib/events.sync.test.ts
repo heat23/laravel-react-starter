@@ -32,7 +32,7 @@ describe('AnalyticsEvents sync', () => {
     const eventKeys = Object.keys(AnalyticsEvents);
     // Floor value: the number of events at the time this test was written.
     // This catches accidental bulk deletions. Increase when adding events.
-    expect(eventKeys.length).toBeGreaterThanOrEqual(54);
+    expect(eventKeys.length).toBeGreaterThanOrEqual(56);
   });
 
   it('sorted event names match snapshot (catches accidental deletions)', () => {
@@ -60,10 +60,12 @@ describe('AnalyticsEvents sync', () => {
       'BILLING_CTA_CLICKED',
       'BILLING_PAYMENT_FAILED',
       'BILLING_PAYMENT_METHOD_UPDATED',
+      'BILLING_PAYMENT_RECOVERED',
       'BILLING_PERIOD_TOGGLED',
       'BILLING_PLAN_SELECTED',
       'BILLING_PLAN_SWAPPED',
       'BILLING_PRICING_VIEWED',
+      'BILLING_RETENTION_COUPON_APPLIED',
       'BILLING_SUBSCRIPTION_CANCELED',
       'BILLING_SUBSCRIPTION_RESUMED',
       'BILLING_SWAP_CONFIRMED',

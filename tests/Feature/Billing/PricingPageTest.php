@@ -206,6 +206,82 @@ it('shows control annual price and Stripe ID when annual variant Stripe price is
     );
 });
 
+it('swaps both annual display price and Stripe ID atomically for variant cohort', function () {
+    $variantAnnualPrice = 120;
+    $variantAnnualStripeId = 'price_test_variant_annual';
+
+    config(['plans.pro.price_annual_variant' => $variantAnnualPrice]);
+    config(['plans.pro.stripe_price_annual_variant' => $variantAnnualStripeId]);
+
+    $cohortOneSeed = collect(range(1, 10000))->first(fn ($i) => (abs(crc32((string) $i)) % 2) === 1);
+
+    $user = User::factory()->create(['id' => $cohortOneSeed, 'email_verified_at' => now()]);
+
+    $response = $this->actingAs($user)->get('/pricing');
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('tiers.pro.price_annual', $variantAnnualPrice)
+        ->where('tiers.pro.stripe_price_id_annual', $variantAnnualStripeId)
+    );
+});
+
+it('trial tier is driven by plans.trial.tier config', function () {
+    config(['plans.trial.tier' => 'team']);
+
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+        'trial_ends_at' => now()->addDays(7),
+    ]);
+
+    $response = $this->actingAs($user)->get('/pricing');
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('currentPlan', 'team')
+    );
+});
+
+it('shows control monthly price when only Stripe monthly variant ID is set without display price', function () {
+    // Only stripe_price_monthly_variant is configured; price_monthly_variant is absent.
+    // The controller must NOT do a partial swap — control values must be returned.
+    config(['plans.pro.stripe_price_monthly_variant' => 'price_test_stripe_only']);
+    // price_monthly_variant intentionally NOT set
+
+    $cohortOneSeed = collect(range(1, 10000))->first(fn ($i) => (abs(crc32((string) $i)) % 2) === 1);
+
+    $user = User::factory()->create(['id' => $cohortOneSeed, 'email_verified_at' => now()]);
+
+    $response = $this->actingAs($user)->get('/pricing');
+
+    $controlMonthly = config('plans.pro.price_monthly');
+    $controlStripeId = config('plans.pro.stripe_price_monthly');
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('tiers.pro.price', $controlMonthly)
+        ->where('tiers.pro.stripe_price_id', $controlStripeId)
+    );
+});
+
+it('shows control annual price when only Stripe annual variant ID is set without display price', function () {
+    // Only stripe_price_annual_variant is configured; price_annual_variant is absent.
+    // The controller must NOT do a partial swap — control values must be returned.
+    config(['plans.pro.stripe_price_annual_variant' => 'price_test_annual_stripe_only']);
+    // price_annual_variant intentionally NOT set
+
+    $cohortOneSeed = collect(range(1, 10000))->first(fn ($i) => (abs(crc32((string) $i)) % 2) === 1);
+
+    $user = User::factory()->create(['id' => $cohortOneSeed, 'email_verified_at' => now()]);
+
+    $response = $this->actingAs($user)->get('/pricing');
+
+    $controlAnnual = config('plans.pro.price_annual');
+    $controlStripeAnnualId = config('plans.pro.stripe_price_annual');
+
+    $response->assertInertia(fn ($page) => $page
+        ->where('tiers.pro.price_annual', $controlAnnual)
+        ->where('tiers.pro.stripe_price_id_annual', $controlStripeAnnualId)
+    );
+});
+
 it('pro description contains outcome language', function () {
     $response = $this->get('/pricing');
 

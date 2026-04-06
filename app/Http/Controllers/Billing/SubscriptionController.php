@@ -470,7 +470,7 @@ class SubscriptionController extends Controller
         try {
             $subscription->applyCoupon($couponId);
 
-            $this->auditService->log('retention_coupon_applied', [
+            $this->auditService->log(AnalyticsEvent::BILLING_RETENTION_COUPON_APPLIED, [
                 'user_id' => $user->id,
                 'coupon_id' => $couponId,
             ]);

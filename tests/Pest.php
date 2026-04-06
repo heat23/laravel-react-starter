@@ -237,6 +237,7 @@ function registerBillingRoutes(): void
         $router->post('/billing/swap', [SubscriptionController::class, 'swap'])->name('billing.swap');
         $router->post('/billing/quantity', [SubscriptionController::class, 'updateQuantity'])->name('billing.quantity');
         $router->post('/billing/payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('billing.payment-method');
+        $router->post('/billing/retention-coupon', [SubscriptionController::class, 'applyRetentionCoupon'])->middleware('throttle:3,60')->name('billing.retention-coupon');
         $router->get('/billing/portal', [SubscriptionController::class, 'portal'])->name('billing.portal');
     });
 

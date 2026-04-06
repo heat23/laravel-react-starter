@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Billing;
 use App\Enums\AnalyticsEvent;
 use App\Enums\LifecycleStage;
 use App\Jobs\DispatchAnalyticsEvent;
+use App\Jobs\PersistAuditLog;
 use App\Models\EmailSendLog;
 use App\Models\Subscription;
 use App\Models\User;
@@ -142,8 +143,11 @@ class StripeWebhookController extends WebhookController
                     $subscription->past_due_since = null;
                     $subscription->save();
 
-                    // Only notify when recovering from a past-due state
+                    // Only notify and track when recovering from a past-due state
                     $user->notify(new PaymentRecoveredNotification(invoiceId: $invoiceId));
+                    $this->dispatchWebhookAnalyticsEvent($user, AnalyticsEvent::BILLING_PAYMENT_RECOVERED, [
+                        'invoice_id' => $invoiceId,
+                    ]);
                 }
             }
         }
@@ -291,6 +295,10 @@ class StripeWebhookController extends WebhookController
     private function dispatchWebhookAnalyticsEvent(User $user, AnalyticsEvent $event, array $params = []): void
     {
         try {
+            // Persist to audit_logs with the correct enum value and user_id so that
+            // ProductAnalyticsService::getSubscriptionEvents() can find webhook events.
+            // Auth::id() is null in webhook context so both jobs receive explicit user_id.
+            PersistAuditLog::dispatch($event->value, $user->id, null, null, $params ?: null);
             DispatchAnalyticsEvent::dispatch($event->value, $params, $user->id);
         } catch (\Throwable) {
             // Analytics dispatch should never break webhook processing

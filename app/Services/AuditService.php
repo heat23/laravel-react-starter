@@ -37,6 +37,8 @@ class AuditService
         'limit.threshold_100',
         'billing.payment_failed',
         'billing.payment_method_updated',
+        'billing.payment_recovered',
+        'billing.retention_coupon_applied',
     ];
 
     public function logLogin(?User $user = null): void

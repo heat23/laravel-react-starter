@@ -40,18 +40,33 @@ class PricingController extends Controller
             // Both the display price and the Stripe price ID must swap atomically — never show a variant
             // display price while billing at the control Stripe price ID, or vice versa.
             if ($tierKey === 'pro' && $isVariantCohort) {
+                $hasMonthlyVariantPrice = isset($tierConfig['price_monthly_variant']);
+                $hasMonthlyVariantStripeId = ! empty($tierConfig['stripe_price_monthly_variant']);
+
                 // Monthly variant: only swap when BOTH the display price and the Stripe price ID are set.
-                if (! empty($tierConfig['stripe_price_monthly_variant']) && isset($tierConfig['price_monthly_variant'])) {
+                if ($hasMonthlyVariantPrice && $hasMonthlyVariantStripeId) {
                     $priceMonthly = $tierConfig['price_monthly_variant'];
                     $stripeMonthlyPriceId = $tierConfig['stripe_price_monthly_variant'];
+                } elseif ($hasMonthlyVariantPrice || $hasMonthlyVariantStripeId) {
+                    logger()->warning('Partial A/B config: monthly variant requires both price_monthly_variant and stripe_price_monthly_variant. Falling back to control pricing.', [
+                        'has_price_monthly_variant' => $hasMonthlyVariantPrice,
+                        'has_stripe_price_monthly_variant' => $hasMonthlyVariantStripeId,
+                    ]);
                 }
 
+                $hasAnnualVariantPrice = isset($tierConfig['price_annual_variant']);
+                $hasAnnualVariantStripeId = ! empty($tierConfig['stripe_price_annual_variant']);
+
                 // Annual variant: only swap when BOTH the display price and the Stripe price ID are set.
-                // If stripe_price_annual_variant is absent, annual billing stays at the control price and
-                // annual display price is unchanged — no partial swap occurs.
-                if (! empty($tierConfig['stripe_price_annual_variant']) && isset($tierConfig['price_annual_variant'])) {
+                // If either is absent, annual billing stays at the control price — no partial swap occurs.
+                if ($hasAnnualVariantPrice && $hasAnnualVariantStripeId) {
                     $priceAnnual = $tierConfig['price_annual_variant'];
                     $stripeAnnualPriceId = $tierConfig['stripe_price_annual_variant'];
+                } elseif ($hasAnnualVariantPrice || $hasAnnualVariantStripeId) {
+                    logger()->warning('Partial A/B config: annual variant requires both price_annual_variant and stripe_price_annual_variant. Falling back to control pricing.', [
+                        'has_price_annual_variant' => $hasAnnualVariantPrice,
+                        'has_stripe_price_annual_variant' => $hasAnnualVariantStripeId,
+                    ]);
                 }
             }
 

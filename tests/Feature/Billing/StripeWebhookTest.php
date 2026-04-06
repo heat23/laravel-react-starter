@@ -566,3 +566,122 @@ it('does not dispatch analytics event when stripe customer has no local user', f
         return $job->eventName === AnalyticsEvent::SUBSCRIPTION_CREATED->value;
     });
 });
+
+it('dispatches BILLING_PAYMENT_RECOVERED analytics event when invoice.payment_succeeded clears past_due_since', function () {
+    Queue::fake();
+
+    $user = User::factory()->create(['stripe_id' => 'cus_ana_recovered']);
+    $subscription = Subscription::factory()->create([
+        'user_id' => $user->id,
+        'stripe_id' => 'sub_ana_recovered',
+        'stripe_status' => 'past_due',
+        'past_due_since' => now()->subDay(),
+    ]);
+
+    $payload = createStripeWebhookPayload('invoice.payment_succeeded', [
+        'id' => 'in_ana_recovered',
+        'customer' => 'cus_ana_recovered',
+        'subscription' => 'sub_ana_recovered',
+        'amount_paid' => 1900,
+        'currency' => 'usd',
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === AnalyticsEvent::BILLING_PAYMENT_RECOVERED->value
+            && $job->userId === $user->id;
+    });
+
+    expect($subscription->fresh()->past_due_since)->toBeNull();
+});
+
+it('does not dispatch BILLING_PAYMENT_RECOVERED when invoice.payment_succeeded is not a recovery', function () {
+    Queue::fake();
+
+    $user = User::factory()->create(['stripe_id' => 'cus_ana_no_recovery']);
+    Subscription::factory()->create([
+        'user_id' => $user->id,
+        'stripe_id' => 'sub_ana_no_recovery',
+        'stripe_status' => 'active',
+        'past_due_since' => null,
+    ]);
+
+    $payload = createStripeWebhookPayload('invoice.payment_succeeded', [
+        'id' => 'in_ana_no_recovery',
+        'customer' => 'cus_ana_no_recovery',
+        'subscription' => 'sub_ana_no_recovery',
+        'amount_paid' => 1900,
+        'currency' => 'usd',
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    Queue::assertNotPushed(DispatchAnalyticsEvent::class, function ($job) {
+        return $job->eventName === AnalyticsEvent::BILLING_PAYMENT_RECOVERED->value;
+    });
+});
+
+// ============================================
+// Analytics audit_log persistence (ANA-002 regression)
+// These tests run without Queue::fake() so PersistAuditLog executes synchronously
+// (QUEUE_CONNECTION=sync in phpunit.xml) and we can assert on audit_logs directly.
+// Previously dispatchWebhookAnalyticsEvent dispatched DispatchAnalyticsEvent directly
+// (GA4 only, no audit_logs write), making webhook events invisible to
+// ProductAnalyticsService::getSubscriptionEvents() queries.
+// ============================================
+
+it('persists subscription.created to audit_logs when customer.subscription.created fires', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_pers_sub_created']);
+
+    $payload = createStripeWebhookPayload('customer.subscription.created', [
+        'id' => 'sub_pers_created',
+        'customer' => 'cus_pers_sub_created',
+        'status' => 'active',
+        'items' => ['data' => [['id' => 'si_pers1', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+        'current_period_end' => now()->addMonth()->timestamp,
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => AnalyticsEvent::SUBSCRIPTION_CREATED->value,
+        'user_id' => $user->id,
+    ]);
+});
+
+it('persists subscription.canceled to audit_logs when customer.subscription.deleted fires', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_pers_sub_deleted']);
+    createSubscription($user, ['stripe_id' => 'sub_pers_deleted']);
+
+    $payload = createStripeWebhookPayload('customer.subscription.deleted', [
+        'id' => 'sub_pers_deleted',
+        'customer' => 'cus_pers_sub_deleted',
+        'status' => 'canceled',
+        'items' => ['data' => [['id' => 'si_pers2', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => AnalyticsEvent::SUBSCRIPTION_CANCELED->value,
+        'user_id' => $user->id,
+    ]);
+});
+
+it('persists billing.payment_failed to audit_logs when invoice.payment_failed fires', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_pers_pay_failed']);
+
+    $payload = createStripeWebhookPayload('invoice.payment_failed', [
+        'id' => 'in_pers_failed',
+        'customer' => 'cus_pers_pay_failed',
+        'amount_due' => 1900,
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => AnalyticsEvent::BILLING_PAYMENT_FAILED->value,
+        'user_id' => $user->id,
+    ]);
+});

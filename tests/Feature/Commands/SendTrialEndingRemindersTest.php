@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\EmailSendLog;
 use App\Models\User;
 use App\Models\UserSetting;
 use App\Notifications\TrialEndingNotification;
@@ -61,7 +62,7 @@ it('does not send to already-subscribed users', function () {
     Notification::assertNotSentTo($user, TrialEndingNotification::class);
 });
 
-it('does not send duplicate reminder when already notified today', function () {
+it('does not send duplicate reminder when already recorded in EmailSendLog', function () {
     Notification::fake();
 
     $user = User::factory()->create([
@@ -69,12 +70,26 @@ it('does not send duplicate reminder when already notified today', function () {
         'trial_ends_at' => now()->addDays(2),
     ]);
 
-    UserSetting::setValue($user->id, 'trial_reminder_sent_at', now()->toISOString());
+    EmailSendLog::record($user->id, 'trial_ending_reminder', 1);
 
     $this->artisan('trial:send-reminders')
         ->assertSuccessful();
 
     Notification::assertNotSentTo($user, TrialEndingNotification::class);
+});
+
+it('records EmailSendLog entry after sending trial-ending reminder', function () {
+    Notification::fake();
+
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+        'trial_ends_at' => now()->addDays(2),
+    ]);
+
+    $this->artisan('trial:send-reminders')
+        ->assertSuccessful();
+
+    expect(EmailSendLog::alreadySent($user->id, 'trial_ending_reminder', 1))->toBeTrue();
 });
 
 it('does not send to users who opted out of marketing emails', function () {

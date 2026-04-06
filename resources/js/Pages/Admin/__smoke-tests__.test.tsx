@@ -3,19 +3,14 @@
  *
  * Basic rendering tests for all admin pages to ensure they don't crash.
  * These are intentionally lightweight - full interaction testing is done in dedicated test files.
+ *
+ * Static imports are used (instead of dynamic await import()) so Vitest loads
+ * all modules upfront via its transform cache, avoiding per-test timeout issues
+ * caused by slow first-time module transformation.
  */
 
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-// Mock window.location before imports (needed by useAdminFilters)
-beforeEach(() => {
-  delete (window as unknown as Record<string, unknown>).location;
-  (window as unknown as Record<string, unknown>).location = {
-    search: '',
-    pathname: '/admin',
-  };
-});
 
 // Mock Inertia
 vi.mock('@inertiajs/react', async () => {
@@ -106,11 +101,39 @@ vi.mock('recharts', () => ({
   Legend: () => null,
 }));
 
+// Mock sonner (used by FeatureFlags and other pages)
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
+}));
+
+// Static imports — vi.mock() calls above are hoisted before these by Vitest
+import AuditLogsIndex from './AuditLogs/Index';
+import AuditLogsShow from './AuditLogs/Show';
+import BillingDashboard from './Billing/Dashboard';
+import BillingShow from './Billing/Show';
+import BillingSubscriptions from './Billing/Subscriptions';
+import Config from './Config';
+import DataHealth from './DataHealth';
+import FailedJobsIndex from './FailedJobs/Index';
+import FailedJobShow from './FailedJobs/Show';
+import FeatureFlagsIndex from './FeatureFlags/Index';
+import Health from './Health';
+import NotificationsDashboard from './Notifications/Dashboard';
+import SocialAuthDashboard from './SocialAuth/Dashboard';
+import System from './System';
+import TokensDashboard from './Tokens/Dashboard';
+import TwoFactorDashboard from './TwoFactor/Dashboard';
+import UsersIndex from './Users/Index';
+import UsersShow from './Users/Show';
+import WebhooksDashboard from './Webhooks/Dashboard';
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe('Admin UI Smoke Tests', () => {
   describe('Users Pages', () => {
-    it('renders Users Index page', async () => {
-      const UsersIndex = (await import('./Users/Index')).default;
-
+    it('renders Users Index page', () => {
       render(
         <UsersIndex
           users={{
@@ -144,9 +167,7 @@ describe('Admin UI Smoke Tests', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders Users Show page', async () => {
-      const UsersShow = (await import('./Users/Show')).default;
-
+    it('renders Users Show page', () => {
       render(
         <UsersShow
           user={{
@@ -175,9 +196,7 @@ describe('Admin UI Smoke Tests', () => {
   });
 
   describe('Audit Logs Pages', () => {
-    it('renders Audit Logs Index page', async () => {
-      const AuditLogsIndex = (await import('./AuditLogs/Index')).default;
-
+    it('renders Audit Logs Index page', () => {
       render(
         <AuditLogsIndex
           logs={{
@@ -199,9 +218,7 @@ describe('Admin UI Smoke Tests', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders Audit Logs Show page', async () => {
-      const AuditLogsShow = (await import('./AuditLogs/Show')).default;
-
+    it('renders Audit Logs Show page', () => {
       render(
         <AuditLogsShow
           auditLog={{
@@ -223,9 +240,7 @@ describe('Admin UI Smoke Tests', () => {
   });
 
   describe('Billing Pages', () => {
-    it('renders Billing Dashboard page', async () => {
-      const BillingDashboard = (await import('./Billing/Dashboard')).default;
-
+    it('renders Billing Dashboard page', () => {
       render(
         <BillingDashboard
           stats={{
@@ -260,10 +275,7 @@ describe('Admin UI Smoke Tests', () => {
       expect(screen.getByText('Billing Overview')).toBeInTheDocument();
     });
 
-    it('renders Billing Subscriptions page', async () => {
-      const BillingSubscriptions = (await import('./Billing/Subscriptions'))
-        .default;
-
+    it('renders Billing Subscriptions page', () => {
       render(
         <BillingSubscriptions
           subscriptions={{
@@ -286,9 +298,7 @@ describe('Admin UI Smoke Tests', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders Billing Show page', async () => {
-      const BillingShow = (await import('./Billing/Show')).default;
-
+    it('renders Billing Show page', () => {
       render(
         <BillingShow
           subscription={{
@@ -314,9 +324,7 @@ describe('Admin UI Smoke Tests', () => {
   });
 
   describe('Config & System Pages', () => {
-    it('renders Config page', async () => {
-      const Config = (await import('./Config')).default;
-
+    it('renders Config page', () => {
       render(
         <Config
           feature_flags={[
@@ -333,9 +341,7 @@ describe('Admin UI Smoke Tests', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders System page', async () => {
-      const System = (await import('./System')).default;
-
+    it('renders System page', () => {
       render(
         <System
           system={{
@@ -365,9 +371,7 @@ describe('Admin UI Smoke Tests', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders Health page', async () => {
-      const Health = (await import('./Health')).default;
-
+    it('renders Health page', () => {
       render(
         <Health
           health={{
@@ -396,10 +400,7 @@ describe('Admin UI Smoke Tests', () => {
   });
 
   describe('Feature Dashboards', () => {
-    it('renders Notifications Dashboard', async () => {
-      const NotificationsDashboard = (await import('./Notifications/Dashboard'))
-        .default;
-
+    it('renders Notifications Dashboard', () => {
       render(
         <NotificationsDashboard
           stats={{
@@ -423,10 +424,7 @@ describe('Admin UI Smoke Tests', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders Social Auth Dashboard', async () => {
-      const SocialAuthDashboard = (await import('./SocialAuth/Dashboard'))
-        .default;
-
+    it('renders Social Auth Dashboard', () => {
       render(
         <SocialAuthDashboard
           stats={{
@@ -441,9 +439,7 @@ describe('Admin UI Smoke Tests', () => {
       expect(screen.getByText('Social Authentication')).toBeInTheDocument();
     });
 
-    it('renders Tokens Dashboard', async () => {
-      const TokensDashboard = (await import('./Tokens/Dashboard')).default;
-
+    it('renders Tokens Dashboard', () => {
       render(
         <TokensDashboard
           stats={{
@@ -460,10 +456,7 @@ describe('Admin UI Smoke Tests', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders TwoFactor Dashboard', async () => {
-      const TwoFactorDashboard = (await import('./TwoFactor/Dashboard'))
-        .default;
-
+    it('renders TwoFactor Dashboard', () => {
       render(
         <TwoFactorDashboard
           stats={{
@@ -477,9 +470,7 @@ describe('Admin UI Smoke Tests', () => {
       expect(screen.getByText('Two-Factor Authentication')).toBeInTheDocument();
     });
 
-    it('renders Webhooks Dashboard', async () => {
-      const WebhooksDashboard = (await import('./Webhooks/Dashboard')).default;
-
+    it('renders Webhooks Dashboard', () => {
       render(
         <WebhooksDashboard
           stats={{
@@ -501,9 +492,7 @@ describe('Admin UI Smoke Tests', () => {
   });
 
   describe('Failed Jobs Pages', () => {
-    it('renders Failed Jobs Index', async () => {
-      const FailedJobsIndex = (await import('./FailedJobs/Index')).default;
-
+    it('renders Failed Jobs Index', () => {
       render(
         <FailedJobsIndex
           jobs={{
@@ -535,9 +524,7 @@ describe('Admin UI Smoke Tests', () => {
       ).toBeInTheDocument();
     });
 
-    it('renders Failed Jobs Show', async () => {
-      const FailedJobShow = (await import('./FailedJobs/Show')).default;
-
+    it('renders Failed Jobs Show', () => {
       render(
         <FailedJobShow
           job={{
@@ -558,9 +545,7 @@ describe('Admin UI Smoke Tests', () => {
   });
 
   describe('Feature Flags Page', () => {
-    it('renders Feature Flags Index', async () => {
-      const FeatureFlagsIndex = (await import('./FeatureFlags/Index')).default;
-
+    it('renders Feature Flags Index', () => {
       render(
         <FeatureFlagsIndex
           flags={[
@@ -570,6 +555,8 @@ describe('Admin UI Smoke Tests', () => {
               global_override: null,
               effective: true,
               user_override_count: 0,
+              is_protected: false,
+              is_route_dependent: false,
             },
             {
               flag: 'social_auth',
@@ -577,6 +564,8 @@ describe('Admin UI Smoke Tests', () => {
               global_override: true,
               effective: true,
               user_override_count: 2,
+              is_protected: false,
+              is_route_dependent: true,
             },
           ]}
         />
@@ -589,9 +578,7 @@ describe('Admin UI Smoke Tests', () => {
   });
 
   describe('Data Health Page', () => {
-    it('renders Data Health', async () => {
-      const DataHealth = (await import('./DataHealth')).default;
-
+    it('renders Data Health', () => {
       render(
         <DataHealth
           checks={{

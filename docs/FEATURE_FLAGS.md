@@ -14,6 +14,10 @@
 - `billing` + `email_verification` = prevents subscriptions from unverified users (check in SubscriptionController)
 - `social_auth` + `email_verification` = OAuth accounts start pre-verified (handled in SocialAuthService)
 
+### Implicit Env Var Dependencies (auto-detected, not config-driven)
+- `social_auth` provider availability is determined by env var presence at runtime — `GOOGLE_CLIENT_ID` enables Google OAuth, `GITHUB_CLIENT_ID` enables GitHub OAuth. Setting `FEATURE_SOCIAL_AUTH=true` without either env var renders no social login buttons. The feature flag is a master switch; individual providers are controlled by env vars only.
+- `onboarding` stores completion state in `user_settings` table (hard dependency above), but the completion timestamp key (`onboarding_completed_at`) is a convention, not enforced by a foreign key — disabling `user_settings` silently drops onboarding completion tracking.
+
 ## Testing Feature Flag Combinations
 
 When adding a new feature-gated feature, test these scenarios:

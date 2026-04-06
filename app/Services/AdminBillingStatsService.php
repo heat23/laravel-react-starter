@@ -161,8 +161,9 @@ class AdminBillingStatsService
         $firstItem = DB::table('subscription_items')
             ->select('subscription_id', 'stripe_price')
             ->whereIn('id', function ($sub) {
+                // MIN() is ANSI SQL — works on MySQL and SQLite.
                 $sub->from('subscription_items')
-                    ->selectRaw('MIN(id)')
+                    ->select(DB::raw('MIN(id)'))
                     ->groupBy('subscription_id');
             });
 

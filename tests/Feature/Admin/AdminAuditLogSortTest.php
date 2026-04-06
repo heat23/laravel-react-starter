@@ -37,3 +37,19 @@ it('rejects invalid sort column', function () {
         ->get('/admin/audit-logs?sort=password&dir=asc')
         ->assertSessionHasErrors('sort'); // Validation fails
 });
+
+it('rejects invalid sort direction', function () {
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin)
+        ->getJson('/admin/audit-logs?dir=sideways')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['dir']);
+});
+
+it('rejects invalid per_page value', function () {
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin)
+        ->getJson('/admin/audit-logs?per_page=500')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['per_page']);
+});

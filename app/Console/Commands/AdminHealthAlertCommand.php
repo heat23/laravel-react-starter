@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use App\Notifications\AdminHealthAlertNotification;
+use App\Services\AdminBillingStatsService;
 use App\Services\CustomerHealthService;
 use App\Services\HealthCheckService;
 use Illuminate\Console\Command;
@@ -17,7 +18,7 @@ class AdminHealthAlertCommand extends Command
 
     protected $description = 'Check system health and alert admins if thresholds are breached';
 
-    public function handle(HealthCheckService $healthCheck, CustomerHealthService $customerHealth): int
+    public function handle(HealthCheckService $healthCheck, CustomerHealthService $customerHealth, AdminBillingStatsService $billingStats): int
     {
         $alerts = [];
 
@@ -97,6 +98,50 @@ class AdminHealthAlertCommand extends Command
                 'threshold' => $d30Threshold,
                 'message' => "D30 retention ({$d30Rate}%) is below threshold ({$d30Threshold}%)",
             ];
+        }
+
+        // Check analytics thresholds: churn rate and trial conversion (billing-gated)
+        if (Schema::hasTable('subscriptions')) {
+            $dashboardStats = $billingStats->getDashboardStats();
+            $churnRate = (float) $dashboardStats['churn_rate'];
+            $churnWarning = (float) config('analytics-thresholds.churn_rate.warning', 10);
+            $churnCritical = (float) config('analytics-thresholds.churn_rate.critical', 20);
+
+            if ($churnRate > 0 && $churnRate >= $churnCritical) {
+                $alerts['churn_rate'] = [
+                    'rate' => $churnRate,
+                    'threshold' => $churnCritical,
+                    'severity' => 'critical',
+                    'message' => "Churn rate ({$churnRate}%) is at or above critical threshold ({$churnCritical}%)",
+                ];
+            } elseif ($churnRate > 0 && $churnRate >= $churnWarning) {
+                $alerts['churn_rate'] = [
+                    'rate' => $churnRate,
+                    'threshold' => $churnWarning,
+                    'severity' => 'warning',
+                    'message' => "Churn rate ({$churnRate}%) is at or above warning threshold ({$churnWarning}%)",
+                ];
+            }
+
+            $trialConversionWarning = (float) config('analytics-thresholds.trial_conversion.warning_below', 20);
+            $trialConversionCritical = (float) config('analytics-thresholds.trial_conversion.critical_below', 10);
+            $trialConversionRate = $customerHealth->getTrialConversionRate();
+
+            if ($trialConversionRate > 0 && $trialConversionRate < $trialConversionCritical) {
+                $alerts['trial_conversion'] = [
+                    'rate' => $trialConversionRate,
+                    'threshold' => $trialConversionCritical,
+                    'severity' => 'critical',
+                    'message' => "Trial conversion rate ({$trialConversionRate}%) is below critical threshold ({$trialConversionCritical}%)",
+                ];
+            } elseif ($trialConversionRate > 0 && $trialConversionRate < $trialConversionWarning) {
+                $alerts['trial_conversion'] = [
+                    'rate' => $trialConversionRate,
+                    'threshold' => $trialConversionWarning,
+                    'severity' => 'warning',
+                    'message' => "Trial conversion rate ({$trialConversionRate}%) is below warning threshold ({$trialConversionWarning}%)",
+                ];
+            }
         }
 
         if (empty($alerts)) {

@@ -210,7 +210,7 @@ class HandleInertiaRequests extends Middleware
             'experiments' => $user ? fn () => [] : null,
             'has_unread_changelog' => $user ? fn () => $this->hasUnreadChangelog($user) : false,
             // PQL limit warnings — only computed when billing is enabled and user is authenticated.
-            // Cached per-user with a 60-second TTL to avoid query overhead on every request.
+            // Cached per-user with a 5-minute TTL to avoid query overhead on every request.
             'limit_warnings' => $user && $features['billing'] ? fn () => $this->getLimitWarnings($user) : null,
             // Highest PQL threshold percentage (80 or 100) for any limit nearing its cap.
             // Used by frontend to surface upgrade prompts. Null when billing is off or no warnings.

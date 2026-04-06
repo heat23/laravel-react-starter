@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\TokenController;
 use App\Http\Controllers\Api\UserSettingsController;
 use App\Http\Controllers\Api\WebhookEndpointController;
 use App\Http\Controllers\Webhook\IncomingWebhookController;
+use App\Http\Middleware\CheckTokenAbility;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -58,8 +59,10 @@ Route::middleware(['auth:sanctum'])->prefix('notifications')->group(function () 
 if (config('features.api_tokens.enabled', true)) {
     Route::middleware(['auth:sanctum', 'throttle:20,1'])->prefix('tokens')->group(function () {
         Route::get('/', [TokenController::class, 'index']);
-        Route::post('/', [TokenController::class, 'store']);
-        Route::delete('/{tokenId}', [TokenController::class, 'destroy']);
+        // POST requires 'write' ability; DELETE requires 'delete' ability.
+        // Session-authenticated users (Inertia/web) carry a TransientToken that always passes.
+        Route::post('/', [TokenController::class, 'store'])->middleware(CheckTokenAbility::class.':write');
+        Route::delete('/{tokenId}', [TokenController::class, 'destroy'])->middleware(CheckTokenAbility::class.':delete');
     });
 }
 

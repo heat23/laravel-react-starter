@@ -98,7 +98,7 @@ class ApiTokenControllerTest extends TestCase
                 'name' => 'New Token',
             ]);
 
-        $response->assertOk()
+        $response->assertCreated()
             ->assertJsonStructure(['token', 'id']);
 
         $this->assertDatabaseHas('personal_access_tokens', [
@@ -116,7 +116,7 @@ class ApiTokenControllerTest extends TestCase
                 'name' => 'New Token',
             ]);
 
-        $response->assertOk();
+        $response->assertCreated();
 
         $token = $response->json('token');
         $this->assertNotEmpty($token);
@@ -133,7 +133,7 @@ class ApiTokenControllerTest extends TestCase
                 'abilities' => ['read'],
             ]);
 
-        $response->assertOk();
+        $response->assertCreated();
 
         $this->assertDatabaseHas('personal_access_tokens', [
             'name' => 'Read Only Token',
@@ -150,7 +150,7 @@ class ApiTokenControllerTest extends TestCase
                 'name' => 'Default Token',
             ]);
 
-        $response->assertOk();
+        $response->assertCreated();
 
         $this->assertDatabaseHas('personal_access_tokens', [
             'name' => 'Default Token',
@@ -303,7 +303,7 @@ class ApiTokenControllerTest extends TestCase
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/tokens', ['name' => 'Second Token']);
 
-        $response->assertOk();
+        $response->assertCreated();
     }
 
     // ============================================

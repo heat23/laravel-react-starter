@@ -92,7 +92,7 @@ class TokenController extends Controller
         return response()->json([
             'token' => $token->plainTextToken,
             'id' => $token->accessToken->id,
-        ]);
+        ], 201);
     }
 
     /**

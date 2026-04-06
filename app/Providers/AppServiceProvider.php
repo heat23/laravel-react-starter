@@ -33,6 +33,8 @@ class AppServiceProvider extends ServiceProvider
     {
         Gate::policy(User::class, UserPolicy::class);
 
+        Gate::define('viewHorizon', fn (User $user) => $user->is_admin);
+
         RateLimiter::for('webhook-test', function ($request) {
             return Limit::perMinute(5)->by('webhook-test|'.($request->user()?->id ?: $request->ip()));
         });

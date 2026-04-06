@@ -238,6 +238,24 @@ it('rejects invalid sort column with validation error', function () {
     $response->assertSessionHasErrors('sort');
 });
 
+it('rejects invalid sort direction with validation error', function () {
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)
+        ->getJson('/admin/users?dir=sideways')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['dir']);
+});
+
+it('rejects invalid per_page value with validation error', function () {
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)
+        ->getJson('/admin/users?per_page=9999')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['per_page']);
+});
+
 it('shows soft-deleted user details', function () {
     $admin = User::factory()->admin()->create();
     $user = User::factory()->create();

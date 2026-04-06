@@ -48,6 +48,8 @@ enum AnalyticsEvent: string
     case BILLING_PAYMENT_FAILED = 'billing.payment_failed';
     case BILLING_PERIOD_TOGGLED = 'billing.period_toggled';
     case BILLING_PAYMENT_METHOD_UPDATED = 'billing.payment_method_updated';
+    case BILLING_PAYMENT_RECOVERED = 'billing.payment_recovered';
+    case BILLING_RETENTION_COUPON_APPLIED = 'billing.retention_coupon_applied';
 
     // Admin
     case ADMIN_UNAUTHORIZED_ACCESS = 'admin.unauthorized_access_attempt';
@@ -171,6 +173,8 @@ enum AnalyticsEvent: string
         'billing.payment_failed',
         'billing.period_toggled',
         'billing.payment_method_updated',
+        'billing.payment_recovered',
+        'billing.retention_coupon_applied',
         'profile.updated',
         'account.deleted',
         'api_token.created',

@@ -213,3 +213,36 @@ it('audit log includes admin email on start', function () {
     expect($log->metadata['admin_email'])->toBe($admin->email);
     expect($log->metadata['target_email'])->toBe($user->email);
 });
+
+it('blocks double-impersonation', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $anotherUser = User::factory()->create();
+
+    // impersonationSession encodes the admin-side keys only (admin ID + name, not the
+    // currently-impersonated target ID) — confirmed: the helper stores
+    // 'admin_impersonating_from' and 'admin_impersonating_name'. A session with these
+    // keys present triggers the defense-in-depth guard in the controller before the
+    // new impersonation can start.
+    $response = $this->actingAs($admin)
+        ->withSession(impersonationSession($admin->id, $admin->name))
+        ->post("/admin/users/{$anotherUser->id}/impersonate");
+
+    $response->assertRedirect();
+    $response->assertSessionHas('error', 'Already impersonating a user. Stop current impersonation first.');
+    $this->assertAuthenticatedAs($admin);
+});
+
+it('logs out and redirects to login on tampered impersonation session', function () {
+    $user = User::factory()->create();
+
+    // A tampered/invalid encrypted value in 'admin_impersonating_from' triggers a
+    // DecryptException in the stop handler, which flushes the session, calls
+    // Auth::logout(), and redirects to login — no admin re-authentication occurs.
+    $response = $this->actingAs($user)
+        ->withSession(['admin_impersonating_from' => 'not-a-valid-encrypted-string', 'admin_impersonating_name' => 'Evil'])
+        ->post('/admin/impersonate/stop');
+
+    $response->assertRedirect(route('login'));
+    // Auth::logout() was called — user should not be authenticated as anyone
+    $this->assertGuest();
+});

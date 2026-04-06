@@ -60,7 +60,7 @@ class CustomerHealthService
      */
     public function getEmailVerificationRate(): float
     {
-        return Cache::remember('metrics:activation_rate', AdminCacheKey::DEFAULT_TTL, function () {
+        return Cache::remember('metrics:email_verification_rate', AdminCacheKey::DEFAULT_TTL, function () {
             $totalUsers = User::where('created_at', '>=', now()->subDays(30))->count();
 
             if ($totalUsers === 0) {
