@@ -138,3 +138,19 @@ it('combining IP and search filters narrows results', function () {
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page->has('logs.data', 1));
 });
+
+it('escapes LIKE wildcards in audit log search', function () {
+    $admin = User::factory()->admin()->create();
+
+    AuditLog::create(['event' => 'test%event.fired', 'user_id' => $admin->id, 'ip' => '127.0.0.1', 'metadata' => []]);
+    AuditLog::create(['event' => 'testGeneral.fired', 'user_id' => $admin->id, 'ip' => '127.0.0.1', 'metadata' => []]);
+
+    // Literal % in search should match only the log with event "test%event.fired"
+    $response = $this->actingAs($admin)->get('/admin/audit-logs?search=test%25event');
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('logs.data', 1)
+            ->where('logs.data.0.event', 'test%event.fired')
+        );
+});

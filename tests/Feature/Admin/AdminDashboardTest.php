@@ -131,6 +131,28 @@ it('recent activity includes user data via eager loading', function () {
     );
 });
 
+it('recent activity includes user data for soft-deleted users', function () {
+    $admin = User::factory()->admin()->create();
+    $user = User::factory()->create();
+    AuditLog::create([
+        'event' => 'auth.login',
+        'user_id' => $user->id,
+        'ip' => '10.0.0.2',
+        'metadata' => [],
+    ]);
+
+    $user->delete(); // soft-delete the user
+
+    $response = $this->actingAs($admin)->get('/admin');
+
+    // The AuditLog user() relationship uses withTrashed(), so soft-deleted
+    // user data must appear in recent activity rather than null.
+    $response->assertInertia(fn ($page) => $page
+        ->where('recent_activity.0.user_name', $user->name)
+        ->where('recent_activity.0.user_email', $user->email)
+    );
+});
+
 it('dashboard query count does not scale with data volume', function () {
     $admin = User::factory()->admin()->create();
     User::factory()->count(10)->create();

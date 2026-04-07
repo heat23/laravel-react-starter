@@ -30,6 +30,11 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
     /**
      * The attributes that are mass assignable.
      *
+     * Note: `is_admin` and `super_admin` are intentionally excluded here.
+     * Laravel guards all unlisted attributes by default, so they cannot
+     * be set via mass assignment (e.g., User::create([]) or $user->fill([])).
+     * Elevation to admin must be done via explicit attribute assignment.
+     *
      * @var list<string>
      */
     protected $fillable = [

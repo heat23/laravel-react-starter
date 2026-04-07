@@ -45,6 +45,7 @@ enum AnalyticsEvent: string
     case BILLING_PLAN_SWAPPED = 'billing.plan_swapped';
     case BILLING_SWAP_CONFIRMED = 'billing.swap_confirmed';
     case BILLING_TRIAL_UPGRADE_CLICKED = 'billing.trial_upgrade_clicked';
+    case BILLING_VIEW_PLANS_CLICKED = 'billing.view_plans_clicked';
     case BILLING_PAYMENT_FAILED = 'billing.payment_failed';
     case BILLING_PERIOD_TOGGLED = 'billing.period_toggled';
     case BILLING_PAYMENT_METHOD_UPDATED = 'billing.payment_method_updated';
@@ -170,6 +171,7 @@ enum AnalyticsEvent: string
         'billing.plan_swapped',
         'billing.swap_confirmed',
         'billing.trial_upgrade_clicked',
+        'billing.view_plans_clicked',
         'billing.payment_failed',
         'billing.period_toggled',
         'billing.payment_method_updated',

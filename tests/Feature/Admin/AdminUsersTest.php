@@ -286,12 +286,14 @@ it('includes tokens count in user detail', function () {
 it('includes tokens count in user index', function () {
     $admin = User::factory()->admin()->create();
     $user = User::factory()->create();
-    $user->createToken('test-token');
+    $user->createToken('token-1');
+    $user->createToken('token-2');
 
-    $response = $this->actingAs($admin)->get('/admin/users');
+    $response = $this->actingAs($admin)->get('/admin/users?search='.$user->email);
 
     $response->assertInertia(fn ($page) => $page
-        ->has('users.data', 2)
+        ->has('users.data', 1)
+        ->where('users.data.0.tokens_count', 2)
     );
 });
 
@@ -698,4 +700,39 @@ it('returns 403 for regular admin on bulk restore', function () {
 
     // User remains deactivated
     expect($target->fresh()->deleted_at)->not->toBeNull();
+});
+
+// AdminBulkDeactivateRequest validation boundary tests
+it('rejects empty ids array on bulk deactivate', function () {
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [
+        'ids' => [],
+    ])->assertSessionHasErrors('ids');
+});
+
+it('rejects more than 100 ids on bulk deactivate', function () {
+    $admin = User::factory()->admin()->create();
+    $users = User::factory()->count(101)->create();
+
+    $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [
+        'ids' => $users->pluck('id')->toArray(),
+    ])->assertSessionHasErrors('ids');
+});
+
+it('rejects non-existent user ids on bulk deactivate', function () {
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [
+        'ids' => [999999, 999998],
+    ])->assertSessionHasErrors('ids.0');
+});
+
+it('accepts exactly 100 ids on bulk deactivate', function () {
+    $admin = User::factory()->admin()->create();
+    $users = User::factory()->count(100)->create();
+
+    $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [
+        'ids' => $users->pluck('id')->toArray(),
+    ])->assertSessionDoesntHaveErrors('ids');
 });

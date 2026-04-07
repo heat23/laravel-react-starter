@@ -112,20 +112,36 @@ import AuditLogsShow from './AuditLogs/Show';
 import BillingDashboard from './Billing/Dashboard';
 import BillingShow from './Billing/Show';
 import BillingSubscriptions from './Billing/Subscriptions';
+import CacheIndex from './Cache/Index';
 import Config from './Config';
+import ContactSubmissionsIndex from './ContactSubmissions/Index';
+import ContactSubmissionsShow from './ContactSubmissions/Show';
 import DataHealth from './DataHealth';
+import EmailSendLogsIndex from './EmailSendLogs/Index';
 import FailedJobsIndex from './FailedJobs/Index';
 import FailedJobShow from './FailedJobs/Show';
 import FeatureFlagsIndex from './FeatureFlags/Index';
+import FeedbackIndex from './Feedback/Index';
+import FeedbackShow from './Feedback/Show';
 import Health from './Health';
 import NotificationsDashboard from './Notifications/Dashboard';
+import NpsResponsesIndex from './NpsResponses/Index';
+import RoadmapCreate from './Roadmap/Create';
+import RoadmapIndex from './Roadmap/Index';
+import ScheduleIndex from './Schedule/Index';
+import SessionsIndex from './Sessions/Index';
 import SocialAuthDashboard from './SocialAuth/Dashboard';
 import System from './System';
 import TokensDashboard from './Tokens/Dashboard';
+import TokensIndex from './Tokens/Index';
 import TwoFactorDashboard from './TwoFactor/Dashboard';
+import UsersCreate from './Users/Create';
 import UsersIndex from './Users/Index';
 import UsersShow from './Users/Show';
 import WebhooksDashboard from './Webhooks/Dashboard';
+import WebhooksDeliveryDetail from './Webhooks/DeliveryDetail';
+import WebhooksEndpoints from './Webhooks/Endpoints';
+import WebhooksIncoming from './Webhooks/IncomingWebhooks';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -600,6 +616,402 @@ describe('Admin UI Smoke Tests', () => {
       expect(
         screen.getByRole('heading', { name: 'Data Health', level: 1 })
       ).toBeInTheDocument();
+    });
+  });
+
+  describe('Cache Page', () => {
+    it('renders Cache Index', () => {
+      render(
+        <CacheIndex
+          cacheKeys={[
+            { key: 'admin.dashboard_stats', name: 'Dashboard Stats', exists: true },
+            { key: 'admin.billing_stats', name: 'Billing Stats', exists: false },
+          ]}
+          scopes={['admin', 'billing']}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'Cache Management', level: 1 })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Contact Submissions Pages', () => {
+    it('renders Contact Submissions Index', () => {
+      render(
+        <ContactSubmissionsIndex
+          submissions={{
+            data: [],
+            current_page: 1,
+            per_page: 25,
+            total: 0,
+            last_page: 1,
+            from: 0,
+            to: 0,
+          }}
+          filters={{}}
+          counts={{ new: 0, replied: 0, spam: 0 }}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'Contact Submissions', level: 1 })
+      ).toBeInTheDocument();
+    });
+
+    it('renders Contact Submissions Show', () => {
+      render(
+        <ContactSubmissionsShow
+          submission={{
+            id: 42,
+            name: 'Jane Doe',
+            email: 'jane@example.com',
+            subject: 'Test Subject',
+            message: 'Test message body',
+            status: 'new',
+            replied_at: null,
+            created_at: '2026-03-20T10:00:00Z',
+            updated_at: '2026-03-20T10:00:00Z',
+          }}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'Contact #42', level: 1 })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Email Send Logs Page', () => {
+    it('renders Email Send Logs Index', () => {
+      render(
+        <EmailSendLogsIndex
+          logs={{
+            data: [],
+            current_page: 1,
+            per_page: 50,
+            total: 0,
+            last_page: 1,
+            from: 0,
+            to: 0,
+          }}
+          sequenceTypes={['onboarding', 'trial_ending']}
+          filters={{}}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'Email Send Logs', level: 1 })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Feedback Pages', () => {
+    it('renders Feedback Index', () => {
+      render(
+        <FeedbackIndex
+          feedback={{
+            data: [],
+            current_page: 1,
+            per_page: 25,
+            total: 0,
+            last_page: 1,
+            from: 0,
+            to: 0,
+          }}
+          filters={{}}
+          counts={{ open: 0, in_review: 0, resolved: 0 }}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'Feedback Inbox', level: 1 })
+      ).toBeInTheDocument();
+    });
+
+    it('renders Feedback Show', () => {
+      render(
+        <FeedbackShow
+          feedback={{
+            id: 7,
+            type: 'bug',
+            status: 'open',
+            priority: 'medium',
+            message: 'Something is broken',
+            admin_notes: null,
+            created_at: '2026-03-20T10:00:00Z',
+            user_id: 1,
+            user_name: 'Test User',
+            user_email: 'test@example.com',
+          }}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'Feedback #7', level: 1 })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('NPS Responses Page', () => {
+    it('renders NPS Responses Index', () => {
+      render(
+        <NpsResponsesIndex
+          responses={{
+            data: [],
+            current_page: 1,
+            per_page: 25,
+            total: 0,
+            last_page: 1,
+            from: 0,
+            to: 0,
+          }}
+          filters={{}}
+          summary={{
+            total: 0,
+            promoters: 0,
+            passives: 0,
+            detractors: 0,
+            nps_score: null,
+          }}
+          surveyTriggers={['post_signup', 'monthly']}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'NPS Responses', level: 1 })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Roadmap Pages', () => {
+    it('renders Roadmap Index', () => {
+      render(
+        <RoadmapIndex
+          entries={{
+            data: [],
+            current_page: 1,
+            per_page: 25,
+            total: 0,
+            last_page: 1,
+            from: 0,
+            to: 0,
+          }}
+          filters={{}}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'Roadmap', level: 1 })
+      ).toBeInTheDocument();
+    });
+
+    it('renders Roadmap Create', () => {
+      render(<RoadmapCreate />);
+
+      expect(
+        screen.getByRole('heading', { name: 'New Roadmap Entry', level: 1 })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Schedule Page', () => {
+    it('renders Schedule Index', () => {
+      render(
+        <ScheduleIndex
+          tasks={[
+            {
+              command: 'inspire',
+              expression: '0 * * * *',
+              description: 'Display an inspiring quote',
+              timezone: 'UTC',
+              next_run_date: '2026-04-07T00:00:00Z',
+            },
+          ]}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'Schedule Monitor', level: 1 })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Sessions Page', () => {
+    it('renders Sessions Index', () => {
+      render(
+        <SessionsIndex
+          sessions={{
+            data: [],
+            current_page: 1,
+            per_page: 25,
+            total: 0,
+            last_page: 1,
+            from: 0,
+            to: 0,
+          }}
+          driver="database"
+          driverSupported={true}
+          filters={{}}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'Session Manager', level: 1 })
+      ).toBeInTheDocument();
+    });
+
+    it('renders Sessions Index with unsupported driver warning', () => {
+      render(
+        <SessionsIndex
+          sessions={{
+            data: [],
+            current_page: 1,
+            per_page: 25,
+            total: 0,
+            last_page: 1,
+            from: 0,
+            to: 0,
+          }}
+          driver="file"
+          driverSupported={false}
+          filters={{}}
+        />
+      );
+
+      expect(screen.getByText('Session Driver Not Supported')).toBeInTheDocument();
+    });
+  });
+
+  describe('Tokens Index Page', () => {
+    it('renders Tokens Index', () => {
+      render(
+        <TokensIndex
+          tokens={{
+            data: [],
+            current_page: 1,
+            per_page: 25,
+            total: 0,
+            last_page: 1,
+            from: 0,
+            to: 0,
+          }}
+          filters={{}}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'All API Tokens', level: 1 })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Users Create Page', () => {
+    it('renders Users Create', () => {
+      render(<UsersCreate isSuperAdmin={false} />);
+
+      expect(
+        screen.getByRole('heading', { name: 'Create User', level: 1 })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Webhooks Sub-pages', () => {
+    it('renders Webhooks Endpoints', () => {
+      render(
+        <WebhooksEndpoints
+          endpoints={{
+            data: [],
+            current_page: 1,
+            per_page: 25,
+            total: 0,
+            last_page: 1,
+            from: 0,
+            to: 0,
+          }}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'Webhook Endpoints', level: 1 })
+      ).toBeInTheDocument();
+    });
+
+    it('renders Webhooks Incoming', () => {
+      render(
+        <WebhooksIncoming
+          webhooks={{
+            data: [],
+            current_page: 1,
+            per_page: 25,
+            total: 0,
+            last_page: 1,
+            from: 0,
+            to: 0,
+          }}
+          providers={['github', 'stripe']}
+          filters={{}}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'Incoming Webhooks', level: 1 })
+      ).toBeInTheDocument();
+    });
+
+    it('renders Webhooks Delivery Detail', () => {
+      render(
+        <WebhooksDeliveryDetail
+          delivery={{
+            id: 1,
+            uuid: 'del-uuid-123',
+            event_type: 'user.created',
+            payload: { userId: 1 },
+            status: 'delivered',
+            response_code: 200,
+            response_body: '{"ok":true}',
+            attempts: 1,
+            delivered_at: '2026-03-20T10:01:00Z',
+            created_at: '2026-03-20T10:00:00Z',
+            endpoint_id: 5,
+            endpoint_url: 'https://example.com/hook',
+            endpoint_deleted: false,
+            user_id: 1,
+            user_name: 'Test User',
+            user_email: 'test@example.com',
+          }}
+        />
+      );
+
+      expect(screen.getByText('del-uuid-123')).toBeInTheDocument();
+    });
+
+    it('renders Webhooks Delivery Detail with deleted endpoint indicator', () => {
+      render(
+        <WebhooksDeliveryDetail
+          delivery={{
+            id: 2,
+            uuid: 'del-uuid-456',
+            event_type: 'user.deleted',
+            payload: { userId: 2 },
+            status: 'delivered',
+            response_code: 200,
+            response_body: '{"ok":true}',
+            attempts: 1,
+            delivered_at: '2026-03-20T10:01:00Z',
+            created_at: '2026-03-20T10:00:00Z',
+            endpoint_id: null,
+            endpoint_url: 'https://example.com/deleted-hook',
+            endpoint_deleted: true,
+            user_id: 1,
+            user_name: 'Test User',
+            user_email: 'test@example.com',
+          }}
+        />
+      );
+
+      expect(screen.getByText('Deleted')).toBeInTheDocument();
     });
   });
 });

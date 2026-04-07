@@ -47,14 +47,14 @@ class SecurityHeaders
 
         $directives = [
             "default-src 'self'",
-            "script-src 'self' 'nonce-{$nonce}'".$this->analyticsScriptSources(),
+            "script-src 'self' 'nonce-{$nonce}'".$this->analyticsScriptSources().$this->billingScriptSources(),
             // unsafe-inline required: Tailwind JIT + Radix UI inject runtime inline styles.
             // Nonce-based styles would require ejecting from Tailwind's JIT engine.
             "style-src 'self' 'unsafe-inline'",
             "img-src 'self' data: blob:",
             "font-src 'self' https://fonts.bunny.net",
             "connect-src 'self'".$this->connectSources(),
-            "frame-src 'none'",
+            'frame-src '.(config('features.billing.enabled') ? "'self'".$this->frameSources() : "'none'"),
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",
@@ -82,6 +82,23 @@ class SecurityHeaders
         return '';
     }
 
+    /**
+     * Only called when billing is enabled (outer ternary in addCspHeader is the authoritative gate).
+     */
+    private function frameSources(): string
+    {
+        return ' https://js.stripe.com';
+    }
+
+    private function billingScriptSources(): string
+    {
+        if (config('features.billing.enabled')) {
+            return ' https://js.stripe.com';
+        }
+
+        return '';
+    }
+
     private function connectSources(): string
     {
         $extra = '';
@@ -92,6 +109,12 @@ class SecurityHeaders
 
         if (app()->isProduction() && config('services.google.analytics_id')) {
             $extra .= ' https://www.google-analytics.com';
+        }
+
+        if (config('features.billing.enabled')) {
+            // api.stripe.com: Stripe.js API calls
+            // m.stripe.com / m.stripe.network: Stripe Radar fraud-signal telemetry
+            $extra .= ' https://api.stripe.com https://m.stripe.com https://m.stripe.network';
         }
 
         return $extra;

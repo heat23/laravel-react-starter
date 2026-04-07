@@ -127,7 +127,7 @@ class ReEngagementNotification extends Notification implements ShouldQueue
 
         $changelogItem = config('app.changelog_item') ?? 'recent improvements';
 
-        $ctaUrl = $this->dashboardUrl('reengagement_winback', 3);
+        $ctaUrl = $this->dashboardUrl('reengagement', 3);
 
         return (new MailMessage)
             ->subject('One thing changed since you last logged in')

@@ -14,7 +14,6 @@ use App\Notifications\PaymentActionRequiredNotification;
 use App\Notifications\PaymentFailedNotification;
 use App\Notifications\PaymentRecoveredNotification;
 use App\Notifications\RefundProcessedNotification;
-use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
 use App\Services\LifecycleService;
 use App\Services\PlanLimitService;
@@ -270,20 +269,10 @@ class StripeWebhookController extends WebhookController
             ?? $payload['data']['object']['id']
             ?? null;
 
-        Log::channel('single')->info("Stripe webhook: {$action}", [
+        Log::channel('single')->info("Stripe webhook: {$action}", array_merge($extraMeta, [
             'event_id' => $payload['id'] ?? null,
             'stripe_customer' => $stripeCustomerId,
-        ]);
-
-        try {
-            app(AuditService::class)->log("stripe.{$action}", array_merge([
-                'event_id' => $payload['id'] ?? null,
-                'event_type' => $payload['type'] ?? null,
-                'stripe_customer' => $stripeCustomerId,
-            ], $extraMeta));
-        } catch (\Throwable) {
-            // Audit logging should never break webhook processing
-        }
+        ]));
     }
 
     /**

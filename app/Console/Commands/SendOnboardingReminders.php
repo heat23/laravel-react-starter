@@ -127,15 +127,12 @@ class SendOnboardingReminders extends Command
 
     private function alreadySentEmail(User $user, int $emailNumber): bool
     {
-        if (EmailSendLog::alreadySent($user->id, 'onboarding_reminder', $emailNumber)) {
-            return true;
-        }
-
-        // Skip onboarding email 1 if welcome sequence email 2 was already sent (cross-sequence dedup)
-        if ($emailNumber === 1) {
-            return EmailSendLog::alreadySent($user->id, 'welcome_sequence', 2);
-        }
-
-        return false;
+        // Only check within the onboarding_reminder sequence — cross-sequence dedup is intentionally
+        // not applied. The welcome sequence and onboarding reminder sequence serve distinct purposes:
+        // welcome emails are generic post-signup touchpoints, while onboarding reminders are
+        // wizard-specific prompts to complete account setup. A user who received a welcome email
+        // has NOT necessarily received onboarding guidance, so suppressing onboarding emails based
+        // on welcome sequence state would cause silent misses for users who need wizard prompts.
+        return EmailSendLog::alreadySent($user->id, 'onboarding_reminder', $emailNumber);
     }
 }

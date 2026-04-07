@@ -343,3 +343,19 @@ it('export filters by search term', function () {
     // 1 header + 1 matching row
     expect(count($lines))->toBe(2);
 });
+
+it('escapes LIKE wildcards in contact submissions search', function () {
+    $admin = User::factory()->admin()->create();
+
+    ContactSubmission::factory()->create(['name' => 'Alice', 'email' => 'alice@example.com', 'subject' => 'test%issue subject']);
+    ContactSubmission::factory()->create(['name' => 'Bob', 'email' => 'bob@example.com', 'subject' => 'testGeneral subject']);
+
+    // Literal % should match only the submission whose subject contains "test%issue"
+    $response = $this->actingAs($admin)->get('/admin/contact-submissions?search=test%25issue');
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('submissions.data', 1)
+            ->where('submissions.data.0.subject', 'test%issue subject')
+        );
+});

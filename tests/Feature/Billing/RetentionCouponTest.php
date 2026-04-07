@@ -14,6 +14,7 @@
  */
 
 use App\Enums\AnalyticsEvent;
+use App\Models\AuditLog;
 use App\Models\User;
 use Stripe\ApiRequestor;
 use Stripe\HttpClient\ClientInterface;
@@ -118,6 +119,33 @@ it('logs billing.retention_coupon_applied using AnalyticsEvent enum value', func
         'event' => 'retention_coupon_applied',
         'user_id' => $user->id,
     ]);
+});
+
+it('logs enriched ROI context including subscription_id and churn_save_context', function () use ($stripeCallTracker) {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+    createSubscription($user, ['stripe_id' => 'sub_roi_test']);
+
+    $this->actingAs($user)
+        ->post('/billing/retention-coupon')
+        ->assertRedirect();
+
+    expect($stripeCallTracker->called)->toBeTrue();
+
+    // Fetch the stored audit log directly to inspect JSON metadata —
+    // assertDatabaseHas cannot query inside JSON columns on SQLite.
+    $log = AuditLog::where('event', AnalyticsEvent::BILLING_RETENTION_COUPON_APPLIED->value)
+        ->where('user_id', $user->id)
+        ->latest()
+        ->first();
+
+    expect($log)->not->toBeNull();
+    expect($log->metadata)->toMatchArray([
+        'coupon_id' => 'RETENTION20',
+        'subscription_id' => 'sub_roi_test',
+        'churn_save_context' => true,
+    ]);
+    // plan_tier is auto-enriched by logProductEvent() via getProductContext()
+    expect($log->metadata)->toHaveKey('plan_tier');
 });
 
 it('returns 422 when retention coupon is not configured', function () use ($stripeCallTracker) {

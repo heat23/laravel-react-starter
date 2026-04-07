@@ -43,6 +43,12 @@ class QualifyLeads extends Command
                         // Dispatch qualification events when crossing thresholds upward
                         if ($score >= $sqlThreshold && $previous < $sqlThreshold) {
                             LeadQualifiedEvent::dispatch($user, $score, 'sql');
+
+                            // Mark lead_qualified_at on first SQL qualification for users who bypassed MQL entirely
+                            DB::table('users')
+                                ->where('id', $user->id)
+                                ->whereNull('lead_qualified_at')
+                                ->update(['lead_qualified_at' => now()]);
                         } elseif ($score >= $mqlThreshold && $previous < $mqlThreshold) {
                             LeadQualifiedEvent::dispatch($user, $score, 'mql');
 

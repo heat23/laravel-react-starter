@@ -59,6 +59,9 @@ enum AdminCacheKey: string
     case STAGE_VELOCITY = 'admin:lifecycle:stage_velocity';
     case LEAD_SCORES = 'admin:lifecycle:lead_scores';
 
+    // Metrics
+    case METRICS_MRR_SNAPSHOT = 'metrics:mrr_snapshot';
+
     /** Default TTL in seconds for most admin caches. */
     public const DEFAULT_TTL = 300;
 

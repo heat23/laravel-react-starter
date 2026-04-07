@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\AnalyticsEvent;
 use App\Models\AuditLog;
 use App\Models\User;
 
@@ -52,4 +53,19 @@ it('rejects invalid per_page value', function () {
         ->getJson('/admin/audit-logs?per_page=500')
         ->assertStatus(422)
         ->assertJsonValidationErrors(['per_page']);
+});
+
+it('rejects an event filter value not in the AnalyticsEvent enum', function () {
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin)
+        ->getJson('/admin/audit-logs?event=arbitrary_unknown_event')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['event']);
+});
+
+it('accepts a valid event filter value from the AnalyticsEvent enum', function () {
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin)
+        ->getJson('/admin/audit-logs?event='.AnalyticsEvent::AUTH_LOGIN->value)
+        ->assertOk();
 });

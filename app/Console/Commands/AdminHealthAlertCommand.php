@@ -2,12 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\AdminCacheKey;
 use App\Models\User;
 use App\Notifications\AdminHealthAlertNotification;
 use App\Services\AdminBillingStatsService;
 use App\Services\CustomerHealthService;
 use App\Services\HealthCheckService;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -141,6 +143,49 @@ class AdminHealthAlertCommand extends Command
                     'severity' => 'warning',
                     'message' => "Trial conversion rate ({$trialConversionRate}%) is below warning threshold ({$trialConversionWarning}%)",
                 ];
+            }
+
+            // Check MRR drop against previous run snapshot
+            $currentMrr = (float) $dashboardStats['mrr'];
+            $previousMrr = Cache::get(AdminCacheKey::METRICS_MRR_SNAPSHOT->value);
+
+            if ($previousMrr !== null) {
+                $previousMrr = (float) $previousMrr;
+                if ($previousMrr > 0 && $currentMrr < $previousMrr) {
+                    $mrrDropPercent = round((($previousMrr - $currentMrr) / $previousMrr) * 100, 1);
+                    $mrrDropWarning = (float) config('analytics-thresholds.mrr_drop_percent.warning', 10);
+                    $mrrDropCritical = (float) config('analytics-thresholds.mrr_drop_percent.critical', 25);
+
+                    if ($mrrDropPercent >= $mrrDropCritical) {
+                        $alerts['mrr_drop'] = [
+                            'drop_percent' => $mrrDropPercent,
+                            'previous_mrr' => $previousMrr,
+                            'current_mrr' => $currentMrr,
+                            'threshold' => $mrrDropCritical,
+                            'severity' => 'critical',
+                            'message' => "MRR dropped {$mrrDropPercent}% (from \${$previousMrr} to \${$currentMrr}), exceeding critical threshold ({$mrrDropCritical}%)",
+                        ];
+                    } elseif ($mrrDropPercent >= $mrrDropWarning) {
+                        $alerts['mrr_drop'] = [
+                            'drop_percent' => $mrrDropPercent,
+                            'previous_mrr' => $previousMrr,
+                            'current_mrr' => $currentMrr,
+                            'threshold' => $mrrDropWarning,
+                            'severity' => 'warning',
+                            'message' => "MRR dropped {$mrrDropPercent}% (from \${$previousMrr} to \${$currentMrr}), exceeding warning threshold ({$mrrDropWarning}%)",
+                        ];
+                    }
+                }
+            }
+
+            // Update MRR snapshot for next run comparison (7-day TTL — safe to miss 1 run).
+            // Guard: skip when MRR is $0 and there are no subscriptions at all — that signals
+            // a data gap (empty environment / failed stats fetch), not genuine $0 revenue.
+            // Prevents overwriting a valid snapshot with a misleading $0 that would cause a
+            // false critical alert on the subsequent run.
+            $totalSubscriptions = (int) $dashboardStats['total_ever'];
+            if ($currentMrr > 0 || $totalSubscriptions > 0) {
+                Cache::put(AdminCacheKey::METRICS_MRR_SNAPSHOT->value, $currentMrr, now()->addDays(7));
             }
         }
 

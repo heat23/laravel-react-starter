@@ -14,6 +14,14 @@ class LeadQualifiedListener implements ShouldQueue
     public function handle(LeadQualifiedEvent $event): void
     {
         if ($event->stage === 'mql') {
+            // Respect marketing opt-out preference.
+            // Intentionally returns before writing the suppression cache key so that if a user
+            // opts back in they receive a fresh 30-day notification window rather than inheriting
+            // a window that started while they were opted out.
+            if ($event->user->marketing_opt_out) {
+                return;
+            }
+
             // Suppress if already notified within 30 days
             $suppressKey = "lead_qualified_nudge:{$event->user->id}:mql";
             if (Cache::has($suppressKey)) {

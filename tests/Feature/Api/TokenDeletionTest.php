@@ -4,6 +4,7 @@ namespace Tests\Feature\Api;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class TokenDeletionTest extends TestCase
@@ -23,9 +24,9 @@ class TokenDeletionTest extends TestCase
     public function test_deleting_non_existent_token_returns_404(): void
     {
         $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->deleteJson('/api/tokens/99999');
+        $response = $this->deleteJson('/api/tokens/99999');
 
         $response->assertStatus(404);
         $response->assertJson(['message' => 'Token not found.']);
@@ -36,9 +37,9 @@ class TokenDeletionTest extends TestCase
         $user = User::factory()->create();
         $token = $user->createToken('test-token');
         $tokenId = $token->accessToken->id;
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->deleteJson("/api/tokens/{$tokenId}");
+        $response = $this->deleteJson("/api/tokens/{$tokenId}");
 
         $response->assertStatus(200);
         $response->assertJson(['success' => true]);

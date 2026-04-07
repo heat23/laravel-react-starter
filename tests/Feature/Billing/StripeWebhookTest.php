@@ -4,9 +4,12 @@ use App\Enums\AnalyticsEvent;
 use App\Jobs\DispatchAnalyticsEvent;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
 use Laravel\Cashier\Subscription;
+use Monolog\Handler\TestHandler;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -684,4 +687,76 @@ it('persists billing.payment_failed to audit_logs when invoice.payment_failed fi
         'event' => AnalyticsEvent::BILLING_PAYMENT_FAILED->value,
         'user_id' => $user->id,
     ]);
+});
+
+it('does not write raw stripe.* event names to audit_logs (ANA-002 regression)', function () {
+    // Use a separate user per event to avoid unique active-subscription constraints.
+    $userA = User::factory()->create(['stripe_id' => 'cus_ana002_a']);
+    $userB = User::factory()->create(['stripe_id' => 'cus_ana002_b']);
+    createSubscription($userB, ['stripe_id' => 'sub_ana002_b']);
+
+    postStripeWebhook(createStripeWebhookPayload('customer.subscription.created', [
+        'id' => 'sub_ana002_a',
+        'customer' => 'cus_ana002_a',
+        'status' => 'active',
+        'items' => ['data' => [['id' => 'si_r1', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+        'current_period_end' => now()->addMonth()->timestamp,
+    ]))->assertOk();
+
+    postStripeWebhook(createStripeWebhookPayload('customer.subscription.deleted', [
+        'id' => 'sub_ana002_b',
+        'customer' => 'cus_ana002_b',
+        'status' => 'canceled',
+        'items' => ['data' => [['id' => 'si_r2', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+    ]))->assertOk();
+
+    postStripeWebhook(createStripeWebhookPayload('invoice.payment_failed', [
+        'id' => 'in_ana002_reg',
+        'customer' => 'cus_ana002_a',
+        'amount_due' => 1900,
+    ]))->assertOk();
+
+    // Positive baseline: verify audit_logs is actively receiving rows so the
+    // negative stripe.% assertion below is load-bearing and not vacuously true.
+    expect(
+        DB::table('audit_logs')->where('event', AnalyticsEvent::SUBSCRIPTION_CREATED->value)->exists()
+    )->toBeTrue('audit_logs must contain at least one expected event row to prove the table is active');
+
+    // Raw Stripe-prefixed event names must never appear in audit_logs
+    $rawCount = DB::table('audit_logs')
+        ->where('event', 'like', 'stripe.%')
+        ->count();
+
+    expect($rawCount)->toBe(0);
+});
+
+it('merges extraMeta fields into the single-channel log context (ANA-002 log regression)', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_log_merge_test']);
+    createSubscription($user, ['stripe_id' => 'sub_log_merge_test']);
+
+    // Inject a TestHandler directly into the 'single' channel's Monolog instance.
+    // This is channel-agnostic — it does not depend on the MessageLogged event
+    // dispatch system, which can vary depending on whether a channel was cached
+    // before the test listener was registered.
+    $testHandler = new TestHandler;
+    Log::channel('single')->getLogger()->pushHandler($testHandler);
+
+    postStripeWebhook(createStripeWebhookPayload('customer.subscription.deleted', [
+        'id' => 'sub_log_merge_test',
+        'customer' => 'cus_log_merge_test',
+        'status' => 'canceled',
+        'cancellation_details' => ['reason' => 'payment_failed'],
+        'items' => ['data' => [['id' => 'si_lm1', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+    ]))->assertOk();
+
+    // Verify the single-channel info call received the merged churn_type from $extraMeta
+    $record = collect($testHandler->getRecords())->first(
+        fn ($r) => str_contains((string) $r->message, 'subscription.deleted')
+    );
+
+    expect($record)->not->toBeNull('TestHandler must capture a subscription.deleted log record from Log::channel(\'single\')')
+        ->and($record->context)->toHaveKey('churn_type')
+        ->and($record->context['churn_type'])->toBe('involuntary')
+        ->and($record->context)->toHaveKey('event_id')
+        ->and($record->context)->toHaveKey('stripe_customer');
 });

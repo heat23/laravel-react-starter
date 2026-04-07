@@ -26,8 +26,8 @@ class ComputeUserScores extends Command
     {
         $processed = 0;
 
-        User::whereNull('deleted_at')
-            ->withCount(['settings', 'tokens', 'webhookEndpoints'])
+        // User uses SoftDeletes; the global scope automatically excludes deleted records.
+        User::withCount(['settings', 'tokens', 'webhookEndpoints'])
             ->chunkById(200, function ($users) use (&$processed) {
                 $engagementScores = $this->engagementService->scoreBatch($users);
                 $this->healthService->primeHealthScoreCaches($users);

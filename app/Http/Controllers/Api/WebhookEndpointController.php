@@ -62,6 +62,7 @@ class WebhookEndpointController extends Controller
         ]));
 
         $this->invalidateAdminCaches();
+        $this->cacheManager->invalidateUserLimitWarnings($user->id);
 
         return response()->json([
             'id' => $endpoint->id,
@@ -104,6 +105,7 @@ class WebhookEndpointController extends Controller
         }
 
         $this->invalidateAdminCaches();
+        $this->cacheManager->invalidateUserLimitWarnings($request->user()->id);
 
         return response()->json(['success' => true]);
     }

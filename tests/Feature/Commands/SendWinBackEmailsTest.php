@@ -111,6 +111,56 @@ it('does not send duplicate win-back emails', function () {
     Notification::assertNotSentTo($user, WinBackNotification::class);
 });
 
+it('dedup is independent of notification table — EmailSendLog is the source of truth', function () {
+    // MSG-023 regression anchor: win-back dedup uses EmailSendLog, not the notifications
+    // table. Even after prune-read-notifications removes old notification rows, the
+    // EmailSendLog record persists and prevents re-send.
+    //
+    // Config is set explicitly here so the window coverage is guaranteed regardless of
+    // what email-sequences.win_back contains in the environment. Day 31 must fall within
+    // email 3's window (days=30, max_days=33) for the candidate to be evaluated at all —
+    // without this, the assertion could pass vacuously because the subscription never
+    // enters the candidate set and the dedup logic is never exercised.
+    config(['email-sequences.win_back' => [
+        1 => ['days' => 3,  'max_days' => 5],
+        2 => ['days' => 14, 'max_days' => 17],
+        3 => ['days' => 30, 'max_days' => 33],
+    ]]);
+
+    Notification::fake();
+
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+        'stripe_id' => 'cus_winback_dedup_log',
+    ]);
+
+    // Subscription ended 31 days ago — inside the email 3 window (30-33 days).
+    createSubscription($user, [
+        'stripe_status' => 'canceled',
+        'ends_at' => now()->subDays(31),
+    ]);
+
+    // Simulate: email 3 was already sent (EmailSendLog has the record).
+    // No matching row exists in the notifications table (as if it had been pruned).
+    EmailSendLog::record($user->id, 'win_back', 3);
+
+    // Baseline: exactly 1 EmailSendLog row exists before the command runs.
+    $logCountBefore = EmailSendLog::count();
+    expect($logCountBefore)->toBe(1);
+
+    $this->artisan('emails:send-win-back')->assertSuccessful();
+
+    // Must NOT resend — EmailSendLog dedup fires before any notification lookup.
+    Notification::assertNotSentTo($user, WinBackNotification::class);
+
+    // Confirm no new EmailSendLog entry was written. If this fails, the candidate was
+    // evaluated but dedup did not fire — meaning dedup is broken, not just missing.
+    expect(EmailSendLog::count())->toBe(1);
+
+    // Confirm the original EmailSendLog entry is still present (not cleared by the command).
+    expect(EmailSendLog::alreadySent($user->id, 'win_back', 3))->toBeTrue();
+});
+
 it('records win-back email in EmailSendLog after sending', function () {
     Notification::fake();
 

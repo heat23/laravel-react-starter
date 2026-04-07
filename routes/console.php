@@ -37,6 +37,12 @@ if (config('features.admin.enabled', false)) {
     Schedule::command('admin:health-alert')->everyFifteenMinutes();
 }
 
+// Trial expiry is gated on plans.trial.enabled (config/plans.php), NOT features.billing.enabled.
+// This is intentional: the trial system is independent of the billing feature flag.
+// Trials can be active without the billing UI being enabled (e.g. when billing is coming soon),
+// and billing can be enabled without offering trials (TRIAL_ENABLED=false).
+// The trial expiry command handles stage transitions (trial → expired/converted) which must
+// run regardless of whether the Stripe billing UI is currently accessible.
 if (config('plans.trial.enabled', false)) {
     Schedule::command('trials:check-expired')->dailyAt('06:00');
 }

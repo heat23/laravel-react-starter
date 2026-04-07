@@ -87,8 +87,28 @@ class SubscriptionController extends Controller
         }
     }
 
+    /**
+     * Direct Stripe API subscription creation (legacy path).
+     *
+     * @deprecated Use checkout() instead. The checkout() method redirects to Stripe's hosted
+     *             checkout page, which handles PCI compliance, SCA/3DS, and payment method
+     *             collection. This method requires a pre-collected payment method token and
+     *             is retained for backward compatibility only.
+     *
+     * Canonical flow: POST /billing/checkout → Stripe Hosted Checkout → billing.index
+     * Legacy flow:    POST /billing/subscribe → direct Stripe API → billing.index
+     */
     public function subscribe(SubscribeRequest $request): RedirectResponse
     {
+        if (! config('billing.legacy_subscribe_enabled', true)) {
+            abort(410, 'This endpoint has been retired. Use POST /billing/checkout instead.');
+        }
+
+        Log::warning('billing.subscribe legacy endpoint called — use checkout() instead', [
+            'user_id' => $request->user()?->id,
+            'ip' => $request->ip(),
+        ]);
+
         $user = $request->user();
         $user->loadMissing('subscriptions.items');
 
@@ -470,9 +490,14 @@ class SubscriptionController extends Controller
         try {
             $subscription->applyCoupon($couponId);
 
-            $this->auditService->log(AnalyticsEvent::BILLING_RETENTION_COUPON_APPLIED, [
-                'user_id' => $user->id,
+            // Use logProductEvent() so plan_tier and cohort context are auto-enriched.
+            // subscription_id and churn_save_context enable 30/60/90-day retention queries:
+            //   SELECT event, context->>'$.subscription_id', context->>'$.churn_save_context'
+            //   FROM audit_logs WHERE event = 'billing.retention_coupon_applied'
+            $this->auditService->logProductEvent(AnalyticsEvent::BILLING_RETENTION_COUPON_APPLIED, $user, [
                 'coupon_id' => $couponId,
+                'subscription_id' => $subscription->stripe_id,
+                'churn_save_context' => true,
             ]);
 
             if ($request->expectsJson()) {

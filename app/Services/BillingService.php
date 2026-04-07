@@ -61,6 +61,10 @@ class BillingService
             $checkoutOptions['discounts'] = [['coupon' => $coupon]];
         }
 
+        if (config('features.billing.tax_enabled')) {
+            $checkoutOptions['automatic_tax'] = ['enabled' => true];
+        }
+
         $checkout = $builder->checkout($checkoutOptions);
 
         return $checkout->url;
@@ -84,11 +88,15 @@ class BillingService
                     $builder->withCoupon($coupon);
                 }
 
+                $subscriptionOptions = config('features.billing.tax_enabled')
+                    ? ['automatic_tax' => ['enabled' => true]]
+                    : [];
+
                 if ($paymentMethod) {
-                    return $builder->create($paymentMethod);
+                    return $builder->create($paymentMethod, [], $subscriptionOptions);
                 }
 
-                return $builder->create();
+                return $builder->create(null, [], $subscriptionOptions);
             });
 
             // After subscription creation, transition user to paying stage

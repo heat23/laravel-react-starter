@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\AnalyticsEvent;
+use App\Jobs\DispatchAnalyticsEvent;
 use App\Models\User;
 use App\Services\AuditService;
 use Carbon\Carbon;
@@ -594,4 +595,123 @@ test('persist does not anonymize IP when config disabled', function () {
     Auth::login($user);
 
     $this->service->log('profile.updated');
+});
+
+// ============================================
+// GA4 forwarding for billing payment events (ANA-007 regression)
+// ============================================
+
+test('billing.payment_failed is forwarded to GA4 for authenticated user', function () {
+    expectLogChannel();
+    Log::shouldReceive('info')->once();
+
+    // No analytics_consent set — null consent means legitimate-interest forwarding applies
+    // (GDPR Art. 6(1)(f)). AuditService::userDeclinedAnalytics() returns false for null,
+    // so the job is dispatched. Only an explicit false/declined value skips forwarding.
+    $user = User::factory()->create();
+    Auth::login($user);
+
+    $this->service->log(AnalyticsEvent::BILLING_PAYMENT_FAILED);
+
+    // DispatchAnalyticsEvent constructor: public readonly string $eventName, public readonly int $userId
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === 'billing.payment_failed'
+            && $job->userId === $user->id;
+    });
+});
+
+test('billing.payment_recovered is forwarded to GA4 for authenticated user', function () {
+    expectLogChannel();
+    Log::shouldReceive('info')->once();
+
+    // No analytics_consent set — null consent means legitimate-interest forwarding applies
+    // (GDPR Art. 6(1)(f)). AuditService::userDeclinedAnalytics() returns false for null,
+    // so the job is dispatched. Only an explicit false/declined value skips forwarding.
+    $user = User::factory()->create();
+    Auth::login($user);
+
+    $this->service->log(AnalyticsEvent::BILLING_PAYMENT_RECOVERED);
+
+    // DispatchAnalyticsEvent constructor: public readonly string $eventName, public readonly int $userId
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === 'billing.payment_recovered'
+            && $job->userId === $user->id;
+    });
+});
+
+test('billing.payment_method_updated is forwarded to GA4 for authenticated user', function () {
+    expectLogChannel();
+    Log::shouldReceive('info')->once();
+
+    // No analytics_consent set — null consent means legitimate-interest forwarding applies
+    // (GDPR Art. 6(1)(f)). AuditService::userDeclinedAnalytics() returns false for null,
+    // so the job is dispatched. Only an explicit false/declined value skips forwarding.
+    $user = User::factory()->create();
+    Auth::login($user);
+
+    $this->service->log(AnalyticsEvent::BILLING_PAYMENT_METHOD_UPDATED);
+
+    // DispatchAnalyticsEvent constructor: public readonly string $eventName, public readonly int $userId
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === 'billing.payment_method_updated'
+            && $job->userId === $user->id;
+    });
+});
+
+test('billing.retention_coupon_applied is forwarded to GA4 for authenticated user', function () {
+    expectLogChannel();
+    Log::shouldReceive('info')->once();
+
+    // No analytics_consent set — null consent means legitimate-interest forwarding applies
+    // (GDPR Art. 6(1)(f)). AuditService::userDeclinedAnalytics() returns false for null,
+    // so the job is dispatched. Only an explicit false/declined value skips forwarding.
+    $user = User::factory()->create();
+    Auth::login($user);
+
+    $this->service->log(AnalyticsEvent::BILLING_RETENTION_COUPON_APPLIED);
+
+    // DispatchAnalyticsEvent constructor: public readonly string $eventName, public readonly int $userId
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === 'billing.retention_coupon_applied'
+            && $job->userId === $user->id;
+    });
+});
+
+test('billing.payment_failed is not forwarded to GA4 for anonymous user', function () {
+    expectLogChannel();
+    Log::shouldReceive('info')->once();
+
+    // No Auth::login — user_id will be null
+    $this->service->log(AnalyticsEvent::BILLING_PAYMENT_FAILED);
+
+    Queue::assertNotPushed(DispatchAnalyticsEvent::class);
+});
+
+test('billing.payment_failed is not forwarded to GA4 when user has explicitly declined analytics consent', function () {
+    expectLogChannel();
+    Log::shouldReceive('info')->once();
+
+    // Explicit false/declined value — this is the primary GDPR guard.
+    // AuditService::userDeclinedAnalytics() must return true for this user,
+    // blocking the DispatchAnalyticsEvent job regardless of event type.
+    $user = User::factory()->create();
+    $user->setSetting(AuditService::ANALYTICS_CONSENT_KEY, false);
+    Auth::login($user);
+
+    $this->service->log(AnalyticsEvent::BILLING_PAYMENT_FAILED);
+
+    Queue::assertNotPushed(DispatchAnalyticsEvent::class);
+});
+
+test('non-forwarded billing event is not dispatched to GA4', function () {
+    expectLogChannel();
+    Log::shouldReceive('info')->once();
+
+    $user = User::factory()->create();
+    Auth::login($user);
+
+    // billing.pricing_viewed is not in GA4_FORWARDED_EVENTS
+    $this->service->log(AnalyticsEvent::BILLING_PRICING_VIEWED);
+
+    Queue::assertNotPushed(DispatchAnalyticsEvent::class);
 });

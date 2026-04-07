@@ -201,3 +201,19 @@ it('export validates invalid category', function () {
         ->assertStatus(422)
         ->assertJsonValidationErrors(['category']);
 });
+
+it('escapes LIKE wildcards in NPS response search', function () {
+    $admin = User::factory()->admin()->create();
+
+    NpsResponse::factory()->create(['score' => 9, 'comment' => 'test%feedback here']);
+    NpsResponse::factory()->create(['score' => 5, 'comment' => 'testGeneral feedback']);
+
+    // Literal % in search should match only the response whose comment contains "test%feedback"
+    $response = $this->actingAs($admin)->get('/admin/nps-responses?search=test%25feedback');
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('responses.data', 1)
+            ->where('responses.data.0.comment', 'test%feedback here')
+        );
+});

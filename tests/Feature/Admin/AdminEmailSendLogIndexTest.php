@@ -144,3 +144,21 @@ it('index passes back active filters', function () {
             ->where('filters.dir', 'asc')
         );
 });
+
+it('escapes LIKE wildcards in email send log search', function () {
+    $admin = User::factory()->admin()->create();
+    $wildcardUser = User::factory()->create(['name' => 'test%user', 'email' => 'wildcard@example.com']);
+    $normalUser = User::factory()->create(['name' => 'testNormal', 'email' => 'normal@example.com']);
+
+    EmailSendLog::create(['user_id' => $wildcardUser->id, 'sequence_type' => 'welcome', 'email_number' => 1, 'sent_at' => now()]);
+    EmailSendLog::create(['user_id' => $normalUser->id, 'sequence_type' => 'welcome', 'email_number' => 1, 'sent_at' => now()]);
+
+    // Literal % in search should match only the log for the user named "test%user"
+    $response = $this->actingAs($admin)->get('/admin/email-send-logs?search=test%25user');
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('logs.data', 1)
+            ->where('logs.data.0.user_id', $wildcardUser->id)
+        );
+});

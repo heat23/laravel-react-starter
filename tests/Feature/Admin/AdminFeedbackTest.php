@@ -290,3 +290,19 @@ it('destroy invalidates the dashboard stats cache', function () {
 
     expect(Cache::has('admin:dashboard:stats'))->toBeFalse();
 });
+
+it('escapes LIKE wildcards in feedback search', function () {
+    $admin = User::factory()->admin()->create();
+
+    Feedback::create(['type' => 'bug', 'message' => 'test%issue with login', 'status' => 'open']);
+    Feedback::create(['type' => 'bug', 'message' => 'testGeneral issue', 'status' => 'open']);
+
+    // Literal % should match only the feedback whose message contains "test%issue"
+    $response = $this->actingAs($admin)->get('/admin/feedback?search=test%25issue');
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('feedback.data', 1)
+            ->where('feedback.data.0.message', 'test%issue with login')
+        );
+});

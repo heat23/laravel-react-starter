@@ -4,7 +4,9 @@ namespace Tests\Feature\Api;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class ApiTokenControllerTest extends TestCase
@@ -25,9 +27,9 @@ class ApiTokenControllerTest extends TestCase
     public function test_index_returns_empty_array_when_no_tokens(): void
     {
         $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->getJson('/api/tokens');
+        $response = $this->getJson('/api/tokens');
 
         $response->assertOk()
             ->assertJson([]);
@@ -38,9 +40,9 @@ class ApiTokenControllerTest extends TestCase
         $user = User::factory()->create();
         $user->createToken('Token 1');
         $user->createToken('Token 2');
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->getJson('/api/tokens');
+        $response = $this->getJson('/api/tokens');
 
         $response->assertOk()
             ->assertJsonCount(2);
@@ -50,9 +52,9 @@ class ApiTokenControllerTest extends TestCase
     {
         $user = User::factory()->create();
         $user->createToken('My Token', ['read', 'write']);
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->getJson('/api/tokens');
+        $response = $this->getJson('/api/tokens');
 
         $response->assertOk()
             ->assertJsonStructure([
@@ -70,8 +72,9 @@ class ApiTokenControllerTest extends TestCase
         $user1->createToken('User 1 Token');
         $user2->createToken('User 2 Token');
 
-        $response = $this->actingAs($user1, 'sanctum')
-            ->getJson('/api/tokens');
+        Sanctum::actingAs($user1, ['*']);
+
+        $response = $this->getJson('/api/tokens');
 
         $response->assertOk()
             ->assertJsonCount(1)
@@ -92,11 +95,11 @@ class ApiTokenControllerTest extends TestCase
     public function test_store_creates_new_token(): void
     {
         $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/tokens', [
-                'name' => 'New Token',
-            ]);
+        $response = $this->postJson('/api/tokens', [
+            'name' => 'New Token',
+        ]);
 
         $response->assertCreated()
             ->assertJsonStructure(['token', 'id']);
@@ -110,11 +113,11 @@ class ApiTokenControllerTest extends TestCase
     public function test_store_returns_plain_text_token(): void
     {
         $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/tokens', [
-                'name' => 'New Token',
-            ]);
+        $response = $this->postJson('/api/tokens', [
+            'name' => 'New Token',
+        ]);
 
         $response->assertCreated();
 
@@ -126,12 +129,12 @@ class ApiTokenControllerTest extends TestCase
     public function test_store_creates_token_with_abilities(): void
     {
         $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/tokens', [
-                'name' => 'Read Only Token',
-                'abilities' => ['read'],
-            ]);
+        $response = $this->postJson('/api/tokens', [
+            'name' => 'Read Only Token',
+            'abilities' => ['read'],
+        ]);
 
         $response->assertCreated();
 
@@ -144,11 +147,11 @@ class ApiTokenControllerTest extends TestCase
     public function test_store_defaults_to_read_ability_when_no_abilities_provided(): void
     {
         $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/tokens', [
-                'name' => 'Default Token',
-            ]);
+        $response = $this->postJson('/api/tokens', [
+            'name' => 'Default Token',
+        ]);
 
         $response->assertCreated();
 
@@ -161,12 +164,12 @@ class ApiTokenControllerTest extends TestCase
     public function test_store_rejects_empty_abilities_array(): void
     {
         $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/tokens', [
-                'name' => 'Empty Abilities Token',
-                'abilities' => [],
-            ]);
+        $response = $this->postJson('/api/tokens', [
+            'name' => 'Empty Abilities Token',
+            'abilities' => [],
+        ]);
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['abilities']);
@@ -175,12 +178,12 @@ class ApiTokenControllerTest extends TestCase
     public function test_store_rejects_wildcard_ability(): void
     {
         $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/tokens', [
-                'name' => 'Wildcard Token',
-                'abilities' => ['*'],
-            ]);
+        $response = $this->postJson('/api/tokens', [
+            'name' => 'Wildcard Token',
+            'abilities' => ['*'],
+        ]);
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['abilities.0']);
@@ -189,9 +192,9 @@ class ApiTokenControllerTest extends TestCase
     public function test_store_requires_name(): void
     {
         $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/tokens', []);
+        $response = $this->postJson('/api/tokens', []);
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
@@ -200,11 +203,11 @@ class ApiTokenControllerTest extends TestCase
     public function test_store_validates_name_max_length(): void
     {
         $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/tokens', [
-                'name' => str_repeat('a', 256),
-            ]);
+        $response = $this->postJson('/api/tokens', [
+            'name' => str_repeat('a', 256),
+        ]);
 
         $response->assertUnprocessable()
             ->assertJsonValidationErrors(['name']);
@@ -228,9 +231,9 @@ class ApiTokenControllerTest extends TestCase
         $user = User::factory()->create();
         $token = $user->createToken('My Token');
         $tokenId = $token->accessToken->id;
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->deleteJson("/api/tokens/{$tokenId}");
+        $response = $this->deleteJson("/api/tokens/{$tokenId}");
 
         $response->assertOk()
             ->assertJson(['success' => true]);
@@ -248,8 +251,9 @@ class ApiTokenControllerTest extends TestCase
         $token = $user2->createToken('User 2 Token');
         $tokenId = $token->accessToken->id;
 
-        $response = $this->actingAs($user1, 'sanctum')
-            ->deleteJson("/api/tokens/{$tokenId}");
+        Sanctum::actingAs($user1, ['*']);
+
+        $response = $this->deleteJson("/api/tokens/{$tokenId}");
 
         $response->assertNotFound()
             ->assertJson(['message' => 'Token not found.']);
@@ -263,9 +267,9 @@ class ApiTokenControllerTest extends TestCase
     public function test_destroy_returns_404_for_nonexistent_token(): void
     {
         $user = User::factory()->create();
+        Sanctum::actingAs($user, ['*']);
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->deleteJson('/api/tokens/99999');
+        $response = $this->deleteJson('/api/tokens/99999');
 
         $response->assertNotFound()
             ->assertJson(['message' => 'Token not found.']);
@@ -286,9 +290,10 @@ class ApiTokenControllerTest extends TestCase
         // Create one token (at the free tier limit)
         $user->createToken('Existing Token');
 
+        Sanctum::actingAs($user, ['*']);
+
         // Second token should be rejected by plan limit
-        $response = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/tokens', ['name' => 'One Too Many']);
+        $response = $this->postJson('/api/tokens', ['name' => 'One Too Many']);
 
         $response->assertForbidden()
             ->assertJsonPath('message', 'You have reached the API token limit for your plan. Upgrade to create more tokens.');
@@ -300,10 +305,39 @@ class ApiTokenControllerTest extends TestCase
         $user = User::factory()->create();
         $user->createToken('First Token');
 
-        $response = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/tokens', ['name' => 'Second Token']);
+        Sanctum::actingAs($user, ['*']);
+
+        $response = $this->postJson('/api/tokens', ['name' => 'Second Token']);
 
         $response->assertCreated();
+    }
+
+    // ============================================
+    // Cache invalidation tests
+    // ============================================
+
+    public function test_creating_token_invalidates_limit_warnings_cache(): void
+    {
+        config(['plans.free.limits.api_tokens' => null]);
+        $user = User::factory()->create();
+        Cache::put("user:{$user->id}:limit_warnings", ['api_tokens' => ['current' => 5, 'limit' => 10, 'threshold' => 80]], 300);
+        Sanctum::actingAs($user, ['*']);
+
+        $this->postJson('/api/tokens', ['name' => 'Test Token']);
+
+        $this->assertNull(Cache::get("user:{$user->id}:limit_warnings"));
+    }
+
+    public function test_deleting_token_invalidates_limit_warnings_cache(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('Token To Delete');
+        Cache::put("user:{$user->id}:limit_warnings", ['api_tokens' => ['current' => 5, 'limit' => 10, 'threshold' => 80]], 300);
+        Sanctum::actingAs($user, ['*']);
+
+        $this->deleteJson("/api/tokens/{$token->accessToken->id}");
+
+        $this->assertNull(Cache::get("user:{$user->id}:limit_warnings"));
     }
 
     // ============================================
@@ -319,17 +353,17 @@ class ApiTokenControllerTest extends TestCase
 
         // Make 20 requests (the limit)
         for ($i = 0; $i < 20; $i++) {
-            $this->actingAs($user, 'sanctum')
-                ->postJson('/api/tokens', [
-                    'name' => "Token {$i}",
-                ]);
+            Sanctum::actingAs($user, ['*']);
+            $this->postJson('/api/tokens', [
+                'name' => "Token {$i}",
+            ]);
         }
 
         // 21st request should be rate limited
-        $response = $this->actingAs($user, 'sanctum')
-            ->postJson('/api/tokens', [
-                'name' => 'One Too Many',
-            ]);
+        Sanctum::actingAs($user, ['*']);
+        $response = $this->postJson('/api/tokens', [
+            'name' => 'One Too Many',
+        ]);
 
         $response->assertStatus(429);
     }

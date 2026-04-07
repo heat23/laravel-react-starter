@@ -493,3 +493,78 @@ it('regular admin cannot remove all user feature flag overrides', function () {
         ->delete('/admin/feature-flags/billing/users')
         ->assertForbidden();
 });
+
+it('rejects flag parameter with path traversal characters on patch', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)
+        ->patch('/admin/feature-flags/../../etc/passwd', ['enabled' => true])
+        ->assertStatus(404);
+});
+
+it('rejects flag parameter with uppercase letters on patch', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)
+        ->patch('/admin/feature-flags/BILLING', ['enabled' => true])
+        ->assertStatus(404);
+});
+
+it('rejects flag parameter with hyphens on delete global', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)
+        ->delete('/admin/feature-flags/some-flag')
+        ->assertStatus(404);
+});
+
+it('rejects flag parameter with path traversal on get users', function () {
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)
+        ->get('/admin/feature-flags/../users/list')
+        ->assertStatus(404);
+});
+
+it('rejects flag parameter with special chars on add user override', function () {
+    $admin = User::factory()->superAdmin()->create();
+    $targetUser = User::factory()->create();
+
+    // Use '@' instead of '%00' (null byte): null bytes are rejected at the HTTP/PHP layer
+    // before reaching the router, so %00 does not exercise the route constraint itself.
+    // '@' is a non-null-byte special character guaranteed to reach the router's [a-z_]+ check.
+    $this->actingAs($admin)
+        ->post('/admin/feature-flags/billing@null/users', [
+            'user_id' => $targetUser->id,
+            'enabled' => true,
+        ])
+        ->assertStatus(404);
+});
+
+it('accepts valid lowercase underscore flag names', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    // Use a real registered flag name to decouple route-constraint check from
+    // controller behavior. The constraint [a-z_]+ should pass this to the controller
+    // which always redirects (never 404) regardless of whether the override succeeds.
+    $response = $this->actingAs($admin)
+        ->patch('/admin/feature-flags/billing', ['enabled' => true]);
+
+    $response->assertRedirect(); // reaches controller — not 404 from route constraint
+});
+
+it('route constraint accepts all registered flag names', function () {
+    // Every key in config/features.php must match the route constraint [a-z_]+.
+    // If a flag key contains hyphens or uppercase letters it cannot be managed
+    // via the admin UI (all matching routes would silently 404).
+    $flags = array_keys(config('features', []));
+
+    expect($flags)->not->toBeEmpty('No feature flags found in config/features.php');
+
+    foreach ($flags as $flag) {
+        expect(preg_match('/^[a-z_]+$/', $flag))->toBe(
+            1,
+            "Flag '{$flag}' contains characters outside [a-z_] and cannot be managed via admin feature-flag routes"
+        );
+    }
+});

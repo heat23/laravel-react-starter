@@ -51,6 +51,7 @@ export default function Larafast({
   metaDescription,
   features,
   breadcrumbs,
+  canonicalUrl,
 }: ComparisonPageProps) {
   const { track } = useAnalytics();
 
@@ -63,7 +64,7 @@ export default function Larafast({
       <Head title={title}>
         <meta name="description" content={metaDescription} />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="/compare/larafast" />
+        {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
         <meta property="og:title" content={title} />
         <meta property="og:description" content={metaDescription} />
         <meta property="og:type" content="website" />

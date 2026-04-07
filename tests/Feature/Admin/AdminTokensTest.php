@@ -69,3 +69,23 @@ it('shows most active tokens', function () {
         ->where('most_active.0.user_name', $user->name)
     );
 });
+
+it('escapes LIKE wildcards in token list search', function () {
+    config(['features.api_tokens.enabled' => true]);
+
+    $admin = User::factory()->admin()->create();
+    $wildcardUser = User::factory()->create(['name' => 'test%user']);
+    $normalUser = User::factory()->create(['name' => 'testNormal']);
+
+    $wildcardUser->createToken('My Token');
+    $normalUser->createToken('Other Token');
+
+    // Literal % should match only the token belonging to the user named "test%user"
+    $response = $this->actingAs($admin)->get('/admin/tokens/list?search=test%25user');
+
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('tokens.data', 1)
+            ->where('tokens.data.0.user_name', 'test%user')
+        );
+});

@@ -91,24 +91,28 @@ return [
     |--------------------------------------------------------------------------
     |
     | Lifecycle notification jobs (welcome sequences, dunning, trial nudges,
-    | win-back) are dispatched to the "notifications" queue so their worker
-    | concurrency can be controlled independently from the default queue.
+    | win-back) implement ShouldQueue via the Queueable trait and dispatch to
+    | the default queue. To prevent mass-notification runs from consuming all
+    | worker concurrency, use one of the patterns below.
     |
-    | To throttle notification throughput, run a dedicated worker with a lower
-    | concurrency limit:
+    | Option A — dedicated "notifications" worker (all queue drivers):
+    |
+    |   Set `public $queue = 'notifications'` on Notification classes, then
+    |   run a dedicated worker with bounded concurrency:
     |
     |   php artisan queue:work --queue=notifications --max-jobs=200 --sleep=3
     |
-    | For Redis-backed queues, use Bus::rateLimiter() in AppServiceProvider to
-    | cap notification jobs per time window:
+    | Option B — Bus rate limiter (Redis queue driver only):
+    |
+    |   In AppServiceProvider::boot(), register a rate limiter:
     |
     |   Bus::rateLimiter('notifications', function (object $job) {
     |       return Limit::perMinute(60);
     |   });
     |
     | The database driver does not support native rate limiting; worker-level
-    | concurrency (separate worker process + --max-jobs) is the correct
-    | mechanism when QUEUE_CONNECTION=database.
+    | concurrency (Option A) is the recommended mechanism when
+    | QUEUE_CONNECTION=database.
     |
     */
 

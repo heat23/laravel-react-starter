@@ -34,4 +34,18 @@ return [
 
     'grace_period_days' => (int) env('PAST_DUE_GRACE_DAYS', 7),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Legacy Subscribe Endpoint Kill Switch
+    |--------------------------------------------------------------------------
+    |
+    | The POST /billing/subscribe endpoint is deprecated in favour of the
+    | Stripe Hosted Checkout flow (POST /billing/checkout). Set this to false
+    | to return HTTP 410 Gone for any callers that have not yet migrated.
+    | Defaults to true so existing integrations are not broken on deploy.
+    |
+    */
+
+    'legacy_subscribe_enabled' => (bool) env('BILLING_LEGACY_SUBSCRIBE', true),
+
 ];

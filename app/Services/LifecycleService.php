@@ -39,7 +39,12 @@ class LifecycleService
         }
 
         DB::transaction(function () use ($user, $from, $to, $reason, $daysInPreviousStage) {
-            // Update the user's lifecycle stage
+            // Update the user's lifecycle stage.
+            // saveQuietly() suppresses Eloquent model events intentionally — any observers
+            // that dispatch jobs, send notifications, or make HTTP calls must NOT run inside
+            // this transaction boundary, as their side-effects cannot be rolled back and may
+            // extend the transaction lock. Post-transition side-effects (win-back notification,
+            // cache invalidation, audit log) are dispatched after the transaction closes below.
             $user->lifecycle_stage = $to->value;
             $user->saveQuietly();
 

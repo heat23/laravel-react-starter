@@ -27,26 +27,28 @@ use App\Http\Controllers\Admin\AdminUsersController;
 use App\Http\Controllers\Admin\AdminWebhooksController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
+Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1,admin:'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         // Metrics Dashboard (landing page)
-        Route::get('/', AdminDashboardController::class)->name('dashboard');
+        Route::get('/', AdminDashboardController::class)->middleware('throttle:30,1')->name('dashboard');
 
         // Product Analytics
-        Route::get('/analytics', AdminProductAnalyticsController::class)->name('analytics');
+        Route::get('/analytics', AdminProductAnalyticsController::class)->middleware('throttle:30,1')->name('analytics');
 
         // Users Management
         Route::get('/users/export', [AdminUsersController::class, 'export'])
             ->middleware('throttle:10,1')
             ->name('users.export');
         Route::get('/users/create', [AdminUsersController::class, 'create'])
+            ->middleware('throttle:30,1')
             ->name('users.create');
         Route::post('/users', [AdminUsersController::class, 'store'])
             ->middleware('throttle:10,1')
             ->name('users.store');
         Route::get('/users', [AdminUsersController::class, 'index'])
+            ->middleware('throttle:30,1')
             ->name('users.index');
         Route::get('/users/{user}', [AdminUsersController::class, 'show'])
             ->withTrashed()
@@ -82,10 +84,10 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1'])
             ->name('users.impersonate');
 
         // Health Status
-        Route::get('/health', AdminHealthController::class)->name('health');
+        Route::get('/health', AdminHealthController::class)->middleware('throttle:30,1')->name('health');
 
         // Config Viewer
-        Route::get('/config', AdminConfigController::class)->name('config');
+        Route::get('/config', AdminConfigController::class)->middleware('throttle:30,1')->name('config');
 
         // Feedback Inbox — bulk/export routes before {feedback} wildcard
         Route::get('/feedback/export', [AdminFeedbackController::class, 'export'])

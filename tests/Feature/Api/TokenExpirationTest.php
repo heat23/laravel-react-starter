@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Laravel\Sanctum\Sanctum;
 
 beforeEach(function () {
     config(['features.api_tokens.enabled' => true]);
@@ -8,15 +9,15 @@ beforeEach(function () {
 
 test('create token with expiration date', function () {
     $user = User::factory()->create();
+    Sanctum::actingAs($user, ['*']);
     $expiresAt = now()->addDays(30)->toISOString();
 
-    $response = $this->actingAs($user, 'sanctum')
-        ->postJson('/api/tokens', [
-            'name' => 'Expiring Token',
-            'expires_at' => $expiresAt,
-        ]);
+    $response = $this->postJson('/api/tokens', [
+        'name' => 'Expiring Token',
+        'expires_at' => $expiresAt,
+    ]);
 
-    $response->assertOk()
+    $response->assertCreated()
         ->assertJsonStructure(['token', 'id']);
 
     $this->assertDatabaseHas('personal_access_tokens', [
@@ -29,13 +30,13 @@ test('create token with expiration date', function () {
 
 test('create token without expiration', function () {
     $user = User::factory()->create();
+    Sanctum::actingAs($user, ['*']);
 
-    $response = $this->actingAs($user, 'sanctum')
-        ->postJson('/api/tokens', [
-            'name' => 'No Expiry Token',
-        ]);
+    $response = $this->postJson('/api/tokens', [
+        'name' => 'No Expiry Token',
+    ]);
 
-    $response->assertOk();
+    $response->assertCreated();
 
     $token = $user->tokens()->where('name', 'No Expiry Token')->first();
     $this->assertNull($token->expires_at);
@@ -43,12 +44,12 @@ test('create token without expiration', function () {
 
 test('expires at must be in the future', function () {
     $user = User::factory()->create();
+    Sanctum::actingAs($user, ['*']);
 
-    $response = $this->actingAs($user, 'sanctum')
-        ->postJson('/api/tokens', [
-            'name' => 'Expired Token',
-            'expires_at' => now()->subDay()->toISOString(),
-        ]);
+    $response = $this->postJson('/api/tokens', [
+        'name' => 'Expired Token',
+        'expires_at' => now()->subDay()->toISOString(),
+    ]);
 
     $response->assertUnprocessable()
         ->assertJsonValidationErrors(['expires_at']);
@@ -58,9 +59,9 @@ test('index returns expires at for all tokens', function () {
     $user = User::factory()->create();
     $user->createToken('Token 1', ['*'], now()->addDays(30));
     $user->createToken('Token 2');
+    Sanctum::actingAs($user, ['*']);
 
-    $response = $this->actingAs($user, 'sanctum')
-        ->getJson('/api/tokens');
+    $response = $this->getJson('/api/tokens');
 
     $response->assertOk()
         ->assertJsonCount(2);
@@ -76,13 +77,13 @@ test('index returns expires at for all tokens', function () {
 
 test('existing tests pass without expires at', function () {
     $user = User::factory()->create();
+    Sanctum::actingAs($user, ['*']);
 
-    $response = $this->actingAs($user, 'sanctum')
-        ->postJson('/api/tokens', [
-            'name' => 'Normal Token',
-            'abilities' => ['read'],
-        ]);
+    $response = $this->postJson('/api/tokens', [
+        'name' => 'Normal Token',
+        'abilities' => ['read'],
+    ]);
 
-    $response->assertOk()
+    $response->assertCreated()
         ->assertJsonStructure(['token', 'id']);
 });

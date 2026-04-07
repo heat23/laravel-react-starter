@@ -98,7 +98,16 @@ class AuditLog extends Model
         ];
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * The user who triggered this audit event.
+     *
+     * IMPORTANT: withTrashed() is intentional — audit logs must retain actor
+     * information even after a user is soft-deleted. Removing withTrashed()
+     * causes user_name/user_email to appear as null in recent_activity and
+     * audit log views for any events logged before the deletion.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class)->withTrashed();

@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Services\BillingService;
+use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Exceptions\IncompletePayment;
 use Laravel\Cashier\Payment;
 use Stripe\Exception\ApiConnectionException;
@@ -307,4 +308,41 @@ it('handles Stripe API error during subscription creation', function () {
 
     $response->assertRedirect();
     $response->assertSessionHas('error', 'Unable to process your request. Please try again or contact support.');
+});
+
+it('emits a deprecation warning log when the legacy subscribe endpoint is called', function () {
+    $user = User::factory()->create(['email_verified_at' => now()]);
+
+    Log::spy();
+
+    $mock = Mockery::mock(BillingService::class)->makePartial();
+    $mock->shouldReceive('createSubscription')
+        ->once()
+        ->andReturnUsing(fn () => createSubscription($user, ['stripe_price' => 'price_pro_monthly']));
+    app()->instance(BillingService::class, $mock);
+
+    $this->actingAs($user)->post('/billing/subscribe', [
+        'price_id' => 'price_pro_monthly',
+        'payment_method' => 'pm_card_visa',
+    ]);
+
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->withArgs(function (string $message, array $context) use ($user) {
+            return str_contains($message, 'billing.subscribe legacy endpoint called')
+                && $context['user_id'] === $user->id;
+        });
+});
+
+it('returns 410 Gone when the legacy subscribe kill switch is disabled', function () {
+    config(['billing.legacy_subscribe_enabled' => false]);
+
+    $user = User::factory()->create(['email_verified_at' => now()]);
+
+    $this->actingAs($user)
+        ->post('/billing/subscribe', [
+            'price_id' => 'price_pro_monthly',
+            'payment_method' => 'pm_card_visa',
+        ])
+        ->assertStatus(410);
 });

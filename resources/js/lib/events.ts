@@ -54,6 +54,7 @@ export const AnalyticsEvents = {
   BILLING_PLAN_SWAPPED: 'billing.plan_swapped',
   BILLING_SWAP_CONFIRMED: 'billing.swap_confirmed',
   BILLING_TRIAL_UPGRADE_CLICKED: 'billing.trial_upgrade_clicked',
+  BILLING_VIEW_PLANS_CLICKED: 'billing.view_plans_clicked',
   BILLING_PAYMENT_FAILED: 'billing.payment_failed',
   BILLING_PERIOD_TOGGLED: 'billing.period_toggled',
   BILLING_PAYMENT_METHOD_UPDATED: 'billing.payment_method_updated',
@@ -212,6 +213,7 @@ type _EventPropertyMapEntries = {
     | { from_plan?: string; to_plan: string; price_id?: string }
     | undefined;
   [AnalyticsEvents.BILLING_TRIAL_UPGRADE_CLICKED]: { tier: string } | undefined;
+  [AnalyticsEvents.BILLING_VIEW_PLANS_CLICKED]: Record<string, never> | undefined;
   [AnalyticsEvents.BILLING_PAYMENT_FAILED]: { reason?: string } | undefined;
   [AnalyticsEvents.BILLING_PERIOD_TOGGLED]: {
     from: BillingPeriod;

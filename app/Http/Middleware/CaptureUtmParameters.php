@@ -11,8 +11,9 @@ class CaptureUtmParameters
     private const UTM_PARAMS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
 
     /**
-     * Capture UTM parameters from GET requests and store them in the session (first-touch only).
-     * Stored under session key 'utm_data' as an associative array.
+     * Capture UTM parameters from GET requests and store them in the session.
+     * First-touch (utm_data): stored once and never overwritten.
+     * Last-touch (utm_last_touch): always updated on each visit with UTM params.
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -26,9 +27,14 @@ class CaptureUtmParameters
                 }
             }
 
-            // First-touch attribution: only store if no UTM data is already in session
-            if (! empty($utm) && ! $request->session()->has('utm_data')) {
-                $request->session()->put('utm_data', $utm);
+            if (! empty($utm)) {
+                // First-touch attribution: only store if no UTM data is already in session
+                if (! $request->session()->has('utm_data')) {
+                    $request->session()->put('utm_data', $utm);
+                }
+
+                // Last-touch attribution: always update on each visit with UTM params
+                $request->session()->put('utm_last_touch', $utm);
             }
         }
 

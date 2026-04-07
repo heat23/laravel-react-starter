@@ -88,6 +88,7 @@ class TokenController extends Controller
         ]);
 
         $this->cacheManager->invalidateTokens();
+        $this->cacheManager->invalidateUserLimitWarnings($user->id);
 
         return response()->json([
             'token' => $token->plainTextToken,
@@ -120,6 +121,7 @@ class TokenController extends Controller
         ]);
 
         $this->cacheManager->invalidateTokens();
+        $this->cacheManager->invalidateUserLimitWarnings($request->user()->id);
 
         return response()->json(['success' => true]);
     }

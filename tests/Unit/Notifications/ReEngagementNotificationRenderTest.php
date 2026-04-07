@@ -30,6 +30,17 @@ it('renders email 3 — account status', function () {
     expect($mail->subject)->toContain('One thing changed since you last logged in');
 });
 
+it('email 3 uses reengagement UTM campaign — not reengagement_winback', function () {
+    $user = User::factory()->create();
+    $notification = new ReEngagementNotification(3);
+
+    $mail = $notification->toMail($user);
+
+    expect($mail->actionUrl)
+        ->toContain('utm_campaign=reengagement&')
+        ->not->toContain('reengagement_winback');
+});
+
 it('includes email_number in toArray', function () {
     $user = User::factory()->create();
     $notification = new ReEngagementNotification(2);

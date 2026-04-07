@@ -90,7 +90,7 @@ it('records sent email in EmailSendLog', function () {
     expect(EmailSendLog::alreadySent($user->id, 'onboarding_reminder', 1))->toBeTrue();
 });
 
-it('skips email 1 when welcome sequence email 2 was already sent', function () {
+it('sends email 1 even when welcome sequence email 2 was already sent', function () {
     Notification::fake();
     config(['features.onboarding.enabled' => true]);
 
@@ -103,7 +103,9 @@ it('skips email 1 when welcome sequence email 2 was already sent', function () {
 
     $this->artisan('notifications:send-onboarding')->assertSuccessful();
 
-    Notification::assertNotSentTo($user, OnboardingReminderNotification::class);
+    Notification::assertSentTo($user, OnboardingReminderNotification::class, function ($n) {
+        return $n->emailNumber === 1;
+    });
 });
 
 it('does not re-send when EmailSendLog already has a record', function () {
@@ -120,4 +122,51 @@ it('does not re-send when EmailSendLog already has a record', function () {
     $this->artisan('notifications:send-onboarding')->assertSuccessful();
 
     Notification::assertNotSentTo($user, OnboardingReminderNotification::class);
+});
+
+it('sends email 1 to users who signed up 1-2 days ago', function () {
+    Notification::fake();
+    config(['features.onboarding.enabled' => true]);
+
+    $user = User::factory()->onboardingIncomplete()->create([
+        'email_verified_at' => now()->subHours(36),
+        'created_at' => now()->subHours(36),
+    ]);
+
+    $this->artisan('notifications:send-onboarding')->assertSuccessful();
+
+    Notification::assertSentTo($user, OnboardingReminderNotification::class, function ($n) {
+        return $n->emailNumber === 1;
+    });
+});
+
+it('skips users who have already completed onboarding', function () {
+    Notification::fake();
+    config(['features.onboarding.enabled' => true]);
+
+    // Factory default creates a user with onboarding_completed setting
+    $user = User::factory()->create([
+        'email_verified_at' => now()->subHours(36),
+        'created_at' => now()->subHours(36),
+    ]);
+
+    $this->artisan('notifications:send-onboarding')->assertSuccessful();
+
+    Notification::assertNotSentTo($user, OnboardingReminderNotification::class);
+});
+
+it('uses dashboard CTA URL when onboarding feature is disabled', function () {
+    Notification::fake();
+    config(['features.onboarding.enabled' => false]);
+
+    $user = User::factory()->onboardingIncomplete()->create([
+        'email_verified_at' => now()->subHours(36),
+        'created_at' => now()->subHours(36),
+    ]);
+
+    $this->artisan('notifications:send-onboarding')->assertSuccessful();
+
+    Notification::assertSentTo($user, OnboardingReminderNotification::class, function ($n) {
+        return $n->ctaUrl === route('dashboard');
+    });
 });

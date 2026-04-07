@@ -58,9 +58,9 @@ Route::middleware(['auth:sanctum'])->prefix('notifications')->group(function () 
 // API token management (for users managing their own tokens)
 if (config('features.api_tokens.enabled', true)) {
     Route::middleware(['auth:sanctum', 'throttle:20,1'])->prefix('tokens')->group(function () {
-        Route::get('/', [TokenController::class, 'index']);
-        // POST requires 'write' ability; DELETE requires 'delete' ability.
+        // All token routes enforce ability-based scoping.
         // Session-authenticated users (Inertia/web) carry a TransientToken that always passes.
+        Route::get('/', [TokenController::class, 'index'])->middleware(CheckTokenAbility::class.':read');
         Route::post('/', [TokenController::class, 'store'])->middleware(CheckTokenAbility::class.':write');
         Route::delete('/{tokenId}', [TokenController::class, 'destroy'])->middleware(CheckTokenAbility::class.':delete');
     });

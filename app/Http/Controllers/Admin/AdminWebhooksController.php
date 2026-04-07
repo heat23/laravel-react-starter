@@ -217,15 +217,24 @@ class AdminWebhooksController extends Controller
         $endpoint = $delivery->endpoint;
         $user = $endpoint !== null && $endpoint->user instanceof User ? $endpoint->user : null;
 
+        $responseBodyDecoded = json_decode($delivery->response_body ?? '', true);
+        if (is_array($responseBodyDecoded)) {
+            $redactedResponseBody = json_encode($this->redactSensitiveFields($responseBodyDecoded));
+        } elseif ($delivery->response_body !== null && $delivery->response_body !== '') {
+            $redactedResponseBody = $this->redactSensitiveKeyValuePairs($delivery->response_body);
+        } else {
+            $redactedResponseBody = $delivery->response_body;
+        }
+
         return Inertia::render('Admin/Webhooks/DeliveryDetail', [
             'delivery' => [
                 'id' => $delivery->id,
                 'uuid' => $delivery->uuid,
                 'event_type' => $delivery->event_type,
-                'payload' => $delivery->payload,
+                'payload' => $this->redactSensitiveFields($delivery->payload ?? []),
                 'status' => $delivery->status,
                 'response_code' => $delivery->response_code,
-                'response_body' => $delivery->response_body,
+                'response_body' => $redactedResponseBody,
                 'attempts' => $delivery->attempts,
                 'delivered_at' => $delivery->delivered_at?->toISOString(),
                 'created_at' => $delivery->created_at?->toISOString(),
@@ -256,5 +265,47 @@ class AdminWebhooksController extends Controller
 
         return redirect()->route('admin.webhooks.endpoints')
             ->with('success', 'Webhook endpoint restored.');
+    }
+
+    /**
+     * Recursively redact known sensitive field names from a payload array.
+     *
+     * @param  array<mixed>  $data
+     * @return array<mixed>
+     */
+    private function redactSensitiveFields(array $data): array
+    {
+        $sensitiveKeys = [
+            'password', 'secret', 'token', 'api_key', 'api_secret',
+            'private_key', 'authorization', 'access_token', 'refresh_token',
+            'client_secret', 'card_number', 'cvv', 'ssn',
+        ];
+
+        // Normalize sensitive keys by stripping underscores/hyphens for camelCase/PascalCase matching
+        $normalizedSensitiveKeys = array_map(
+            fn ($k) => strtolower(str_replace(['_', '-'], '', $k)),
+            $sensitiveKeys
+        );
+
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $data[$key] = $this->redactSensitiveFields($value);
+            } elseif (is_string($key) && in_array(strtolower(str_replace(['_', '-'], '', $key)), $normalizedSensitiveKeys, true)) {
+                $data[$key] = '[REDACTED]';
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Redact sensitive key=value patterns from a plain-text (non-JSON) response body.
+     * Handles form-encoded bodies and other text formats that may leak token values.
+     */
+    private function redactSensitiveKeyValuePairs(string $body): string
+    {
+        $pattern = '/\b(password|secret|token|api[_\-]?key|api[_\-]?secret|private[_\-]?key|authorization|access[_\-]?token|refresh[_\-]?token|client[_\-]?secret|card[_\-]?number|cvv|ssn)(\s*[=:]\s*)([^&;\s]+)/i';
+
+        return preg_replace($pattern, '$1$2[REDACTED]', $body) ?? $body;
     }
 }

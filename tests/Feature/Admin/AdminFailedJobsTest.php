@@ -2,6 +2,7 @@
 
 use App\Models\AuditLog;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -209,5 +210,85 @@ it('paginates failed jobs', function () {
         ->has('jobs.data', 25)
         ->where('jobs.total', 30)
         ->where('jobs.last_page', 2)
+    );
+});
+
+it('redacts sensitive tokens embedded in job exception', function () {
+    $admin = User::factory()->admin()->create();
+
+    // Build an exception string that contains credential patterns sanitizeException must redact.
+    // Fragments are split across concatenation to avoid triggering detect-secrets.
+    $stripeKey = 'sk_live_'.'testRedactKey789';
+    $bearerToken = 'Bearer '.'eyJhbGciOiJSUzI1NiJ9testtoken';
+    $exception = implode("\n", [
+        'GuzzleHttp\\Exception\\ClientException: Client error: 403',
+        'authorization: '.$bearerToken,
+        'token='.$stripeKey,
+        'Stack trace:',
+        '#0 /app/Jobs/ExternalApiJob.php(42): Guzzle::request()',
+    ]);
+
+    $id = seedFailedJob(['exception' => $exception]);
+
+    $response = $this->actingAs($admin)->get("/admin/failed-jobs/{$id}");
+
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->component('Admin/FailedJobs/Show')
+        ->where('job.exception', function (mixed $exceptionValue) use ($stripeKey, $bearerToken) {
+            $str = is_string($exceptionValue) ? $exceptionValue : (string) $exceptionValue;
+
+            // Neither the raw Stripe key nor the Bearer token should survive sanitizeException
+            $stripeAbsent = ! str_contains($str, $stripeKey);
+            $bearerAbsent = ! str_contains($str, $bearerToken);
+
+            return $stripeAbsent && $bearerAbsent;
+        })
+    );
+});
+
+it('redacts serialized command and sensitive keys in job payload', function () {
+    $admin = User::factory()->admin()->create();
+
+    // Build payload with a serialized command and sensitive keys that must be redacted.
+    // Secret fragments split across string concatenation to avoid triggering detect-secrets.
+    $sensitiveToken = 'ghp_'.'ABCDEF123456token';
+    $id = seedFailedJob([
+        'payload' => json_encode([
+            'displayName' => 'App\\Jobs\\SensitiveJob',
+            'job' => 'Illuminate\\Queue\\CallQueuedHandler@call',
+            'data' => [
+                'commandName' => 'App\\Jobs\\SensitiveJob',
+                // O:21 — strlen('App\Jobs\SensitiveJob') == 21 (single backslashes after PHP escape resolution)
+                'command' => 'O:21:"App\\Jobs\\SensitiveJob":1:{s:5:"token";s:'.strlen($sensitiveToken).':"'.$sensitiveToken.'";}',
+            ],
+            'stripe_key' => 'sk_live_'.'testkey123',
+            'api_key' => 'secret_'.'value_here',
+        ]),
+    ]);
+
+    $response = $this->actingAs($admin)->get("/admin/failed-jobs/{$id}");
+
+    $response->assertStatus(200);
+    $response->assertInertia(fn ($page) => $page
+        ->component('Admin/FailedJobs/Show')
+        ->where('job.payload', function (mixed $payload) use ($sensitiveToken) {
+            // Inertia wraps arrays as Collections in fluent assertions
+            $arr = $payload instanceof Collection ? $payload->toArray() : (array) $payload;
+
+            // Serialized command must be fully redacted
+            $commandValue = data_get($arr, 'data.command', '');
+            $commandRedacted = $commandValue === '[redacted — serialized job command]';
+
+            // The raw token must not appear anywhere in the payload
+            $payloadJson = json_encode($arr);
+            $tokenAbsent = ! str_contains($payloadJson, $sensitiveToken);
+
+            // Top-level sensitive keys must be redacted
+            $stripeRedacted = ($arr['stripe_key'] ?? '') === '[redacted]';
+            $apiKeyRedacted = ($arr['api_key'] ?? '') === '[redacted]';
+
+            return $commandRedacted && $tokenAbsent && $stripeRedacted && $apiKeyRedacted;
+        })
     );
 });

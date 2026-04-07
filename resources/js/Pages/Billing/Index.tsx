@@ -287,6 +287,7 @@ export default function BillingIndex() {
                         loadingText="Processing..."
                         onClick={() => {
                           setTrialUpgradeLoading(true);
+                          track(AnalyticsEvents.BILLING_TRIAL_UPGRADE_CLICKED, { tier: 'pro' });
                           track(AnalyticsEvents.BILLING_CHECKOUT_STARTED, {
                             plan: 'pro',
                             source: 'trial_billing_page',
@@ -303,6 +304,7 @@ export default function BillingIndex() {
                     ) : (
                       <Link
                         href="/pricing"
+                        onClick={() => track(AnalyticsEvents.BILLING_TRIAL_UPGRADE_CLICKED, { tier: 'pro' })}
                         className="underline font-medium rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                       >
                         Upgrade now
@@ -574,7 +576,14 @@ export default function BillingIndex() {
                   </>
                 ) : (
                   <Button asChild className="w-full sm:w-auto">
-                    <Link href="/pricing">
+                    <Link
+                      href="/pricing"
+                      onClick={() =>
+                        platformTrial
+                          ? track(AnalyticsEvents.BILLING_TRIAL_UPGRADE_CLICKED, { tier: 'pro' })
+                          : track(AnalyticsEvents.BILLING_VIEW_PLANS_CLICKED)
+                      }
+                    >
                       {platformTrial ? 'Upgrade Now' : 'View Plans'}
                     </Link>
                   </Button>

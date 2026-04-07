@@ -154,7 +154,10 @@ if (config('features.billing.enabled', false)) {
 
     Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+        // Canonical subscription path: creates a Stripe Hosted Checkout session.
         Route::post('/billing/checkout', [SubscriptionController::class, 'checkout'])->middleware('throttle:5,1')->name('billing.checkout');
+        // Legacy direct-API path (deprecated): requires pre-collected payment method token.
+        // Prefer checkout() for new integrations. Retained for backward compatibility.
         Route::post('/billing/subscribe', [SubscriptionController::class, 'subscribe'])->middleware('throttle:5,1')->name('billing.subscribe');
         Route::post('/billing/cancel', [SubscriptionController::class, 'cancel'])->middleware('throttle:5,1')->name('billing.cancel');
         Route::post('/billing/resume', [SubscriptionController::class, 'resume'])->middleware('throttle:5,1')->name('billing.resume');

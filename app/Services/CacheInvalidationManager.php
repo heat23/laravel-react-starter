@@ -55,6 +55,11 @@ class CacheInvalidationManager
         Cache::forget(AdminCacheKey::featureFlagsUser($userId));
     }
 
+    public function invalidateUserLimitWarnings(int $userId): void
+    {
+        Cache::forget("user:{$userId}:limit_warnings");
+    }
+
     public function invalidateDashboard(): void
     {
         Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);

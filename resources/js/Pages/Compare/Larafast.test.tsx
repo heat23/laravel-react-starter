@@ -7,7 +7,12 @@ vi.mock('@inertiajs/react', async () => {
   const actual = await vi.importActual('@inertiajs/react');
   return {
     ...actual,
-    Head: ({ title }: { title: string }) => <title>{title}</title>,
+    Head: ({ title, children }: { title: string; children?: React.ReactNode }) => (
+      <>
+        <title>{title}</title>
+        {children}
+      </>
+    ),
     Link: ({ children, href }: { children: React.ReactNode; href: string }) => (
       <a href={href}>{children}</a>
     ),
@@ -65,20 +70,20 @@ describe('Compare/Larafast', () => {
 
   it('uses absolute canonical URL from prop', () => {
     const { container } = render(<Larafast {...defaultProps} />);
-    // canonicalUrl prop is passed as absolute URL from the server (CompareController)
-    // and rendered via {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
-    // Verify page renders correctly with the absolute URL prop
-    expect(container).toBeTruthy();
-    // The canonicalUrl prop value is absolute — confirm no relative fallback is rendered
     const links = container.querySelectorAll('link[rel="canonical"]');
-    links.forEach((link) => {
-      expect(link.getAttribute('href')).not.toBe('/compare/larafast');
-    });
+    expect(links).toHaveLength(1);
+    expect(links[0].getAttribute('href')).toBe('https://example.com/compare/larafast');
   });
 
   it('does not render canonical link when canonicalUrl prop is omitted', () => {
     const { canonicalUrl: _, ...propsWithoutCanonical } = defaultProps;
     const { container } = render(<Larafast {...propsWithoutCanonical} />);
+    const canonicalLinks = container.querySelectorAll('link[rel="canonical"]');
+    expect(canonicalLinks).toHaveLength(0);
+  });
+
+  it('does not render canonical link when canonicalUrl is an empty string', () => {
+    const { container } = render(<Larafast {...defaultProps} canonicalUrl="" />);
     const canonicalLinks = container.querySelectorAll('link[rel="canonical"]');
     expect(canonicalLinks).toHaveLength(0);
   });

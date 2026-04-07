@@ -28,7 +28,7 @@ class HandleInertiaRequests extends Middleware
     /**
      * Return approaching-limit flags for the user.
      * Only resources at ≥80% usage are returned.
-     * Cached per-user for 60 seconds to minimise query overhead.
+     * Cached per-user for 5 minutes to minimise query overhead.
      *
      * @return array<string, array{current: int, limit: int, threshold: int}>
      */
