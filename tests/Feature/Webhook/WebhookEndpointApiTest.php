@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Models\WebhookDelivery;
 use App\Models\WebhookEndpoint;
 use Illuminate\Support\Facades\Queue;
+use Laravel\Sanctum\Sanctum;
 
 beforeEach(function () {
     config(['features.webhooks.enabled' => true]);
@@ -47,7 +48,9 @@ it('returns 404 when webhooks feature is disabled', function () {
     config(['features.webhooks.enabled' => false]);
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user, 'sanctum')->getJson('/api/webhooks');
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this->getJson('/api/webhooks');
 
     $response->assertNotFound();
 });
@@ -56,7 +59,9 @@ it('lists webhook endpoints for authenticated user', function () {
     $user = User::factory()->create();
     WebhookEndpoint::factory()->for($user)->count(3)->create();
 
-    $response = $this->actingAs($user, 'sanctum')->getJson('/api/webhooks');
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this->getJson('/api/webhooks');
 
     $response->assertOk();
     expect($response->json())->toHaveCount(3);
@@ -67,7 +72,9 @@ it('does not list other users endpoints', function () {
     $other = User::factory()->create();
     WebhookEndpoint::factory()->for($other)->count(2)->create();
 
-    $response = $this->actingAs($user, 'sanctum')->getJson('/api/webhooks');
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this->getJson('/api/webhooks');
 
     $response->assertOk();
     expect($response->json())->toHaveCount(0);
@@ -76,7 +83,9 @@ it('does not list other users endpoints', function () {
 it('creates a webhook endpoint', function () {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user, 'sanctum')->postJson('/api/webhooks', [
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this->postJson('/api/webhooks', [
         'url' => 'https://example.com/webhook',
         'events' => ['user.created'],
         'description' => 'Test endpoint',
@@ -90,7 +99,9 @@ it('creates a webhook endpoint', function () {
 it('validates url is required', function () {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user, 'sanctum')->postJson('/api/webhooks', [
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this->postJson('/api/webhooks', [
         'events' => ['user.created'],
     ]);
 
@@ -101,7 +112,9 @@ it('validates url is required', function () {
 it('validates events are required', function () {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user, 'sanctum')->postJson('/api/webhooks', [
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this->postJson('/api/webhooks', [
         'url' => 'https://example.com/webhook',
     ]);
 
@@ -112,7 +125,9 @@ it('validates events are required', function () {
 it('validates events must be from allowed list', function () {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user, 'sanctum')->postJson('/api/webhooks', [
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this->postJson('/api/webhooks', [
         'url' => 'https://example.com/webhook',
         'events' => ['invalid.event'],
     ]);
@@ -125,7 +140,9 @@ it('enforces plan limits on endpoint creation', function () {
     $user = User::factory()->create();
     WebhookEndpoint::factory()->for($user)->count(2)->create();
 
-    $response = $this->actingAs($user, 'sanctum')->postJson('/api/webhooks', [
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this->postJson('/api/webhooks', [
         'url' => 'https://example.com/webhook',
         'events' => ['user.created'],
     ]);
@@ -138,7 +155,9 @@ it('updates a webhook endpoint', function () {
     $user = User::factory()->create();
     $endpoint = WebhookEndpoint::factory()->for($user)->create();
 
-    $response = $this->actingAs($user, 'sanctum')->patchJson("/api/webhooks/{$endpoint->id}", [
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this->patchJson("/api/webhooks/{$endpoint->id}", [
         'description' => 'Updated description',
         'active' => false,
     ]);
@@ -152,7 +171,9 @@ it('deletes a webhook endpoint', function () {
     $user = User::factory()->create();
     $endpoint = WebhookEndpoint::factory()->for($user)->create();
 
-    $response = $this->actingAs($user, 'sanctum')->deleteJson("/api/webhooks/{$endpoint->id}");
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this->deleteJson("/api/webhooks/{$endpoint->id}");
 
     $response->assertOk();
     expect($user->webhookEndpoints()->count())->toBe(0);
@@ -163,7 +184,9 @@ it('cannot update another users endpoint', function () {
     $other = User::factory()->create();
     $endpoint = WebhookEndpoint::factory()->for($other)->create();
 
-    $response = $this->actingAs($user, 'sanctum')->patchJson("/api/webhooks/{$endpoint->id}", [
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this->patchJson("/api/webhooks/{$endpoint->id}", [
         'description' => 'Hacked',
     ]);
 
@@ -175,7 +198,9 @@ it('returns deliveries for an endpoint', function () {
     $endpoint = WebhookEndpoint::factory()->for($user)->create();
     WebhookDelivery::factory()->for($endpoint, 'endpoint')->count(3)->create();
 
-    $response = $this->actingAs($user, 'sanctum')->getJson("/api/webhooks/{$endpoint->id}/deliveries");
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this->getJson("/api/webhooks/{$endpoint->id}/deliveries");
 
     $response->assertOk();
     expect($response->json())->toHaveCount(3);

@@ -4,6 +4,7 @@ use App\Models\User;
 use App\Models\WebhookEndpoint;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\RateLimiter;
+use Laravel\Sanctum\Sanctum;
 
 beforeEach(function () {
     config(['features.webhooks.enabled' => true]);
@@ -50,14 +51,18 @@ it('rate limits webhook test dispatch to 5 per minute', function () {
 
     // Make 5 requests (the limit)
     for ($i = 0; $i < 5; $i++) {
-        $response = $this->actingAs($user, 'sanctum')
+        Sanctum::actingAs($user, ['*']);
+
+        $response = $this
             ->postJson("/api/webhooks/{$endpoint->id}/test");
 
         $response->assertOk();
     }
 
     // 6th request should be rate limited
-    $response = $this->actingAs($user, 'sanctum')
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this
         ->postJson("/api/webhooks/{$endpoint->id}/test");
 
     $response->assertStatus(429);
@@ -67,7 +72,9 @@ it('allows webhook test dispatch within rate limit', function () {
     $user = User::factory()->create();
     $endpoint = WebhookEndpoint::factory()->for($user)->create();
 
-    $response = $this->actingAs($user, 'sanctum')
+    Sanctum::actingAs($user, ['*']);
+
+    $response = $this
         ->postJson("/api/webhooks/{$endpoint->id}/test");
 
     $response->assertOk();
