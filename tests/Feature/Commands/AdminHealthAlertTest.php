@@ -282,6 +282,138 @@ it('does not alert on churn rate when subscriptions table has no data', function
     Notification::assertNothingSent();
 });
 
+it('sends alert when activation rate falls below warning threshold', function () {
+    Notification::fake();
+    $admin = User::factory()->admin()->create();
+
+    Cache::forget(AdminCacheKey::BILLING_STATS->value);
+    Cache::forget(AdminCacheKey::METRICS_MRR_SNAPSHOT->value);
+
+    config(['analytics-thresholds.activation_rate.warning_below' => 40, 'analytics-thresholds.activation_rate.critical_below' => 20]);
+
+    $mock = Mockery::mock(AdminBillingStatsService::class);
+    $mock->shouldReceive('getDashboardStats')->andReturn([
+        'active_subscriptions' => 10,
+        'trialing' => 0,
+        'past_due' => 0,
+        'canceled' => 0,
+        'scheduled_cancellations' => 0,
+        'total_ever' => 10,
+        'mrr' => 0.0,
+        'churn_rate' => 0.0,
+        'trial_conversion_rate' => 0.0,
+        'activation_rate' => 30.0, // below warning_below=40 but above critical_below=20
+        'activation_rate_all_time' => 0.0,
+        'signup_to_paid_conversion' => 0.0,
+        'cohort_conversion_30d' => 0.0,
+        'cached_at' => now()->toISOString(),
+    ]);
+    $this->app->instance(AdminBillingStatsService::class, $mock);
+
+    $this->artisan('admin:health-alert')
+        ->expectsOutputToContain('Alert sent')
+        ->assertExitCode(0);
+
+    Notification::assertSentTo($admin, AdminHealthAlertNotification::class, function ($notification, $channel) {
+        $data = $notification->toArray(new stdClass);
+
+        return isset($data['alerts']['activation_rate']) && $data['alerts']['activation_rate']['severity'] === 'warning';
+    });
+});
+
+it('sends alert when activation rate falls below critical threshold', function () {
+    Notification::fake();
+    $admin = User::factory()->admin()->create();
+
+    Cache::forget(AdminCacheKey::BILLING_STATS->value);
+    Cache::forget(AdminCacheKey::METRICS_MRR_SNAPSHOT->value);
+
+    config(['analytics-thresholds.activation_rate.warning_below' => 40, 'analytics-thresholds.activation_rate.critical_below' => 20]);
+
+    $mock = Mockery::mock(AdminBillingStatsService::class);
+    $mock->shouldReceive('getDashboardStats')->andReturn([
+        'active_subscriptions' => 10,
+        'trialing' => 0,
+        'past_due' => 0,
+        'canceled' => 0,
+        'scheduled_cancellations' => 0,
+        'total_ever' => 10,
+        'mrr' => 0.0,
+        'churn_rate' => 0.0,
+        'trial_conversion_rate' => 0.0,
+        'activation_rate' => 15.0, // below critical_below=20
+        'activation_rate_all_time' => 0.0,
+        'signup_to_paid_conversion' => 0.0,
+        'cohort_conversion_30d' => 0.0,
+        'cached_at' => now()->toISOString(),
+    ]);
+    $this->app->instance(AdminBillingStatsService::class, $mock);
+
+    $this->artisan('admin:health-alert')
+        ->expectsOutputToContain('Alert sent')
+        ->assertExitCode(0);
+
+    Notification::assertSentTo($admin, AdminHealthAlertNotification::class, function ($notification, $channel) {
+        $data = $notification->toArray(new stdClass);
+
+        return isset($data['alerts']['activation_rate']) && $data['alerts']['activation_rate']['severity'] === 'critical';
+    });
+});
+
+it('sends critical alert when activation rate equals the critical threshold boundary', function () {
+    Notification::fake();
+    $admin = User::factory()->admin()->create();
+
+    Cache::forget(AdminCacheKey::BILLING_STATS->value);
+    Cache::forget(AdminCacheKey::METRICS_MRR_SNAPSHOT->value);
+
+    config(['analytics-thresholds.activation_rate.warning_below' => 40, 'analytics-thresholds.activation_rate.critical_below' => 20]);
+
+    $mock = Mockery::mock(AdminBillingStatsService::class);
+    $mock->shouldReceive('getDashboardStats')->andReturn([
+        'active_subscriptions' => 10,
+        'trialing' => 0,
+        'past_due' => 0,
+        'canceled' => 0,
+        'scheduled_cancellations' => 0,
+        'total_ever' => 10,
+        'mrr' => 0.0,
+        'churn_rate' => 0.0,
+        'trial_conversion_rate' => 0.0,
+        'activation_rate' => 20.0, // exactly at critical_below=20 — must be critical, not warning
+        'activation_rate_all_time' => 0.0,
+        'signup_to_paid_conversion' => 0.0,
+        'cohort_conversion_30d' => 0.0,
+        'cached_at' => now()->toISOString(),
+    ]);
+    $this->app->instance(AdminBillingStatsService::class, $mock);
+
+    $this->artisan('admin:health-alert')
+        ->expectsOutputToContain('Alert sent')
+        ->assertExitCode(0);
+
+    Notification::assertSentTo($admin, AdminHealthAlertNotification::class, function ($notification, $channel) {
+        $data = $notification->toArray(new stdClass);
+
+        return isset($data['alerts']['activation_rate']) && $data['alerts']['activation_rate']['severity'] === 'critical';
+    });
+});
+
+it('does not alert on activation rate when rate is zero', function () {
+    Notification::fake();
+    User::factory()->admin()->create();
+
+    Cache::forget(AdminCacheKey::BILLING_STATS->value);
+    Cache::forget(AdminCacheKey::METRICS_MRR_SNAPSHOT->value);
+
+    // No subscriptions — activation_rate from real stats = 0, guard prevents false alert
+    $this->artisan('admin:health-alert')
+        ->expectsOutputToContain('No alerts')
+        ->assertExitCode(0);
+
+    Notification::assertNothingSent();
+});
+
 it('sends alert when trial conversion rate falls below warning threshold', function () {
     Notification::fake();
     $admin = User::factory()->admin()->create();

@@ -211,6 +211,8 @@ export default function AdminFeedbackIndex({ feedback, filters, counts }: AdminF
           pagination={feedback}
           onPage={handlePage}
           paginationLabel="feedback items"
+          perPage={Number(filters.per_page)}
+          onPerPageChange={(value) => updateFilter({ per_page: String(value) })}
           emptyIcon={MessageSquare}
           emptyTitle="No feedback found"
           emptyDescription={

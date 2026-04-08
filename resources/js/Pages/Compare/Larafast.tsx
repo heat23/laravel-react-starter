@@ -15,6 +15,29 @@ import type { ComparisonPageProps } from '@/types/index';
 
 const DATE_PUBLISHED = '2026-03-20';
 
+/**
+ * Validates that a canonical URL is absolute and belongs to the application's own origin.
+ * This prevents SEO hijacking if the prop were ever derived from untrusted input.
+ * The prop is server-side controlled (trusted), but origin-scoping is enforced here as a
+ * defence-in-depth measure.
+ *
+ * SSR note: when `window` is unavailable (server-side render), any well-formed absolute
+ * URL is provisionally allowed; the browser re-validates on hydration where `window` exists.
+ */
+function isOwnOriginUrl(url: string): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    // Reject non-HTTP schemes (javascript:, data:, ftp:, etc.)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    // During SSR window is not available; trust the server-provided absolute URL
+    if (typeof window === 'undefined') return true;
+    return parsed.hostname === window.location.hostname;
+  } catch {
+    return false;
+  }
+}
+
 const faqSchema = {
   '@context': 'https://schema.org',
   '@type': 'FAQPage',
@@ -64,7 +87,7 @@ export default function Larafast({
       <Head title={title}>
         <meta name="description" content={metaDescription} />
         <meta name="robots" content="index, follow" />
-        {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+        {canonicalUrl && isOwnOriginUrl(canonicalUrl) && <link rel="canonical" href={canonicalUrl} />}
         <meta property="og:title" content={title} />
         <meta property="og:description" content={metaDescription} />
         <meta property="og:type" content="website" />

@@ -31,3 +31,24 @@ it('whereLike wraps the escaped value with leading and trailing wildcards', func
 
     expect($bindings[0])->toBe('%alice%');
 });
+
+it('whereLike with or boolean produces OR condition in SQL', function () {
+    $query = DB::table('users');
+    QueryHelper::whereLike($query, 'name', 'alice', 'and');
+    QueryHelper::whereLike($query, 'email', 'alice', 'or');
+
+    $sql = $query->toSql();
+
+    expect($sql)->toContain('or');
+    expect($query->getBindings())->toHaveCount(2);
+    expect($query->getBindings()[1])->toBe('%alice%');
+});
+
+it('escapeLike on empty string returns empty string', function () {
+    expect(QueryHelper::escapeLike(''))->toBe('');
+});
+
+it('escapeLike on string with only pipe characters escapes all of them', function () {
+    // "|||" becomes "||||||" — each | becomes ||
+    expect(QueryHelper::escapeLike('|||'))->toBe('||||||');
+});

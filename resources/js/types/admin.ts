@@ -94,7 +94,7 @@ export interface AdminUserFilters extends SortableFilters {
   admin?: string;
   verified?: string;
   status?: string;
-  per_page?: string;
+  per_page: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -445,7 +445,7 @@ export interface AdminAuditLogsIndexProps {
     search?: string;
     sort?: string;
     dir?: string;
-    per_page?: string;
+    per_page: string;
   };
 }
 
@@ -716,6 +716,7 @@ export interface FeedbackFilters {
   search?: string;
   sort?: string;
   dir?: string;
+  per_page: string;
 }
 
 export interface AdminFeedbackIndexProps {

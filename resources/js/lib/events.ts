@@ -60,6 +60,7 @@ export const AnalyticsEvents = {
   BILLING_PAYMENT_METHOD_UPDATED: 'billing.payment_method_updated',
   BILLING_PAYMENT_RECOVERED: 'billing.payment_recovered',
   BILLING_RETENTION_COUPON_APPLIED: 'billing.retention_coupon_applied',
+  BILLING_CHARGE_REFUNDED: 'billing.charge_refunded',
 
   // User actions (server-side event names for cross-system correlation)
   PROFILE_UPDATED: 'profile.updated',
@@ -228,6 +229,9 @@ type _EventPropertyMapEntries = {
     | undefined;
   [AnalyticsEvents.BILLING_RETENTION_COUPON_APPLIED]:
     | { coupon_id?: string }
+    | undefined;
+  [AnalyticsEvents.BILLING_CHARGE_REFUNDED]:
+    | { charge_id?: string; amount_refunded?: number; currency?: string }
     | undefined;
   [AnalyticsEvents.PROFILE_UPDATED]: Record<string, never> | undefined;
   [AnalyticsEvents.API_TOKEN_CREATED]: { token_name?: string } | undefined;

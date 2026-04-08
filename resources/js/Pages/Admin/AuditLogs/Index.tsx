@@ -211,7 +211,7 @@ export default function AdminAuditLogsIndex({
           pagination={logs}
           onPage={handlePage}
           paginationLabel="entries"
-          perPage={Number(filters.per_page ?? 50)}
+          perPage={Number(filters.per_page)}
           onPerPageChange={(value) =>
             updateFilter({ per_page: String(value) })
           }

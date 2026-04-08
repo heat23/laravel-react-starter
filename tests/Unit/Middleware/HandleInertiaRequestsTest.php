@@ -6,6 +6,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class HandleInertiaRequestsTest extends TestCase
@@ -278,5 +279,52 @@ class HandleInertiaRequestsTest extends TestCase
         $shared = $this->middleware->share($request);
 
         $this->assertTrue($shared['features']['userSettings']);
+    }
+
+    // ============================================
+    // limit_warnings cache TTL regression (DB-02)
+    // ============================================
+
+    public function test_limit_warnings_are_cached_for_five_minutes(): void
+    {
+        // Regression guard for DB-02: the per-user limit_warnings cache must use
+        // a 5-minute (300s) TTL so that per-request query overhead stays bounded.
+        config([
+            'features.billing.enabled' => true,
+            'features.api_tokens.enabled' => true,
+        ]);
+
+        $user = User::factory()->create();
+
+        $request = Request::create('/test');
+        $request->setUserResolver(fn () => $user);
+
+        $cacheKey = "user:{$user->id}:limit_warnings";
+
+        $shared = $this->middleware->share($request);
+
+        // Guard: verify the key is present before accessing it
+        $this->assertArrayHasKey('limit_warnings', $shared, 'Middleware must expose limit_warnings in shared props');
+
+        // Guard: limit_warnings must be a lazy closure so Cache::spy() is set up in time.
+        // If this fails, the middleware was changed to compute limit_warnings eagerly, meaning
+        // Cache::spy() would be set up AFTER cache()->remember() fires during share(), and the
+        // TTL assertion below would silently never run (breaking the DB-02 regression guard).
+        $this->assertIsCallable($shared['limit_warnings'], 'limit_warnings must be a lazy Inertia closure; if this fails, Cache::spy() is set up too late to intercept the cache call');
+
+        // Spy on Cache BEFORE resolving the lazy closure so the remember() call is captured.
+        Cache::spy();
+
+        // Resolve the lazy closure — this triggers cache()->remember(...)
+        is_callable($shared['limit_warnings'])
+            ? $shared['limit_warnings']()
+            : $shared['limit_warnings'];
+
+        // Assert the exact 300 s TTL — the real regression guard for DB-02.
+        // Any change to this TTL value will cause this assertion to fail.
+        // Uses argument-specific matching so other cache->remember() calls (e.g. PlanLimitService)
+        // do not cause false failures on the count.
+        Cache::shouldHaveReceived('remember')
+            ->with($cacheKey, 300, \Mockery::type(\Closure::class));
     }
 }

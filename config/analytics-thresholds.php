@@ -6,6 +6,9 @@ return [
     'trial_conversion' => ['warning_below' => 20, 'critical_below' => 10],
     // % of trial/new users who complete a meaningful activation event (e.g. first key action)
     'activation_rate' => ['warning_below' => 40, 'critical_below' => 20],
-    // Net Revenue Retention (%): 100 = neutral, >100 = expansion, <100 = net churn
+    // Net Revenue Retention (%): 100 = neutral, >100 = expansion, <100 = net churn.
+    // NOTE: This threshold is defined but not yet wired to AdminHealthAlertCommand — NRR
+    // computation requires a dedicated service with historical MRR snapshots per customer.
+    // Wire via AdminHealthAlertCommand once that service is implemented.
     'net_revenue_retention' => ['warning_below' => 100, 'critical_below' => 90],
 ];

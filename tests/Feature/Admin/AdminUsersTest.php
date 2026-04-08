@@ -101,6 +101,23 @@ it('escapes LIKE wildcards in user search', function () {
     );
 });
 
+it('escapes LIKE underscore wildcard in user search', function () {
+    $admin = User::factory()->admin()->create();
+    // User whose name contains a literal underscore
+    $underscoreUser = User::factory()->create(['name' => 'test_user', 'email' => 'underscore@test.com']);
+    // User with a name that would match if _ were treated as wildcard
+    $wildcardMatchUser = User::factory()->create(['name' => 'testXuser', 'email' => 'other@test.com']);
+
+    // URL-encode the underscore so it is passed as a literal search term
+    $response = $this->actingAs($admin)->get('/admin/users?search=test_user');
+
+    $response->assertInertia(fn ($page) => $page
+        ->has('users.data', 1)
+        ->where('users.data.0.id', $underscoreUser->id)
+        ->missing('users.data.1')
+    );
+});
+
 it('filters by admin status', function () {
     $admin = User::factory()->admin()->create();
     User::factory()->create(['is_admin' => false]);
@@ -427,7 +444,7 @@ it('invalidates dashboard cache on toggle active', function () {
 });
 
 it('invalidates dashboard cache on bulk deactivate', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $users = User::factory()->count(2)->create();
 
     Cache::put(AdminCacheKey::DASHBOARD_STATS->value, ['cached' => true], 300);
@@ -478,7 +495,7 @@ it('captures before/after values when restoring user', function () {
 });
 
 it('captures before/after values in bulk deactivate', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [
@@ -688,23 +705,9 @@ it('rejects empty ids on bulk restore', function () {
     ])->assertSessionHasErrors('ids');
 });
 
-// ADM-SEC-004: Bulk restore requires super_admin
-it('returns 403 for regular admin on bulk restore', function () {
-    $admin = User::factory()->admin()->create();
-    $target = User::factory()->create();
-    $target->delete();
-
-    $this->actingAs($admin)->post('/admin/users/bulk-restore', [
-        'ids' => [$target->id],
-    ])->assertStatus(403);
-
-    // User remains deactivated
-    expect($target->fresh()->deleted_at)->not->toBeNull();
-});
-
 // AdminBulkDeactivateRequest validation boundary tests
 it('rejects empty ids array on bulk deactivate', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [
         'ids' => [],
@@ -712,7 +715,7 @@ it('rejects empty ids array on bulk deactivate', function () {
 });
 
 it('rejects more than 100 ids on bulk deactivate', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $users = User::factory()->count(101)->create();
 
     $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [
@@ -721,7 +724,7 @@ it('rejects more than 100 ids on bulk deactivate', function () {
 });
 
 it('rejects non-existent user ids on bulk deactivate', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [
         'ids' => [999999, 999998],
@@ -729,7 +732,7 @@ it('rejects non-existent user ids on bulk deactivate', function () {
 });
 
 it('accepts exactly 100 ids on bulk deactivate', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $users = User::factory()->count(100)->create();
 
     $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [

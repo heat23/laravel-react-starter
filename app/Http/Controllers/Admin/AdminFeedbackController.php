@@ -52,12 +52,16 @@ class AdminFeedbackController extends Controller
             });
         }
 
-        $feedback = $query->paginate(config('pagination.admin.feedback', 50))
+        $perPage = (int) ($request->validated('per_page') ?? config('pagination.admin.feedback', 50));
+        $feedback = $query->paginate($perPage)
             ->withQueryString();
 
         return Inertia::render('Admin/Feedback/Index', [
             'feedback' => $feedback,
-            'filters' => $request->only('type', 'status', 'search', 'sort', 'dir'),
+            'filters' => array_merge(
+                $request->only('type', 'status', 'search', 'sort', 'dir'),
+                ['per_page' => (string) $perPage]
+            ),
             'counts' => [
                 'open' => Feedback::byStatus('open')->count(),
                 'in_review' => Feedback::byStatus('in_review')->count(),

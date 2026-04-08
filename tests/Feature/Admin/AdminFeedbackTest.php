@@ -66,6 +66,45 @@ it('index validates status enum', function () {
         ->assertJsonValidationErrors(['status']);
 });
 
+it('rejects invalid per_page value for feedback index', function () {
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin)
+        ->getJson('/admin/feedback?per_page=9999')
+        ->assertStatus(422)
+        ->assertJsonValidationErrors(['per_page']);
+});
+
+it('accepts valid per_page values for feedback index', function () {
+    $admin = User::factory()->admin()->create();
+    foreach ([10, 25, 50, 100] as $value) {
+        $this->actingAs($admin)
+            ->getJson("/admin/feedback?per_page={$value}")
+            ->assertOk();
+    }
+});
+
+it('feedback index passes per_page filter back to frontend', function () {
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin)
+        ->get('/admin/feedback?per_page=10')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Admin/Feedback/Index')
+            ->where('filters.per_page', '10')
+        );
+});
+
+it('feedback index always includes resolved per_page in filters even without query param', function () {
+    $admin = User::factory()->admin()->create();
+    $this->actingAs($admin)
+        ->get('/admin/feedback')
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('Admin/Feedback/Index')
+            ->where('filters.per_page', (string) config('pagination.admin.feedback', 50))
+        );
+});
+
 it('admin can view a feedback item', function () {
     $admin = User::factory()->admin()->create();
     $feedback = makeFeedback();

@@ -129,7 +129,7 @@ class AdminHealthAlertCommand extends Command
             $trialConversionCritical = (float) config('analytics-thresholds.trial_conversion.critical_below', 10);
             $trialConversionRate = $customerHealth->getTrialConversionRate();
 
-            if ($trialConversionRate > 0 && $trialConversionRate < $trialConversionCritical) {
+            if ($trialConversionRate > 0 && $trialConversionRate <= $trialConversionCritical) {
                 $alerts['trial_conversion'] = [
                     'rate' => $trialConversionRate,
                     'threshold' => $trialConversionCritical,
@@ -142,6 +142,27 @@ class AdminHealthAlertCommand extends Command
                     'threshold' => $trialConversionWarning,
                     'severity' => 'warning',
                     'message' => "Trial conversion rate ({$trialConversionRate}%) is below warning threshold ({$trialConversionWarning}%)",
+                ];
+            }
+
+            // Check activation rate threshold
+            $activationRate = (float) $dashboardStats['activation_rate'];
+            $activationWarning = (float) config('analytics-thresholds.activation_rate.warning_below', 40);
+            $activationCritical = (float) config('analytics-thresholds.activation_rate.critical_below', 20);
+
+            if ($activationRate > 0 && $activationRate <= $activationCritical) {
+                $alerts['activation_rate'] = [
+                    'rate' => $activationRate,
+                    'threshold' => $activationCritical,
+                    'severity' => 'critical',
+                    'message' => "Activation rate ({$activationRate}%) is below critical threshold ({$activationCritical}%)",
+                ];
+            } elseif ($activationRate > 0 && $activationRate < $activationWarning) {
+                $alerts['activation_rate'] = [
+                    'rate' => $activationRate,
+                    'threshold' => $activationWarning,
+                    'severity' => 'warning',
+                    'message' => "Activation rate ({$activationRate}%) is below warning threshold ({$activationWarning}%)",
                 ];
             }
 

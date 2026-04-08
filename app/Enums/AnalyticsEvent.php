@@ -51,6 +51,7 @@ enum AnalyticsEvent: string
     case BILLING_PAYMENT_METHOD_UPDATED = 'billing.payment_method_updated';
     case BILLING_PAYMENT_RECOVERED = 'billing.payment_recovered';
     case BILLING_RETENTION_COUPON_APPLIED = 'billing.retention_coupon_applied';
+    case BILLING_CHARGE_REFUNDED = 'billing.charge_refunded';
 
     // Admin
     case ADMIN_UNAUTHORIZED_ACCESS = 'admin.unauthorized_access_attempt';
@@ -177,6 +178,7 @@ enum AnalyticsEvent: string
         'billing.payment_method_updated',
         'billing.payment_recovered',
         'billing.retention_coupon_applied',
+        'billing.charge_refunded',
         'profile.updated',
         'account.deleted',
         'api_token.created',

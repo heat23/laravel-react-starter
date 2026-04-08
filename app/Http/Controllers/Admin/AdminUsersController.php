@@ -101,7 +101,10 @@ class AdminUsersController extends Controller
 
         return Inertia::render('Admin/Users/Index', [
             'users' => $users,
-            'filters' => $request->only('search', 'admin', 'verified', 'status', 'sort', 'dir', 'per_page'),
+            'filters' => array_merge(
+                $request->only('search', 'admin', 'verified', 'status', 'sort', 'dir'),
+                ['per_page' => (string) $perPage]
+            ),
         ]);
     }
 

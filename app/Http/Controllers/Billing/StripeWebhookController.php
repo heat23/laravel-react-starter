@@ -234,6 +234,12 @@ class StripeWebhookController extends WebhookController
                     currency: $payload['data']['object']['currency'] ?? 'usd',
                     reason: $payload['data']['object']['refunds']['data'][0]['reason'] ?? null,
                 ));
+
+                $this->dispatchWebhookAnalyticsEvent($user, AnalyticsEvent::BILLING_CHARGE_REFUNDED, [
+                    'charge_id' => $payload['data']['object']['id'] ?? null,
+                    'amount_refunded' => $payload['data']['object']['amount_refunded'] ?? 0,
+                    'currency' => $payload['data']['object']['currency'] ?? 'usd',
+                ]);
             }
         }
 

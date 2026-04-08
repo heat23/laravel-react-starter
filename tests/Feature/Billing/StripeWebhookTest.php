@@ -730,6 +730,67 @@ it('does not write raw stripe.* event names to audit_logs (ANA-002 regression)',
     expect($rawCount)->toBe(0);
 });
 
+it('dispatches BILLING_CHARGE_REFUNDED analytics event on charge.refunded', function () {
+    Queue::fake();
+
+    $user = User::factory()->create(['stripe_id' => 'cus_ana_refunded']);
+
+    $payload = createStripeWebhookPayload('charge.refunded', [
+        'id' => 'ch_ana_refunded',
+        'customer' => 'cus_ana_refunded',
+        'amount_refunded' => 2000,
+        'currency' => 'usd',
+        'refunds' => ['data' => []],
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === AnalyticsEvent::BILLING_CHARGE_REFUNDED->value
+            && $job->userId === $user->id
+            && $job->params['charge_id'] === 'ch_ana_refunded'
+            && $job->params['amount_refunded'] === 2000
+            && $job->params['currency'] === 'usd';
+    });
+});
+
+it('persists billing.charge_refunded to audit_logs when charge.refunded fires', function () {
+    $user = User::factory()->create(['stripe_id' => 'cus_pers_refunded']);
+
+    $payload = createStripeWebhookPayload('charge.refunded', [
+        'id' => 'ch_pers_refunded',
+        'customer' => 'cus_pers_refunded',
+        'amount_refunded' => 1900,
+        'currency' => 'usd',
+        'refunds' => ['data' => []],
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => AnalyticsEvent::BILLING_CHARGE_REFUNDED->value,
+        'user_id' => $user->id,
+    ]);
+});
+
+it('does not dispatch BILLING_CHARGE_REFUNDED when stripe customer has no local user', function () {
+    Queue::fake();
+
+    $payload = createStripeWebhookPayload('charge.refunded', [
+        'id' => 'ch_no_user',
+        'customer' => 'cus_no_local_user_refund',
+        'amount_refunded' => 1900,
+        'currency' => 'usd',
+        'refunds' => ['data' => []],
+    ]);
+
+    postStripeWebhook($payload)->assertOk();
+
+    Queue::assertNotPushed(DispatchAnalyticsEvent::class, function ($job) {
+        return $job->eventName === AnalyticsEvent::BILLING_CHARGE_REFUNDED->value;
+    });
+});
+
 it('merges extraMeta fields into the single-channel log context (ANA-002 log regression)', function () {
     $user = User::factory()->create(['stripe_id' => 'cus_log_merge_test']);
     createSubscription($user, ['stripe_id' => 'sub_log_merge_test']);

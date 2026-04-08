@@ -43,7 +43,10 @@ class AdminAuditLogController extends Controller
         return Inertia::render('Admin/AuditLogs/Index', [
             'logs' => $logs,
             'eventTypes' => $eventTypes,
-            'filters' => $request->only('event', 'user_id', 'from', 'to', 'ip', 'search', 'sort', 'dir', 'per_page'),
+            'filters' => array_merge(
+                $request->only('event', 'user_id', 'from', 'to', 'ip', 'search', 'sort', 'dir'),
+                ['per_page' => (string) $perPage]
+            ),
         ]);
     }
 

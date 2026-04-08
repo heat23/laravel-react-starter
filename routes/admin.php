@@ -71,7 +71,7 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1,admin:'])
 
         // Bulk Actions
         Route::post('/users/bulk-deactivate', [AdminUsersController::class, 'bulkDeactivate'])
-            ->middleware('throttle:10,1')
+            ->middleware(['throttle:10,1', 'super_admin'])
             ->name('users.bulk-deactivate');
         Route::post('/users/bulk-restore', [AdminUsersController::class, 'bulkRestore'])
             ->middleware(['throttle:10,1', 'super_admin'])

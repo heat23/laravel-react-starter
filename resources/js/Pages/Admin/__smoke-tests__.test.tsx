@@ -9,7 +9,7 @@
  * caused by slow first-time module transformation.
  */
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock Inertia
@@ -126,6 +126,7 @@ import FeedbackShow from './Feedback/Show';
 import Health from './Health';
 import NotificationsDashboard from './Notifications/Dashboard';
 import NpsResponsesIndex from './NpsResponses/Index';
+import ProductAnalytics from './ProductAnalytics';
 import RoadmapCreate from './Roadmap/Create';
 import RoadmapIndex from './Roadmap/Index';
 import ScheduleIndex from './Schedule/Index';
@@ -181,6 +182,46 @@ describe('Admin UI Smoke Tests', () => {
       expect(
         screen.getByRole('heading', { name: 'Users', level: 1 })
       ).toBeInTheDocument();
+    });
+
+    it('hides bulk action bar for non-super-admin even when users are selected', () => {
+      // The global usePage mock returns auth.user without is_super_admin,
+      // so isSuperAdmin === false inside the component.
+      // Selecting a user must NOT reveal the bulk action bar.
+      render(
+        <UsersIndex
+          users={{
+            data: [
+              {
+                id: 2, // Different from mocked auth user (id:1) — selectable
+                name: 'Regular User',
+                email: 'regular@example.com',
+                email_verified_at: '2026-01-01',
+                is_admin: false, // Not an admin — eligible for bulk deactivate
+                created_at: '2026-01-01',
+                deleted_at: null,
+                last_login_at: null,
+                tokens_count: 0,
+                engagement_score: 0,
+              },
+            ],
+            current_page: 1,
+            per_page: 15,
+            total: 1,
+            last_page: 1,
+            from: 1,
+            to: 1,
+          }}
+          filters={{}}
+        />
+      );
+
+      // Select the user via their row checkbox
+      const checkbox = screen.getByRole('checkbox', { name: 'Select Regular User' });
+      fireEvent.click(checkbox);
+
+      // Bulk action bar must remain absent — isSuperAdmin is false
+      expect(screen.queryByText(/user\(s\) selected/)).not.toBeInTheDocument();
     });
 
     it('renders Users Show page', () => {
@@ -781,6 +822,30 @@ describe('Admin UI Smoke Tests', () => {
 
       expect(
         screen.getByRole('heading', { name: 'NPS Responses', level: 1 })
+      ).toBeInTheDocument();
+    });
+  });
+
+  describe('Product Analytics Page', () => {
+    it('renders Product Analytics', () => {
+      render(
+        <ProductAnalytics
+          signup_trend={[{ date: '2026-04-01', count: 5 }]}
+          onboarding_funnel={{
+            registered: 100,
+            started: 60,
+            completed: 40,
+            start_rate: 60,
+            completion_rate: 40,
+          }}
+          activation={{ total_users: 100, activated_users: 40, activation_rate: 40 }}
+          feature_adoption={[{ feature_name: 'billing', count: 25 }]}
+          subscription_events={{ created: 10, canceled: 2, resumed: 1 }}
+        />
+      );
+
+      expect(
+        screen.getByRole('heading', { name: 'Product Analytics', level: 1 })
       ).toBeInTheDocument();
     });
   });

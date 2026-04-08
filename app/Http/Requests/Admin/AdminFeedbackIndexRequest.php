@@ -20,6 +20,7 @@ class AdminFeedbackIndexRequest extends FormRequest
             'search' => ['nullable', 'string', 'max:100'],
             'sort' => ['nullable', 'string', Rule::in(['created_at', 'priority', 'status', 'type'])],
             'dir' => ['nullable', 'string', Rule::in(['asc', 'desc'])],
+            'per_page' => ['nullable', 'integer', 'in:10,25,50,100'],
         ];
     }
 }

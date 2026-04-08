@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import Larafast from './Larafast';
 
@@ -52,10 +52,20 @@ const defaultProps = {
       url: 'https://example.com/compare/larafast',
     },
   ],
-  canonicalUrl: 'https://example.com/compare/larafast',
+  canonicalUrl: 'http://localhost/compare/larafast',
 };
 
 describe('Compare/Larafast', () => {
+  beforeEach(() => {
+    // The component's isOwnOriginUrl helper uses window.location.hostname for origin-gating.
+    // jsdom defaults to about:blank (hostname=""); stub a stable origin so tests are predictable.
+    vi.stubGlobal('location', { ...window.location, hostname: 'localhost' });
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('renders without crashing', () => {
     render(<Larafast {...defaultProps} />);
     expect(document.body).toBeTruthy();
@@ -72,7 +82,7 @@ describe('Compare/Larafast', () => {
     const { container } = render(<Larafast {...defaultProps} />);
     const links = container.querySelectorAll('link[rel="canonical"]');
     expect(links).toHaveLength(1);
-    expect(links[0].getAttribute('href')).toBe('https://example.com/compare/larafast');
+    expect(links[0].getAttribute('href')).toBe('http://localhost/compare/larafast');
   });
 
   it('does not render canonical link when canonicalUrl prop is omitted', () => {
@@ -84,6 +94,22 @@ describe('Compare/Larafast', () => {
 
   it('does not render canonical link when canonicalUrl is an empty string', () => {
     const { container } = render(<Larafast {...defaultProps} canonicalUrl="" />);
+    const canonicalLinks = container.querySelectorAll('link[rel="canonical"]');
+    expect(canonicalLinks).toHaveLength(0);
+  });
+
+  it('does not render canonical link when canonicalUrl is a relative path', () => {
+    const { container } = render(<Larafast {...defaultProps} canonicalUrl="/compare/larafast" />);
+    const canonicalLinks = container.querySelectorAll('link[rel="canonical"]');
+    expect(canonicalLinks).toHaveLength(0);
+  });
+
+  it('does not render canonical link when canonicalUrl points to an external domain', () => {
+    // Security: external-origin URLs must be rejected to prevent SEO hijacking.
+    // jsdom sets window.location.hostname to 'localhost'; 'evil.com' must not match.
+    const { container } = render(
+      <Larafast {...defaultProps} canonicalUrl="https://evil.com/compare/larafast" />,
+    );
     const canonicalLinks = container.querySelectorAll('link[rel="canonical"]');
     expect(canonicalLinks).toHaveLength(0);
   });

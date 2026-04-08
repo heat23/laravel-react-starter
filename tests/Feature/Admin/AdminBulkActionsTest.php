@@ -13,7 +13,7 @@ beforeEach(function () {
 */
 
 it('bulk deactivates non-admin users', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $users = User::factory()->count(3)->create();
     $ids = $users->pluck('id')->all();
 
@@ -29,7 +29,7 @@ it('bulk deactivates non-admin users', function () {
 });
 
 it('excludes self from bulk deactivation', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
 
     $response = $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [
@@ -46,7 +46,7 @@ it('excludes self from bulk deactivation', function () {
 });
 
 it('excludes admin users from bulk deactivation', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $otherAdmin = User::factory()->admin()->create();
     $user = User::factory()->create();
 
@@ -64,7 +64,7 @@ it('excludes admin users from bulk deactivation', function () {
 });
 
 it('skips already deactivated users', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $deactivated = User::factory()->create(['deleted_at' => now()]);
     $active = User::factory()->create();
 
@@ -77,7 +77,7 @@ it('skips already deactivated users', function () {
 });
 
 it('validates ids are required', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->post('/admin/users/bulk-deactivate', ['ids' => []]);
 
@@ -85,7 +85,7 @@ it('validates ids are required', function () {
 });
 
 it('validates max 100 ids', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $ids = range(1, 101);
 
     $response = $this->actingAs($admin)->post('/admin/users/bulk-deactivate', ['ids' => $ids]);
@@ -94,7 +94,7 @@ it('validates max 100 ids', function () {
 });
 
 it('validates ids must exist in users table', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->post('/admin/users/bulk-deactivate', ['ids' => [99999]]);
 
@@ -102,7 +102,7 @@ it('validates ids must exist in users table', function () {
 });
 
 it('creates audit logs for each deactivated user', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $users = User::factory()->count(2)->create();
     $ids = $users->pluck('id')->all();
 
@@ -115,7 +115,7 @@ it('creates audit logs for each deactivated user', function () {
 });
 
 it('returns zero count when all users are excluded', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $otherAdmin = User::factory()->admin()->create();
 
     $response = $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [
@@ -132,4 +132,33 @@ it('blocks non-admin from bulk deactivate', function () {
     $response = $this->actingAs($user)->post('/admin/users/bulk-deactivate', ['ids' => [1]]);
 
     $response->assertStatus(403);
+});
+
+it('blocks non-super-admin from bulk deactivate', function () {
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->create();
+
+    $response = $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [
+        'ids' => [$target->id],
+    ]);
+
+    $response->assertStatus(403);
+
+    // User remains active
+    expect($target->fresh()->deleted_at)->toBeNull();
+});
+
+it('blocks non-super-admin from bulk restore', function () {
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->create();
+    $target->delete();
+
+    $response = $this->actingAs($admin)->post('/admin/users/bulk-restore', [
+        'ids' => [$target->id],
+    ]);
+
+    $response->assertStatus(403);
+
+    // User remains deactivated
+    expect($target->fresh()->deleted_at)->not->toBeNull();
 });

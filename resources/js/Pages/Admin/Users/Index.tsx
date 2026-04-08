@@ -284,8 +284,8 @@ export default function AdminUsersIndex({
           </Select>
         </fieldset>
 
-        {/* Bulk Action Bar */}
-        {selectedIds.size > 0 && (
+        {/* Bulk Action Bar — only visible to super admins (all bulk mutations require super_admin) */}
+        {selectedIds.size > 0 && isSuperAdmin && (
           <div
             className="flex items-center gap-3 rounded-lg border bg-muted/50 px-4 py-2"
             role="status"
@@ -329,7 +329,7 @@ export default function AdminUsersIndex({
           pagination={users}
           onPage={handlePage}
           paginationLabel="users"
-          perPage={Number(filters.per_page ?? 25)}
+          perPage={Number(filters.per_page)}
           onPerPageChange={(value) =>
             updateFilter({ per_page: String(value) })
           }
