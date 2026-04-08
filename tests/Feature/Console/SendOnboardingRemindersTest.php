@@ -155,13 +155,47 @@ it('skips users who have already completed onboarding', function () {
     Notification::assertNotSentTo($user, OnboardingReminderNotification::class);
 });
 
+it('skips users who have not verified their email', function () {
+    Notification::fake();
+    config(['features.onboarding.enabled' => true]);
+
+    $user = User::factory()->onboardingIncomplete()->create([
+        'email_verified_at' => null,
+        'created_at' => now()->subHours(36),
+    ]);
+
+    $this->artisan('notifications:send-onboarding')->assertSuccessful();
+
+    Notification::assertNotSentTo($user, OnboardingReminderNotification::class);
+});
+
+it('uses onboarding CTA URL when onboarding feature is enabled', function () {
+    Notification::fake();
+    config(['features.onboarding.enabled' => true]);
+
+    // Created 1 day 12 hours ago — definitively inside onboarding email 1 window
+    // (email-sequences.onboarding[1]: days:1, max_days:2 → user must be 1–2 days old)
+    $user = User::factory()->onboardingIncomplete()->create([
+        'email_verified_at' => now()->subDays(1)->subHours(12),
+        'created_at' => now()->subDays(1)->subHours(12),
+    ]);
+
+    $this->artisan('notifications:send-onboarding')->assertSuccessful();
+
+    Notification::assertSentTo($user, OnboardingReminderNotification::class, function ($n) {
+        return $n->ctaUrl === route('onboarding');
+    });
+});
+
 it('uses dashboard CTA URL when onboarding feature is disabled', function () {
     Notification::fake();
     config(['features.onboarding.enabled' => false]);
 
+    // Created 1 day 12 hours ago — definitively inside onboarding email 1 window
+    // (email-sequences.onboarding[1]: days:1, max_days:2 → user must be 1–2 days old)
     $user = User::factory()->onboardingIncomplete()->create([
-        'email_verified_at' => now()->subHours(36),
-        'created_at' => now()->subHours(36),
+        'email_verified_at' => now()->subDays(1)->subHours(12),
+        'created_at' => now()->subDays(1)->subHours(12),
     ]);
 
     $this->artisan('notifications:send-onboarding')->assertSuccessful();
