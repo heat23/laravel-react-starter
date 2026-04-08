@@ -496,7 +496,7 @@ describe('Billing Index Page', () => {
 
     expect(mockTrack).toHaveBeenCalledWith(
       AnalyticsEvents.BILLING_TRIAL_UPGRADE_CLICKED,
-      undefined
+      { tier: 'pro' }
     );
   });
 });

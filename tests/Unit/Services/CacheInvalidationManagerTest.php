@@ -108,3 +108,20 @@ it('invalidates dashboard stats only', function () {
     expect(Cache::has(AdminCacheKey::DASHBOARD_STATS->value))->toBeFalse();
     expect(Cache::has(AdminCacheKey::TOKENS_STATS->value))->toBeTrue();
 });
+
+it('invalidates registration caches', function () {
+    Cache::put(AdminCacheKey::DASHBOARD_STATS->value, 'stats', 300);
+    Cache::put(AdminCacheKey::DASHBOARD_SIGNUP_CHART->value, 'chart', 300);
+    // Unrelated caches must remain intact
+    Cache::put(AdminCacheKey::TOKENS_STATS->value, 'tokens', 300);
+
+    $manager = app(CacheInvalidationManager::class);
+    $manager->invalidateOnRegistration();
+
+    // invalidateOnRegistration intentionally clears only DASHBOARD_STATS and
+    // DASHBOARD_SIGNUP_CHART — registration affects the user count and the
+    // sign-up chart but does not affect billing, tokens, or other subsystems.
+    expect(Cache::has(AdminCacheKey::DASHBOARD_STATS->value))->toBeFalse();
+    expect(Cache::has(AdminCacheKey::DASHBOARD_SIGNUP_CHART->value))->toBeFalse();
+    expect(Cache::has(AdminCacheKey::TOKENS_STATS->value))->toBeTrue();
+});
