@@ -611,6 +611,12 @@ it('logs audit entry when sending password reset', function () {
     expect($log->metadata['target_user_id'])->toBe($user->id);
 });
 
+it('redirects guest to login on send-password-reset', function () {
+    $target = User::factory()->create();
+
+    $this->post("/admin/users/{$target->id}/send-password-reset")->assertRedirect('/login');
+});
+
 it('returns 403 for non-admin on password reset', function () {
     $user = User::factory()->create();
     $target = User::factory()->create();
@@ -738,4 +744,182 @@ it('accepts exactly 100 ids on bulk deactivate', function () {
     $this->actingAs($admin)->post('/admin/users/bulk-deactivate', [
         'ids' => $users->pluck('id')->toArray(),
     ])->assertSessionDoesntHaveErrors('ids');
+});
+
+it('paginates users at 25 per page by default', function () {
+    $admin = User::factory()->admin()->create();
+    User::factory()->count(30)->create();
+
+    $response = $this->actingAs($admin)->get('/admin/users');
+
+    // AdminUsersController includes all roles in the listing (no admin filter applied by default).
+    // 30 non-admin + 1 admin (the acting user) = 31 total; ceil(31/25) = 2 pages.
+    $response->assertInertia(fn ($page) => $page
+        ->has('users.data', 25)
+        ->where('users.total', 31)
+        ->where('users.last_page', 2)
+    );
+});
+
+// --- create (GET /admin/users/create) ---
+
+it('redirects guest to login on create form', function () {
+    $this->get('/admin/users/create')->assertRedirect('/login');
+});
+
+it('returns 403 for non-admin on create form', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->get('/admin/users/create')->assertStatus(403);
+});
+
+it('renders create form for admin', function () {
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)
+        ->get('/admin/users/create')
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page->component('Admin/Users/Create'));
+});
+
+// --- store (POST /admin/users) ---
+
+it('redirects guest to login on store', function () {
+    $this->post('/admin/users', [
+        'name' => 'New User',
+        'email' => 'new@test.com',
+        'password' => 'password123!',
+    ])->assertRedirect('/login');
+});
+
+it('returns 403 for non-admin on store', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)->post('/admin/users', [
+        'name' => 'New User',
+        'email' => 'new@test.com',
+        'password' => 'password123!',
+    ])->assertStatus(403);
+});
+
+it('creates a user as admin', function () {
+    $admin = User::factory()->admin()->create();
+
+    $response = $this->actingAs($admin)->post('/admin/users', [
+        'name' => 'Created User',
+        'email' => 'created@test.com',
+        'password' => 'password123!',
+    ]);
+
+    $response->assertRedirect(route('admin.users.index'));
+    $response->assertSessionHas('success');
+    expect(User::where('email', 'created@test.com')->exists())->toBeTrue();
+});
+
+it('rejects duplicate email on store', function () {
+    $admin = User::factory()->admin()->create();
+    User::factory()->create(['email' => 'taken@test.com']);
+
+    $this->actingAs($admin)->post('/admin/users', [
+        'name' => 'Dup User',
+        'email' => 'taken@test.com',
+        'password' => 'password123!',
+    ])->assertSessionHasErrors('email');
+});
+
+it('can create admin user via store when acting as super_admin', function () {
+    $superAdmin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($superAdmin)->post('/admin/users', [
+        'name' => 'New Admin',
+        'email' => 'newadmin@test.com',
+        'password' => 'password123!',
+        'is_admin' => true,
+    ])->assertRedirect(route('admin.users.index'));
+
+    $created = User::where('email', 'newadmin@test.com')->first();
+    expect($created)->not->toBeNull();
+    expect($created->is_admin)->toBeTrue();
+    // Admin users get email verified automatically on creation
+    expect($created->email_verified_at)->not->toBeNull();
+});
+
+it('plain admin cannot elevate is_admin via store — field is silently ignored', function () {
+    // AdminCreateUserRequest only adds the is_admin rule for super_admins; for plain
+    // admins the field is never validated and therefore never appears in $validated.
+    // The controller's `if (! empty($validated['is_admin']))` guard stays false, so
+    // the created user must NOT be an admin.
+    $admin = User::factory()->admin()->create();
+
+    $this->actingAs($admin)->post('/admin/users', [
+        'name' => 'Attempted Escalation',
+        'email' => 'escalation@test.com',
+        'password' => 'password123!',
+        'is_admin' => true,
+    ])->assertRedirect(route('admin.users.index'));
+
+    $created = User::where('email', 'escalation@test.com')->first();
+    expect($created)->not->toBeNull();
+    expect($created->is_admin)->toBeFalse();
+});
+
+// --- update (PATCH /admin/users/{user}) ---
+// update is intentionally admin-only (not super_admin) because it only modifies
+// non-sensitive fields (name, email) — not roles or active status.
+
+it('returns 403 for guest on update', function () {
+    $user = User::factory()->create();
+
+    $this->patch("/admin/users/{$user->id}", [
+        'name' => 'Updated',
+        'email' => 'updated@test.com',
+    ])->assertRedirect('/login');
+});
+
+it('returns 403 for non-admin on update', function () {
+    $actor = User::factory()->create();
+    $target = User::factory()->create();
+
+    $this->actingAs($actor)->patch("/admin/users/{$target->id}", [
+        'name' => 'Updated',
+        'email' => 'updated@test.com',
+    ])->assertStatus(403);
+});
+
+it('allows plain admin to update user name and email', function () {
+    // update does NOT require super_admin — plain admin is sufficient
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->create(['name' => 'Original', 'email' => 'original@test.com']);
+
+    $response = $this->actingAs($admin)->patch("/admin/users/{$target->id}", [
+        'name' => 'Updated Name',
+        'email' => 'updated@test.com',
+    ]);
+
+    $response->assertRedirect(route('admin.users.show', $target));
+    $response->assertSessionHas('success');
+    expect($target->fresh()->name)->toBe('Updated Name');
+    expect($target->fresh()->email)->toBe('updated@test.com');
+});
+
+it('rejects update for a deactivated (soft-deleted) user', function () {
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->create();
+    $target->delete();
+
+    $this->actingAs($admin)->patch("/admin/users/{$target->id}", [
+        'name' => 'Updated',
+        'email' => 'updated@test.com',
+    ])->assertStatus(403);
+});
+
+it('rejects duplicate email on update', function () {
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->create(['email' => 'target@test.com']);
+    User::factory()->create(['email' => 'taken@test.com']);
+
+    $this->actingAs($admin)->patch("/admin/users/{$target->id}", [
+        'name' => 'Target',
+        'email' => 'taken@test.com',
+    ])->assertSessionHasErrors('email');
 });

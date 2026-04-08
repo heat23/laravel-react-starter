@@ -21,6 +21,7 @@ use App\Http\Controllers\Billing\BillingController;
 use App\Http\Controllers\Billing\PricingController;
 use App\Http\Controllers\Billing\StripeWebhookController;
 use App\Http\Controllers\Billing\SubscriptionController;
+use App\Http\Middleware\EnsureIsSuperAdmin;
 use App\Models\FeatureFlagOverride;
 use App\Models\User;
 use Illuminate\Database\QueryException;
@@ -277,6 +278,13 @@ function registerAdminRoutes(): void
     config(['features.admin.enabled' => true]);
 
     $router = app('router');
+
+    // Explicitly alias super_admin here so the test router is self-contained and does
+    // not silently skip the middleware if the application bootstrap ordering differs in
+    // test environments. The alias is also registered in bootstrap/app.php but being
+    // explicit here prevents false-passing tests if that registration ever changes.
+    $router->aliasMiddleware('super_admin', EnsureIsSuperAdmin::class);
+
     $needsRefresh = false;
 
     // Core admin routes (register once)
@@ -287,13 +295,30 @@ function registerAdminRoutes(): void
             ->group(function () use ($router) {
                 $router->get('/', [AdminDashboardController::class, '__invoke'])->name('dashboard');
 
+                // Static GET segments must precede the {user} wildcard (same HTTP verb).
+                // Static POST segments (bulk-deactivate, bulk-restore) must precede any
+                // POST /users/{user}/... wildcard routes for the same reason — register
+                // them before POST /users/{user}/... actions below.
+                $router->get('/users/export', [AdminUsersController::class, 'export'])->name('users.export');
+                $router->get('/users/create', [AdminUsersController::class, 'create'])->name('users.create');
+                $router->post('/users', [AdminUsersController::class, 'store'])->name('users.store');
                 $router->get('/users', [AdminUsersController::class, 'index'])->name('users.index');
+                // Bulk POST actions registered before POST /users/{user}/... routes so that
+                // the literal path segments are not captured by a {user} wildcard POST route
+                // if one is added in the future.
+                $router->post('/users/bulk-deactivate', [AdminUsersController::class, 'bulkDeactivate'])->middleware('super_admin')->name('users.bulk-deactivate');
+                $router->post('/users/bulk-restore', [AdminUsersController::class, 'bulkRestore'])->middleware('super_admin')->name('users.bulk-restore');
                 $router->get('/users/{user}', [AdminUsersController::class, 'show'])->withTrashed()->name('users.show');
-                $router->patch('/users/{user}/toggle-admin', [AdminUsersController::class, 'toggleAdmin'])->name('users.toggle-admin');
-                $router->patch('/users/{user}/toggle-active', [AdminUsersController::class, 'toggleActive'])->withTrashed()->name('users.toggle-active');
-                $router->post('/users/bulk-deactivate', [AdminUsersController::class, 'bulkDeactivate'])->name('users.bulk-deactivate');
+                // PATCH /users/{user} (update) is intentionally admin-only, NOT super_admin.
+                // It only modifies non-sensitive fields (name, email) — not roles or active
+                // status. Privilege elevation (toggleAdmin, toggleActive) requires super_admin.
+                $router->patch('/users/{user}', [AdminUsersController::class, 'update'])->withTrashed()->name('users.update');
+                // Mutations below require super_admin — mirror routes/admin.php enforcement
+                $router->patch('/users/{user}/toggle-admin', [AdminUsersController::class, 'toggleAdmin'])->middleware('super_admin')->name('users.toggle-admin');
+                $router->patch('/users/{user}/toggle-active', [AdminUsersController::class, 'toggleActive'])->withTrashed()->middleware('super_admin')->name('users.toggle-active');
+                $router->post('/users/{user}/send-password-reset', [AdminUsersController::class, 'sendPasswordReset'])->name('users.send-password-reset');
 
-                $router->post('/users/{user}/impersonate', [AdminImpersonationController::class, 'start'])->withTrashed()->name('users.impersonate');
+                $router->post('/users/{user}/impersonate', [AdminImpersonationController::class, 'start'])->withTrashed()->middleware('super_admin')->name('users.impersonate');
 
                 $router->get('/health', [AdminHealthController::class, '__invoke'])->name('health');
                 $router->get('/config', [AdminConfigController::class, '__invoke'])->name('config');
