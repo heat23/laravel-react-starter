@@ -52,3 +52,63 @@ it('escapeLike on string with only pipe characters escapes all of them', functio
     // "|||" becomes "||||||" — each | becomes ||
     expect(QueryHelper::escapeLike('|||'))->toBe('||||||');
 });
+
+it('coalesceExpr returns COALESCE expression for a simple column', function () {
+    $grammar = DB::connection()->getQueryGrammar();
+    $expr = QueryHelper::coalesceExpr('name', '[Deleted User]');
+
+    expect($expr->getValue($grammar))->toBe("COALESCE(name, '[Deleted User]')");
+});
+
+it('coalesceExpr includes alias when provided', function () {
+    $grammar = DB::connection()->getQueryGrammar();
+    $expr = QueryHelper::coalesceExpr('users.name', '[Deleted User]', 'user_name');
+
+    expect($expr->getValue($grammar))->toBe("COALESCE(users.name, '[Deleted User]') as user_name");
+});
+
+it('coalesceExpr escapes single quotes in the fallback value', function () {
+    $grammar = DB::connection()->getQueryGrammar();
+    $expr = QueryHelper::coalesceExpr('name', "O'Brien");
+
+    expect($expr->getValue($grammar))->toBe("COALESCE(name, 'O''Brien')");
+});
+
+it('coalesceExpr rejects column names with invalid characters', function () {
+    expect(fn () => QueryHelper::coalesceExpr('name; DROP TABLE users--', 'fallback'))
+        ->toThrow(InvalidArgumentException::class);
+});
+
+it('coalesceExpr rejects column names with more than one dot', function () {
+    expect(fn () => QueryHelper::coalesceExpr('a.b.c', 'fallback'))
+        ->toThrow(InvalidArgumentException::class);
+});
+
+it('coalesceExpr rejects invalid alias names', function () {
+    expect(fn () => QueryHelper::coalesceExpr('name', 'fallback', 'invalid-alias!'))
+        ->toThrow(InvalidArgumentException::class);
+});
+
+it('coalesceExpr with empty fallback produces empty string literal in SQL', function () {
+    $grammar = DB::connection()->getQueryGrammar();
+    $expr = QueryHelper::coalesceExpr('name', '');
+
+    expect($expr->getValue($grammar))->toBe("COALESCE(name, '')");
+});
+
+it('dateExpression returns a valid SQL expression for a simple column', function () {
+    $grammar = DB::connection()->getQueryGrammar();
+    $expr = QueryHelper::dateExpression('created_at');
+
+    expect($expr->getValue($grammar))->toContain('created_at');
+});
+
+it('dateExpression rejects column names with invalid characters', function () {
+    expect(fn () => QueryHelper::dateExpression('created_at; DROP TABLE--'))
+        ->toThrow(InvalidArgumentException::class);
+});
+
+it('dateExpression rejects column names with more than one dot', function () {
+    expect(fn () => QueryHelper::dateExpression('a.b.c'))
+        ->toThrow(InvalidArgumentException::class);
+});

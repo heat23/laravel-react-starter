@@ -2,8 +2,8 @@
 
 namespace App\Helpers;
 
+use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Facades\DB;
 
 class QueryHelper
@@ -28,6 +28,36 @@ class QueryHelper
     }
 
     /**
+     * Build a COALESCE(<column>, '<fallback>') expression for use in a query select.
+     * COALESCE is ANSI SQL — compatible with MySQL and SQLite.
+     *
+     * @param  string  $column  Column reference, e.g. 'users.name' or 'name'.
+     * @param  string  $fallback  Literal fallback string (single quotes will be SQL-escaped).
+     * @param  string|null  $alias  Optional AS alias appended to the expression.
+     *
+     * @throws \InvalidArgumentException When $column contains characters outside [A-Za-z0-9_.].
+     */
+    public static function coalesceExpr(string $column, string $fallback, ?string $alias = null): Expression
+    {
+        if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/', $column)) {
+            throw new \InvalidArgumentException("Invalid column name: {$column}");
+        }
+
+        if ($alias !== null && ! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $alias)) {
+            throw new \InvalidArgumentException("Invalid alias: {$alias}");
+        }
+
+        $escaped = str_replace("'", "''", $fallback);
+        $sql = "COALESCE({$column}, '{$escaped}')";
+
+        if ($alias !== null) {
+            $sql .= " as {$alias}";
+        }
+
+        return DB::raw($sql);
+    }
+
+    /**
      * Get a database-aware DATE() expression for grouping by day.
      * Works with both MySQL (DATE()) and SQLite (date()).
      *
@@ -35,7 +65,7 @@ class QueryHelper
      */
     public static function dateExpression(string $column): Expression
     {
-        if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_.]*$/', $column)) {
+        if (! preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)?$/', $column)) {
             throw new \InvalidArgumentException("Invalid column name: {$column}");
         }
 
