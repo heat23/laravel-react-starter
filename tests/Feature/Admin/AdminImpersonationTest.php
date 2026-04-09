@@ -14,6 +14,13 @@ it('returns 403 for non-admin on impersonate', function () {
     $this->actingAs($user)->post("/admin/users/{$target->id}/impersonate")->assertStatus(403);
 });
 
+it('returns 403 for regular admin (non-super-admin) on impersonate start', function () {
+    $admin = User::factory()->admin()->create();
+    $target = User::factory()->create();
+
+    $this->actingAs($admin)->post("/admin/users/{$target->id}/impersonate")->assertStatus(403);
+});
+
 it('allows admin to impersonate a regular user', function () {
     $admin = User::factory()->superAdmin()->create();
     $user = User::factory()->create();
