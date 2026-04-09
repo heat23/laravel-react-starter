@@ -791,6 +791,81 @@ it('does not dispatch BILLING_CHARGE_REFUNDED when stripe customer has no local 
     });
 });
 
+it('dispatches SUBSCRIPTION_RESUMED analytics event when cancel_at_period_end flips to false', function () {
+    Queue::fake();
+
+    $user = User::factory()->create(['stripe_id' => 'cus_ana_resumed']);
+    createSubscription($user, ['stripe_id' => 'sub_ana_resumed']);
+
+    $payload = createStripeWebhookPayload('customer.subscription.updated', [
+        'id' => 'sub_ana_resumed',
+        'customer' => 'cus_ana_resumed',
+        'status' => 'active',
+        'cancel_at_period_end' => false,
+        'items' => ['data' => [['id' => 'si_ana_res', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+    ]);
+    $payload['data']['previous_attributes'] = ['cancel_at_period_end' => true];
+
+    postStripeWebhook($payload)->assertOk();
+
+    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
+        return $job->eventName === AnalyticsEvent::SUBSCRIPTION_RESUMED->value
+            && $job->userId === $user->id;
+    });
+});
+
+it('does not dispatch SUBSCRIPTION_RESUMED when cancel_at_period_end does not flip to false', function () {
+    Queue::fake();
+
+    $user = User::factory()->create(['stripe_id' => 'cus_ana_no_resume']);
+    createSubscription($user, ['stripe_id' => 'sub_ana_no_resume']);
+
+    // Only a status change — no cancel_at_period_end flip
+    $payload = createStripeWebhookPayload('customer.subscription.updated', [
+        'id' => 'sub_ana_no_resume',
+        'customer' => 'cus_ana_no_resume',
+        'status' => 'active',
+        'cancel_at_period_end' => false,
+        'items' => ['data' => [['id' => 'si_ana_nores', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+    ]);
+    // No previous_attributes.cancel_at_period_end, so no resume detected
+
+    postStripeWebhook($payload)->assertOk();
+
+    Queue::assertNotPushed(DispatchAnalyticsEvent::class, function ($job) {
+        return $job->eventName === AnalyticsEvent::SUBSCRIPTION_RESUMED->value;
+    });
+});
+
+it('skips SUBSCRIPTION_RESUMED dispatch when user-initiated resume cache key is set (deduplication)', function () {
+    Queue::fake();
+
+    $user = User::factory()->create(['stripe_id' => 'cus_ana_dedup_resume']);
+    createSubscription($user, ['stripe_id' => 'sub_ana_dedup_resume']);
+
+    // Simulate SubscriptionController setting the deduplication flag
+    Cache::put("billing.resume_analytics_sent:{$user->id}", true, now()->addSeconds(90));
+
+    $payload = createStripeWebhookPayload('customer.subscription.updated', [
+        'id' => 'sub_ana_dedup_resume',
+        'customer' => 'cus_ana_dedup_resume',
+        'status' => 'active',
+        'cancel_at_period_end' => false,
+        'items' => ['data' => [['id' => 'si_ana_dedup', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
+    ]);
+    $payload['data']['previous_attributes'] = ['cancel_at_period_end' => true];
+
+    postStripeWebhook($payload)->assertOk();
+
+    // Webhook must NOT re-dispatch — analytics already sent by SubscriptionController
+    Queue::assertNotPushed(DispatchAnalyticsEvent::class, function ($job) {
+        return $job->eventName === AnalyticsEvent::SUBSCRIPTION_RESUMED->value;
+    });
+
+    // Cache key consumed (Cache::pull) — subsequent webhooks (Stripe retries) would dispatch
+    expect(Cache::has("billing.resume_analytics_sent:{$user->id}"))->toBeFalse();
+});
+
 it('merges extraMeta fields into the single-channel log context (ANA-002 log regression)', function () {
     $user = User::factory()->create(['stripe_id' => 'cus_log_merge_test']);
     createSubscription($user, ['stripe_id' => 'sub_log_merge_test']);

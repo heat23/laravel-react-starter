@@ -17,6 +17,7 @@ use App\Notifications\RefundProcessedNotification;
 use App\Services\CacheInvalidationManager;
 use App\Services\LifecycleService;
 use App\Services\PlanLimitService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Http\Controllers\WebhookController;
 use Symfony\Component\HttpFoundation\Response;
@@ -83,6 +84,24 @@ class StripeWebhookController extends WebhookController
 
         $this->logWebhookEvent('subscription.updated', $payload);
         $this->invalidatePlanCache($payload);
+
+        // Detect a resume (cancel_at_period_end flipped from true → false).
+        // SubscriptionController sets a short-lived cache key for user-initiated resumes so
+        // this webhook handler skips the dispatch and avoids double-counting analytics.
+        $previousCancelAtPeriodEnd = $payload['data']['previous_attributes']['cancel_at_period_end'] ?? null;
+        $currentCancelAtPeriodEnd = $payload['data']['object']['cancel_at_period_end'] ?? false;
+        if ($previousCancelAtPeriodEnd === true && $currentCancelAtPeriodEnd === false) {
+            $customerId = $payload['data']['object']['customer'] ?? null;
+            if ($customerId) {
+                $user = User::where('stripe_id', $customerId)->first();
+                if ($user) {
+                    $cacheKey = "billing.resume_analytics_sent:{$user->id}";
+                    if (! Cache::pull($cacheKey)) {
+                        $this->dispatchWebhookAnalyticsEvent($user, AnalyticsEvent::SUBSCRIPTION_RESUMED);
+                    }
+                }
+            }
+        }
 
         return $response;
     }

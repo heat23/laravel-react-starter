@@ -17,6 +17,7 @@ use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Laravel\Cashier\Cashier;
@@ -278,6 +279,10 @@ class SubscriptionController extends Controller
 
         try {
             $this->billingService->resumeSubscription($user);
+
+            // Mark that this resume was user-initiated so the webhook handler skips
+            // its own dispatch (preventing a double-count in analytics).
+            Cache::put("billing.resume_analytics_sent:{$user->id}", true, now()->addSeconds(90));
 
             $this->auditService->log(AnalyticsEvent::SUBSCRIPTION_RESUMED, [
                 'user_id' => $user->id,
