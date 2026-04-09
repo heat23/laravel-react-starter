@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
     config(['features.api_tokens.enabled' => true]);
@@ -68,6 +69,27 @@ it('shows most active tokens', function () {
         ->where('most_active.0.token_name', 'Active Token')
         ->where('most_active.0.user_name', $user->name)
     );
+});
+
+it('returns 403 for non-admin on token export', function () {
+    config(['features.api_tokens.enabled' => true]);
+
+    $user = User::factory()->create();
+    $this->actingAs($user)->get('/admin/tokens/export')->assertStatus(403);
+});
+
+it('admin can export tokens as CSV', function () {
+    config(['features.api_tokens.enabled' => true]);
+
+    $admin = User::factory()->admin()->create();
+    $user = User::factory()->create(['name' => 'Token Owner']);
+    $user->createToken('My Export Token');
+
+    $response = $this->actingAs($admin)->get('/admin/tokens/export');
+
+    $response->assertOk();
+    $response->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+    expect($response->streamedContent())->toContain('Token Owner');
 });
 
 it('escapes LIKE wildcards in token list search', function () {
