@@ -170,7 +170,7 @@ if (config('features.billing.enabled', false)) {
     });
 
     // Cashier payment confirmation page (SCA/3DS redirect target)
-    Route::get('/stripe/payment/{id}', PaymentController::class.'@show')
+    Route::get('/stripe/payment/{id}', [PaymentController::class, 'show'])
         ->name('cashier.payment');
 
     // Stripe webhook (no auth - Cashier verifies signature)
