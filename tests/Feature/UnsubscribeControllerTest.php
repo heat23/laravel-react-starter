@@ -62,3 +62,21 @@ it('returns 404 for a non-existent user with a valid signature', function () {
 
     $this->get($url)->assertNotFound();
 });
+
+it('returns 403 for an expired temporary signed URL', function () {
+    $user = User::factory()->create();
+    // hasValidSignature() returns false for expired URLs; the controller calls abort(403)
+    // directly — no signed middleware is on this route, so the status comes from the
+    // explicit abort() call, not from InvalidSignatureException.
+    $url = URL::temporarySignedRoute('unsubscribe', now()->subDay(), ['userId' => $user->id]);
+
+    $this->get($url)->assertForbidden();
+});
+
+it('accepts a temporary signed URL that has not yet expired', function () {
+    $user = User::factory()->create();
+    // Use 1-year expiry to match HasUnsubscribeLink::unsubscribeLine() production behaviour.
+    $url = URL::temporarySignedRoute('unsubscribe', now()->addYear(), ['userId' => $user->id]);
+
+    $this->get($url)->assertOk();
+});

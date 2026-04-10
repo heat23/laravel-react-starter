@@ -19,7 +19,7 @@ trait HasUnsubscribeLink
             return null;
         }
 
-        $url = URL::signedRoute('unsubscribe', ['userId' => $notifiable->id]);
+        $url = URL::temporarySignedRoute('unsubscribe', now()->addYear(), ['userId' => $notifiable->id]);
 
         return "To stop receiving these emails, [unsubscribe here]({$url}).";
     }

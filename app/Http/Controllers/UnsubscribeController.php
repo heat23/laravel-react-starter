@@ -12,6 +12,11 @@ class UnsubscribeController extends Controller
 {
     public function unsubscribe(Request $request, int $userId): Response
     {
+        // hasValidSignature() accepts both permanent signed URLs (no `expires` param, used
+        // in emails sent before the switch to temporary URLs) and temporary signed URLs
+        // (with `expires` param, used going forward). Both formats share the same HMAC key,
+        // so old links remain valid indefinitely while new links expire after 1 year.
+        // If validation fails the controller aborts with 403 directly — no signed middleware.
         if (! $request->hasValidSignature()) {
             abort(403, 'Invalid or expired unsubscribe link.');
         }
