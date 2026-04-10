@@ -14,6 +14,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "league/commonmark": "^2.5",
+        "sentry/sentry-laravel": "^4.25",
         "tightenco/ziggy": "^2.0"
     },
     "require-dev": {
@@ -36,8 +37,7 @@
     "suggest": {
         "laravel/cashier": "Required for billing features (^16.2)",
         "laravel/socialite": "Required for social authentication (^5.24)",
-        "laravel/horizon": "Required for queue monitoring (^5.43)",
-        "sentry/sentry-laravel": "For error tracking (^4.20)"
+        "laravel/horizon": "Required for queue monitoring (^5.43)"
     },
     "autoload": {
         "psr-4": {

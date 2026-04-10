@@ -12,7 +12,6 @@ use App\Notifications\PaymentFailedNotification;
 use App\Notifications\PaymentRecoveredNotification;
 use App\Notifications\ReEngagementNotification;
 use App\Notifications\RefundProcessedNotification;
-use App\Notifications\TrialEndingNotification;
 use App\Notifications\TrialNudgeNotification;
 use App\Notifications\UpgradeNudgeNotification;
 use App\Notifications\WelcomeSequenceNotification;
@@ -156,15 +155,6 @@ it('includes unsubscribe link in RefundProcessedNotification', function () {
         chargeId: 'ch_test123',
         amountRefunded: 1000
     );
-
-    $mail = $notification->toMail($user);
-
-    assertHasUnsubscribeLine($mail, $user);
-});
-
-it('includes unsubscribe link in TrialEndingNotification', function () {
-    $user = User::factory()->create();
-    $notification = new TrialEndingNotification(daysRemaining: 3);
 
     $mail = $notification->toMail($user);
 

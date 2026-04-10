@@ -74,6 +74,20 @@ it('renders the supastarter comparison page', function () {
     );
 });
 
+it('renders the larafast comparison page', function () {
+    $response = $this->get('/compare/larafast');
+
+    $response->assertOk();
+    $response->assertInertia(fn (AssertableInertia $page) => $page
+        ->component('Compare/Larafast')
+        ->has('features')
+        ->where('competitor', 'larafast')
+        ->where('competitorName', 'Larafast')
+        ->where('canonicalUrl', config('app.url').'/compare/larafast')
+        ->where('appUrl', config('app.url'))
+    );
+});
+
 it('includes all comparison pages in the sitemap', function () {
     $response = $this->get('/sitemap.xml');
 

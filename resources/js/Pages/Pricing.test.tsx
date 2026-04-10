@@ -4,13 +4,31 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { usePage } from '@inertiajs/react';
 
+import { AnalyticsEvents } from '@/lib/events';
+
 import Pricing from './Pricing';
+
+const mockTrack = vi.fn();
+vi.mock('@/hooks/useAnalytics', () => ({
+  useAnalytics: () => ({ track: mockTrack }),
+}));
+
+const mockSalesPost = vi.fn();
 
 vi.mock('@inertiajs/react', async () => {
   const actual = await vi.importActual('@inertiajs/react');
   return {
     ...actual,
     usePage: vi.fn(),
+    useForm: vi.fn(() => ({
+      data: { name: '', email: '', company: '', seats_needed: 10, message: '' },
+      setData: vi.fn(),
+      post: mockSalesPost,
+      processing: false,
+      errors: {},
+      reset: vi.fn(),
+      wasSuccessful: false,
+    })),
     Head: ({ title, children }: { title: string; children?: React.ReactNode }) => (
       <>
         <title>{title}</title>
@@ -96,6 +114,7 @@ describe('Pricing Page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPageProps();
+    mockSalesPost.mockImplementation(() => {});
   });
 
   describe('rendering', () => {
@@ -218,6 +237,53 @@ describe('Pricing Page', () => {
       render(<Pricing />);
 
       expect(screen.getByRole('button', { name: /contact sales/i })).toBeInTheDocument();
+    });
+
+    it('tracks SALES_INQUIRY_SUBMITTED on successful sales form submission', async () => {
+      const user = userEvent.setup();
+      mockPageProps({
+        auth: { user: { id: 1, name: 'Test', email: 'test@example.com' } },
+        currentPlan: 'free',
+      });
+      mockSalesPost.mockImplementation(
+        (_url: string, options?: { onSuccess?: () => void }) => {
+          options?.onSuccess?.();
+        }
+      );
+
+      render(<Pricing />);
+
+      await user.click(screen.getByRole('button', { name: /contact sales/i }));
+      const submitBtn = screen.getByRole('button', { name: /send message/i });
+      await user.click(submitBtn);
+
+      expect(mockTrack).toHaveBeenCalledWith(AnalyticsEvents.SALES_INQUIRY_SUBMITTED);
+    });
+
+    it('does NOT track SALES_INQUIRY_SUBMITTED when sales form submission fails', async () => {
+      const user = userEvent.setup();
+      mockPageProps({
+        auth: { user: { id: 1, name: 'Test', email: 'test@example.com' } },
+        currentPlan: 'free',
+      });
+      // Simulate a failed submission: onSuccess is never called (e.g. validation error or network error)
+      mockSalesPost.mockImplementation(
+        (_url: string, _options?: { onSuccess?: () => void }) => {
+          // intentionally does not invoke onSuccess
+        }
+      );
+
+      render(<Pricing />);
+
+      // Clear calls accumulated during page mount (e.g. pricing_viewed) so we
+      // can assert zero additional tracking events during the failed submission.
+      mockTrack.mockClear();
+
+      await user.click(screen.getByRole('button', { name: /contact sales/i }));
+      const submitBtn = screen.getByRole('button', { name: /send message/i });
+      await user.click(submitBtn);
+
+      expect(mockTrack).not.toHaveBeenCalled();
     });
 
     it('uses DashboardLayout for authenticated users', () => {

@@ -337,3 +337,185 @@ it('calculates d30 retention rate for users active by day 30', function () {
 
     expect($rate)->toBe(50.0);
 });
+
+// --- Feature adoption score ---
+
+it('confirms baseline: unverified user with null password and zero counts scores 0', function () {
+    // Establish that the unverified()->onboardingIncomplete() factory state with password=null
+    // and all counts zeroed produces a total score of 0 — validating the additive assumption
+    // used in all feature-adoption tests below.
+    // - loginFrequencyScore  = 0: score is derived from AuditLog query (not last_login_at);
+    //                              factory users have no AuditLog entries.
+    // - featureAdoptionScore = 0: all counts are 0.
+    // - billingStatusScore   = 0: no subscription row; trial_ends_at is null or in the past.
+    // - profileCompletionScore = 0: unverified → no +10; password=null → no +7; settings=0 → no +8.
+    $user = User::factory()->unverified()->onboardingIncomplete()->create(['password' => null]);
+    $user->webhook_endpoints_count = 0;
+    $user->tokens_count = 0;
+    $user->settings_count = 0;
+
+    expect((new CustomerHealthService)->calculateHealthScore($user))->toBe(0);
+});
+
+it('gives webhook adoption score when user has webhook endpoints', function () {
+    $user = User::factory()->unverified()->onboardingIncomplete()->create(['password' => null]);
+    $user->webhook_endpoints_count = 1;
+    $user->tokens_count = 0;
+    $user->settings_count = 0;
+    $service = new CustomerHealthService;
+
+    // 0 (login) + 12 (webhook) + 0 (billing) + 0 (profile)
+    expect($service->calculateHealthScore($user))->toBe(12);
+});
+
+it('gives token adoption score when user has API tokens', function () {
+    $user = User::factory()->unverified()->onboardingIncomplete()->create(['password' => null]);
+    $user->webhook_endpoints_count = 0;
+    $user->tokens_count = 1;
+    $user->settings_count = 0;
+    $service = new CustomerHealthService;
+
+    // 0 (login) + 10 (tokens) + 0 (billing) + 0 (profile)
+    expect($service->calculateHealthScore($user))->toBe(10);
+});
+
+it('gives depth bonus when user has 5+ API tokens', function () {
+    $user = User::factory()->unverified()->onboardingIncomplete()->create(['password' => null]);
+    $user->webhook_endpoints_count = 0;
+    $user->tokens_count = 5;
+    $user->settings_count = 0;
+    $service = new CustomerHealthService;
+
+    // 0 (login) + 10 (tokens) + 3 (depth) + 0 (billing) + 0 (profile)
+    expect($service->calculateHealthScore($user))->toBe(13);
+});
+
+it('does not give depth bonus when user has exactly 4 API tokens', function () {
+    // Pins the lower boundary: depth bonus requires tokens_count >= 5, so 4 earns only the base token score.
+    $user = User::factory()->unverified()->onboardingIncomplete()->create(['password' => null]);
+    $user->webhook_endpoints_count = 0;
+    $user->tokens_count = 4;
+    $user->settings_count = 0;
+    $service = new CustomerHealthService;
+
+    // 0 (login) + 10 (tokens, base only — no depth bonus because count < 5) + 0 (billing) + 0 (profile)
+    expect($service->calculateHealthScore($user))->toBe(10);
+});
+
+it('gives settings adoption score when user has settings configured', function () {
+    $user = User::factory()->unverified()->onboardingIncomplete()->create(['password' => null]);
+    $user->webhook_endpoints_count = 0;
+    $user->tokens_count = 0;
+    $user->settings_count = 1;
+    $service = new CustomerHealthService;
+
+    // 0 (login) + 3 (settings) + 0 (billing) + 0 (profile)
+    expect($service->calculateHealthScore($user))->toBe(3);
+});
+
+it('caps feature adoption score at 25 when all features active', function () {
+    $user = User::factory()->unverified()->onboardingIncomplete()->create(['password' => null]);
+    $user->webhook_endpoints_count = 1;
+    $user->tokens_count = 5;
+    $user->settings_count = 1;
+    $service = new CustomerHealthService;
+
+    // Raw: 12 (webhook) + 10 (tokens) + 3 (depth) + 3 (settings) = 28, capped at 25
+    // 0 (login) + 25 (feature, capped) + 0 (billing) + 0 (profile)
+    expect($service->calculateHealthScore($user))->toBe(25);
+});
+
+// --- Trial conversion rate ---
+
+it('calculates trial conversion rate for users with active subscriptions', function () {
+    Cache::forget('metrics:trial_conversion_rate');
+
+    // 2 trial users, 1 converted to active subscription
+    $converted = User::factory()->create(['trial_ends_at' => now()->subDays(3)]);
+    $notConverted = User::factory()->create(['trial_ends_at' => now()->subDays(3)]);
+
+    DB::table('subscriptions')->insert([
+        'user_id' => $converted->id,
+        'type' => 'default',
+        'stripe_id' => 'sub_converted_'.uniqid(),
+        'stripe_status' => 'active',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $service = new CustomerHealthService;
+    $rate = $service->getTrialConversionRate();
+
+    // 1 converted / 2 trial users = 50.0%
+    expect($rate)->toBe(50.0);
+});
+
+it('does not count past_due subscriptions as converted trials', function () {
+    Cache::forget('metrics:trial_conversion_rate');
+
+    // Explicit non-converted trial user ensures the denominator is 2, owned entirely by this test.
+    // Without this, a denominator of 0 (from a misconfigured query) would return 0.0 from the
+    // early-guard and make the assertion pass for the wrong reason.
+    User::factory()->create(['trial_ends_at' => now()->subDays(3)]);
+
+    $pastDueUser = User::factory()->create(['trial_ends_at' => now()->subDays(3)]);
+
+    DB::table('subscriptions')->insert([
+        'user_id' => $pastDueUser->id,
+        'type' => 'default',
+        'stripe_id' => 'sub_pastdue_'.uniqid(),
+        'stripe_status' => 'past_due',
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $service = new CustomerHealthService;
+    $rate = $service->getTrialConversionRate();
+
+    // 2 trial users, 0 converted (past_due does not count) = 0.0%
+    // If past_due were incorrectly counted, rate would be 50.0% — this assertion would catch it.
+    expect($rate)->toBe(0.0);
+});
+
+// --- Profile completion: settings bonus ---
+
+it('gives settings bonus in profile score when user has 2+ settings', function () {
+    // Verified user (email_verified_at set), no password (no +7), no billing, no webhooks, no tokens.
+    // settings_count = 2 contributes to TWO independent score components:
+    //   - featureAdoptionScore:   settings_count > 0  → +3
+    //   - profileCompletionScore: settings_count >= 2 → +8 (in addition to verified +10)
+    // login=0 | feature=3 | billing=0 | profile=18 → total=21
+    $user = User::factory()->create(['password' => null, 'trial_ends_at' => null]);
+    $user->webhook_endpoints_count = 0;
+    $user->tokens_count = 0;
+    $user->settings_count = 2;
+    $service = new CustomerHealthService;
+
+    expect($service->calculateHealthScore($user))->toBe(21);
+});
+
+it('profile settings bonus contributes exactly 8 points above the settings-present baseline', function () {
+    // Delta test that isolates the +8 profile bonus by comparing settings_count=1 vs =2.
+    // At settings_count=1: feature +3 (settings>0), profile +10 (verified only; <2 threshold) = 13
+    // At settings_count=2: feature +3 (same),       profile +10+8 (verified + settings bonus)  = 21
+    // Delta = 8 — confirms the profile bonus is independent of the feature adoption path.
+    $service = new CustomerHealthService;
+
+    $oneSettingUser = User::factory()->create(['password' => null, 'trial_ends_at' => null]);
+    $oneSettingUser->webhook_endpoints_count = 0;
+    $oneSettingUser->tokens_count = 0;
+    $oneSettingUser->settings_count = 1;
+    // 0 (login) + 3 (feature: settings>0) + 0 (billing) + 10 (profile: verified only) = 13
+    $scoreWithOneSetting = $service->calculateHealthScore($oneSettingUser);
+
+    $twoSettingsUser = User::factory()->create(['password' => null, 'trial_ends_at' => null]);
+    $twoSettingsUser->webhook_endpoints_count = 0;
+    $twoSettingsUser->tokens_count = 0;
+    $twoSettingsUser->settings_count = 2;
+    // 0 (login) + 3 (feature: settings>0) + 0 (billing) + 18 (profile: verified+settings) = 21
+    $scoreWithTwoSettings = $service->calculateHealthScore($twoSettingsUser);
+
+    expect($scoreWithOneSetting)->toBe(13);
+    expect($scoreWithTwoSettings)->toBe(21);
+    expect($scoreWithTwoSettings - $scoreWithOneSetting)->toBe(8);
+});

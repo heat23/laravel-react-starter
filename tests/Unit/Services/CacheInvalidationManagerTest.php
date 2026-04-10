@@ -16,6 +16,7 @@ it('invalidates billing caches', function () {
     Cache::put(AdminCacheKey::BILLING_STATUS->value, 'status', 300);
     Cache::put(AdminCacheKey::BILLING_GROWTH_CHART->value, 'growth', 300);
     Cache::put(AdminCacheKey::BILLING_TRIALS->value, 'trials', 300);
+    Cache::put(AdminCacheKey::BILLING_COHORT_RETENTION->value, 'cohort', 300);
 
     $manager = app(CacheInvalidationManager::class);
     $manager->invalidateBilling();
@@ -26,6 +27,7 @@ it('invalidates billing caches', function () {
     expect(Cache::has(AdminCacheKey::BILLING_STATUS->value))->toBeFalse();
     expect(Cache::has(AdminCacheKey::BILLING_GROWTH_CHART->value))->toBeFalse();
     expect(Cache::has(AdminCacheKey::BILLING_TRIALS->value))->toBeFalse();
+    expect(Cache::has(AdminCacheKey::BILLING_COHORT_RETENTION->value))->toBeFalse();
 });
 
 it('invalidates token caches', function () {

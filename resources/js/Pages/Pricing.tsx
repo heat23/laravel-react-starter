@@ -360,6 +360,7 @@ export default function Pricing() {
               onSuccess: () => {
                 setSalesDialogOpen(false);
                 salesForm.reset(['name', 'company', 'seats_needed', 'message']);
+                track(AnalyticsEvents.SALES_INQUIRY_SUBMITTED);
               },
             });
           }}

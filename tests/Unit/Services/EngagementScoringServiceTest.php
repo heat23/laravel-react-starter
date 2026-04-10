@@ -64,3 +64,28 @@ it('scoreBatch does not award onboarding bonus for absent setting', function () 
 
     expect($scores[$user->id])->toBeLessThan(25);
 });
+
+it('awards base token score but no depth bonus when user has exactly 4 tokens', function () {
+    // User with no login, no onboarding, new account → all other score components = 0.
+    // featureAdoptionScore(tokens=4): base +10, depth bonus NOT awarded (4 < 5). Expected total = 10.
+    $user = User::factory()->onboardingIncomplete()->create(['last_login_at' => null]);
+    for ($i = 0; $i < 4; $i++) {
+        $user->createToken("token-{$i}");
+    }
+
+    $score = app(EngagementScoringService::class)->score($user);
+
+    expect($score)->toBe(10);
+});
+
+it('awards depth bonus when user has exactly 5 tokens', function () {
+    // featureAdoptionScore(tokens=5): base +10, depth bonus +3 (5 >= 5). Expected total = 13.
+    $user = User::factory()->onboardingIncomplete()->create(['last_login_at' => null]);
+    for ($i = 0; $i < 5; $i++) {
+        $user->createToken("token-{$i}");
+    }
+
+    $score = app(EngagementScoringService::class)->score($user);
+
+    expect($score)->toBe(13);
+});

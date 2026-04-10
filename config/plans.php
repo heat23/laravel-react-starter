@@ -107,7 +107,9 @@ return [
         'stripe_price_monthly' => env('STRIPE_PRICE_PRO_TEAM'),
         'stripe_price_annual' => env('STRIPE_PRICE_PRO_TEAM_ANNUAL'),
         'price_monthly' => env('PLAN_PRO_TEAM_PRICE_MONTHLY', 39),
-        'price_annual' => env('PLAN_PRO_TEAM_PRICE_ANNUAL', 374), // $374/seat/yr ≈ $31.17/mo, 20% off
+        // DISPLAY-ONLY: actual charge is determined by the Stripe price object tied to STRIPE_PRICE_PRO_TEAM_ANNUAL.
+        // These MUST be kept in sync whenever pricing changes — update the Stripe price object first, then this default.
+        'price_annual' => env('PLAN_PRO_TEAM_PRICE_ANNUAL', 374), // $374/seat/yr ≈ 20% off ($39 × 12 = $468, exact 20% = $374.40, rounded to nearest dollar)
         'per_seat' => true,
         'min_seats' => (int) env('PLAN_PRO_TEAM_MIN_SEATS', 2),
         'max_seats' => (int) env('PLAN_PRO_TEAM_MAX_SEATS', 4),

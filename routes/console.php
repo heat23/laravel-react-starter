@@ -24,7 +24,6 @@ Schedule::command('emails:qualify-leads')->dailyAt('07:00')->onOneServer();
 if (config('features.billing.enabled', false)) {
     Schedule::command('subscriptions:check-incomplete')->hourly();
     // emails:send-trial-nudges owns all trial windows (7-day, 3-day, expired) via EmailSendLog dedup.
-    // trial:send-reminders was removed from the schedule to prevent double-sends in the 3-day window.
     Schedule::command('emails:send-trial-nudges')->dailyAt('10:00');
     Schedule::command('notifications:send-dunning')->daily();
     Schedule::command('billing:enforce-grace-period')->dailyAt('01:00')->onOneServer();

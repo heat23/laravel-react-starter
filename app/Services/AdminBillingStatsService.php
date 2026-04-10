@@ -182,8 +182,8 @@ class AdminBillingStatsService
                 'subscriptions.trial_ends_at',
                 'subscriptions.ends_at',
                 'subscriptions.created_at',
-                DB::raw("COALESCE(users.name, '[Deleted User]') as user_name"),
-                DB::raw("COALESCE(users.email, '') as user_email"),
+                QueryHelper::coalesceExpr('users.name', '[Deleted User]', 'user_name'),
+                QueryHelper::coalesceExpr('users.email', '', 'user_email'),
                 'first_item.stripe_price as item_price',
             );
 
@@ -232,6 +232,9 @@ class AdminBillingStatsService
         return Cache::remember(AdminCacheKey::BILLING_STATS->value.'_churn_breakdown', AdminCacheKey::DEFAULT_TTL, function () {
             $thirtyDaysAgo = now()->subDays(30);
 
+            // Keep both canonical and legacy event names until a production backfill
+            // migrates 'stripe.subscription.deleted' rows to 'subscription.canceled'.
+            // Dropping the legacy name silently excludes pre-migration audit rows.
             $rows = DB::table('audit_logs')
                 ->whereIn('event', ['subscription.canceled', 'stripe.subscription.deleted'])
                 ->where('created_at', '>=', $thirtyDaysAgo)

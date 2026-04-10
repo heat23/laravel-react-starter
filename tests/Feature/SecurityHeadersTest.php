@@ -79,11 +79,15 @@ class SecurityHeadersTest extends TestCase
 
         $csp = $response->headers->get('Content-Security-Policy');
         $this->assertNotNull($csp);
-        // frame-src should allow js.stripe.com for Stripe payment element iframes
-        $this->assertStringContainsString("frame-src 'self' https://js.stripe.com", $csp);
         $this->assertStringNotContainsString("frame-src 'none'", $csp);
-        // hooks.stripe.com is a webhook relay, not an iframe origin — must not be in frame-src
-        $this->assertStringNotContainsString('https://hooks.stripe.com', $csp);
+
+        // Verify both origins appear specifically within the frame-src directive
+        $parts = explode(';', $csp);
+        $frameSrc = collect($parts)->first(fn ($p) => str_contains(trim($p), 'frame-src'));
+        $this->assertNotNull($frameSrc, 'frame-src directive must be present');
+        $this->assertStringContainsString("'self'", $frameSrc);
+        $this->assertStringContainsString('https://js.stripe.com', $frameSrc);
+        $this->assertStringContainsString('https://hooks.stripe.com', $frameSrc);
     }
 
     public function test_csp_frame_src_is_none_when_billing_disabled(): void

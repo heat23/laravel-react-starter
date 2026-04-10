@@ -250,6 +250,7 @@ class CompareController extends Controller
             'competitorName' => 'Larafast',
             'title' => 'Laravel React Starter vs Larafast 2026 — Full Comparison',
             'metaDescription' => 'Larafast vs Laravel React Starter: honest comparison. See pricing, TypeScript support, test coverage, webhooks, and which larafast alternative ships more.',
+            'appUrl' => $appUrl,
             'canonicalUrl' => $appUrl.'/compare/larafast',
             'lastVerified' => '2026-03',
             'relatedComparisons' => $this->relatedComparisons('larafast'),

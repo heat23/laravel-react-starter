@@ -154,6 +154,7 @@ export interface ComparisonPageProps {
   relatedComparisons?: RelatedComparison[];
   breadcrumbs?: BreadcrumbItem[];
   canonicalUrl?: string;
+  appUrl?: string;
   ogImage?: string;
   whenToChooseThem?: string;
 }

@@ -16,6 +16,38 @@ import type { ComparisonPageProps } from '@/types/index';
 const DATE_PUBLISHED = '2026-03-20';
 
 /**
+ * Converts a relative or absolute URL to an absolute URL.
+ * Used to ensure canonical URLs are always absolute, as Google recommends.
+ *
+ * @param path     The URL or path to make absolute.
+ * @param appUrl   APP_URL from the server (used as origin fallback during SSR
+ *                 when window is not available). Prevents the canonical tag
+ *                 from being silently omitted in SSR-rendered HTML.
+ */
+function toAbsoluteUrl(path: string, appUrl?: string): string {
+  if (!path) return '';
+  // Already absolute
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  // Relative path — prefer window.location.origin, fall back to server appUrl
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}${path}`;
+  }
+  if (appUrl) {
+    return `${appUrl.replace(/\/$/, '')}${path}`;
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      '[toAbsoluteUrl] Cannot resolve relative path to absolute URL during SSR: no appUrl prop provided. ' +
+        'The canonical tag will be omitted. Pass appUrl from the controller to fix this.',
+      { path },
+    );
+  }
+  return '';
+}
+
+/**
  * Validates that a canonical URL is absolute and belongs to the application's own origin.
  * This prevents SEO hijacking if the prop were ever derived from untrusted input.
  * The prop is server-side controlled (trusted), but origin-scoping is enforced here as a
@@ -75,6 +107,7 @@ export default function Larafast({
   features,
   breadcrumbs,
   canonicalUrl,
+  appUrl,
 }: ComparisonPageProps) {
   const { track } = useAnalytics();
 
@@ -82,12 +115,16 @@ export default function Larafast({
     track(AnalyticsEvents.ENGAGEMENT_PAGE_VIEWED, { page: 'compare-larafast' });
   }, [track]);
 
+  const absoluteCanonicalUrl = canonicalUrl ? toAbsoluteUrl(canonicalUrl, appUrl) : undefined;
+
   return (
     <>
       <Head title={title}>
         <meta name="description" content={metaDescription} />
         <meta name="robots" content="index, follow" />
-        {canonicalUrl && isOwnOriginUrl(canonicalUrl) && <link rel="canonical" href={canonicalUrl} />}
+        {absoluteCanonicalUrl && isOwnOriginUrl(absoluteCanonicalUrl) && (
+          <link rel="canonical" href={absoluteCanonicalUrl} />
+        )}
         <meta property="og:title" content={title} />
         <meta property="og:description" content={metaDescription} />
         <meta property="og:type" content="website" />

@@ -237,6 +237,7 @@ type _EventPropertyMapEntries = {
   [AnalyticsEvents.API_TOKEN_CREATED]: { token_name?: string } | undefined;
   [AnalyticsEvents.API_TOKEN_DELETED]: { token_name?: string } | undefined;
   [AnalyticsEvents.CONTACT_SUBMITTED]: Record<string, never> | undefined;
+  [AnalyticsEvents.SALES_INQUIRY_SUBMITTED]: Record<string, never> | undefined;
   [AnalyticsEvents.FEEDBACK_SUBMITTED]: { type?: string } | undefined;
   [AnalyticsEvents.FEATURE_USED]: {
     feature_name: string;

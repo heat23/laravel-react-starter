@@ -84,10 +84,12 @@ class SecurityHeaders
 
     /**
      * Only called when billing is enabled (outer ternary in addCspHeader is the authoritative gate).
+     * https://js.stripe.com   – Stripe Elements / Payment Element iframes
+     * https://hooks.stripe.com – 3DS2 challenge frames (SCA authentication flow)
      */
     private function frameSources(): string
     {
-        return ' https://js.stripe.com';
+        return ' https://js.stripe.com https://hooks.stripe.com';
     }
 
     private function billingScriptSources(): string

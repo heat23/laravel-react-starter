@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
@@ -34,4 +35,38 @@ it('rejects invalid scope', function () {
     $this->actingAs($admin)
         ->post('/admin/cache/flush', ['scope' => 'invalid_scope'])
         ->assertSessionHasErrors('scope');
+});
+
+it('creates an audit log entry when cache is flushed', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)
+        ->post('/admin/cache/flush', ['scope' => 'billing'])
+        ->assertRedirect('/admin/cache');
+
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => 'admin.cache_flushed',
+        'user_id' => $admin->id,
+    ]);
+
+    $log = AuditLog::where('event', 'admin.cache_flushed')->where('user_id', $admin->id)->first();
+    expect($log->metadata)->toBeArray();
+    expect($log->metadata['scope'])->toBe('billing');
+});
+
+it('creates an audit log entry with the correct scope when flushing all caches', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    $this->actingAs($admin)
+        ->post('/admin/cache/flush', ['scope' => 'all'])
+        ->assertRedirect('/admin/cache');
+
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => 'admin.cache_flushed',
+        'user_id' => $admin->id,
+    ]);
+
+    $log = AuditLog::where('event', 'admin.cache_flushed')->where('user_id', $admin->id)->first();
+    expect($log->metadata)->toBeArray();
+    expect($log->metadata['scope'])->toBe('all');
 });

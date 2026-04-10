@@ -7,8 +7,10 @@ use App\Models\User;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class LoginRequestTest extends TestCase
@@ -19,11 +21,17 @@ class LoginRequestTest extends TestCase
     {
         parent::setUp();
         RateLimiter::clear('test@example.com|127.0.0.1');
+        Cache::forget('login_locked:'.Str::transliterate('test@example.com|127.0.0.1'));
+        Cache::forget('login_locked_email:'.Str::transliterate('test@example.com'));
+        Cache::forget('login_lockout_events:'.Str::transliterate('test@example.com'));
     }
 
     protected function tearDown(): void
     {
         RateLimiter::clear('test@example.com|127.0.0.1');
+        Cache::forget('login_locked:'.Str::transliterate('test@example.com|127.0.0.1'));
+        Cache::forget('login_locked_email:'.Str::transliterate('test@example.com'));
+        Cache::forget('login_lockout_events:'.Str::transliterate('test@example.com'));
         parent::tearDown();
     }
 
@@ -273,8 +281,10 @@ class LoginRequestTest extends TestCase
             ]);
         }
 
-        // All 5 should have been processed (not blocked)
-        $this->assertEquals(5, RateLimiter::attempts('test@example.com|127.0.0.1'));
+        // All 5 were processed (not pre-blocked by the lockout guard).
+        // After the 5th failure the counter is cleared and the lockout cache key is set.
+        $this->assertEquals(0, RateLimiter::attempts('test@example.com|127.0.0.1'));
+        $this->assertTrue(Cache::has('login_locked:'.Str::transliterate('test@example.com|127.0.0.1')));
     }
 
     public function test_ensure_is_not_rate_limited_blocks_at_6th_attempt(): void
@@ -510,5 +520,79 @@ class LoginRequestTest extends TestCase
         ]);
 
         $this->assertAuthenticated();
+    }
+
+    // ============================================
+    // Lockout Email Key Tests (IP rotation bypass prevention)
+    // ============================================
+
+    public function test_lockout_email_key_is_email_only_scoped(): void
+    {
+        $request = new LoginRequest;
+        $request->merge(['email' => 'test@example.com']);
+        $request->setUserResolver(fn () => null);
+        $request->server->set('REMOTE_ADDR', '127.0.0.1');
+
+        $key = $request->lockoutEmailKey();
+
+        // Must contain the email but NOT the IP address
+        $this->assertStringContainsString('test@example.com', $key);
+        $this->assertStringNotContainsString('127.0.0.1', $key);
+    }
+
+    public function test_lockout_email_key_uses_lowercase_email(): void
+    {
+        $request = new LoginRequest;
+        $request->merge(['email' => 'TEST@EXAMPLE.COM']);
+        $request->setUserResolver(fn () => null);
+        $request->server->set('REMOTE_ADDR', '127.0.0.1');
+
+        $key = $request->lockoutEmailKey();
+
+        $this->assertStringContainsString('test@example.com', $key);
+        $this->assertStringNotContainsString('TEST@EXAMPLE.COM', $key);
+    }
+
+    public function test_lockout_email_key_differs_from_ip_scoped_lockout_key(): void
+    {
+        $request = new LoginRequest;
+        $request->merge(['email' => 'test@example.com']);
+        $request->setUserResolver(fn () => null);
+        $request->server->set('REMOTE_ADDR', '127.0.0.1');
+
+        $this->assertNotEquals($request->lockoutKey(), $request->lockoutEmailKey());
+    }
+
+    public function test_authenticate_writes_email_only_lockout_key_after_5_failures(): void
+    {
+        User::factory()->create(['email' => 'test@example.com']);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', [
+                'email' => 'test@example.com',
+                'password' => 'wrong-password',
+            ]);
+        }
+
+        // Both the IP-scoped and email-only lockout keys must be present
+        $this->assertTrue(Cache::has('login_locked:'.Str::transliterate('test@example.com|127.0.0.1')));
+        $this->assertTrue(Cache::has('login_locked_email:'.Str::transliterate('test@example.com')));
+    }
+
+    public function test_authenticate_clears_email_only_lockout_key_on_success(): void
+    {
+        $emailOnlyKey = 'login_locked_email:'.Str::transliterate('test@example.com');
+        // Use an already-expired timestamp so ensureIsNotRateLimited allows the request through
+        Cache::put($emailOnlyKey, now()->subMinute()->timestamp, 360);
+
+        User::factory()->create(['email' => 'test@example.com']);
+
+        $this->post('/login', [
+            'email' => 'test@example.com',
+            'password' => 'password',
+        ]);
+
+        $this->assertAuthenticated();
+        $this->assertFalse(Cache::has($emailOnlyKey));
     }
 }

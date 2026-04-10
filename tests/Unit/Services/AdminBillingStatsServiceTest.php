@@ -465,3 +465,92 @@ it('getFilteredSubscriptions filters by search term on SQLite', function () {
     expect($result->total())->toBe(1);
     expect($result->items()[0]['user_name'])->toBe('SearchableUser');
 });
+
+// ─── getChurnBreakdown event namespace tests (ANA-006) ───
+// RefreshDatabase (applied globally in Pest.php) runs all migrations including
+// create_audit_logs_table, so audit_logs is guaranteed to exist. No Schema::hasTable
+// guard needed — a missing table would cause an explicit exception, not a silent skip.
+
+it('getChurnBreakdown counts both canonical and legacy churn events', function () {
+    $service = app(AdminBillingStatsService::class);
+    $user = User::factory()->create();
+
+    // Capture baseline before inserts (delta-based assertion for isolation)
+    Cache::flush();
+    $before = $service->getChurnBreakdown();
+
+    // Insert one voluntary cancellation using the canonical event name
+    DB::table('audit_logs')->insert([
+        'event' => 'subscription.canceled',
+        'user_id' => $user->id,
+        'ip' => '127.0.0.1',
+        'metadata' => json_encode(['churn_type' => 'voluntary']),
+        'created_at' => now(),
+    ]);
+
+    // Insert a legacy 'stripe.subscription.deleted' entry — must ALSO be counted
+    // until a production backfill migrates these rows to 'subscription.canceled'.
+    DB::table('audit_logs')->insert([
+        'event' => 'stripe.subscription.deleted',
+        'user_id' => $user->id,
+        'ip' => '127.0.0.1',
+        'metadata' => json_encode(['churn_type' => 'involuntary']),
+        'created_at' => now(),
+    ]);
+
+    Cache::flush();
+    $after = $service->getChurnBreakdown();
+
+    // Both the canonical event and the legacy stripe.* event must contribute to the totals
+    expect($after['voluntary'])->toBe($before['voluntary'] + 1);
+    expect($after['involuntary'])->toBe($before['involuntary'] + 1);
+});
+
+it('getChurnBreakdown counts involuntary churn from subscription.canceled events', function () {
+    $service = app(AdminBillingStatsService::class);
+    $user = User::factory()->create();
+
+    // Capture baseline before insert (delta-based assertion for isolation)
+    Cache::flush();
+    $before = $service->getChurnBreakdown();
+
+    DB::table('audit_logs')->insert([
+        'event' => 'subscription.canceled',
+        'user_id' => $user->id,
+        'ip' => '127.0.0.1',
+        'metadata' => json_encode(['churn_type' => 'involuntary']),
+        'created_at' => now(),
+    ]);
+
+    Cache::flush();
+    $after = $service->getChurnBreakdown();
+
+    expect($after['involuntary'])->toBe($before['involuntary'] + 1);
+    expect($after['voluntary'])->toBe($before['voluntary']);
+});
+
+it('getChurnBreakdown classifies voluntary churn from legacy stripe.subscription.deleted event', function () {
+    // Dedicated isolation test: inserts ONLY a legacy event with churn_type=voluntary
+    // to confirm the metadata classification path works correctly for the legacy event
+    // name, independent of the canonical 'subscription.canceled' code path.
+    $service = app(AdminBillingStatsService::class);
+    $user = User::factory()->create();
+
+    Cache::flush();
+    $before = $service->getChurnBreakdown();
+
+    DB::table('audit_logs')->insert([
+        'event' => 'stripe.subscription.deleted',
+        'user_id' => $user->id,
+        'ip' => '127.0.0.1',
+        'metadata' => json_encode(['churn_type' => 'voluntary']),
+        'created_at' => now(),
+    ]);
+
+    Cache::flush();
+    $after = $service->getChurnBreakdown();
+
+    // Legacy event with voluntary churn_type must increment voluntary bucket only
+    expect($after['voluntary'])->toBe($before['voluntary'] + 1);
+    expect($after['involuntary'])->toBe($before['involuntary']);
+});

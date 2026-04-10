@@ -145,7 +145,7 @@ class EngagementScoringService
 
         if ($tokenCount > 0) {
             $score += 10;
-            if ($tokenCount > 4) {
+            if ($tokenCount >= 5) {
                 $score += 3;
             }
         }

@@ -35,6 +35,24 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('viewHorizon', fn (User $user) => $user->is_admin);
 
+        RateLimiter::for('admin-read', function ($request) {
+            $routeName = $request->route()?->getName() ?? 'unknown';
+
+            return Limit::perMinute(30)->by('admin-read:'.$routeName.':'.$request->user()?->id);
+        });
+
+        RateLimiter::for('admin-write', function ($request) {
+            $routeName = $request->route()?->getName() ?? 'unknown';
+
+            return Limit::perMinute(10)->by('admin-write:'.$routeName.':'.$request->user()?->id);
+        });
+
+        RateLimiter::for('admin-sensitive', function ($request) {
+            $routeName = $request->route()?->getName() ?? 'unknown';
+
+            return Limit::perMinute(5)->by('admin-sensitive:'.$routeName.':'.$request->user()?->id);
+        });
+
         RateLimiter::for('webhook-test', function ($request) {
             return Limit::perMinute(5)->by('webhook-test|'.($request->user()?->id ?: $request->ip()));
         });
