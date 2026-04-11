@@ -1,10 +1,15 @@
 <?php
 
+use App\Enums\LifecycleStage;
 use App\Exceptions\ConcurrentOperationException;
 use App\Models\User;
 use App\Services\BillingService;
+use App\Services\LifecycleService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Laravel\Cashier\Subscription;
+use Laravel\Cashier\SubscriptionBuilder;
 
 beforeEach(function () {
     config(['features.billing.enabled' => true]);
@@ -184,4 +189,280 @@ it('caches a valid coupon after the first successful Stripe lookup', function ()
 
     expect($result)->toBeNull();
     expect(Cache::has($cacheKey))->toBeTrue();
+});
+
+// EXPANSION upgrade detection — isUpgrade() is pure tier comparison, tested exhaustively here.
+// swapPlan → LifecycleService::transition paths are also verified below using mocked Cashier swap().
+
+it('isUpgrade returns true when moving to a strictly higher tier', function () {
+    config(['plans.tier_hierarchy' => ['free', 'pro', 'pro_team', 'team', 'enterprise']]);
+    $service = new BillingService;
+
+    expect($service->isUpgrade('free', 'pro'))->toBeTrue();
+    expect($service->isUpgrade('pro', 'team'))->toBeTrue();
+    expect($service->isUpgrade('pro', 'enterprise'))->toBeTrue();
+    expect($service->isUpgrade('team', 'enterprise'))->toBeTrue();
+    expect($service->isUpgrade('pro_team', 'team'))->toBeTrue();
+});
+
+it('isUpgrade returns false when moving to a lower or equal tier', function () {
+    config(['plans.tier_hierarchy' => ['free', 'pro', 'pro_team', 'team', 'enterprise']]);
+    $service = new BillingService;
+
+    expect($service->isUpgrade('team', 'pro'))->toBeFalse();
+    expect($service->isUpgrade('enterprise', 'team'))->toBeFalse();
+    expect($service->isUpgrade('pro', 'pro'))->toBeFalse();
+    expect($service->isUpgrade('team', 'team'))->toBeFalse();
+    expect($service->isUpgrade('pro', 'free'))->toBeFalse();
+});
+
+it('isUpgrade returns false when either tier is null', function () {
+    config(['plans.tier_hierarchy' => ['free', 'pro', 'team']]);
+    $service = new BillingService;
+
+    expect($service->isUpgrade(null, 'team'))->toBeFalse();
+    expect($service->isUpgrade('pro', null))->toBeFalse();
+    expect($service->isUpgrade(null, null))->toBeFalse();
+});
+
+it('isUpgrade returns false when a tier is not in the hierarchy', function () {
+    config(['plans.tier_hierarchy' => ['free', 'pro', 'team']]);
+    $service = new BillingService;
+
+    expect($service->isUpgrade('unknown_tier', 'team'))->toBeFalse();
+    expect($service->isUpgrade('pro', 'unknown_tier'))->toBeFalse();
+});
+
+it('isUpgrade returns false with empty tier hierarchy and emits a misconfiguration warning', function () {
+    config(['plans.tier_hierarchy' => []]);
+    Log::spy();
+
+    $service = new BillingService;
+    $result = $service->isUpgrade('pro', 'team');
+
+    expect($result)->toBeFalse();
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->with('billing.tier_hierarchy_not_configured', Mockery::on(fn ($ctx) => ($ctx['current_tier'] ?? null) === 'pro' && ($ctx['new_tier'] ?? null) === 'team'));
+});
+
+it('swapPlan calls LifecycleService::transition with EXPANSION when upgrading to a higher tier', function () {
+    config([
+        'plans.tier_hierarchy' => ['free', 'pro', 'team', 'enterprise'],
+        'plans.pro.stripe_price_monthly' => 'price_pro_monthly',
+        'plans.team.stripe_price_monthly' => 'price_team_monthly',
+    ]);
+
+    $lifecycleMock = Mockery::mock(LifecycleService::class);
+    $lifecycleMock->shouldReceive('transition')
+        ->once()
+        ->with(Mockery::type(User::class), LifecycleStage::EXPANSION, 'plan_upgraded');
+    app()->instance(LifecycleService::class, $lifecycleMock);
+
+    $subscriptionMock = Mockery::mock(Subscription::class);
+    $subscriptionMock->shouldReceive('getAttribute')->with('stripe_price')->andReturn('price_pro_monthly');
+    $subscriptionMock->shouldReceive('setRelation')->andReturnSelf();
+    $subscriptionMock->shouldReceive('loadMissing')->andReturnSelf();
+    $subscriptionMock->shouldReceive('getAttribute')->with('items')->andReturn(collect([]));
+    $subscriptionMock->shouldReceive('swap')->once()->with('price_team_monthly')->andReturnSelf();
+
+    $user = User::factory()->create();
+    $userMock = Mockery::mock(User::class)->makePartial();
+    $userMock->id = $user->id;
+    $userMock->shouldReceive('subscription')->with('default')->andReturn($subscriptionMock);
+
+    $lockMock = Mockery::mock();
+    $lockMock->shouldReceive('get')->andReturn(true);
+    $lockMock->shouldReceive('release');
+    Cache::shouldReceive('lock')->andReturn($lockMock);
+
+    DB::shouldReceive('transaction')->andReturnUsing(fn ($cb) => $cb());
+
+    $service = new BillingService;
+    $service->swapPlan($userMock, 'price_team_monthly');
+});
+
+it('swapPlan does not call LifecycleService::transition when swapping to an equal or lower tier', function () {
+    config([
+        'plans.tier_hierarchy' => ['free', 'pro', 'team', 'enterprise'],
+        'plans.pro.stripe_price_monthly' => 'price_pro_monthly',
+        'plans.team.stripe_price_monthly' => 'price_team_monthly',
+    ]);
+
+    $lifecycleMock = Mockery::mock(LifecycleService::class);
+    $lifecycleMock->shouldNotReceive('transition');
+    app()->instance(LifecycleService::class, $lifecycleMock);
+
+    $subscriptionMock = Mockery::mock(Subscription::class);
+    // Current tier is team — swapping back down to pro is NOT an upgrade
+    $subscriptionMock->shouldReceive('getAttribute')->with('stripe_price')->andReturn('price_team_monthly');
+    $subscriptionMock->shouldReceive('setRelation')->andReturnSelf();
+    $subscriptionMock->shouldReceive('loadMissing')->andReturnSelf();
+    $subscriptionMock->shouldReceive('getAttribute')->with('items')->andReturn(collect([]));
+    $subscriptionMock->shouldReceive('swap')->once()->with('price_pro_monthly')->andReturnSelf();
+
+    $user = User::factory()->create();
+    $userMock = Mockery::mock(User::class)->makePartial();
+    $userMock->id = $user->id;
+    $userMock->shouldReceive('subscription')->with('default')->andReturn($subscriptionMock);
+
+    $lockMock = Mockery::mock();
+    $lockMock->shouldReceive('get')->andReturn(true);
+    $lockMock->shouldReceive('release');
+    Cache::shouldReceive('lock')->andReturn($lockMock);
+
+    DB::shouldReceive('transaction')->andReturnUsing(fn ($cb) => $cb());
+
+    $service = new BillingService;
+    $service->swapPlan($userMock, 'price_pro_monthly');
+});
+
+it('createSubscription logs lifecycle_transition_failed when PAYING transition throws', function () {
+    Log::spy();
+
+    $lifecycleMock = Mockery::mock(LifecycleService::class);
+    $lifecycleMock->shouldReceive('transition')
+        ->once()
+        ->with(Mockery::type(User::class), LifecycleStage::PAYING, 'subscription_created')
+        ->andThrow(new RuntimeException('lifecycle boom'));
+    app()->instance(LifecycleService::class, $lifecycleMock);
+
+    $subscriptionMock = Mockery::mock(Subscription::class);
+
+    $builderMock = Mockery::mock(SubscriptionBuilder::class);
+    $builderMock->shouldReceive('quantity')->andReturnSelf();
+    $builderMock->shouldReceive('create')->andReturn($subscriptionMock);
+
+    $user = User::factory()->create();
+    $userMock = Mockery::mock(User::class)->makePartial();
+    $userMock->id = $user->id;
+    $userMock->shouldReceive('newSubscription')->with('default', 'price_pro_monthly')->andReturn($builderMock);
+
+    $lockMock = Mockery::mock();
+    $lockMock->shouldReceive('get')->andReturn(true);
+    $lockMock->shouldReceive('release');
+    Cache::shouldReceive('lock')->andReturn($lockMock);
+
+    DB::shouldReceive('transaction')->andReturnUsing(fn ($cb) => $cb());
+
+    $service = new BillingService;
+    $result = $service->createSubscription($userMock, 'price_pro_monthly');
+
+    expect($result)->toBe($subscriptionMock);
+    Log::shouldHaveReceived('error')
+        ->once()
+        ->with('lifecycle_transition_failed', Mockery::on(fn ($ctx) => ($ctx['event'] ?? null) === 'subscription_created'
+            && ($ctx['target_stage'] ?? null) === LifecycleStage::PAYING->value
+        ));
+});
+
+it('cancelSubscription logs lifecycle_transition_failed when CHURNED transition throws', function () {
+    Log::spy();
+
+    $lifecycleMock = Mockery::mock(LifecycleService::class);
+    $lifecycleMock->shouldReceive('transition')
+        ->once()
+        ->with(Mockery::type(User::class), LifecycleStage::CHURNED, 'subscription_cancelled')
+        ->andThrow(new RuntimeException('lifecycle boom'));
+    app()->instance(LifecycleService::class, $lifecycleMock);
+
+    $subscriptionMock = Mockery::mock(Subscription::class);
+    $subscriptionMock->shouldReceive('setRelation')->andReturnSelf();
+    $subscriptionMock->shouldReceive('loadMissing')->andReturnSelf();
+    $subscriptionMock->shouldReceive('getAttribute')->with('items')->andReturn(collect([]));
+    $subscriptionMock->shouldReceive('cancel')->once()->andReturnSelf();
+
+    $user = User::factory()->create();
+    $userMock = Mockery::mock(User::class)->makePartial();
+    $userMock->id = $user->id;
+    $userMock->shouldReceive('subscription')->with('default')->andReturn($subscriptionMock);
+
+    $lockMock = Mockery::mock();
+    $lockMock->shouldReceive('get')->andReturn(true);
+    $lockMock->shouldReceive('release');
+    Cache::shouldReceive('lock')->andReturn($lockMock);
+
+    DB::shouldReceive('transaction')->andReturnUsing(fn ($cb) => $cb());
+
+    $service = new BillingService;
+    $result = $service->cancelSubscription($userMock);
+
+    expect($result)->toBe($subscriptionMock);
+    Log::shouldHaveReceived('error')
+        ->once()
+        ->with('lifecycle_transition_failed', Mockery::on(fn ($ctx) => ($ctx['event'] ?? null) === 'subscription_cancelled'
+            && ($ctx['target_stage'] ?? null) === LifecycleStage::CHURNED->value
+        ));
+});
+
+it('swapPlan does not throw and skips lifecycle transition when user has no active subscription', function () {
+    config([
+        'plans.tier_hierarchy' => ['free', 'pro', 'team', 'enterprise'],
+        'plans.pro.stripe_price_monthly' => 'price_pro_monthly',
+    ]);
+
+    $lifecycleMock = Mockery::mock(LifecycleService::class);
+    $lifecycleMock->shouldNotReceive('transition');
+    app()->instance(LifecycleService::class, $lifecycleMock);
+
+    $user = User::factory()->create();
+    $userMock = Mockery::mock(User::class)->makePartial();
+    $userMock->id = $user->id;
+    $userMock->shouldReceive('subscription')->with('default')->andReturnNull();
+
+    $lockMock = Mockery::mock();
+    $lockMock->shouldReceive('get')->andReturn(true);
+    $lockMock->shouldReceive('release');
+    Cache::shouldReceive('lock')->andReturn($lockMock);
+
+    DB::shouldReceive('transaction')->andReturnUsing(fn ($cb) => $cb());
+
+    $service = new BillingService;
+
+    // subscription('default') returns null → calling setRelation on null should throw
+    expect(fn () => $service->swapPlan($userMock, 'price_pro_monthly'))
+        ->toThrow(Error::class);
+});
+
+it('swapPlan logs lifecycle_transition_failed and still returns the subscription when upgrade transition throws', function () {
+    config([
+        'plans.tier_hierarchy' => ['free', 'pro', 'team', 'enterprise'],
+        'plans.pro.stripe_price_monthly' => 'price_pro_monthly',
+        'plans.team.stripe_price_monthly' => 'price_team_monthly',
+    ]);
+
+    Log::spy();
+
+    $lifecycleMock = Mockery::mock(LifecycleService::class);
+    $lifecycleMock->shouldReceive('transition')
+        ->once()
+        ->andThrow(new RuntimeException('boom'));
+    app()->instance(LifecycleService::class, $lifecycleMock);
+
+    $subscriptionMock = Mockery::mock(Subscription::class);
+    $subscriptionMock->shouldReceive('getAttribute')->with('stripe_price')->andReturn('price_pro_monthly');
+    $subscriptionMock->shouldReceive('setRelation')->andReturnSelf();
+    $subscriptionMock->shouldReceive('loadMissing')->andReturnSelf();
+    $subscriptionMock->shouldReceive('getAttribute')->with('items')->andReturn(collect([]));
+    $subscriptionMock->shouldReceive('swap')->once()->with('price_team_monthly')->andReturnSelf();
+
+    $user = User::factory()->create();
+    $userMock = Mockery::mock(User::class)->makePartial();
+    $userMock->id = $user->id;
+    $userMock->shouldReceive('subscription')->with('default')->andReturn($subscriptionMock);
+
+    $lockMock = Mockery::mock();
+    $lockMock->shouldReceive('get')->andReturn(true);
+    $lockMock->shouldReceive('release');
+    Cache::shouldReceive('lock')->andReturn($lockMock);
+
+    DB::shouldReceive('transaction')->andReturnUsing(fn ($cb) => $cb());
+
+    $service = new BillingService;
+    $result = $service->swapPlan($userMock, 'price_team_monthly');
+
+    expect($result)->toBe($subscriptionMock);
+    Log::shouldHaveReceived('error')
+        ->once()
+        ->with('lifecycle_transition_failed', Mockery::on(fn ($ctx) => ($ctx['event'] ?? null) === 'plan_upgraded'));
 });

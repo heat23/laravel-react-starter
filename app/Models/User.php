@@ -21,6 +21,10 @@ use Laravel\Sanctum\HasApiTokens;
  * Implements MustVerifyEmail conditionally based on feature flag.
  * To disable email verification, remove "implements MustVerifyEmail"
  * or check config('features.email_verification.enabled').
+ *
+ * Note: Uses SoftDeletes as an intentional exception to the project's hard-delete default.
+ * This is required for GDPR compliance via the purgePersonalData() method, which soft-deletes
+ * user records while maintaining referential integrity for audit logs and billing history.
  */
 class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenticatable
 {

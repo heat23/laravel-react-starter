@@ -102,7 +102,13 @@ class BillingService
             // After subscription creation, transition user to paying stage
             try {
                 app(LifecycleService::class)->transition($user, LifecycleStage::PAYING, 'subscription_created');
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
+                Log::error('lifecycle_transition_failed', [
+                    'user_id' => $user->id,
+                    'target_stage' => LifecycleStage::PAYING->value,
+                    'event' => 'subscription_created',
+                    'exception' => $e->getMessage(),
+                ]);
             }
 
             return $subscription;
@@ -131,7 +137,13 @@ class BillingService
             // Transition user to churned stage
             try {
                 app(LifecycleService::class)->transition($user, LifecycleStage::CHURNED, 'subscription_cancelled');
-            } catch (\Throwable) {
+            } catch (\Throwable $e) {
+                Log::error('lifecycle_transition_failed', [
+                    'user_id' => $user->id,
+                    'target_stage' => LifecycleStage::CHURNED->value,
+                    'event' => 'subscription_cancelled',
+                    'exception' => $e->getMessage(),
+                ]);
             }
 
             return $subscription;
@@ -157,21 +169,81 @@ class BillingService
 
     /**
      * Swap the subscription to a new plan/price.
+     * Transitions the user to EXPANSION stage when upgrading to a higher tier.
      */
     public function swapPlan(User $user, string $newPriceId, ?string $coupon = null): Subscription
     {
         return $this->withLock($this->lockKey('swap', $user), function () use ($user, $newPriceId, $coupon) {
-            return DB::transaction(function () use ($user, $newPriceId, $coupon) {
+            // Both tier resolutions and the swap happen inside the transaction to avoid
+            // TOCTOU races with webhook-path stripe_price writes. resolveTierFromPrice is
+            // config-only (no DB reads), but keeping it inside the transaction makes the
+            // atomicity guarantee explicit and eliminates any future risk if tier resolution
+            // ever gains a DB dependency.
+            ['subscription' => $subscription, 'currentTier' => $currentTier, 'newTier' => $newTier] = DB::transaction(function () use ($user, $newPriceId, $coupon): array {
                 $subscription = $user->subscription('default');
+                $currentTier = $subscription ? $this->resolveTierFromPrice($subscription->stripe_price) : null;
+                $newTier = $this->resolveTierFromPrice($newPriceId);
+
                 $subscription->setRelation('owner', $user);
                 $subscription->loadMissing('items');
                 $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
 
                 $builder = $coupon ? $subscription->withCoupon($coupon) : $subscription;
 
-                return $builder->swap($newPriceId);
+                return [
+                    'subscription' => $builder->swap($newPriceId),
+                    'currentTier' => $currentTier,
+                    'newTier' => $newTier,
+                ];
             });
+
+            // Transition to EXPANSION stage on plan upgrade (swap to strictly higher tier)
+            if ($this->isUpgrade($currentTier, $newTier)) {
+                try {
+                    app(LifecycleService::class)->transition($user, LifecycleStage::EXPANSION, 'plan_upgraded');
+                } catch (\Throwable $e) {
+                    Log::error('lifecycle_transition_failed', [
+                        'user_id' => $user->id,
+                        'target_stage' => LifecycleStage::EXPANSION->value,
+                        'event' => 'plan_upgraded',
+                        'exception' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            return $subscription;
         });
+    }
+
+    /**
+     * Returns true when the new tier is strictly higher than the current tier.
+     * Compares positions in the configured tier hierarchy.
+     */
+    public function isUpgrade(?string $currentTier, ?string $newTier): bool
+    {
+        if ($currentTier === null || $newTier === null) {
+            return false;
+        }
+
+        $hierarchy = config('plans.tier_hierarchy', []);
+
+        if (empty($hierarchy)) {
+            Log::warning('billing.tier_hierarchy_not_configured', [
+                'current_tier' => $currentTier,
+                'new_tier' => $newTier,
+            ]);
+
+            return false;
+        }
+
+        $currentIndex = array_search($currentTier, $hierarchy, true);
+        $newIndex = array_search($newTier, $hierarchy, true);
+
+        if ($currentIndex === false || $newIndex === false) {
+            return false;
+        }
+
+        return $newIndex > $currentIndex;
     }
 
     /**

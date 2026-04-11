@@ -98,10 +98,13 @@ describe('Compare/Larafast', () => {
     expect(canonicalLinks).toHaveLength(0);
   });
 
-  it('does not render canonical link when canonicalUrl is a relative path', () => {
+  it('resolves relative canonicalUrl to an absolute URL using window.location.origin', () => {
+    // toAbsoluteUrl() converts relative paths to absolute using window.location.origin (jsdom: http://localhost).
+    // The resulting absolute URL passes isOwnOriginUrl(), so the canonical link is rendered.
     const { container } = render(<Larafast {...defaultProps} canonicalUrl="/compare/larafast" />);
     const canonicalLinks = container.querySelectorAll('link[rel="canonical"]');
-    expect(canonicalLinks).toHaveLength(0);
+    expect(canonicalLinks).toHaveLength(1);
+    expect(canonicalLinks[0].getAttribute('href')).toBe('http://localhost/compare/larafast');
   });
 
   it('does not render canonical link when canonicalUrl points to an external domain', () => {

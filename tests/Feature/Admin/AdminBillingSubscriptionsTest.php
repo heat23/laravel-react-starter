@@ -232,7 +232,7 @@ it('export route has rate limit middleware', function () {
         ->first(fn ($r) => $r->getName() === 'admin.billing.subscriptions.export');
 
     expect($route)->not->toBeNull();
-    expect(implode(' ', $route->middleware()))->toContain('throttle:10,1');
+    expect(implode(' ', $route->middleware()))->toContain('throttle:admin-write');
 });
 
 it('subscriptions query count does not scale with subscription count', function () {

@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * WebhookEndpoint Model
+ *
+ * Note: Uses SoftDeletes as an intentional exception to the project's hard-delete default.
+ * Soft deletes preserve webhook delivery history and audit trails when endpoints are removed.
+ */
 class WebhookEndpoint extends Model
 {
     use HasFactory, SoftDeletes;
