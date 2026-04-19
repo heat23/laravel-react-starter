@@ -31,6 +31,10 @@ enum AdminCacheKey: string
     case WEBHOOKS_DELIVERY_CHART = 'admin:webhooks:delivery_chart';
     case WEBHOOKS_RECENT_FAILURES = 'admin:webhooks:recent_failures';
 
+    // IndexNow
+    case INDEXNOW_STATS = 'admin:indexnow:stats';
+    case INDEXNOW_RECENT_SUBMISSIONS = 'admin:indexnow:recent_submissions';
+
     // Tokens
     case TOKENS_STATS = 'admin:tokens:stats';
     case TOKENS_MOST_ACTIVE = 'admin:tokens:most_active';

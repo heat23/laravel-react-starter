@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Subscription;
 use App\Models\User;
 use App\Policies\UserPolicy;
+use App\Services\IndexNowService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Gate;
@@ -24,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
         // We register our own billing routes in routes/web.php
         Cashier::ignoreRoutes();
         Cashier::useSubscriptionModel(Subscription::class);
+
+        $this->app->singleton(IndexNowService::class);
     }
 
     /**

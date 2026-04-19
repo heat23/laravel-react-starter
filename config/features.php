@@ -176,4 +176,21 @@ return [
     'admin' => [
         'enabled' => env('FEATURE_ADMIN', false),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | IndexNow (Search Engine Instant Indexing)
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, exposes the IndexNow service for pinging search engines
+    | (Bing, Yandex, Seznam, Naver, Yep) when URLs change. Requires an API
+    | key generated via `php artisan indexnow:generate-key`.
+    |
+    */
+    'indexnow' => [
+        'enabled' => env('FEATURE_INDEXNOW', false),
+        'auto_ping_sitemap' => env('INDEXNOW_AUTO_PING_SITEMAP', false),
+        'max_urls_per_submission' => 10000,
+        'debounce_minutes' => env('INDEXNOW_DEBOUNCE_MINUTES', 10),
+    ],
 ];

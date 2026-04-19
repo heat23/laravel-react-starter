@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\IndexNowService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class SeoController extends Controller
 {
@@ -121,14 +123,43 @@ class SeoController extends Controller
         return response($content, 200, ['Content-Type' => 'text/plain']);
     }
 
-    public function sitemap(): Response
+    public function sitemap(IndexNowService $indexNow): Response
     {
-        $xml = Cache::remember('sitemap', 86400, fn () => $this->buildSitemap());
+        $xml = Cache::remember('sitemap', 86400, function () use ($indexNow) {
+            $urls = $this->buildSitemapUrls();
+
+            // Fresh cache = content may have changed. If the app opted into
+            // auto-ping, submit the full URL list to IndexNow. The try/catch
+            // below only guards the IndexNow side effect — URL generation or
+            // view rendering errors are still fatal and intentional; only the
+            // opt-in ping is treated as best-effort.
+            if (config('features.indexnow.auto_ping_sitemap', false)) {
+                try {
+                    $indexNow->submit(
+                        array_map(static fn (array $u) => (string) $u['loc'], $urls),
+                        trigger: 'sitemap',
+                    );
+                } catch (\Throwable $e) {
+                    Log::channel('single')->warning('IndexNow sitemap auto-ping failed', [
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+
+            return view('seo.sitemap', ['urls' => $urls])->render();
+        });
 
         return response($xml, 200, ['Content-Type' => 'application/xml']);
     }
 
-    private function buildSitemap(): string
+    /**
+     * Build the canonical list of URLs in the sitemap. Kept separate from
+     * view rendering so IndexNow can pipe the same list to search engines
+     * without regenerating or parsing XML.
+     *
+     * @return list<array{loc: string, priority: string, changefreq: string, lastmod: string}>
+     */
+    private function buildSitemapUrls(): array
     {
         $base = rtrim(config('app.url'), '/');
 
@@ -196,6 +227,6 @@ class SeoController extends Controller
             $urls[] = ['loc' => $base.'/docs', 'priority' => '0.6', 'changefreq' => 'weekly', 'lastmod' => '2026-03-01T00:00:00+00:00'];
         }
 
-        return view('seo.sitemap', ['urls' => $urls])->render();
+        return $urls;
     }
 }

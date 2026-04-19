@@ -52,5 +52,9 @@
         <!-- FEATURE_API_DOCS defaults to false - let tests that need it set it explicitly -->
         <env name="FEATURE_TWO_FACTOR" value="true"/>
         <env name="FEATURE_WEBHOOKS" value="true"/>
+        <env name="FEATURE_INDEXNOW" value="true"/>
+        <env name="INDEXNOW_API_KEY" value="testkeytestkeytestkeytestkey1234"/>
+        <env name="INDEXNOW_HOST" value="example.test"/>
+        <env name="APP_URL" value="https://example.test"/>
     </php>
 </phpunit>

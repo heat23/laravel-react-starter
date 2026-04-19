@@ -197,6 +197,7 @@ class HandleInertiaRequests extends Middleware
                 'twoFactor' => $features['two_factor'],
                 'webhooks' => $features['webhooks'],
                 'admin' => $features['admin'],
+                'indexnow' => $features['indexnow'] ?? false,
             ],
             'notifications_unread_count' => fn () => $features['notifications'] && $user
                 ? cache()->remember(

@@ -577,6 +577,61 @@ export interface AdminIncomingWebhooksProps {
   };
 }
 
+// ---------------------------------------------------------------------------
+// IndexNow
+// ---------------------------------------------------------------------------
+
+export interface IndexNowStats {
+  total_submissions_30d: number;
+  successful_submissions_30d: number;
+  failed_submissions_30d: number;
+  pending_submissions_30d: number;
+  total_urls_30d: number;
+  failure_rate: number;
+}
+
+export interface IndexNowSubmissionRow {
+  id: number;
+  uuid: string;
+  url_count: number;
+  status: 'pending' | 'success' | 'failed';
+  response_code: number | null;
+  attempts: number;
+  trigger: string | null;
+  submitted_at: string | null;
+  created_at: string;
+}
+
+export interface AdminIndexNowDashboardProps {
+  stats: IndexNowStats;
+  submissions: PaginatedResponse<IndexNowSubmissionRow>;
+  triggers: string[];
+  filters: {
+    status?: string;
+    trigger?: string;
+  };
+  key_location: string;
+  configured: boolean;
+}
+
+export interface IndexNowSubmissionDetail {
+  id: number;
+  uuid: string;
+  urls: string[];
+  url_count: number;
+  status: 'pending' | 'success' | 'failed';
+  response_code: number | null;
+  response_body: string | null;
+  attempts: number;
+  trigger: string | null;
+  submitted_at: string | null;
+  created_at: string;
+}
+
+export interface AdminIndexNowSubmissionDetailProps {
+  submission: IndexNowSubmissionDetail;
+}
+
 export interface AdminTokensDashboardProps {
   stats: TokenDashboardStats;
   most_active: ActiveToken[];

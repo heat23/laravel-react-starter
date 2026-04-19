@@ -17,6 +17,7 @@ use App\Http\Controllers\FeaturesController;
 use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\GuidesController;
 use App\Http\Controllers\HealthCheckController;
+use App\Http\Controllers\IndexNowKeyFileController;
 use App\Http\Controllers\LegalController;
 use App\Http\Controllers\NpsSurveyController;
 use App\Http\Controllers\OnboardingController;
@@ -214,6 +215,15 @@ Route::get('/favicon.ico', function () {
 Route::get('/robots.txt', [SeoController::class, 'robots'])->name('robots');
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap'])->name('sitemap');
 Route::get('/llms.txt', [SeoController::class, 'llms'])->name('llms');
+
+// IndexNow key-verification file (only when feature enabled). The regex matches
+// IndexNow's key charset rules (8-128 chars, [a-zA-Z0-9-]) which also keeps the
+// route from colliding with any legitimate future `/{something}.txt` handler.
+if (config('features.indexnow.enabled', false)) {
+    Route::get('/{key}.txt', IndexNowKeyFileController::class)
+        ->where('key', '[A-Za-z0-9\-]{8,128}')
+        ->name('indexnow.key');
+}
 
 // Health check (controller handles its own authorization)
 Route::get('/health', HealthCheckController::class)->name('health');

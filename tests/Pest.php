@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AdminFailedJobsController;
 use App\Http\Controllers\Admin\AdminFeatureFlagController;
 use App\Http\Controllers\Admin\AdminHealthController;
 use App\Http\Controllers\Admin\AdminImpersonationController;
+use App\Http\Controllers\Admin\AdminIndexNowController;
 use App\Http\Controllers\Admin\AdminNotificationsController;
 use App\Http\Controllers\Admin\AdminSocialAuthController;
 use App\Http\Controllers\Admin\AdminSystemController;
@@ -371,6 +372,20 @@ function registerAdminRoutes(): void
                     ->middleware(['super_admin'])
                     ->name('webhooks.endpoints.restore');
                 $router->get('/webhooks/deliveries/{id}', [AdminWebhooksController::class, 'showDelivery'])->name('webhooks.deliveries.show');
+            });
+        $needsRefresh = true;
+    }
+
+    if (config('features.indexnow.enabled') && ! Route::has('admin.indexnow.index')) {
+        $router->middleware(['web', 'auth', 'verified', 'admin'])
+            ->prefix('admin')
+            ->name('admin.')
+            ->group(function () use ($router) {
+                $router->get('/indexnow', [AdminIndexNowController::class, '__invoke'])->name('indexnow.index');
+                $router->get('/indexnow/{submission}', [AdminIndexNowController::class, 'show'])->name('indexnow.show');
+                $router->post('/indexnow/{submission}/retry', [AdminIndexNowController::class, 'retry'])
+                    ->middleware(['super_admin'])
+                    ->name('indexnow.retry');
             });
         $needsRefresh = true;
     }

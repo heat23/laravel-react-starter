@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\AdminFeatureFlagController;
 use App\Http\Controllers\Admin\AdminFeedbackController;
 use App\Http\Controllers\Admin\AdminHealthController;
 use App\Http\Controllers\Admin\AdminImpersonationController;
+use App\Http\Controllers\Admin\AdminIndexNowController;
 use App\Http\Controllers\Admin\AdminNotificationsController;
 use App\Http\Controllers\Admin\AdminNpsResponsesController;
 use App\Http\Controllers\Admin\AdminProductAnalyticsController;
@@ -274,6 +275,18 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1,admin:'])
             Route::get('/billing/subscriptions/{subscription}', [AdminBillingController::class, 'show'])
                 ->middleware('throttle:admin-read')
                 ->name('billing.show');
+        }
+
+        if (config('features.indexnow.enabled')) {
+            Route::get('/indexnow', AdminIndexNowController::class)
+                ->middleware('throttle:admin-read')
+                ->name('indexnow.index');
+            Route::get('/indexnow/{submission}', [AdminIndexNowController::class, 'show'])
+                ->middleware('throttle:admin-read')
+                ->name('indexnow.show');
+            Route::post('/indexnow/{submission}/retry', [AdminIndexNowController::class, 'retry'])
+                ->middleware(['throttle:admin-write', 'super_admin'])
+                ->name('indexnow.retry');
         }
 
         if (config('features.webhooks.enabled')) {

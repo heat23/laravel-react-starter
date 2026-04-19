@@ -36,6 +36,7 @@ export interface Features {
   twoFactor: boolean;
   webhooks: boolean;
   admin: boolean;
+  indexnow: boolean;
 }
 
 export interface UpgradePromptData {

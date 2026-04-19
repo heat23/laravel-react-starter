@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Monitor,
   Radio,
+  Search,
   Server,
   Settings,
   ShieldCheck,
@@ -74,6 +75,12 @@ export const adminNavigationGroups: AdminNavGroup[] = [
         label: 'Webhooks',
         icon: Radio,
         featureFlag: 'webhooks',
+      },
+      {
+        href: '/admin/indexnow',
+        label: 'IndexNow',
+        icon: Search,
+        featureFlag: 'indexnow',
       },
       {
         href: '/admin/tokens',
