@@ -5,7 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
-        <link rel="canonical" href="{{ request()->url() }}" />
+        @php $page ??= []; $canonicalUrl = ($page['props']['canonicalUrl'] ?? null) ?: request()->url(); @endphp
+        <link rel="canonical" href="{{ $canonicalUrl }}" />
 
         <!-- Robot / AI crawler meta tags -->
         @auth
@@ -59,18 +60,20 @@
 
         <!-- JSON-LD Structured Data: SoftwareApplication -->
         @php
-            $offersBlock = ['@type' => 'Offer', 'priceCurrency' => 'USD', 'price' => '0', 'description' => 'Contact for pricing', 'availability' => 'https://schema.org/InStock'];
+            $baseUrl = rtrim(config('app.url'), '/');
+            $offersBlock = ['@type' => 'Offer', 'priceCurrency' => 'USD', 'price' => 0, 'description' => 'Contact for pricing', 'availability' => 'https://schema.org/InStock'];
             if (config('features.billing.enabled', false)) {
                 $plans = config('plans', []);
                 $startingPrice = collect($plans)->filter(fn ($p) => ($p['price_monthly'] ?? 0) > 0)->min('price_monthly');
                 if ($startingPrice) {
-                    $offersBlock['price'] = (string) $startingPrice;
+                    $offersBlock['price'] = (int) $startingPrice;
                     $offersBlock['description'] = 'Starting price per month';
                 }
             }
             $softwareAppLd = json_encode([
                 '@context' => 'https://schema.org',
                 '@type' => 'SoftwareApplication',
+                '@id' => $baseUrl.'#software',
                 'name' => config('app.name', 'Laravel'),
                 'url' => config('app.url'),
                 'applicationCategory' => 'DeveloperApplication',
@@ -88,27 +91,54 @@
                     '90+ automated tests',
                 ],
                 'softwareVersion' => '1.0',
-                'screenshot' => rtrim(config('app.url'), '/').'/images/og-default.png',
-            ], JSON_UNESCAPED_SLASHES);
+                'screenshot' => $baseUrl.'/images/og-default.png',
+                'publisher' => ['@id' => $baseUrl.'#organization'],
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         @endphp
         <script type="application/ld+json" nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">{!! $softwareAppLd !!}</script>
 
-        <!-- JSON-LD Structured Data: Organization -->
+        <!-- JSON-LD Structured Data: Organization, WebSite, WebPage -->
         @php
             $organizationLd = json_encode([
                 '@context' => 'https://schema.org',
                 '@type' => 'Organization',
+                '@id' => $baseUrl.'#organization',
                 'name' => config('app.name', 'Laravel'),
                 'url' => config('app.url'),
-                'logo' => rtrim(config('app.url'), '/').'/images/og-default.png',
+                'logo' => [
+                    '@type' => 'ImageObject',
+                    'url' => $baseUrl.'/images/og-default.png',
+                    'width' => 1200,
+                    'height' => 630,
+                ],
                 'contactPoint' => [
                     '@type' => 'ContactPoint',
                     'contactType' => 'customer support',
-                    'url' => rtrim(config('app.url'), '/').'/contact',
+                    'url' => $baseUrl.'/contact',
                 ],
-            ], JSON_UNESCAPED_SLASHES);
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            $webSiteLd = json_encode([
+                '@context' => 'https://schema.org',
+                '@type' => 'WebSite',
+                '@id' => $baseUrl.'#website',
+                'url' => config('app.url'),
+                'name' => config('app.name', 'Laravel'),
+                'publisher' => ['@id' => $baseUrl.'#organization'],
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            $webPageLd = json_encode([
+                '@context' => 'https://schema.org',
+                '@type' => 'WebPage',
+                '@id' => $canonicalUrl.'#webpage',
+                'url' => $canonicalUrl,
+                'name' => $page['props']['title'] ?? config('app.name', 'Laravel'),
+                'description' => $page['props']['metaDescription'] ?? '',
+                'isPartOf' => ['@id' => $baseUrl.'#website'],
+                'publisher' => ['@id' => $baseUrl.'#organization'],
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         @endphp
         <script type="application/ld+json" nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">{!! $organizationLd !!}</script>
+        <script type="application/ld+json" nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">{!! $webSiteLd !!}</script>
+        <script type="application/ld+json" nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">{!! $webPageLd !!}</script>
 
         <!-- JSON-LD Structured Data: FAQPage (homepage only) -->
         @if(isset($page['component']) && $page['component'] === 'Welcome')
@@ -126,7 +156,7 @@
                             'text' => $faq['answer'],
                         ],
                     ], $faqItems),
-                ], JSON_UNESCAPED_SLASHES);
+                ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
             }
         @endphp
         @if(isset($faqLd))
@@ -141,6 +171,9 @@
         @inertiaHead
     </head>
     <body class="font-sans antialiased">
+        @guest
+            @include('partials.seo-shell')
+        @endguest
         @inertia
     </body>
 </html>

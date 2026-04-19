@@ -139,7 +139,7 @@ class CompareController extends Controller
         return Inertia::render('Compare/SaaSykit', [
             'competitor' => 'saasykit',
             'competitorName' => 'SaaSykit',
-            'title' => 'Laravel React Starter vs SaaSykit — Which SaaS Boilerplate Is Right for You?',
+            'title' => 'Laravel React Starter vs SaaSykit — React vs Filament Admin',
             'metaDescription' => 'SaaSykit uses Filament for admin. This starter uses a custom React admin panel with TypeScript. Compare stack, features, and philosophy for your SaaS build.',
             'canonicalUrl' => $appUrl.'/compare/saasykit',
             'lastVerified' => '2026-03',
@@ -306,7 +306,7 @@ class CompareController extends Controller
         return Inertia::render('Compare/Supastarter', [
             'competitor' => 'supastarter',
             'competitorName' => 'Supastarter',
-            'title' => 'Laravel React Starter vs Supastarter — Laravel vs Supabase SaaS Starter',
+            'title' => 'Laravel React Starter vs Supastarter — Laravel vs Supabase',
             'metaDescription' => 'Supastarter uses Supabase + Next.js. This starter uses Laravel + MySQL + Redis. Compare auth, billing, admin, and backend philosophy for your SaaS architecture decision.',
             'canonicalUrl' => $appUrl.'/compare/supastarter',
             'lastVerified' => '2026-03',

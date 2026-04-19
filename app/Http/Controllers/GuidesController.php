@@ -81,7 +81,7 @@ class GuidesController extends Controller
         $appUrl = rtrim(config('app.url'), '/');
 
         return Inertia::render('Guides/StripeBillingGuide', [
-            'title' => 'Laravel Stripe Billing Tutorial — Subscriptions, Webhooks, and Race Conditions',
+            'title' => 'Laravel Stripe Billing Tutorial — Subscriptions & Race Conditions',
             'metaDescription' => 'How to implement production-grade Stripe billing in Laravel 12: subscriptions with Cashier, webhook handling, race condition prevention with Redis locks, and dunning emails.',
             'appName' => $appName,
             'canonicalUrl' => $appUrl.'/guides/laravel-stripe-billing-tutorial',
@@ -100,7 +100,7 @@ class GuidesController extends Controller
         $appUrl = rtrim(config('app.url'), '/');
 
         return Inertia::render('Guides/FeatureFlagsGuide', [
-            'title' => 'Laravel Feature Flags — Runtime Toggles Without Unleash or LaunchDarkly',
+            'title' => 'Laravel Feature Flags — Runtime Toggles Without Unleash',
             'metaDescription' => 'Implement feature flags in Laravel without a third-party service: env-based toggles, database overrides, per-user targeting, and a React UI for runtime control.',
             'appName' => $appName,
             'canonicalUrl' => $appUrl.'/guides/laravel-feature-flags-tutorial',
