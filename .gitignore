@@ -99,8 +99,11 @@ RankWiz*AUDIT*
 .claude/prompt-pack-runs/*
 ADMIN_AUDIT_REPORT_*.md
 ADMIN_AUDIT_REPORT_*.json
+ANALYTICS_AUDIT*
 ANALYTICS_QA_*.md
 ANALYTICS_QA_*.json
 CI_BLOCKER_*.md
+GROWTH_AUDIT*
 MERGE_ALL_REPORT_*.md
+MESSAGING_AUDIT*
 LaravelReactStarter*audit*
