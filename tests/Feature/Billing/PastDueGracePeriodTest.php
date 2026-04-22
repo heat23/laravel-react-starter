@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PlanTier;
 use App\Models\User;
 use App\Services\PlanLimitService;
 
@@ -19,7 +20,7 @@ it('grants pro access during grace period for past_due subscription', function (
 
     $service = app(PlanLimitService::class);
 
-    expect($service->getUserPlan($user->fresh()))->toBe('pro');
+    expect($service->getUserPlan($user->fresh()))->toBe(PlanTier::Pro);
 });
 
 it('reverts to free tier after grace period expires', function () {
@@ -32,7 +33,7 @@ it('reverts to free tier after grace period expires', function () {
 
     $service = app(PlanLimitService::class);
 
-    expect($service->getUserPlan($user->fresh()))->toBe('free');
+    expect($service->getUserPlan($user->fresh()))->toBe(PlanTier::Free);
 });
 
 it('uses configurable grace period days', function () {
@@ -47,7 +48,7 @@ it('uses configurable grace period days', function () {
 
     $service = app(PlanLimitService::class);
 
-    expect($service->getUserPlan($user->fresh()))->toBe('free');
+    expect($service->getUserPlan($user->fresh()))->toBe(PlanTier::Free);
 });
 
 it('grants access when past_due is exactly at grace boundary', function () {
@@ -62,7 +63,7 @@ it('grants access when past_due is exactly at grace boundary', function () {
 
     $service = app(PlanLimitService::class);
 
-    expect($service->getUserPlan($user->fresh()))->toBe('pro');
+    expect($service->getUserPlan($user->fresh()))->toBe(PlanTier::Pro);
 });
 
 it('active subscription is unaffected by grace period logic', function () {
@@ -74,5 +75,5 @@ it('active subscription is unaffected by grace period logic', function () {
 
     $service = app(PlanLimitService::class);
 
-    expect($service->getUserPlan($user->fresh()))->toBe('pro');
+    expect($service->getUserPlan($user->fresh()))->toBe(PlanTier::Pro);
 });

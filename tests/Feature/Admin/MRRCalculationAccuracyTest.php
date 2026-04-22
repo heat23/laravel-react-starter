@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PlanTier;
 use App\Models\User;
 use App\Services\AdminBillingStatsService;
 use App\Services\BillingService;
@@ -18,7 +19,7 @@ it('returns null for unknown stripe price IDs', function () {
     $service = app(BillingService::class);
 
     expect($service->resolveTierFromPrice('price_unknown_xyz'))->toBeNull();
-    expect($service->resolveTierFromPrice('price_pro_monthly'))->toBe('pro');
+    expect($service->resolveTierFromPrice('price_pro_monthly'))->toBe(PlanTier::Pro);
 });
 
 it('does not count unknown prices in MRR calculation', function () {

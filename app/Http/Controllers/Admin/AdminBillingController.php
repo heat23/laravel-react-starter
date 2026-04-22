@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
+use App\Enums\PlanTier;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminSubscriptionIndexRequest;
 use App\Models\AuditLog;
@@ -79,7 +80,7 @@ class AdminBillingController extends Controller
             'stripe_price' => $item->stripe_price,
             'stripe_product' => $item->stripe_product,
             'quantity' => $item->quantity,
-            'tier' => $this->billingService->resolveTierFromPrice($item->stripe_price) ?? 'unknown',
+            'tier' => PlanTier::safeValue($this->billingService->resolveTierFromPrice($item->stripe_price)),
         ]);
 
         $auditLogs = AuditLog::where('user_id', $subscription->user_id)
@@ -106,8 +107,8 @@ class AdminBillingController extends Controller
                 'stripe_id' => $subscription->stripe_id,
                 'stripe_status' => $subscription->stripe_status,
                 'tier' => $items->isNotEmpty()
-                    ? ($this->billingService->resolveTierFromPrice($items->first()['stripe_price']) ?? 'unknown')
-                    : 'free',
+                    ? PlanTier::safeValue($this->billingService->resolveTierFromPrice($items->first()['stripe_price']))
+                    : PlanTier::Free->value,
                 'quantity' => $subscription->quantity,
                 'trial_ends_at' => $subscription->trial_ends_at?->toISOString(),
                 'ends_at' => $subscription->ends_at?->toISOString(),
@@ -145,7 +146,7 @@ class AdminBillingController extends Controller
                     [
                         $row->user_name,
                         $row->user_email,
-                        $billingService->resolveTierFromPrice($row->item_price) ?? 'unknown',
+                        PlanTier::safeValue($billingService->resolveTierFromPrice($row->item_price)),
                         $row->stripe_status,
                         $row->quantity,
                         $row->trial_ends_at,

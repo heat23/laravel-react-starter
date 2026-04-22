@@ -1,10 +1,10 @@
 <?php
 
+use App\Enums\PlanTier;
 use App\Jobs\PersistAuditLog;
 use App\Models\User;
 use App\Services\PlanLimitService;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 
 beforeEach(function () {
@@ -171,33 +171,40 @@ it('returns pro plan when user is on trial', function () {
     config(['plans.trial.tier' => 'pro']);
     $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
 
-    expect($this->service->getUserPlan($user))->toBe('pro');
+    expect($this->service->getUserPlan($user))->toBe(PlanTier::Pro);
 });
 
-it('returns configured trial tier', function () {
+it('returns configured trial tier when it is a valid PlanTier', function () {
+    config(['plans.trial.tier' => 'team']);
+    $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
+
+    expect($this->service->getUserPlan($user))->toBe(PlanTier::Team);
+});
+
+it('falls back to pro when configured trial tier is unknown', function () {
     config(['plans.trial.tier' => 'premium']);
     $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
 
-    expect($this->service->getUserPlan($user))->toBe('premium');
+    expect($this->service->getUserPlan($user))->toBe(PlanTier::Pro);
 });
 
 it('returns pro as default trial tier', function () {
     config(['plans.trial' => ['enabled' => true]]);
     $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
 
-    expect($this->service->getUserPlan($user))->toBe('pro');
+    expect($this->service->getUserPlan($user))->toBe(PlanTier::Pro);
 });
 
 it('returns free plan when not on trial', function () {
     $user = User::factory()->create(['trial_ends_at' => null]);
 
-    expect($this->service->getUserPlan($user))->toBe('free');
+    expect($this->service->getUserPlan($user))->toBe(PlanTier::Free);
 });
 
 it('returns free plan when trial expired', function () {
     $user = User::factory()->create(['trial_ends_at' => now()->subDays(1)]);
 
-    expect($this->service->getUserPlan($user))->toBe('free');
+    expect($this->service->getUserPlan($user))->toBe(PlanTier::Free);
 });
 
 // ============================================
@@ -300,7 +307,7 @@ it('returns pro plan when subscribed and billing enabled', function () {
     $user = User::factory()->create(['trial_ends_at' => null]);
     createSubscription($user, ['stripe_price' => 'price_pro_monthly']);
 
-    expect($this->service->getUserPlan($user->fresh()))->toBe('pro');
+    expect($this->service->getUserPlan($user->fresh()))->toBe(PlanTier::Pro);
 });
 
 it('returns team plan when team subscribed', function () {
@@ -309,7 +316,7 @@ it('returns team plan when team subscribed', function () {
     $user = User::factory()->create(['trial_ends_at' => null]);
     createTeamSubscription($user, 5);
 
-    expect($this->service->getUserPlan($user->fresh()))->toBe('team');
+    expect($this->service->getUserPlan($user->fresh()))->toBe(PlanTier::Team);
 });
 
 it('returns enterprise plan when enterprise subscribed', function () {
@@ -318,7 +325,7 @@ it('returns enterprise plan when enterprise subscribed', function () {
     $user = User::factory()->create(['trial_ends_at' => null]);
     createEnterpriseSubscription($user, 10);
 
-    expect($this->service->getUserPlan($user->fresh()))->toBe('enterprise');
+    expect($this->service->getUserPlan($user->fresh()))->toBe(PlanTier::Enterprise);
 });
 
 it('returns free plan when billing disabled even if subscribed', function () {
@@ -327,7 +334,7 @@ it('returns free plan when billing disabled even if subscribed', function () {
     $user = User::factory()->create(['trial_ends_at' => null]);
     createSubscription($user, ['stripe_price' => 'price_pro_monthly']);
 
-    expect($this->service->getUserPlan($user->fresh()))->toBe('free');
+    expect($this->service->getUserPlan($user->fresh()))->toBe(PlanTier::Free);
 });
 
 it('returns correct tier during grace period', function () {
@@ -336,7 +343,7 @@ it('returns correct tier during grace period', function () {
     $user = User::factory()->create(['trial_ends_at' => null]);
     createTeamSubscription($user, 5, ['ends_at' => now()->addDays(5)]);
 
-    expect($this->service->getUserPlan($user->fresh()))->toBe('team');
+    expect($this->service->getUserPlan($user->fresh()))->toBe(PlanTier::Team);
 });
 
 it('returns free plan when subscription ended', function () {
@@ -348,7 +355,7 @@ it('returns free plan when subscription ended', function () {
         'ends_at' => now()->subDay(),
     ]);
 
-    expect($this->service->getUserPlan($user->fresh()))->toBe('free');
+    expect($this->service->getUserPlan($user->fresh()))->toBe(PlanTier::Free);
 });
 
 it('gives trial precedence over subscription check', function () {
@@ -357,7 +364,7 @@ it('gives trial precedence over subscription check', function () {
     ensureCashierTablesExist();
     $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
 
-    expect($this->service->getUserPlan($user))->toBe('pro');
+    expect($this->service->getUserPlan($user))->toBe(PlanTier::Pro);
 });
 
 // ============================================
@@ -438,49 +445,14 @@ it('gives team subscription user team tier limits', function () {
 // ============================================
 
 it('returns next tier for a plan in the middle of the hierarchy', function () {
-    config(['plans.tier_hierarchy' => ['free', 'pro', 'team', 'enterprise']]);
-
-    expect($this->service->getNextTier('free'))->toBe('pro');
-    expect($this->service->getNextTier('pro'))->toBe('team');
-    expect($this->service->getNextTier('team'))->toBe('enterprise');
+    expect($this->service->getNextTier(PlanTier::Free))->toBe(PlanTier::Pro);
+    expect($this->service->getNextTier(PlanTier::Pro))->toBe(PlanTier::ProTeam);
+    expect($this->service->getNextTier(PlanTier::ProTeam))->toBe(PlanTier::Team);
+    expect($this->service->getNextTier(PlanTier::Team))->toBe(PlanTier::Enterprise);
 });
 
 it('returns null for a plan at the top of the hierarchy', function () {
-    config(['plans.tier_hierarchy' => ['free', 'pro', 'team', 'enterprise']]);
-
-    expect($this->service->getNextTier('enterprise'))->toBeNull();
-});
-
-it('returns null for top tier with real plans config hierarchy', function () {
-    // The real config has enterprise as the last entry
-    $hierarchy = config('plans.tier_hierarchy');
-    $topTier = end($hierarchy);
-
-    expect($this->service->getNextTier($topTier))->toBeNull();
-});
-
-it('logs warning and returns first paid tier when plan is not in hierarchy', function () {
-    config(['plans.tier_hierarchy' => ['free', 'pro', 'team', 'enterprise']]);
-    Log::spy();
-
-    $result = $this->service->getNextTier('legacy_custom_plan');
-
-    expect($result)->toBe('pro');
-    Log::shouldHaveReceived('warning')->once()->withArgs(
-        fn ($message) => str_contains($message, 'not found in tier_hierarchy')
-    );
-});
-
-it('logs error and returns pro when tier_hierarchy is empty', function () {
-    config(['plans.tier_hierarchy' => []]);
-    Log::spy();
-
-    $result = $this->service->getNextTier('free');
-
-    expect($result)->toBe('pro');
-    Log::shouldHaveReceived('error')->once()->withArgs(
-        fn ($message) => str_contains($message, 'tier_hierarchy is empty')
-    );
+    expect($this->service->getNextTier(PlanTier::Enterprise))->toBeNull();
 });
 
 it('does not flash upgrade_prompt for top-tier users when limit exceeded', function () {

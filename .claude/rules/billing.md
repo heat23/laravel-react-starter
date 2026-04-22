@@ -23,5 +23,7 @@ globs:
 
 **Billing (Production-Grade):**
 - `BillingService` — Redis-locked subscription mutations (create, cancel, resume, swap)
-- Plan tiers: free, pro, team (3-50 seats), enterprise (custom)
+- Plan tiers: `App\Enums\PlanTier` (Free, Pro, ProTeam, Team, Enterprise) — never use raw strings like `'pro'` or `'team'` in billing code. Use `PlanTier::Pro`, `PlanTier::Free`, etc. Serialize for Inertia/JSON with `->value`.
+- `BillingService::resolveUserTier()` returns `PlanTier`. `resolveTierFromPrice()` returns `?PlanTier`. `validateSeatCount()` accepts `PlanTier`.
+- `PlanLimitService::getUserPlan()` returns `PlanTier`. `getNextTier()` accepts and returns `PlanTier`.
 - Incomplete payment tracking: `subscriptions:check-incomplete` command sends reminders at 1h/12h

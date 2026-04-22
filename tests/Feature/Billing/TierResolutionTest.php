@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PlanTier;
 use App\Models\User;
 use App\Services\BillingService;
 
@@ -14,7 +15,7 @@ it('resolves pro tier from monthly price', function () {
 
     $tier = app(BillingService::class)->resolveUserTier($user->fresh());
 
-    expect($tier)->toBe('pro');
+    expect($tier)->toBe(PlanTier::Pro);
 });
 
 it('resolves pro tier from annual price', function () {
@@ -23,7 +24,7 @@ it('resolves pro tier from annual price', function () {
 
     $tier = app(BillingService::class)->resolveUserTier($user->fresh());
 
-    expect($tier)->toBe('pro');
+    expect($tier)->toBe(PlanTier::Pro);
 });
 
 it('resolves team tier from monthly price', function () {
@@ -32,7 +33,7 @@ it('resolves team tier from monthly price', function () {
 
     $tier = app(BillingService::class)->resolveUserTier($user->fresh());
 
-    expect($tier)->toBe('team');
+    expect($tier)->toBe(PlanTier::Team);
 });
 
 it('resolves team tier from annual price', function () {
@@ -41,7 +42,7 @@ it('resolves team tier from annual price', function () {
 
     $tier = app(BillingService::class)->resolveUserTier($user->fresh());
 
-    expect($tier)->toBe('team');
+    expect($tier)->toBe(PlanTier::Team);
 });
 
 it('resolves enterprise tier from monthly price', function () {
@@ -50,7 +51,7 @@ it('resolves enterprise tier from monthly price', function () {
 
     $tier = app(BillingService::class)->resolveUserTier($user->fresh());
 
-    expect($tier)->toBe('enterprise');
+    expect($tier)->toBe(PlanTier::Enterprise);
 });
 
 it('resolves enterprise tier from annual price', function () {
@@ -59,7 +60,7 @@ it('resolves enterprise tier from annual price', function () {
 
     $tier = app(BillingService::class)->resolveUserTier($user->fresh());
 
-    expect($tier)->toBe('enterprise');
+    expect($tier)->toBe(PlanTier::Enterprise);
 });
 
 it('falls back to free for unknown stripe price', function () {
@@ -68,7 +69,7 @@ it('falls back to free for unknown stripe price', function () {
 
     $tier = app(BillingService::class)->resolveUserTier($user->fresh());
 
-    expect($tier)->toBe('free');
+    expect($tier)->toBe(PlanTier::Free);
 });
 
 it('resolves free tier when no subscription exists', function () {
@@ -76,7 +77,7 @@ it('resolves free tier when no subscription exists', function () {
 
     $tier = app(BillingService::class)->resolveUserTier($user);
 
-    expect($tier)->toBe('free');
+    expect($tier)->toBe(PlanTier::Free);
 });
 
 it('resolves free tier when subscription is canceled and expired', function () {
@@ -88,7 +89,7 @@ it('resolves free tier when subscription is canceled and expired', function () {
 
     $tier = app(BillingService::class)->resolveUserTier($user->fresh());
 
-    expect($tier)->toBe('free');
+    expect($tier)->toBe(PlanTier::Free);
 });
 
 it('resolves correct tier during grace period', function () {
@@ -99,5 +100,5 @@ it('resolves correct tier during grace period', function () {
 
     $tier = app(BillingService::class)->resolveUserTier($user->fresh());
 
-    expect($tier)->toBe('team');
+    expect($tier)->toBe(PlanTier::Team);
 });

@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\LifecycleStage;
+use App\Enums\PlanTier;
 use App\Exceptions\ConcurrentOperationException;
 use App\Models\User;
 use App\Services\BillingService;
@@ -21,7 +22,7 @@ it('resolves user tier from pro monthly price', function () {
     createSubscription($user, ['stripe_price' => 'price_pro_monthly']);
 
     $service = new BillingService;
-    expect($service->resolveUserTier($user->fresh()))->toBe('pro');
+    expect($service->resolveUserTier($user->fresh()))->toBe(PlanTier::Pro);
 });
 
 it('resolves user tier from team price', function () {
@@ -29,7 +30,7 @@ it('resolves user tier from team price', function () {
     createTeamSubscription($user, 5);
 
     $service = new BillingService;
-    expect($service->resolveUserTier($user->fresh()))->toBe('team');
+    expect($service->resolveUserTier($user->fresh()))->toBe(PlanTier::Team);
 });
 
 it('resolves user tier from enterprise price', function () {
@@ -37,19 +38,19 @@ it('resolves user tier from enterprise price', function () {
     createEnterpriseSubscription($user, 10);
 
     $service = new BillingService;
-    expect($service->resolveUserTier($user->fresh()))->toBe('enterprise');
+    expect($service->resolveUserTier($user->fresh()))->toBe(PlanTier::Enterprise);
 });
 
 it('returns free tier for user without subscription', function () {
     $user = User::factory()->create();
 
     $service = new BillingService;
-    expect($service->resolveUserTier($user))->toBe('free');
+    expect($service->resolveUserTier($user))->toBe(PlanTier::Free);
 });
 
 it('validates seat count rejects non-per-seat plan with quantity > 1', function () {
     $service = new BillingService;
-    $error = $service->validateSeatCount('pro', 5);
+    $error = $service->validateSeatCount(PlanTier::Pro, 5);
 
     expect($error)->toBe('This plan does not support per-seat billing.');
 });
@@ -57,7 +58,7 @@ it('validates seat count rejects non-per-seat plan with quantity > 1', function 
 it('validates seat count enforces team minimum seats', function () {
     config(['plans.team.min_seats' => 2]);
     $service = new BillingService;
-    $error = $service->validateSeatCount('team', 1);
+    $error = $service->validateSeatCount(PlanTier::Team, 1);
 
     expect($error)->toBe('This plan requires a minimum of 2 seats.');
 });
@@ -65,28 +66,28 @@ it('validates seat count enforces team minimum seats', function () {
 it('validates seat count allows team minimum of 2 seats', function () {
     config(['plans.team.min_seats' => 2]);
     $service = new BillingService;
-    $error = $service->validateSeatCount('team', 2);
+    $error = $service->validateSeatCount(PlanTier::Team, 2);
 
     expect($error)->toBeNull();
 });
 
 it('validates seat count enforces enterprise minimum seats', function () {
     $service = new BillingService;
-    $error = $service->validateSeatCount('enterprise', 5);
+    $error = $service->validateSeatCount(PlanTier::Enterprise, 5);
 
     expect($error)->toBe('This plan requires a minimum of 10 seats.');
 });
 
 it('validates seat count allows valid team quantity', function () {
     $service = new BillingService;
-    $error = $service->validateSeatCount('team', 10);
+    $error = $service->validateSeatCount(PlanTier::Team, 10);
 
     expect($error)->toBeNull();
 });
 
 it('validates seat count enforces team max seats', function () {
     $service = new BillingService;
-    $error = $service->validateSeatCount('team', 100);
+    $error = $service->validateSeatCount(PlanTier::Team, 100);
 
     expect($error)->toBe('This plan supports a maximum of 50 seats.');
 });
@@ -94,12 +95,12 @@ it('validates seat count enforces team max seats', function () {
 it('resolves tier from price id correctly', function () {
     $service = new BillingService;
 
-    expect($service->resolveTierFromPrice('price_pro_monthly'))->toBe('pro');
-    expect($service->resolveTierFromPrice('price_pro_annual'))->toBe('pro');
-    expect($service->resolveTierFromPrice('price_team_monthly'))->toBe('team');
-    expect($service->resolveTierFromPrice('price_team_annual'))->toBe('team');
-    expect($service->resolveTierFromPrice('price_enterprise_monthly'))->toBe('enterprise');
-    expect($service->resolveTierFromPrice('price_enterprise_annual'))->toBe('enterprise');
+    expect($service->resolveTierFromPrice('price_pro_monthly'))->toBe(PlanTier::Pro);
+    expect($service->resolveTierFromPrice('price_pro_annual'))->toBe(PlanTier::Pro);
+    expect($service->resolveTierFromPrice('price_team_monthly'))->toBe(PlanTier::Team);
+    expect($service->resolveTierFromPrice('price_team_annual'))->toBe(PlanTier::Team);
+    expect($service->resolveTierFromPrice('price_enterprise_monthly'))->toBe(PlanTier::Enterprise);
+    expect($service->resolveTierFromPrice('price_enterprise_annual'))->toBe(PlanTier::Enterprise);
     expect($service->resolveTierFromPrice('price_unknown'))->toBeNull();
 });
 
@@ -195,55 +196,31 @@ it('caches a valid coupon after the first successful Stripe lookup', function ()
 // swapPlan → LifecycleService::transition paths are also verified below using mocked Cashier swap().
 
 it('isUpgrade returns true when moving to a strictly higher tier', function () {
-    config(['plans.tier_hierarchy' => ['free', 'pro', 'pro_team', 'team', 'enterprise']]);
     $service = new BillingService;
 
-    expect($service->isUpgrade('free', 'pro'))->toBeTrue();
-    expect($service->isUpgrade('pro', 'team'))->toBeTrue();
-    expect($service->isUpgrade('pro', 'enterprise'))->toBeTrue();
-    expect($service->isUpgrade('team', 'enterprise'))->toBeTrue();
-    expect($service->isUpgrade('pro_team', 'team'))->toBeTrue();
+    expect($service->isUpgrade(PlanTier::Free, PlanTier::Pro))->toBeTrue();
+    expect($service->isUpgrade(PlanTier::Pro, PlanTier::Team))->toBeTrue();
+    expect($service->isUpgrade(PlanTier::Pro, PlanTier::Enterprise))->toBeTrue();
+    expect($service->isUpgrade(PlanTier::Team, PlanTier::Enterprise))->toBeTrue();
+    expect($service->isUpgrade(PlanTier::ProTeam, PlanTier::Team))->toBeTrue();
 });
 
 it('isUpgrade returns false when moving to a lower or equal tier', function () {
-    config(['plans.tier_hierarchy' => ['free', 'pro', 'pro_team', 'team', 'enterprise']]);
     $service = new BillingService;
 
-    expect($service->isUpgrade('team', 'pro'))->toBeFalse();
-    expect($service->isUpgrade('enterprise', 'team'))->toBeFalse();
-    expect($service->isUpgrade('pro', 'pro'))->toBeFalse();
-    expect($service->isUpgrade('team', 'team'))->toBeFalse();
-    expect($service->isUpgrade('pro', 'free'))->toBeFalse();
+    expect($service->isUpgrade(PlanTier::Team, PlanTier::Pro))->toBeFalse();
+    expect($service->isUpgrade(PlanTier::Enterprise, PlanTier::Team))->toBeFalse();
+    expect($service->isUpgrade(PlanTier::Pro, PlanTier::Pro))->toBeFalse();
+    expect($service->isUpgrade(PlanTier::Team, PlanTier::Team))->toBeFalse();
+    expect($service->isUpgrade(PlanTier::Pro, PlanTier::Free))->toBeFalse();
 });
 
 it('isUpgrade returns false when either tier is null', function () {
-    config(['plans.tier_hierarchy' => ['free', 'pro', 'team']]);
     $service = new BillingService;
 
-    expect($service->isUpgrade(null, 'team'))->toBeFalse();
-    expect($service->isUpgrade('pro', null))->toBeFalse();
+    expect($service->isUpgrade(null, PlanTier::Team))->toBeFalse();
+    expect($service->isUpgrade(PlanTier::Pro, null))->toBeFalse();
     expect($service->isUpgrade(null, null))->toBeFalse();
-});
-
-it('isUpgrade returns false when a tier is not in the hierarchy', function () {
-    config(['plans.tier_hierarchy' => ['free', 'pro', 'team']]);
-    $service = new BillingService;
-
-    expect($service->isUpgrade('unknown_tier', 'team'))->toBeFalse();
-    expect($service->isUpgrade('pro', 'unknown_tier'))->toBeFalse();
-});
-
-it('isUpgrade returns false with empty tier hierarchy and emits a misconfiguration warning', function () {
-    config(['plans.tier_hierarchy' => []]);
-    Log::spy();
-
-    $service = new BillingService;
-    $result = $service->isUpgrade('pro', 'team');
-
-    expect($result)->toBeFalse();
-    Log::shouldHaveReceived('warning')
-        ->once()
-        ->with('billing.tier_hierarchy_not_configured', Mockery::on(fn ($ctx) => ($ctx['current_tier'] ?? null) === 'pro' && ($ctx['new_tier'] ?? null) === 'team'));
 });
 
 it('swapPlan calls LifecycleService::transition with EXPANSION when upgrading to a higher tier', function () {

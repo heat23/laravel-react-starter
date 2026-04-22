@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Billing;
 
 use App\Enums\AuditEvent;
+use App\Enums\PlanTier;
 use App\Exceptions\ConcurrentOperationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Billing\CancelSubscriptionRequest;
@@ -56,7 +57,7 @@ class SubscriptionController extends Controller
             return back()->with('error', 'Invalid plan selected.');
         }
 
-        $tierConfig = config("plans.{$tier}");
+        $tierConfig = config("plans.{$tier->value}");
         if (! empty($tierConfig['coming_soon'] ?? false) || config('features.billing.coming_soon', false)) {
             return back()->with('error', 'This plan is coming soon and not yet available for purchase.');
         }
@@ -71,7 +72,7 @@ class SubscriptionController extends Controller
                 $user,
                 $priceId,
                 $quantity,
-                route('billing.index', ['checkout' => 'success', 'plan' => $tier]),
+                route('billing.index', ['checkout' => 'success', 'plan' => $tier->value]),
                 route('pricing'),
                 $request->validated('coupon'),
             );
@@ -126,7 +127,7 @@ class SubscriptionController extends Controller
             return back()->with('error', 'Invalid plan selected.');
         }
 
-        $tierConfig = config("plans.{$tier}");
+        $tierConfig = config("plans.{$tier->value}");
         if (! empty($tierConfig['coming_soon'] ?? false) || config('features.billing.coming_soon', false)) {
             return back()->with('error', 'This plan is coming soon and not yet available for purchase.');
         }
@@ -148,7 +149,7 @@ class SubscriptionController extends Controller
                 $quantity,
             );
 
-            $tierConfig = config("plans.{$tier}");
+            $tierConfig = config("plans.{$tier->value}");
             $amount = (float) ($tierConfig['price_monthly'] ?? 0) * $quantity;
             $isVariantPrice = ($tierConfig['stripe_price_monthly_variant'] ?? null) !== null
                 && $priceId === $tierConfig['stripe_price_monthly_variant'];
@@ -191,7 +192,7 @@ class SubscriptionController extends Controller
             $this->planLimitService->invalidateUserPlanCache($user);
             $this->invalidateAdminCaches();
 
-            return redirect()->route('billing.index', ['checkout' => 'success', 'plan' => $tier])->with('success', 'Subscription created successfully.');
+            return redirect()->route('billing.index', ['checkout' => 'success', 'plan' => $tier->value])->with('success', 'Subscription created successfully.');
         } catch (ConcurrentOperationException) {
             return back()->with('error', 'A subscription request is already in progress. Please try again.');
         } catch (IncompletePayment $e) {
@@ -369,18 +370,18 @@ class SubscriptionController extends Controller
         try {
             $this->billingService->swapPlan($user, $newPriceId, $coupon);
 
-            $newTier = $this->billingService->resolveTierFromPrice($newPriceId) ?? 'unknown';
+            $newTier = $this->billingService->resolveTierFromPrice($newPriceId);
 
             $this->auditService->log(AuditEvent::SUBSCRIPTION_SWAPPED, [
                 'user_id' => $user->id,
                 'new_price_id' => $newPriceId,
-                'new_tier' => $newTier,
+                'new_tier' => PlanTier::safeValue($newTier),
             ]);
 
             $this->planLimitService->invalidateUserPlanCache($user);
             $this->invalidateAdminCaches();
 
-            return redirect()->route('billing.index', ['checkout' => 'success', 'plan' => $newTier, 'swapped' => 'true'])->with('success', 'Plan updated successfully.');
+            return redirect()->route('billing.index', ['checkout' => 'success', 'plan' => PlanTier::safeValue($newTier), 'swapped' => 'true'])->with('success', 'Plan updated successfully.');
         } catch (ConcurrentOperationException) {
             return back()->with('error', 'A plan change is already in progress. Please try again.');
         } catch (IncompletePayment $e) {

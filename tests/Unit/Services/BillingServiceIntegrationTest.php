@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PlanTier;
 use App\Exceptions\ConcurrentOperationException;
 use App\Models\User;
 use App\Services\BillingService;
@@ -43,22 +44,22 @@ beforeEach(function () {
 
 it('resolves tier from pro monthly price', function () {
     $tier = $this->service->resolveTierFromPrice('price_pro_monthly');
-    expect($tier)->toBe('pro');
+    expect($tier)->toBe(PlanTier::Pro);
 });
 
 it('resolves tier from pro annual price', function () {
     $tier = $this->service->resolveTierFromPrice('price_pro_annual');
-    expect($tier)->toBe('pro');
+    expect($tier)->toBe(PlanTier::Pro);
 });
 
 it('resolves tier from team monthly price', function () {
     $tier = $this->service->resolveTierFromPrice('price_team_monthly');
-    expect($tier)->toBe('team');
+    expect($tier)->toBe(PlanTier::Team);
 });
 
 it('resolves tier from enterprise monthly price', function () {
     $tier = $this->service->resolveTierFromPrice('price_enterprise_monthly');
-    expect($tier)->toBe('enterprise');
+    expect($tier)->toBe(PlanTier::Enterprise);
 });
 
 it('resolves null for unknown price', function () {
@@ -67,43 +68,38 @@ it('resolves null for unknown price', function () {
 });
 
 it('validates seat count for single-seat plan', function () {
-    $error = $this->service->validateSeatCount('pro', 1);
+    $error = $this->service->validateSeatCount(PlanTier::Pro, 1);
     expect($error)->toBeNull();
 });
 
 it('rejects multiple seats for single-seat plan', function () {
-    $error = $this->service->validateSeatCount('pro', 5);
+    $error = $this->service->validateSeatCount(PlanTier::Pro, 5);
     expect($error)->toBe('This plan does not support per-seat billing.');
 });
 
 it('validates seat count within team plan limits', function () {
-    $error = $this->service->validateSeatCount('team', 5);
+    $error = $this->service->validateSeatCount(PlanTier::Team, 5);
     expect($error)->toBeNull();
 });
 
 it('rejects seat count below team plan minimum', function () {
-    $error = $this->service->validateSeatCount('team', 2);
+    $error = $this->service->validateSeatCount(PlanTier::Team, 2);
     expect($error)->toBe('This plan requires a minimum of 3 seats.');
 });
 
 it('rejects seat count above team plan maximum', function () {
-    $error = $this->service->validateSeatCount('team', 51);
+    $error = $this->service->validateSeatCount(PlanTier::Team, 51);
     expect($error)->toBe('This plan supports a maximum of 50 seats.');
 });
 
 it('validates enterprise seat count with no maximum', function () {
-    $error = $this->service->validateSeatCount('enterprise', 100);
+    $error = $this->service->validateSeatCount(PlanTier::Enterprise, 100);
     expect($error)->toBeNull();
 });
 
 it('rejects seat count below enterprise plan minimum', function () {
-    $error = $this->service->validateSeatCount('enterprise', 5);
+    $error = $this->service->validateSeatCount(PlanTier::Enterprise, 5);
     expect($error)->toBe('This plan requires a minimum of 10 seats.');
-});
-
-it('rejects invalid tier', function () {
-    $error = $this->service->validateSeatCount('invalid_tier', 1);
-    expect($error)->toBe('Invalid plan tier.');
 });
 
 it('gets subscription status for user without subscription', function () {
@@ -174,7 +170,7 @@ it('resolves user tier for free user', function () {
 
     $tier = $this->service->resolveUserTier($user);
 
-    expect($tier)->toBe('free');
+    expect($tier)->toBe(PlanTier::Free);
 });
 
 it('resolves user tier for subscribed user', function () {
@@ -186,7 +182,7 @@ it('resolves user tier for subscribed user', function () {
 
     $tier = $this->service->resolveUserTier($user);
 
-    expect($tier)->toBe('pro');
+    expect($tier)->toBe(PlanTier::Pro);
 });
 
 it('resolves user tier for expired subscription', function () {
@@ -199,7 +195,7 @@ it('resolves user tier for expired subscription', function () {
 
     $tier = $this->service->resolveUserTier($user);
 
-    expect($tier)->toBe('free');
+    expect($tier)->toBe(PlanTier::Free);
 });
 
 it('throws exception when Redis lock cannot be acquired for subscription creation', function () {

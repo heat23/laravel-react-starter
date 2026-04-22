@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AuditEvent;
+use App\Enums\PlanTier;
 use App\Events\PqlThresholdReached;
 use App\Models\User;
 use Carbon\Carbon;
@@ -31,7 +32,7 @@ class PlanLimitService
     public function startTrial(User $user): void
     {
         $trialDays = (int) config('plans.trial.days', 14);
-        $tier = config('plans.trial.tier', 'pro');
+        $tier = config('plans.trial.tier', PlanTier::Pro->value);
         $trialEndsAt = Carbon::now()->addDays($trialDays);
 
         // Atomic write: only set if trial hasn't already been started.
@@ -85,7 +86,7 @@ class PlanLimitService
      *
      * Resolves tier from: trial > active subscription (with grace period) > free.
      */
-    public function getUserPlan(User $user): string
+    public function getUserPlan(User $user): PlanTier
     {
         return Cache::remember(
             "user:{$user->id}:plan_tier",
@@ -111,7 +112,7 @@ class PlanLimitService
     {
         $plan = $this->getUserPlan($user);
 
-        return config("plans.{$plan}.limits.{$limitKey}");
+        return config("plans.{$plan->value}.limits.{$limitKey}");
     }
 
     /**
@@ -141,7 +142,7 @@ class PlanLimitService
                 if ($nextTier !== null) {
                     session()->flash('upgrade_prompt', [
                         'limit' => $limitKey,
-                        'plan' => $nextTier,
+                        'plan' => $nextTier->value,
                         'cta_url' => config('features.billing.enabled', false) ? route('pricing') : '/pricing',
                     ]);
                 }
@@ -222,47 +223,26 @@ class PlanLimitService
      * Returns null when the user is already on the top tier (no upgrade available),
      * which the caller should use to suppress the upgrade-prompt flash entirely.
      */
-    public function getNextTier(string $currentPlan): ?string
+    public function getNextTier(PlanTier $currentPlan): ?PlanTier
     {
-        /** @var array<int, string> $hierarchy */
-        $hierarchy = config('plans.tier_hierarchy', []);
+        $cases = PlanTier::cases();
+        $index = array_search($currentPlan, $cases, strict: true);
 
-        if (empty($hierarchy)) {
-            Log::error('plans.tier_hierarchy is empty; cannot determine next tier', [
-                'current_plan' => $currentPlan,
-            ]);
-
-            return 'pro';
-        }
-
-        $index = array_search($currentPlan, $hierarchy, strict: true);
-
-        if ($index === false) {
-            Log::warning('Plan not found in tier_hierarchy; defaulting to first paid tier', [
-                'current_plan' => $currentPlan,
-                'hierarchy' => $hierarchy,
-            ]);
-
-            // Return the first paid tier (index 1); fall back to index 0 or 'pro' for safety.
-            return (string) ($hierarchy[1] ?? $hierarchy[0] ?? 'pro');
-        }
-
-        // Already at the top tier — no upgrade available; suppress the flash.
-        if ($index === array_key_last($hierarchy)) {
+        if ($index === false || $index === array_key_last($cases)) {
             return null;
         }
 
-        return (string) $hierarchy[$index + 1];
+        return $cases[$index + 1];
     }
 
     /**
      * Resolve the user's plan tier without caching.
      */
-    private function resolveUserPlan(User $user): string
+    private function resolveUserPlan(User $user): PlanTier
     {
         // During trial, user has trial-tier access
         if ($this->isOnTrial($user)) {
-            return config('plans.trial.tier', 'pro');
+            return PlanTier::tryFrom(config('plans.trial.tier', PlanTier::Pro->value)) ?? PlanTier::Pro;
         }
 
         // Resolve tier from subscription's Stripe price
@@ -270,7 +250,7 @@ class PlanLimitService
             $subscription = $user->subscription('default');
 
             if (! $subscription) {
-                return 'free';
+                return PlanTier::Free;
             }
 
             // Past-due grace period enforcement
@@ -285,19 +265,19 @@ class PlanLimitService
                         'grace_days' => $graceDays,
                     ]);
 
-                    return 'free';
+                    return PlanTier::Free;
                 }
 
                 // Within grace period — resolve tier from price directly
-                return $this->billingService->resolveTierFromPrice($subscription->stripe_price) ?? 'free';
+                return $this->billingService->resolveTierFromPrice($subscription->stripe_price) ?? PlanTier::Free;
             }
 
             // Active, trialing, or on grace period subscriptions
             if ($subscription->active()) {
-                return $this->billingService->resolveTierFromPrice($subscription->stripe_price) ?? 'free';
+                return $this->billingService->resolveTierFromPrice($subscription->stripe_price) ?? PlanTier::Free;
             }
         }
 
-        return 'free';
+        return PlanTier::Free;
     }
 }
