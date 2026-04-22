@@ -11,6 +11,7 @@ use App\Services\CacheInvalidationManager;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -47,6 +48,12 @@ class TwoFactorController extends Controller
     public function enable(Request $request): RedirectResponse
     {
         $user = $request->user();
+
+        if (! $user->hasVerifiedEmail()) {
+            throw ValidationException::withMessages([
+                'email' => 'You must verify your email before enabling two-factor authentication.',
+            ]);
+        }
 
         $user->createTwoFactorAuth();
 

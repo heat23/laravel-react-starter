@@ -52,7 +52,7 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1,admin:'])
             ->name('users.show');
         Route::patch('/users/{user}', [AdminUsersController::class, 'update'])
             ->withTrashed()
-            ->middleware('throttle:admin-write')
+            ->middleware(['throttle:admin-write', 'super_admin'])
             ->name('users.update');
         Route::patch('/users/{user}/toggle-admin', [AdminUsersController::class, 'toggleAdmin'])
             ->middleware(['throttle:admin-write', 'super_admin'])

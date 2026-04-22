@@ -26,6 +26,13 @@ class TwoFactorChallengeController extends Controller
             return redirect()->route('login');
         }
 
+        $expiresAt = session('login.expires_at');
+        if ($expiresAt === null || now()->getTimestamp() > $expiresAt) {
+            session()->forget(['login.id', 'login.remember', 'login.expires_at']);
+
+            return redirect()->route('login')->withErrors(['email' => '2FA session expired, please sign in again.']);
+        }
+
         return Inertia::render('Auth/TwoFactorChallenge');
     }
 
@@ -64,7 +71,7 @@ class TwoFactorChallengeController extends Controller
         Auth::loginUsingId($userId, $remember);
 
         $request->session()->regenerate();
-        $request->session()->forget(['login.id', 'login.remember']);
+        $request->session()->forget(['login.id', 'login.remember', 'login.expires_at']);
 
         $this->auditService->log(AuditEvent::AUTH_2FA_VERIFIED, [
             'method' => $code ? 'totp' : 'recovery',
@@ -73,5 +80,12 @@ class TwoFactorChallengeController extends Controller
         $user->updateLastLogin();
 
         return redirect()->intended(route('dashboard', absolute: false));
+    }
+
+    public function cancel(): RedirectResponse
+    {
+        session()->forget(['login.id', 'login.remember', 'login.expires_at']);
+
+        return redirect()->route('login');
     }
 }

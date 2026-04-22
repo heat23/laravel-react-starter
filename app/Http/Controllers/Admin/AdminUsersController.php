@@ -196,13 +196,24 @@ class AdminUsersController extends Controller
             return back()->with('error', 'Cannot change own admin status.');
         }
 
-        if ($user->is_admin && User::where('is_admin', true)->whereNull('deleted_at')->count() <= 2) {
+        $wasAdmin = $user->is_admin;
+
+        $blocked = DB::transaction(function () use ($user, $wasAdmin) {
+            $adminCount = User::where('is_admin', true)->whereNull('deleted_at')->lockForUpdate()->count();
+
+            if ($wasAdmin && $adminCount <= 2) {
+                return true;
+            }
+
+            $user->is_admin = ! $wasAdmin;
+            $user->save();
+
+            return false;
+        });
+
+        if ($blocked) {
             return back()->with('error', 'Cannot remove admin status. At least two admin accounts must exist.');
         }
-
-        $wasAdmin = $user->is_admin;
-        $user->is_admin = ! $user->is_admin;
-        $user->save();
 
         $this->cacheManager->invalidateDashboard();
 

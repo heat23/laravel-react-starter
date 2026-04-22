@@ -47,6 +47,8 @@ Route::middleware('guest')->group(function () {
         ->name('two-factor.challenge');
     Route::post('two-factor-challenge', [TwoFactorChallengeController::class, 'store'])
         ->middleware('throttle:5,1');
+    Route::post('two-factor-cancel', [TwoFactorChallengeController::class, 'cancel'])
+        ->name('two-factor.cancel');
 });
 
 Route::middleware('auth')->group(function () {
