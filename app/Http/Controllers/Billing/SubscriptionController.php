@@ -42,7 +42,6 @@ class SubscriptionController extends Controller
     public function checkout(SubscribeRequest $request): Response
     {
         $user = $request->user();
-        $user->loadMissing('subscriptions.items');
 
         if ($user->subscribed('default')) {
             return back()->with('error', 'You already have an active subscription. Use plan swap to change plans.');
@@ -112,7 +111,6 @@ class SubscriptionController extends Controller
         ]);
 
         $user = $request->user();
-        $user->loadMissing('subscriptions.items');
 
         if ($user->subscribed('default')) {
             return back()->with('error', 'You already have an active subscription. Use plan swap to change plans.');
@@ -213,7 +211,6 @@ class SubscriptionController extends Controller
     public function cancel(CancelSubscriptionRequest $request): RedirectResponse|JsonResponse
     {
         $user = $request->user();
-        $user->loadMissing('subscriptions.items');
         $immediately = $request->validated('immediately', false);
 
         if (! $user->subscribed('default')) {
@@ -270,8 +267,6 @@ class SubscriptionController extends Controller
     public function resume(Request $request): RedirectResponse|JsonResponse
     {
         $user = $request->user();
-        $user->loadMissing('subscriptions.items');
-
         $subscription = $user->subscription('default');
         if (! $subscription || ! $subscription->onGracePeriod()) {
             if ($request->expectsJson()) {
@@ -329,7 +324,6 @@ class SubscriptionController extends Controller
         $request->validate(['price_id' => ['required', 'string']]);
 
         $user = $request->user();
-        $user->loadMissing('subscriptions.items');
 
         if (! $user->subscribed('default')) {
             return response()->json(['message' => 'No active subscription.'], 400);
@@ -358,7 +352,6 @@ class SubscriptionController extends Controller
     public function swap(SwapPlanRequest $request): RedirectResponse
     {
         $user = $request->user();
-        $user->loadMissing('subscriptions.items');
 
         if (! $user->subscribed('default')) {
             return back()->with('error', 'No active subscription to change.');
@@ -401,7 +394,6 @@ class SubscriptionController extends Controller
     public function updateQuantity(UpdateQuantityRequest $request): RedirectResponse
     {
         $user = $request->user();
-        $user->loadMissing('subscriptions.items');
 
         if (! $user->subscribed('default')) {
             return back()->with('error', 'No active subscription.');
@@ -522,7 +514,6 @@ class SubscriptionController extends Controller
     public function portal(Request $request): RedirectResponse
     {
         $user = $request->user();
-        $user->loadMissing('subscriptions.items');
 
         if (! $user->subscribed('default') && ! $user->hasStripeId()) {
             return back()->with('error', 'No billing account found.');

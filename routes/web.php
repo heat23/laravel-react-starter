@@ -153,7 +153,7 @@ if (config('features.billing.enabled', false)) {
     // Public pricing page
     Route::get('/pricing', PricingController::class)->name('pricing');
 
-    Route::middleware(['auth', 'verified'])->group(function () {
+    Route::middleware(['auth', 'verified', 'billing.context'])->group(function () {
         Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
         // Canonical subscription path: creates a Stripe Hosted Checkout session.
         Route::post('/billing/checkout', [SubscriptionController::class, 'checkout'])->middleware('throttle:5,1')->name('billing.checkout');

@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureIsSuperAdmin;
 use App\Http\Middleware\EnsureOnboardingCompleted;
 use App\Http\Middleware\EnsureSubscribed;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\LoadBillingContext;
 use App\Http\Middleware\RateLimitHeaders;
 use App\Http\Middleware\RequestIdMiddleware;
 use App\Http\Middleware\SecurityHeaders;
@@ -74,6 +75,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'verify-webhook' => VerifyWebhookSignature::class,
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
+            'billing.context' => LoadBillingContext::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
