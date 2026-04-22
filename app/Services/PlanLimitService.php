@@ -6,6 +6,7 @@ use App\Enums\AuditEvent;
 use App\Enums\PlanTier;
 use App\Events\PqlThresholdReached;
 use App\Models\User;
+use App\Support\Billing\PlanLimitResult;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -119,39 +120,36 @@ class PlanLimitService
      * Check if user can perform an action based on limits.
      * Emits PQL threshold events at 50%, 80%, and 100% usage.
      *
+     * Returns a PlanLimitResult DTO. Callers (controllers) are responsible
+     * for any session flashing — this service no longer accesses the session.
+     *
      * @param  int  $currentCount  Current usage count
-     * @return bool True if under limit, false if at/over limit
      */
-    public function canPerform(User $user, string $limitKey, int $currentCount): bool
+    public function canPerform(User $user, string $limitKey, int $currentCount): PlanLimitResult
     {
         $limit = $this->getLimit($user, $limitKey);
 
         // null means unlimited
         if ($limit === null) {
-            return true;
+            return new PlanLimitResult(allowed: true);
         }
 
         $this->checkThresholds($user, $limitKey, $currentCount, $limit);
 
-        $allowed = $currentCount < $limit;
-
-        if (! $allowed && app()->bound('session.store')) {
-            try {
-                $nextTier = $this->getNextTier($this->getUserPlan($user));
-
-                if ($nextTier !== null) {
-                    session()->flash('upgrade_prompt', [
-                        'limit' => $limitKey,
-                        'plan' => $nextTier->value,
-                        'cta_url' => config('features.billing.enabled', false) ? route('pricing') : '/pricing',
-                    ]);
-                }
-            } catch (\Throwable) {
-                // Session may not be available in CLI/queue contexts
-            }
+        if ($currentCount < $limit) {
+            return new PlanLimitResult(allowed: true);
         }
 
-        return $allowed;
+        $nextTier = $this->getNextTier($this->getUserPlan($user));
+
+        return new PlanLimitResult(
+            allowed: false,
+            reason: 'limit_exceeded',
+            upgradeTier: $nextTier,
+            userMessage: $nextTier !== null
+                ? "You have reached the {$limitKey} limit for your plan. Upgrade to {$nextTier->label()} to create more."
+                : "You have reached the {$limitKey} limit for your plan.",
+        );
     }
 
     /**

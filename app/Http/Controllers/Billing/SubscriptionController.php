@@ -474,7 +474,6 @@ class SubscriptionController extends Controller
     public function applyRetentionCoupon(Request $request): RedirectResponse|JsonResponse
     {
         $user = $request->user();
-        $user->loadMissing('subscriptions.items');
 
         $couponId = config('plans.retention_coupon_id');
 
@@ -486,34 +485,26 @@ class SubscriptionController extends Controller
             return back()->with('error', 'Retention coupon is not configured.');
         }
 
-        $subscription = $user->subscription('default');
-
-        if (! $subscription || ! $subscription->active()) {
-            if ($request->expectsJson()) {
-                return response()->json(['message' => 'No active subscription found.'], 400);
-            }
-
-            return back()->with('error', 'No active subscription found.');
-        }
-
         try {
-            $subscription->applyCoupon($couponId);
-
-            // subscription_id and churn_save_context enable 30/60/90-day retention queries:
-            //   SELECT event, metadata->>'$.subscription_id', metadata->>'$.churn_save_context'
-            //   FROM audit_logs WHERE event = 'billing.retention_coupon_applied'
-            $this->auditService->log(AuditEvent::BILLING_RETENTION_COUPON_APPLIED, [
-                'user_id' => $user->id,
-                'coupon_id' => $couponId,
-                'subscription_id' => $subscription->stripe_id,
-                'churn_save_context' => true,
-            ]);
+            $this->billingService->applyRetentionCoupon($user, $couponId);
 
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Discount applied! Your 20% discount has been added to your subscription.']);
             }
 
             return back()->with('success', 'Discount applied successfully.');
+        } catch (ConcurrentOperationException) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'A discount request is already in progress. Please try again.'], 409);
+            }
+
+            return back()->with('error', 'A discount request is already in progress. Please try again.');
+        } catch (\DomainException $e) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage()], 400);
+            }
+
+            return back()->with('error', $e->getMessage());
         } catch (ApiErrorException $e) {
             Log::error('Stripe API error applying retention coupon', [
                 'user_id' => $user->id,

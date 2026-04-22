@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AuditEvent;
 use App\Enums\LifecycleStage;
 use App\Enums\PlanTier;
 use App\Exceptions\ConcurrentOperationException;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Cashier;
 use Laravel\Cashier\Subscription;
 use Laravel\Cashier\SubscriptionItem;
+use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException as StripeInvalidRequestException;
 
 class BillingService
@@ -420,6 +422,44 @@ class BillingService
                 ? date('Y-m-d', $stripeInvoice->next_payment_attempt)
                 : null,
         ];
+    }
+
+    /**
+     * Apply a retention coupon to the user's active subscription.
+     *
+     * Follows the same Redis-lock + eager-load pattern as other mutation methods.
+     * Audit log is written on the success path only, outside the DB transaction.
+     *
+     * @throws ConcurrentOperationException When a concurrent subscription operation is in progress.
+     * @throws \DomainException When the user has no active subscription.
+     * @throws ApiErrorException When Stripe rejects the coupon (e.g. unknown coupon ID).
+     */
+    public function applyRetentionCoupon(User $user, string $couponId): void
+    {
+        $this->withLock($this->lockKey('coupon', $user), function () use ($user, $couponId) {
+            $stripeSubscriptionId = DB::transaction(function () use ($user, $couponId) {
+                $subscription = $user->subscription('default');
+
+                if (! $subscription || ! $subscription->active()) {
+                    throw new \DomainException('No active subscription found.');
+                }
+
+                $subscription->setRelation('owner', $user);
+                $subscription->loadMissing('items');
+                $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
+
+                $subscription->applyCoupon($couponId);
+
+                return $subscription->stripe_id;
+            });
+
+            app(AuditService::class)->log(AuditEvent::BILLING_RETENTION_COUPON_APPLIED, [
+                'user_id' => $user->id,
+                'coupon_id' => $couponId,
+                'subscription_id' => $stripeSubscriptionId,
+                'churn_save_context' => true,
+            ]);
+        });
     }
 
     /**

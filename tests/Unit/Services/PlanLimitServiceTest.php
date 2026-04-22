@@ -248,42 +248,42 @@ it('returns true when under limit', function () {
     config(['plans.free.limits.api_tokens' => 5]);
     $user = User::factory()->create(['trial_ends_at' => null]);
 
-    expect($this->service->canPerform($user, 'api_tokens', 3))->toBeTrue();
+    expect($this->service->canPerform($user, 'api_tokens', 3)->allowed)->toBeTrue();
 });
 
 it('returns false when at limit', function () {
     config(['plans.free.limits.api_tokens' => 5]);
     $user = User::factory()->create(['trial_ends_at' => null]);
 
-    expect($this->service->canPerform($user, 'api_tokens', 5))->toBeFalse();
+    expect($this->service->canPerform($user, 'api_tokens', 5)->allowed)->toBeFalse();
 });
 
 it('returns false when over limit', function () {
     config(['plans.free.limits.api_tokens' => 5]);
     $user = User::factory()->create(['trial_ends_at' => null]);
 
-    expect($this->service->canPerform($user, 'api_tokens', 10))->toBeFalse();
+    expect($this->service->canPerform($user, 'api_tokens', 10)->allowed)->toBeFalse();
 });
 
 it('returns true when limit is null meaning unlimited', function () {
     config(['plans.free.limits.api_tokens' => null]);
     $user = User::factory()->create(['trial_ends_at' => null]);
 
-    expect($this->service->canPerform($user, 'api_tokens', 1000))->toBeTrue();
+    expect($this->service->canPerform($user, 'api_tokens', 1000)->allowed)->toBeTrue();
 });
 
 it('returns true with zero current count', function () {
     config(['plans.free.limits.api_tokens' => 5]);
     $user = User::factory()->create(['trial_ends_at' => null]);
 
-    expect($this->service->canPerform($user, 'api_tokens', 0))->toBeTrue();
+    expect($this->service->canPerform($user, 'api_tokens', 0)->allowed)->toBeTrue();
 });
 
 it('returns false with zero limit and zero count', function () {
     config(['plans.free.limits.api_tokens' => 0]);
     $user = User::factory()->create(['trial_ends_at' => null]);
 
-    expect($this->service->canPerform($user, 'api_tokens', 0))->toBeFalse();
+    expect($this->service->canPerform($user, 'api_tokens', 0)->allowed)->toBeFalse();
 });
 
 it('uses pro limits during trial for canPerform', function () {
@@ -291,10 +291,10 @@ it('uses pro limits during trial for canPerform', function () {
     config(['plans.pro.limits.projects' => 20]);
     $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
 
-    expect($this->service->canPerform($user, 'projects', 15))->toBeTrue();
+    expect($this->service->canPerform($user, 'projects', 15)->allowed)->toBeTrue();
 
     $expiredUser = User::factory()->create(['trial_ends_at' => now()->subDays(1)]);
-    expect($this->service->canPerform($expiredUser, 'projects', 15))->toBeFalse();
+    expect($this->service->canPerform($expiredUser, 'projects', 15)->allowed)->toBeFalse();
 });
 
 // ============================================
@@ -455,29 +455,27 @@ it('returns null for a plan at the top of the hierarchy', function () {
     expect($this->service->getNextTier(PlanTier::Enterprise))->toBeNull();
 });
 
-it('does not flash upgrade_prompt for top-tier users when limit exceeded', function () {
+it('returns null upgradeTier for top-tier users when limit exceeded', function () {
     config(['plans.tier_hierarchy' => ['free', 'pro', 'enterprise']]);
     config(['plans.enterprise.limits.api_tokens' => 2]);
     $user = User::factory()->create(['trial_ends_at' => now()->addDays(7)]);
-    // Force enterprise tier by configuring trial tier
     config(['plans.trial.tier' => 'enterprise']);
 
     $result = $this->service->canPerform($user, 'api_tokens', 5);
 
-    expect($result)->toBeFalse();
-    // No session flash should have been set since user is at top tier
-    expect(session()->has('upgrade_prompt'))->toBeFalse();
+    expect($result->allowed)->toBeFalse()
+        ->and($result->upgradeTier)->toBeNull();
 });
 
-it('flashes upgrade_prompt with correct next tier when limit exceeded', function () {
+it('returns correct upgradeTier in result when limit exceeded', function () {
     config(['plans.tier_hierarchy' => ['free', 'pro', 'team']]);
     config(['plans.free.limits.api_tokens' => 1]);
     $user = User::factory()->create(['trial_ends_at' => null]);
 
-    $this->service->canPerform($user, 'api_tokens', 5);
+    $result = $this->service->canPerform($user, 'api_tokens', 5);
 
-    expect(session('upgrade_prompt'))->toMatchArray([
-        'limit' => 'api_tokens',
-        'plan' => 'pro',
-    ]);
+    expect($result->allowed)->toBeFalse()
+        ->and($result->reason)->toBe('limit_exceeded')
+        ->and($result->upgradeTier)->toBe(PlanTier::Pro)
+        ->and($result->userMessage)->toContain('api_tokens');
 });
