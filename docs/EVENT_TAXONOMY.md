@@ -97,13 +97,6 @@ Admin events are server-side only and are never forwarded to GA4 in production b
 | `admin.session.terminated` | `target_user_id` |
 | `admin.token.revoked` | `target_user_id` |
 
-#### Impersonation
-
-| Event | Properties |
-|-------|-----------|
-| `admin.impersonation_started` | `target_user_id` |
-| `admin.impersonation_stopped` | `target_user_id` |
-
 #### Security
 
 | Event | Properties |
@@ -247,4 +240,4 @@ Frontend events are dispatched via the `useAnalytics` hook which:
 
 ## Canonical Source
 
-The complete list of event cases is defined in `app/Enums/AnalyticsEvent.php`. This document mirrors that enum. When adding a new event case to the enum, update this file in the same PR.
+The complete list of event cases is defined in `app/Enums/AuditEvent.php`. This document mirrors that enum. When adding a new event case to the enum, update this file in the same PR.

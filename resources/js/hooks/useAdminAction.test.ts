@@ -122,16 +122,6 @@ describe("useAdminAction", () => {
       expect(props.variant).toBe("default");
     });
 
-    it("returns impersonate dialog", () => {
-      const { result } = renderHook(() => useAdminAction());
-      act(() => {
-        result.current.setConfirmAction({ type: "impersonate", user: mockUser });
-      });
-      const props = result.current.getDialogProps();
-      expect(props.title).toBe("Impersonate User");
-      expect(props.description).toContain("John Doe");
-      expect(props.variant).toBe("default");
-    });
   });
 
   describe("executeAction", () => {
@@ -178,22 +168,6 @@ describe("useAdminAction", () => {
       );
     });
 
-    it("calls router.post for impersonate", async () => {
-      const { result } = renderHook(() => useAdminAction());
-      act(() => {
-        result.current.setConfirmAction({ type: "impersonate", user: mockUser });
-      });
-
-      await act(async () => {
-        await result.current.executeAction();
-      });
-
-      expect(router.post).toHaveBeenCalledWith(
-        "/admin/users/1/impersonate",
-        {},
-        expect.objectContaining({}),
-      );
-    });
   });
 
   describe("optimistic updates", () => {
@@ -266,33 +240,6 @@ describe("useAdminAction", () => {
       });
 
       expect(onOptimisticUpdate).toHaveBeenCalledTimes(1);
-      expect(onRollback).toHaveBeenCalledTimes(1);
-      expect(onSuccess).not.toHaveBeenCalled();
-    });
-
-    it("calls onRollback on impersonate failure", async () => {
-      (router.post as ReturnType<typeof vi.fn>).mockImplementation(
-        (_url: string, _data: unknown, options?: RouterOptions) => {
-          options?.onError?.();
-        }
-      );
-
-      const onRollback = vi.fn();
-      const onSuccess = vi.fn();
-      const { result } = renderHook(() => useAdminAction());
-      act(() => {
-        result.current.setConfirmAction({
-          type: "impersonate",
-          user: mockUser,
-          onRollback,
-          onSuccess,
-        });
-      });
-
-      await act(async () => {
-        await result.current.executeAction().catch(() => {});
-      });
-
       expect(onRollback).toHaveBeenCalledTimes(1);
       expect(onSuccess).not.toHaveBeenCalled();
     });

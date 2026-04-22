@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers\Billing;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Enums\LifecycleStage;
-use App\Jobs\DispatchAnalyticsEvent;
 use App\Jobs\PersistAuditLog;
 use App\Models\EmailSendLog;
 use App\Models\Subscription;
@@ -47,7 +46,7 @@ class StripeWebhookController extends WebhookController
         if ($customerId) {
             $user = User::where('stripe_id', $customerId)->first();
             if ($user) {
-                $this->dispatchWebhookAnalyticsEvent($user, AnalyticsEvent::SUBSCRIPTION_CREATED);
+                $this->dispatchWebhookAuditEvent($user, AuditEvent::SUBSCRIPTION_CREATED);
             }
         }
 
@@ -97,7 +96,7 @@ class StripeWebhookController extends WebhookController
                 if ($user) {
                     $cacheKey = "billing.resume_analytics_sent:{$user->id}";
                     if (! Cache::pull($cacheKey)) {
-                        $this->dispatchWebhookAnalyticsEvent($user, AnalyticsEvent::SUBSCRIPTION_RESUMED);
+                        $this->dispatchWebhookAuditEvent($user, AuditEvent::SUBSCRIPTION_RESUMED);
                     }
                 }
             }
@@ -122,7 +121,7 @@ class StripeWebhookController extends WebhookController
         if ($customerId) {
             $user = User::where('stripe_id', $customerId)->first();
             if ($user) {
-                $this->dispatchWebhookAnalyticsEvent($user, AnalyticsEvent::SUBSCRIPTION_CANCELED, [
+                $this->dispatchWebhookAuditEvent($user, AuditEvent::SUBSCRIPTION_CANCELED, [
                     'churn_type' => $churnType,
                 ]);
 
@@ -163,7 +162,7 @@ class StripeWebhookController extends WebhookController
 
                     // Only notify and track when recovering from a past-due state
                     $user->notify(new PaymentRecoveredNotification(invoiceId: $invoiceId));
-                    $this->dispatchWebhookAnalyticsEvent($user, AnalyticsEvent::BILLING_PAYMENT_RECOVERED, [
+                    $this->dispatchWebhookAuditEvent($user, AuditEvent::BILLING_PAYMENT_RECOVERED, [
                         'invoice_id' => $invoiceId,
                     ]);
                 }
@@ -202,7 +201,7 @@ class StripeWebhookController extends WebhookController
                     }
                 }
 
-                $this->dispatchWebhookAnalyticsEvent($user, AnalyticsEvent::BILLING_PAYMENT_FAILED, [
+                $this->dispatchWebhookAuditEvent($user, AuditEvent::BILLING_PAYMENT_FAILED, [
                     'invoice_id' => $payload['data']['object']['id'] ?? null,
                 ]);
             }
@@ -254,7 +253,7 @@ class StripeWebhookController extends WebhookController
                     reason: $payload['data']['object']['refunds']['data'][0]['reason'] ?? null,
                 ));
 
-                $this->dispatchWebhookAnalyticsEvent($user, AnalyticsEvent::BILLING_CHARGE_REFUNDED, [
+                $this->dispatchWebhookAuditEvent($user, AuditEvent::BILLING_CHARGE_REFUNDED, [
                     'charge_id' => $payload['data']['object']['id'] ?? null,
                     'amount_refunded' => $payload['data']['object']['amount_refunded'] ?? 0,
                     'currency' => $payload['data']['object']['currency'] ?? 'usd',
@@ -306,16 +305,14 @@ class StripeWebhookController extends WebhookController
      *
      * @param  array<string, mixed>  $params
      */
-    private function dispatchWebhookAnalyticsEvent(User $user, AnalyticsEvent $event, array $params = []): void
+    private function dispatchWebhookAuditEvent(User $user, AuditEvent $event, array $params = []): void
     {
         try {
-            // Persist to audit_logs with the correct enum value and user_id so that
-            // ProductAnalyticsService::getSubscriptionEvents() can find webhook events.
-            // Auth::id() is null in webhook context so both jobs receive explicit user_id.
+            // Persist to audit_logs with the correct enum value and user_id.
+            // Auth::id() is null in webhook context so the job receives explicit user_id.
             PersistAuditLog::dispatch($event->value, $user->id, null, null, $params ?: null);
-            DispatchAnalyticsEvent::dispatch($event->value, $params, $user->id);
         } catch (\Throwable) {
-            // Analytics dispatch should never break webhook processing
+            // Audit dispatch should never break webhook processing
         }
     }
 }

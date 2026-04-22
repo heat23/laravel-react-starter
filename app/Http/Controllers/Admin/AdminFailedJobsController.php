@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminBulkDeleteFailedJobRequest;
 use App\Http\Requests\Admin\AdminBulkRetryFailedJobRequest;
@@ -79,7 +79,7 @@ class AdminFailedJobsController extends Controller
 
         Artisan::call('queue:retry', ['id' => [$job->uuid]]);
 
-        $audit->log(AnalyticsEvent::ADMIN_FAILED_JOB_RETRY, [
+        $audit->log(AuditEvent::ADMIN_FAILED_JOB_RETRY, [
             'job_id' => $job->id,
             'job_uuid' => $job->uuid,
             'job_name' => $this->extractJobName($job->payload),
@@ -97,7 +97,7 @@ class AdminFailedJobsController extends Controller
 
         DB::table('failed_jobs')->where('id', $id)->delete();
 
-        $audit->log(AnalyticsEvent::ADMIN_FAILED_JOB_DELETE, [
+        $audit->log(AuditEvent::ADMIN_FAILED_JOB_DELETE, [
             'job_id' => $job->id,
             'job_uuid' => $job->uuid,
             'job_name' => $this->extractJobName($job->payload),
@@ -122,7 +122,7 @@ class AdminFailedJobsController extends Controller
             }
         }
 
-        $audit->log(AnalyticsEvent::ADMIN_FAILED_JOB_BULK_RETRY, [
+        $audit->log(AuditEvent::ADMIN_FAILED_JOB_BULK_RETRY, [
             'count' => $retried,
             'requested' => count($validated['ids']),
         ]);
@@ -137,7 +137,7 @@ class AdminFailedJobsController extends Controller
 
         $deleted = DB::table('failed_jobs')->whereIn('uuid', $validated['ids'])->delete();
 
-        $audit->log(AnalyticsEvent::ADMIN_FAILED_JOB_BULK_DELETE, [
+        $audit->log(AuditEvent::ADMIN_FAILED_JOB_BULK_DELETE, [
             'count' => $deleted,
             'requested' => count($validated['ids']),
         ]);

@@ -29,7 +29,6 @@ const flags = [
     { flag: 'two_factor.enabled', env: 'FEATURE_TWO_FACTOR', description: 'TOTP 2FA authentication' },
     { flag: 'social_auth.enabled', env: 'FEATURE_SOCIAL_AUTH', description: 'Google + GitHub OAuth' },
     { flag: 'onboarding.enabled', env: 'FEATURE_ONBOARDING', description: 'Welcome wizard for new users' },
-    { flag: 'api_docs.enabled', env: 'FEATURE_API_DOCS', description: 'Scribe interactive API docs' },
     { flag: 'api_tokens.enabled', env: 'FEATURE_API_TOKENS', description: 'Sanctum token management UI' },
     { flag: 'user_settings.enabled', env: 'FEATURE_USER_SETTINGS', description: 'Theme and timezone persistence' },
     { flag: 'email_verification.enabled', env: 'FEATURE_EMAIL_VERIFICATION', description: 'Email verification flow' },
@@ -80,7 +79,7 @@ export default function FeatureFlags({ title, metaDescription, breadcrumbs, cano
                     <article className="mx-auto max-w-4xl">
                         <header className="py-16 text-center">
                             <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                                Build Exactly the SaaS You Need &mdash; Toggle 11 Features On or Off
+                                Build Exactly the SaaS You Need &mdash; Toggle 10 Features On or Off
                             </h1>
                             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
                                 Every starter kit gives you everything at once. This one lets you
@@ -91,13 +90,13 @@ export default function FeatureFlags({ title, metaDescription, breadcrumbs, cano
 
                         <FeatureScreenshot
                             src="/images/features/feature-flags-admin.svg"
-                            alt="Admin feature flags panel showing 11 flags in a table with toggle switches — billing, admin, two-factor, social auth, and webhooks enabled; notifications, onboarding, and API docs disabled"
+                            alt="Admin feature flags panel showing 10 flags in a table with toggle switches — billing, admin, two-factor, social auth, and webhooks enabled; notifications and onboarding disabled"
                             caption="Feature flag admin UI — toggle any flag globally, no redeploy required"
                         />
 
                         <section className="mb-16">
                             <h2 className="mb-8 text-center text-3xl font-bold">
-                                The 11 built-in flags
+                                The 10 built-in flags
                             </h2>
                             <div className="overflow-x-auto rounded-2xl border border-border/70">
                                 <table className="w-full text-left text-sm">

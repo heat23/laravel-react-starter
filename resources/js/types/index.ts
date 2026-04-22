@@ -19,9 +19,6 @@ export interface User {
 export interface Auth {
   user: User | null;
   theme?: 'light' | 'dark' | 'system';
-  impersonating?: {
-    admin_name: string;
-  } | null;
 }
 
 export interface Features {
@@ -32,7 +29,6 @@ export interface Features {
   userSettings: boolean;
   notifications: boolean;
   onboarding: boolean;
-  apiDocs: boolean;
   twoFactor: boolean;
   webhooks: boolean;
   admin: boolean;

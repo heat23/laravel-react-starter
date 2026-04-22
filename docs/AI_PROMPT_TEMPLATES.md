@@ -532,20 +532,6 @@ public function test_{action}_{resource}_rate_limits(): void
 }
 ```
 
-### 8. Documentation (REQUIRED)
-
-If `api_docs` feature enabled, add to OpenAPI spec:
-```php
-/**
- * @OA\Post(
- *   path="/api/v1/{resource}",
- *   summary="{Action} a {resource}",
- *   @OA\Response(response=201, description="Created"),
- *   @OA\Response(response=422, description="Validation failed")
- * )
- */
-```
-
 ## Acceptance Criteria
 
 ✅ Endpoint follows REST conventions
@@ -555,7 +541,6 @@ If `api_docs` feature enabled, add to OpenAPI spec:
 ✅ Rate limiting configured
 ✅ Response format consistent
 ✅ Versioned under `/api/v1/`
-✅ Documented (if api_docs enabled)
 ```
 
 ---

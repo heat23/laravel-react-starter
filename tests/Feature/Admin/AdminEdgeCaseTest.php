@@ -3,7 +3,6 @@
 use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Crypt;
 
 beforeEach(function () {
     registerAdminRoutes();
@@ -89,52 +88,6 @@ it('handles search with backslash safely', function () {
     $response = $this->actingAs($admin)->get('/admin/users?search='.urlencode('test\\'));
 
     $response->assertStatus(200);
-});
-
-/*
-|--------------------------------------------------------------------------
-| Impersonation Security
-|--------------------------------------------------------------------------
-*/
-
-it('impersonated user cannot access admin routes', function () {
-    $admin = User::factory()->superAdmin()->create();
-    $user = User::factory()->create();
-
-    // Start impersonation (switches auth to $user)
-    $this->actingAs($admin)->post("/admin/users/{$user->id}/impersonate");
-    $this->assertAuthenticatedAs($user);
-
-    // Impersonated user (non-admin) should be blocked from admin routes
-    $response = $this->actingAs($user)->get('/admin');
-    $response->assertStatus(403);
-});
-
-it('handles tampered impersonation session gracefully', function () {
-    $user = User::factory()->create();
-
-    // Put garbage in the encrypted session field
-    $response = $this->actingAs($user)
-        ->withSession(['admin_impersonating_from' => 'tampered-not-encrypted-value'])
-        ->post('/admin/impersonate/stop');
-
-    // Should safely redirect to login (decryption failure)
-    $response->assertRedirect(route('login'));
-});
-
-it('handles impersonation with non-existent admin ID', function () {
-    $user = User::factory()->create();
-
-    // Encrypt a non-existent admin ID
-    $response = $this->actingAs($user)
-        ->withSession([
-            'admin_impersonating_from' => Crypt::encryptString('99999'),
-            'admin_impersonating_name' => 'Ghost Admin',
-        ])
-        ->post('/admin/impersonate/stop');
-
-    // Admin not found — should redirect to login
-    $response->assertRedirect(route('login'));
 });
 
 /*

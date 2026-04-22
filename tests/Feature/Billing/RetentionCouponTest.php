@@ -13,7 +13,7 @@
  * real-network calls from escaping the test environment undetected.
  */
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\User;
 use Stripe\ApiRequestor;
@@ -94,7 +94,7 @@ afterEach(function () {
     ApiRequestor::setHttpClient(null);
 });
 
-it('logs billing.retention_coupon_applied using AnalyticsEvent enum value', function () use ($stripeCallTracker) {
+it('logs billing.retention_coupon_applied using AuditEvent enum value', function () use ($stripeCallTracker) {
     $user = User::factory()->create(['email_verified_at' => now()]);
     createSubscription($user, ['stripe_id' => 'sub_fake']);
 
@@ -110,7 +110,7 @@ it('logs billing.retention_coupon_applied using AnalyticsEvent enum value', func
 
     // Verify the event is stored using the typed enum value, not a raw string.
     $this->assertDatabaseHas('audit_logs', [
-        'event' => AnalyticsEvent::BILLING_RETENTION_COUPON_APPLIED->value,
+        'event' => AuditEvent::BILLING_RETENTION_COUPON_APPLIED->value,
         'user_id' => $user->id,
     ]);
 
@@ -133,7 +133,7 @@ it('logs enriched ROI context including subscription_id and churn_save_context',
 
     // Fetch the stored audit log directly to inspect JSON metadata —
     // assertDatabaseHas cannot query inside JSON columns on SQLite.
-    $log = AuditLog::where('event', AnalyticsEvent::BILLING_RETENTION_COUPON_APPLIED->value)
+    $log = AuditLog::where('event', AuditEvent::BILLING_RETENTION_COUPON_APPLIED->value)
         ->where('user_id', $user->id)
         ->latest()
         ->first();
@@ -144,8 +144,6 @@ it('logs enriched ROI context including subscription_id and churn_save_context',
         'subscription_id' => 'sub_roi_test',
         'churn_save_context' => true,
     ]);
-    // plan_tier is auto-enriched by logProductEvent() via getProductContext()
-    expect($log->metadata)->toHaveKey('plan_tier');
 });
 
 it('returns 422 when retention coupon is not configured', function () use ($stripeCallTracker) {

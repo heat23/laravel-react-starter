@@ -26,7 +26,6 @@ How this starter template compares to popular Laravel and React SaaS boilerplate
 | Security headers (CSP, HSTS) | Yes (configurable) | No | No | No | No | No | No |
 | Request tracing (X-Request-Id) | Yes | No | No | No | No | No | No |
 | Session regeneration | Yes | Yes | Yes | Yes | Yes | N/A | N/A |
-| Admin impersonation | Yes | No | No | No | No | No | No |
 
 ### Billing & Subscriptions
 
@@ -45,7 +44,6 @@ How this starter template compares to popular Laravel and React SaaS boilerplate
 | Feature | This Template | Spark | SaaSyKit | Wave | Jetstream | Shipfast | Makerkit |
 |---------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
 | User management | Yes | No | Yes | Yes | No | No | Yes |
-| User impersonation | Yes | No | No | No | No | No | No |
 | Health monitoring | Yes (DB/cache/queue/disk) | No | No | No | No | No | No |
 | Audit logs | Yes (with IP/user agent) | No | Partial | No | No | No | No |
 | Config viewer | Yes | No | No | No | No | No | No |
@@ -67,7 +65,6 @@ How this starter template compares to popular Laravel and React SaaS boilerplate
 | Mutation testing (Infection) | Yes | No | No | No | No | No | No |
 | Pre-commit hooks | Yes (Husky) | No | No | No | No | No | No |
 | CI/CD pipeline | Yes (GitHub Actions) | No | Partial | No | No | No | Partial |
-| API documentation (Scribe) | Yes (feature-flagged) | No | Partial | No | No | No | No |
 
 ### Infrastructure
 
@@ -100,7 +97,7 @@ Most starters call Cashier methods directly, risking race conditions when users 
 
 ### 5. Production-Grade Admin Panel
 
-Not just user CRUD — the admin panel includes health monitoring, audit logs with IP tracking, billing analytics (MRR, churn, trial conversion), data export, impersonation, failed job management, feature flag overrides, and config viewing. Purpose-built for operating a SaaS, not just building one.
+Not just user CRUD — the admin panel includes health monitoring, audit logs with IP tracking, billing analytics (MRR, churn, trial conversion), data export, failed job management, feature flag overrides, and config viewing. Purpose-built for operating a SaaS, not just building one.
 
 ## Pricing Comparison
 

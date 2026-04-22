@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\PasswordUpdateRequest;
 use App\Services\AuditService;
@@ -26,7 +26,7 @@ class PasswordController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        $this->auditService->log(AnalyticsEvent::AUTH_PASSWORD_CHANGED);
+        $this->auditService->log(AuditEvent::AUTH_PASSWORD_CHANGED);
 
         return back();
     }

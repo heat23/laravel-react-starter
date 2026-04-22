@@ -12,11 +12,9 @@ use App\Http\Controllers\Admin\AdminFailedJobsController;
 use App\Http\Controllers\Admin\AdminFeatureFlagController;
 use App\Http\Controllers\Admin\AdminFeedbackController;
 use App\Http\Controllers\Admin\AdminHealthController;
-use App\Http\Controllers\Admin\AdminImpersonationController;
 use App\Http\Controllers\Admin\AdminIndexNowController;
 use App\Http\Controllers\Admin\AdminNotificationsController;
 use App\Http\Controllers\Admin\AdminNpsResponsesController;
-use App\Http\Controllers\Admin\AdminProductAnalyticsController;
 use App\Http\Controllers\Admin\AdminRoadmapController;
 use App\Http\Controllers\Admin\AdminScheduleController;
 use App\Http\Controllers\Admin\AdminSessionsController;
@@ -34,9 +32,6 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1,admin:'])
     ->group(function () {
         // Metrics Dashboard (landing page)
         Route::get('/', AdminDashboardController::class)->middleware('throttle:admin-read')->name('dashboard');
-
-        // Product Analytics
-        Route::get('/analytics', AdminProductAnalyticsController::class)->middleware('throttle:admin-read')->name('analytics');
 
         // Users Management
         Route::get('/users/export', [AdminUsersController::class, 'export'])
@@ -77,12 +72,6 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1,admin:'])
         Route::post('/users/bulk-restore', [AdminUsersController::class, 'bulkRestore'])
             ->middleware(['throttle:admin-write', 'super_admin'])
             ->name('users.bulk-restore');
-
-        // Impersonation — super_admin only
-        Route::post('/users/{user}/impersonate', [AdminImpersonationController::class, 'start'])
-            ->withTrashed()
-            ->middleware(['throttle:admin-sensitive', 'super_admin'])
-            ->name('users.impersonate');
 
         // Health Status
         Route::get('/health', AdminHealthController::class)->middleware('throttle:admin-read')->name('health');
@@ -343,8 +332,3 @@ Route::middleware(['auth', 'verified', 'admin', 'throttle:60,1,admin:'])
                 ->name('two-factor');
         }
     });
-
-// Stop impersonation — outside admin middleware because impersonated user is not admin
-Route::middleware(['auth', 'throttle:admin-write'])
-    ->post('/admin/impersonate/stop', [AdminImpersonationController::class, 'stop'])
-    ->name('admin.impersonation.stop');

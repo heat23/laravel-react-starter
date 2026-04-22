@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TwoFactor\TwoFactorChallengeRequest;
 use App\Models\User;
@@ -66,7 +66,7 @@ class TwoFactorChallengeController extends Controller
         $request->session()->regenerate();
         $request->session()->forget(['login.id', 'login.remember']);
 
-        $this->auditService->log(AnalyticsEvent::AUTH_2FA_VERIFIED, [
+        $this->auditService->log(AuditEvent::AUTH_2FA_VERIFIED, [
             'method' => $code ? 'totp' : 'recovery',
         ]);
 

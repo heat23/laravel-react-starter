@@ -27,14 +27,6 @@ it('admin dashboard is accessible with 30/min view throttle', function () {
         ->assertStatus(200);
 });
 
-it('admin analytics is accessible with 30/min view throttle', function () {
-    $admin = User::factory()->admin()->create();
-
-    $this->actingAs($admin)
-        ->get('/admin/analytics')
-        ->assertStatus(200);
-});
-
 it('admin users index is accessible with 30/min view throttle', function () {
     $admin = User::factory()->admin()->create();
 
@@ -102,38 +94,6 @@ it('admin-read limiter isolates buckets per route — exhausting one route does 
 
 // ── Sensitive operations throttled at 5/min ─────────────────────────────────
 
-it('impersonation endpoint enforces super_admin gate before throttle fires', function () {
-    $admin = User::factory()->admin()->create();
-    $target = User::factory()->create();
-
-    // A regular admin (not super_admin) gets 403 — auth guard fires before throttle
-    $this->actingAs($admin)
-        ->post("/admin/users/{$target->id}/impersonate")
-        ->assertStatus(403);
-});
-
-it('impersonation endpoint returns 429 after exhausting 5/min limit', function () {
-    $admin = User::factory()->superAdmin()->create();
-
-    // Use a soft-deleted target; throttle middleware runs before the controller
-    // so business-logic short-circuits still count against the rate limit.
-    $target = User::factory()->create();
-    $target->delete();
-
-    $response = null;
-    for ($i = 0; $i < 5; $i++) {
-        $response = $this->actingAs($admin)
-            ->post("/admin/users/{$target->id}/impersonate");
-    }
-
-    $response->assertHeader('X-RateLimit-Remaining', '0');
-
-    // 6th request must be rate-limited
-    $this->actingAs($admin)
-        ->post("/admin/users/{$target->id}/impersonate")
-        ->assertStatus(429);
-});
-
 // ── send-password-reset throttled at 5/min via admin-sensitive ─────────────
 
 it('send-password-reset endpoint enforces 5/min admin-sensitive limit', function () {
@@ -149,16 +109,6 @@ it('send-password-reset endpoint enforces 5/min admin-sensitive limit', function
     $this->actingAs($admin)
         ->post("/admin/users/{$target->id}/send-password-reset")
         ->assertStatus(429);
-});
-
-// ── Stop-impersonation throttled at 10/min ──────────────────────────────────
-
-it('stop-impersonation route redirects for authenticated users without an active session', function () {
-    $user = User::factory()->create();
-
-    $this->actingAs($user)
-        ->post('/admin/impersonate/stop')
-        ->assertStatus(302);
 });
 
 // ── Export routes throttled at 10/min ───────────────────────────────────────

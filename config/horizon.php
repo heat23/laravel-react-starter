@@ -1,6 +1,5 @@
 <?php
 
-use App\Jobs\DispatchAnalyticsEvent;
 use Illuminate\Support\Str;
 
 return [
@@ -117,13 +116,12 @@ return [
     |
     | Silenced jobs will not show up in the Horizon dashboard and will not
     | be tracked in the Horizon metrics. This is useful for high-volume
-    | jobs that don't need to be monitored individually. Analytics events
-    | are silenced here to keep the dashboard clean.
+    | jobs that don't need to be monitored individually.
     |
     */
 
     'silenced' => [
-        DispatchAnalyticsEvent::class,
+        //
     ],
 
     /*

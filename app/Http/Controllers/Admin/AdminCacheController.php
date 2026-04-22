@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminCacheKey;
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
@@ -52,7 +52,7 @@ class AdminCacheController extends Controller
             default => $this->cacheManager->invalidateDashboard(),
         };
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_CACHE_FLUSHED, [
+        $this->auditService->log(AuditEvent::ADMIN_CACHE_FLUSHED, [
             'scope' => $scope,
         ]);
 

@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Models\NpsResponse;
 use App\Models\User;
 
@@ -189,7 +189,7 @@ it('export logs an audit event', function () {
         ->get('/admin/nps-responses/export');
 
     $this->assertDatabaseHas('audit_logs', [
-        'event' => AnalyticsEvent::ADMIN_NPS_EXPORTED->value,
+        'event' => AuditEvent::ADMIN_NPS_EXPORTED->value,
         'user_id' => $admin->id,
     ]);
 });

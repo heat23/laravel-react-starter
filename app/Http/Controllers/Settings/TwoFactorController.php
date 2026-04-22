@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Settings;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TwoFactor\ConfirmTwoFactorRequest;
 use App\Http\Requests\TwoFactor\DisableTwoFactorRequest;
@@ -61,7 +61,7 @@ class TwoFactorController extends Controller
             return back()->withErrors(['code' => 'The provided code is invalid.']);
         }
 
-        $this->auditService->log(AnalyticsEvent::AUTH_2FA_ENABLED);
+        $this->auditService->log(AuditEvent::AUTH_2FA_ENABLED);
 
         $this->cacheManager->invalidateTwoFactor();
 
@@ -74,7 +74,7 @@ class TwoFactorController extends Controller
 
         $user->disableTwoFactorAuth();
 
-        $this->auditService->log(AnalyticsEvent::AUTH_2FA_DISABLED);
+        $this->auditService->log(AuditEvent::AUTH_2FA_DISABLED);
 
         $this->cacheManager->invalidateTwoFactor();
 
@@ -104,7 +104,7 @@ class TwoFactorController extends Controller
 
         $user->generateRecoveryCodes();
 
-        $this->auditService->log(AnalyticsEvent::AUTH_2FA_RECOVERY_REGENERATED);
+        $this->auditService->log(AuditEvent::AUTH_2FA_RECOVERY_REGENERATED);
 
         return back()->with('success', 'Recovery codes have been regenerated.');
     }

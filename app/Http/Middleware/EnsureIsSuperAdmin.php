@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Services\AuditService;
 use Closure;
 use Illuminate\Http\Request;
@@ -15,7 +15,7 @@ class EnsureIsSuperAdmin
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->user()?->isSuperAdmin()) {
-            $this->auditService->log(AnalyticsEvent::ADMIN_UNAUTHORIZED_ACCESS, [
+            $this->auditService->log(AuditEvent::ADMIN_UNAUTHORIZED_ACCESS, [
                 'route' => $request->route()?->getName(),
                 'path' => $request->path(),
                 'reason' => 'super_admin_required',

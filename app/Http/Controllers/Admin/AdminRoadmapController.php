@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminReorderRoadmapRequest;
@@ -28,7 +28,7 @@ class AdminRoadmapController extends Controller
 
     public function export(): StreamedResponse
     {
-        $this->auditService->log(AnalyticsEvent::ADMIN_ROADMAP_EXPORTED, []);
+        $this->auditService->log(AuditEvent::ADMIN_ROADMAP_EXPORTED, []);
 
         $query = RoadmapEntry::withCount('feedbackSubmissions')
             ->orderBy('status')
@@ -101,7 +101,7 @@ class AdminRoadmapController extends Controller
             return back()->withErrors(['title' => 'Could not generate a unique slug. Please use a different title.']);
         }
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_ROADMAP_ENTRY_CREATED, [
+        $this->auditService->log(AuditEvent::ADMIN_ROADMAP_ENTRY_CREATED, [
             'entry_id' => $entry->id,
             'title' => $entry->title,
             'status' => $entry->status,
@@ -123,7 +123,7 @@ class AdminRoadmapController extends Controller
             }
         });
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_ROADMAP_ENTRY_UPDATED, [
+        $this->auditService->log(AuditEvent::ADMIN_ROADMAP_ENTRY_UPDATED, [
             'action' => 'reorder',
             'count' => count($validated['items']),
         ]);
@@ -137,7 +137,7 @@ class AdminRoadmapController extends Controller
 
         $roadmapEntry->update($validated);
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_ROADMAP_ENTRY_UPDATED, [
+        $this->auditService->log(AuditEvent::ADMIN_ROADMAP_ENTRY_UPDATED, [
             'entry_id' => $roadmapEntry->id,
             'title' => $roadmapEntry->title,
             'changes' => array_keys($validated),
@@ -148,7 +148,7 @@ class AdminRoadmapController extends Controller
 
     public function destroy(RoadmapEntry $roadmapEntry): RedirectResponse
     {
-        $this->auditService->log(AnalyticsEvent::ADMIN_ROADMAP_ENTRY_DELETED, [
+        $this->auditService->log(AuditEvent::ADMIN_ROADMAP_ENTRY_DELETED, [
             'entry_id' => $roadmapEntry->id,
             'title' => $roadmapEntry->title,
         ]);

@@ -84,7 +84,7 @@ Check: run `tests/Feature/Seo/TitleLengthTest.php`.
 
 ## SSR
 
-SSR build is wired in `package.json`: `"build": "vite build && vite build --ssr"`. Both bundles must compile together. Configure `INERTIA_SSR_ENABLED=true` and start `bootstrap/ssr/ssr.mjs` in production for full server-rendered responses. The SEO shell is a fallback only.
+SSR is not used. The Blade SEO shell in `resources/views/partials/seo-shell.blade.php` is the canonical crawler fallback. `package.json` builds a single client bundle; there is no Node SSR process in production. If you need SSR later, re-add `ssr: 'resources/js/ssr.tsx'` to the `laravel()` plugin in `vite.config.ts` and a second `vite build --ssr` step in the build script.
 
 ## Tests
 

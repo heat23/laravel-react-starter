@@ -169,11 +169,6 @@ class HandleInertiaRequests extends Middleware
                         ];
                     } : null,
                 ] : null,
-                'impersonating' => fn () => $request->session()->has('admin_impersonating_from')
-                    ? [
-                        'admin_name' => $request->session()->get('admin_impersonating_name', 'Admin'),
-                    ]
-                    : null,
             ],
             'billing_status' => fn () => $this->getBillingStatus($request),
             'flash' => [
@@ -193,7 +188,6 @@ class HandleInertiaRequests extends Middleware
                 'userSettings' => $features['user_settings'],
                 'notifications' => $features['notifications'],
                 'onboarding' => $features['onboarding'],
-                'apiDocs' => $features['api_docs'],
                 'twoFactor' => $features['two_factor'],
                 'webhooks' => $features['webhooks'],
                 'admin' => $features['admin'],

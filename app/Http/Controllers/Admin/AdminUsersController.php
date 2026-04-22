@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminBulkDeactivateRequest;
@@ -19,7 +19,6 @@ use App\Models\User;
 use App\Models\UserStageHistory;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
-use App\Services\EngagementScoringService;
 use App\Support\CsvExport;
 use Illuminate\Auth\Passwords\PasswordBroker;
 use Illuminate\Database\Eloquent\Builder;
@@ -36,7 +35,6 @@ class AdminUsersController extends Controller
     public function __construct(
         private AuditService $auditService,
         private CacheInvalidationManager $cacheManager,
-        private EngagementScoringService $engagementService,
     ) {}
 
     public function create(): Response
@@ -62,7 +60,7 @@ class AdminUsersController extends Controller
             $user->save();
         }
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_USER_CREATED, [
+        $this->auditService->log(AuditEvent::ADMIN_USER_CREATED, [
             'created_user_id' => $user->id,
             'created_email' => $user->email,
             'is_admin' => $user->is_admin,
@@ -84,8 +82,6 @@ class AdminUsersController extends Controller
         $perPage = (int) ($validated['per_page'] ?? config('pagination.admin.users', 25));
         $users = $query->paginate($perPage);
 
-        $engagementScores = $this->engagementService->scoreBatch($users->getCollection());
-
         $users->through(fn (User $user) => [
             'id' => $user->id,
             'name' => $user->name,
@@ -96,7 +92,6 @@ class AdminUsersController extends Controller
             'created_at' => $user->created_at?->toISOString(),
             'tokens_count' => $user->tokens_count,
             'deleted_at' => $user->deleted_at?->toISOString(),
-            'engagement_score' => $engagementScores[$user->id] ?? 0,
         ]);
 
         return Inertia::render('Admin/Users/Index', [
@@ -112,7 +107,7 @@ class AdminUsersController extends Controller
     {
         $user->loadCount('tokens');
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_USER_VIEWED, [
+        $this->auditService->log(AuditEvent::ADMIN_USER_VIEWED, [
             'target_user_id' => $user->id,
             'target_email' => $user->email,
         ]);
@@ -186,7 +181,7 @@ class AdminUsersController extends Controller
         $user->update($validated);
         $after = ['name' => $user->name, 'email' => $user->email];
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_USER_UPDATED, [
+        $this->auditService->log(AuditEvent::ADMIN_USER_UPDATED, [
             'target_user_id' => $user->id,
             'changes' => ['before' => $before, 'after' => $after],
         ]);
@@ -211,7 +206,7 @@ class AdminUsersController extends Controller
 
         $this->cacheManager->invalidateDashboard();
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_TOGGLE_ADMIN, [
+        $this->auditService->log(AuditEvent::ADMIN_TOGGLE_ADMIN, [
             'target_user_id' => $user->id,
             'target_email' => $user->email,
             'changes' => ['is_admin' => ['from' => $wasAdmin, 'to' => $user->is_admin]],
@@ -233,7 +228,7 @@ class AdminUsersController extends Controller
             $deactivated = 0;
             foreach ($users as $user) {
                 $user->delete();
-                $this->auditService->log(AnalyticsEvent::ADMIN_USER_DEACTIVATED, [
+                $this->auditService->log(AuditEvent::ADMIN_USER_DEACTIVATED, [
                     'target_user_id' => $user->id,
                     'target_email' => $user->email,
                     'bulk' => true,
@@ -262,7 +257,7 @@ class AdminUsersController extends Controller
             $restored = 0;
             foreach ($users as $user) {
                 $user->restore();
-                $this->auditService->log(AnalyticsEvent::ADMIN_USER_RESTORED, [
+                $this->auditService->log(AuditEvent::ADMIN_USER_RESTORED, [
                     'target_user_id' => $user->id,
                     'target_email' => $user->email,
                     'bulk' => true,
@@ -292,7 +287,7 @@ class AdminUsersController extends Controller
 
         if ($user->trashed()) {
             $user->restore();
-            $this->auditService->log(AnalyticsEvent::ADMIN_USER_RESTORED, [
+            $this->auditService->log(AuditEvent::ADMIN_USER_RESTORED, [
                 'target_user_id' => $user->id,
                 'target_email' => $user->email,
                 'changes' => ['active' => ['from' => false, 'to' => true]],
@@ -304,7 +299,7 @@ class AdminUsersController extends Controller
         }
 
         $user->delete();
-        $this->auditService->log(AnalyticsEvent::ADMIN_USER_DEACTIVATED, [
+        $this->auditService->log(AuditEvent::ADMIN_USER_DEACTIVATED, [
             'target_user_id' => $user->id,
             'target_email' => $user->email,
             'changes' => ['active' => ['from' => true, 'to' => false]],
@@ -317,7 +312,7 @@ class AdminUsersController extends Controller
 
     public function export(AdminUserExportRequest $request): StreamedResponse
     {
-        $this->auditService->log(AnalyticsEvent::ADMIN_USERS_EXPORTED, [
+        $this->auditService->log(AuditEvent::ADMIN_USERS_EXPORTED, [
             'filters' => $request->validated(),
         ]);
 
@@ -348,7 +343,7 @@ class AdminUsersController extends Controller
         $token = $broker->createToken($user);
         $user->sendPasswordResetNotification($token);
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_PASSWORD_RESET_SENT, [
+        $this->auditService->log(AuditEvent::ADMIN_PASSWORD_RESET_SENT, [
             'target_user_id' => $user->id,
             'target_email' => $user->email,
         ]);

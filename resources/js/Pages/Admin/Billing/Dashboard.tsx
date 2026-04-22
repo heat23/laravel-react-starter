@@ -43,6 +43,11 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { formatCurrency, formatRelativeTime } from '@/lib/format';
 import type { AdminBillingDashboardProps } from '@/types/admin';
 
+// Thresholds previously lived in config/analytics-thresholds.php.
+// Inlined here now that the scoring subsystem has been removed.
+const CHURN_THRESHOLDS = { warning: 5, critical: 10 };
+const TRIAL_CONVERSION_THRESHOLDS = { warning_below: 25, critical_below: 15 };
+
 export default function BillingDashboard({
   stats,
   tier_distribution,
@@ -51,7 +56,6 @@ export default function BillingDashboard({
   trial_stats,
   recent_events,
   cohort_retention,
-  analyticsThresholds,
 }: AdminBillingDashboardProps) {
   const hasSubscriptions = stats.total_ever > 0;
 
@@ -78,8 +82,8 @@ export default function BillingDashboard({
       format: (n) => `${n}%`,
       description: 'Cancellations vs active',
       threshold: {
-        warning: analyticsThresholds.churn_rate.warning,
-        critical: analyticsThresholds.churn_rate.critical,
+        warning: CHURN_THRESHOLDS.warning,
+        critical: CHURN_THRESHOLDS.critical,
         direction: 'above',
       },
     },
@@ -91,8 +95,8 @@ export default function BillingDashboard({
       description: 'Trial to paid',
       href: '/admin/billing/subscriptions?status=trialing',
       threshold: {
-        warning: analyticsThresholds.trial_conversion.warning_below,
-        critical: analyticsThresholds.trial_conversion.critical_below,
+        warning: TRIAL_CONVERSION_THRESHOLDS.warning_below,
+        critical: TRIAL_CONVERSION_THRESHOLDS.critical_below,
         direction: 'below',
       },
     },

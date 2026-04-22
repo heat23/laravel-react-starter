@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\Feedback;
 use App\Models\User;
@@ -145,7 +145,7 @@ it('update logs an audit event', function () {
     $this->actingAs($admin)
         ->patch("/admin/feedback/{$feedback->id}", ['status' => 'in_review']);
 
-    expect(AuditLog::where('event', AnalyticsEvent::ADMIN_FEEDBACK_UPDATED->value)
+    expect(AuditLog::where('event', AuditEvent::ADMIN_FEEDBACK_UPDATED->value)
         ->whereJsonContains('metadata->feedback_id', $feedback->id)
         ->exists()
     )->toBeTrue();
@@ -191,7 +191,7 @@ it('destroy logs an audit event', function () {
     $this->actingAs($admin)
         ->delete("/admin/feedback/{$feedback->id}");
 
-    expect(AuditLog::where('event', AnalyticsEvent::ADMIN_FEEDBACK_DELETED->value)
+    expect(AuditLog::where('event', AuditEvent::ADMIN_FEEDBACK_DELETED->value)
         ->whereJsonContains('metadata->feedback_id', $feedbackId)
         ->exists()
     )->toBeTrue();

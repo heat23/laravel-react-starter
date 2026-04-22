@@ -3,7 +3,6 @@ import {
     CheckCircle,
     Github,
     Link2,
-    RefreshCw,
     Shield,
     UserPlus,
     Zap,
@@ -42,11 +41,6 @@ const socialAuthFeatures = [
         icon: Shield,
         title: 'Email verification bypass',
         description: 'OAuth logins mark the user\'s email as verified automatically — no verification email sent for OAuth-created accounts. Email-password accounts still require verification.',
-    },
-    {
-        icon: RefreshCw,
-        title: 'Session data migration',
-        description: 'Guest session data (cart, preferences, onboarding state) is migrated to the authenticated user on OAuth login via SessionDataMigrationService.',
     },
     {
         icon: Zap,

@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\PlanLimitService;
@@ -21,7 +21,7 @@ it('logs trial.started audit event when startTrial is called', function () {
 
     expect(
         AuditLog::where('user_id', $user->id)
-            ->where('event', AnalyticsEvent::TRIAL_STARTED->value)
+            ->where('event', AuditEvent::TRIAL_STARTED->value)
             ->exists()
     )->toBeTrue();
 });
@@ -78,7 +78,7 @@ it('logs trial.expired for users with expired trial and no subscription', functi
 
     expect(
         AuditLog::where('user_id', $user->id)
-            ->where('event', AnalyticsEvent::TRIAL_EXPIRED->value)
+            ->where('event', AuditEvent::TRIAL_EXPIRED->value)
             ->exists()
     )->toBeTrue();
 });
@@ -93,7 +93,7 @@ it('never logs trial.expired again once already logged (lifetime idempotency)', 
     // Simulate prior log from 30 days ago (past the old 2-day window)
     AuditLog::factory()->create([
         'user_id' => $user->id,
-        'event' => AnalyticsEvent::TRIAL_EXPIRED->value,
+        'event' => AuditEvent::TRIAL_EXPIRED->value,
         'created_at' => now()->subDays(30),
     ]);
 
@@ -101,7 +101,7 @@ it('never logs trial.expired again once already logged (lifetime idempotency)', 
 
     expect(
         AuditLog::where('user_id', $user->id)
-            ->where('event', AnalyticsEvent::TRIAL_EXPIRED->value)
+            ->where('event', AuditEvent::TRIAL_EXPIRED->value)
             ->count()
     )->toBe(1);
 });
@@ -120,7 +120,7 @@ it('does not log trial.expired for users with active subscription', function () 
 
     expect(
         AuditLog::where('user_id', $user->id)
-            ->where('event', AnalyticsEvent::TRIAL_EXPIRED->value)
+            ->where('event', AuditEvent::TRIAL_EXPIRED->value)
             ->exists()
     )->toBeFalse();
 });
@@ -136,7 +136,7 @@ it('skips command entirely when trials disabled', function () {
 
     expect(
         AuditLog::where('user_id', $user->id)
-            ->where('event', AnalyticsEvent::TRIAL_EXPIRED->value)
+            ->where('event', AuditEvent::TRIAL_EXPIRED->value)
             ->exists()
     )->toBeFalse();
 });

@@ -1,6 +1,5 @@
 import {
   Bell,
-  FileText,
   Key,
   LogOut,
   Menu,
@@ -13,7 +12,6 @@ import { PropsWithChildren } from 'react';
 
 import { Link, usePage } from '@inertiajs/react';
 
-import { ImpersonationBanner } from '@/Components/admin/ImpersonationBanner';
 import { BillingAlertBanner } from '@/Components/billing/BillingAlertBanner';
 import { UpgradePrompt } from '@/Components/UpgradePrompt';
 import { Logo, TextLogo } from '@/Components/branding/Logo';
@@ -77,7 +75,6 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
 
   return (
     <div className="min-h-screen bg-background">
-      <ImpersonationBanner />
       {billing_status && <BillingAlertBanner status={billing_status} />}
       {flash?.upgrade_prompt && <UpgradePrompt prompt={flash.upgrade_prompt} />}
       <a
@@ -198,19 +195,6 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
                       <Radio className="mr-2 h-4 w-4" />
                       Webhooks
                     </Link>
-                  </DropdownMenuItem>
-                )}
-                {features.apiDocs && (
-                  <DropdownMenuItem asChild>
-                    <a
-                      href="/docs"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="cursor-pointer"
-                    >
-                      <FileText className="mr-2 h-4 w-4" />
-                      API Docs
-                    </a>
                   </DropdownMenuItem>
                 )}
                 {auth.user?.is_admin && features.admin && (

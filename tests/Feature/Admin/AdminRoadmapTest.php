@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\RoadmapEntry;
 use App\Models\User;
@@ -61,7 +61,7 @@ it('store logs an audit event', function () {
     $entry = RoadmapEntry::where('title', 'Audited Entry')->first();
     expect($entry)->not->toBeNull();
 
-    expect(AuditLog::where('event', AnalyticsEvent::ADMIN_ROADMAP_ENTRY_CREATED->value)
+    expect(AuditLog::where('event', AuditEvent::ADMIN_ROADMAP_ENTRY_CREATED->value)
         ->whereJsonContains('metadata->entry_id', $entry->id)
         ->exists()
     )->toBeTrue();
@@ -113,7 +113,7 @@ it('update logs an audit event', function () {
     $this->actingAs($admin)
         ->patch("/admin/roadmap/{$entry->id}", ['status' => 'completed']);
 
-    expect(AuditLog::where('event', AnalyticsEvent::ADMIN_ROADMAP_ENTRY_UPDATED->value)
+    expect(AuditLog::where('event', AuditEvent::ADMIN_ROADMAP_ENTRY_UPDATED->value)
         ->whereJsonContains('metadata->entry_id', $entry->id)
         ->exists()
     )->toBeTrue();
@@ -148,7 +148,7 @@ it('destroy logs an audit event', function () {
     $this->actingAs($admin)
         ->delete("/admin/roadmap/{$entry->id}");
 
-    expect(AuditLog::where('event', AnalyticsEvent::ADMIN_ROADMAP_ENTRY_DELETED->value)
+    expect(AuditLog::where('event', AuditEvent::ADMIN_ROADMAP_ENTRY_DELETED->value)
         ->whereJsonContains('metadata->entry_id', $entryId)
         ->exists()
     )->toBeTrue();

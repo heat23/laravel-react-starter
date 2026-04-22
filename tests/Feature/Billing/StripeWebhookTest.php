@@ -1,12 +1,10 @@
 <?php
 
-use App\Enums\AnalyticsEvent;
-use App\Jobs\DispatchAnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;
 use Laravel\Cashier\Subscription;
 use Monolog\Handler\TestHandler;
@@ -488,72 +486,13 @@ it('does not throw when subscription customer does not exist in the database', f
 });
 
 // ============================================
-// Analytics event dispatch (ANA-002)
+// Webhook audit_log persistence
+// These tests run synchronously (QUEUE_CONNECTION=sync in phpunit.xml) so
+// PersistAuditLog writes to audit_logs inline and we can assert on DB state.
 // ============================================
 
-it('dispatches SUBSCRIPTION_CREATED analytics event on customer.subscription.created', function () {
-    Queue::fake();
-
-    $user = User::factory()->create(['stripe_id' => 'cus_ana_created']);
-
-    $payload = createStripeWebhookPayload('customer.subscription.created', [
-        'id' => 'sub_ana_created',
-        'customer' => 'cus_ana_created',
-        'status' => 'active',
-        'items' => ['data' => [['id' => 'si_ana1', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
-        'current_period_end' => now()->addMonth()->timestamp,
-    ]);
-
-    postStripeWebhook($payload)->assertOk();
-
-    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
-        return $job->eventName === AnalyticsEvent::SUBSCRIPTION_CREATED->value
-            && $job->userId === $user->id;
-    });
-});
-
-it('dispatches SUBSCRIPTION_CANCELED analytics event on customer.subscription.deleted', function () {
-    Queue::fake();
-
-    $user = User::factory()->create(['stripe_id' => 'cus_ana_deleted']);
-    createSubscription($user, ['stripe_id' => 'sub_ana_deleted']);
-
-    $payload = createStripeWebhookPayload('customer.subscription.deleted', [
-        'id' => 'sub_ana_deleted',
-        'customer' => 'cus_ana_deleted',
-        'status' => 'canceled',
-        'items' => ['data' => [['id' => 'si_ana2', 'price' => ['id' => 'price_pro_monthly', 'product' => 'prod_test'], 'quantity' => 1]]],
-    ]);
-
-    postStripeWebhook($payload)->assertOk();
-
-    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
-        return $job->eventName === AnalyticsEvent::SUBSCRIPTION_CANCELED->value
-            && $job->userId === $user->id;
-    });
-});
-
-it('dispatches BILLING_PAYMENT_FAILED analytics event on invoice.payment_failed', function () {
-    Queue::fake();
-
-    $user = User::factory()->create(['stripe_id' => 'cus_ana_failed']);
-
-    $payload = createStripeWebhookPayload('invoice.payment_failed', [
-        'id' => 'in_ana_failed',
-        'customer' => 'cus_ana_failed',
-        'amount_due' => 1900,
-    ]);
-
-    postStripeWebhook($payload)->assertOk();
-
-    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
-        return $job->eventName === AnalyticsEvent::BILLING_PAYMENT_FAILED->value
-            && $job->userId === $user->id;
-    });
-});
-
-it('does not dispatch analytics event when stripe customer has no local user', function () {
-    Queue::fake();
+it('does not persist an audit event when stripe customer has no local user', function () {
+    $before = DB::table('audit_logs')->count();
 
     $payload = createStripeWebhookPayload('customer.subscription.created', [
         'id' => 'sub_ana_no_user',
@@ -565,14 +504,10 @@ it('does not dispatch analytics event when stripe customer has no local user', f
 
     postStripeWebhook($payload)->assertOk();
 
-    Queue::assertNotPushed(DispatchAnalyticsEvent::class, function ($job) {
-        return $job->eventName === AnalyticsEvent::SUBSCRIPTION_CREATED->value;
-    });
+    expect(DB::table('audit_logs')->count())->toBe($before);
 });
 
-it('dispatches BILLING_PAYMENT_RECOVERED analytics event when invoice.payment_succeeded clears past_due_since', function () {
-    Queue::fake();
-
+it('persists BILLING_PAYMENT_RECOVERED to audit_logs and clears past_due_since when invoice.payment_succeeded fires for a past-due subscription', function () {
     $user = User::factory()->create(['stripe_id' => 'cus_ana_recovered']);
     $subscription = Subscription::factory()->create([
         'user_id' => $user->id,
@@ -591,17 +526,15 @@ it('dispatches BILLING_PAYMENT_RECOVERED analytics event when invoice.payment_su
 
     postStripeWebhook($payload)->assertOk();
 
-    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
-        return $job->eventName === AnalyticsEvent::BILLING_PAYMENT_RECOVERED->value
-            && $job->userId === $user->id;
-    });
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => AuditEvent::BILLING_PAYMENT_RECOVERED->value,
+        'user_id' => $user->id,
+    ]);
 
     expect($subscription->fresh()->past_due_since)->toBeNull();
 });
 
-it('does not dispatch BILLING_PAYMENT_RECOVERED when invoice.payment_succeeded is not a recovery', function () {
-    Queue::fake();
-
+it('does not persist BILLING_PAYMENT_RECOVERED when invoice.payment_succeeded is not a recovery', function () {
     $user = User::factory()->create(['stripe_id' => 'cus_ana_no_recovery']);
     Subscription::factory()->create([
         'user_id' => $user->id,
@@ -620,18 +553,14 @@ it('does not dispatch BILLING_PAYMENT_RECOVERED when invoice.payment_succeeded i
 
     postStripeWebhook($payload)->assertOk();
 
-    Queue::assertNotPushed(DispatchAnalyticsEvent::class, function ($job) {
-        return $job->eventName === AnalyticsEvent::BILLING_PAYMENT_RECOVERED->value;
-    });
+    $this->assertDatabaseMissing('audit_logs', [
+        'event' => AuditEvent::BILLING_PAYMENT_RECOVERED->value,
+        'user_id' => $user->id,
+    ]);
 });
 
 // ============================================
-// Analytics audit_log persistence (ANA-002 regression)
-// These tests run without Queue::fake() so PersistAuditLog executes synchronously
-// (QUEUE_CONNECTION=sync in phpunit.xml) and we can assert on audit_logs directly.
-// Previously dispatchWebhookAnalyticsEvent dispatched DispatchAnalyticsEvent directly
-// (GA4 only, no audit_logs write), making webhook events invisible to
-// ProductAnalyticsService::getSubscriptionEvents() queries.
+// Webhook audit_log persistence (regression)
 // ============================================
 
 it('persists subscription.created to audit_logs when customer.subscription.created fires', function () {
@@ -648,7 +577,7 @@ it('persists subscription.created to audit_logs when customer.subscription.creat
     postStripeWebhook($payload)->assertOk();
 
     $this->assertDatabaseHas('audit_logs', [
-        'event' => AnalyticsEvent::SUBSCRIPTION_CREATED->value,
+        'event' => AuditEvent::SUBSCRIPTION_CREATED->value,
         'user_id' => $user->id,
     ]);
 });
@@ -667,7 +596,7 @@ it('persists subscription.canceled to audit_logs when customer.subscription.dele
     postStripeWebhook($payload)->assertOk();
 
     $this->assertDatabaseHas('audit_logs', [
-        'event' => AnalyticsEvent::SUBSCRIPTION_CANCELED->value,
+        'event' => AuditEvent::SUBSCRIPTION_CANCELED->value,
         'user_id' => $user->id,
     ]);
 });
@@ -684,7 +613,7 @@ it('persists billing.payment_failed to audit_logs when invoice.payment_failed fi
     postStripeWebhook($payload)->assertOk();
 
     $this->assertDatabaseHas('audit_logs', [
-        'event' => AnalyticsEvent::BILLING_PAYMENT_FAILED->value,
+        'event' => AuditEvent::BILLING_PAYMENT_FAILED->value,
         'user_id' => $user->id,
     ]);
 });
@@ -719,7 +648,7 @@ it('does not write raw stripe.* event names to audit_logs (ANA-002 regression)',
     // Positive baseline: verify audit_logs is actively receiving rows so the
     // negative stripe.% assertion below is load-bearing and not vacuously true.
     expect(
-        DB::table('audit_logs')->where('event', AnalyticsEvent::SUBSCRIPTION_CREATED->value)->exists()
+        DB::table('audit_logs')->where('event', AuditEvent::SUBSCRIPTION_CREATED->value)->exists()
     )->toBeTrue('audit_logs must contain at least one expected event row to prove the table is active');
 
     // Raw Stripe-prefixed event names must never appear in audit_logs
@@ -730,9 +659,7 @@ it('does not write raw stripe.* event names to audit_logs (ANA-002 regression)',
     expect($rawCount)->toBe(0);
 });
 
-it('dispatches BILLING_CHARGE_REFUNDED analytics event on charge.refunded', function () {
-    Queue::fake();
-
+it('persists BILLING_CHARGE_REFUNDED with metadata to audit_logs on charge.refunded', function () {
     $user = User::factory()->create(['stripe_id' => 'cus_ana_refunded']);
 
     $payload = createStripeWebhookPayload('charge.refunded', [
@@ -745,13 +672,16 @@ it('dispatches BILLING_CHARGE_REFUNDED analytics event on charge.refunded', func
 
     postStripeWebhook($payload)->assertOk();
 
-    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
-        return $job->eventName === AnalyticsEvent::BILLING_CHARGE_REFUNDED->value
-            && $job->userId === $user->id
-            && $job->params['charge_id'] === 'ch_ana_refunded'
-            && $job->params['amount_refunded'] === 2000
-            && $job->params['currency'] === 'usd';
-    });
+    $row = DB::table('audit_logs')
+        ->where('event', AuditEvent::BILLING_CHARGE_REFUNDED->value)
+        ->where('user_id', $user->id)
+        ->first();
+
+    expect($row)->not->toBeNull();
+    $metadata = json_decode($row->metadata, true);
+    expect($metadata['charge_id'])->toBe('ch_ana_refunded');
+    expect($metadata['amount_refunded'])->toBe(2000);
+    expect($metadata['currency'])->toBe('usd');
 });
 
 it('persists billing.charge_refunded to audit_logs when charge.refunded fires', function () {
@@ -768,14 +698,12 @@ it('persists billing.charge_refunded to audit_logs when charge.refunded fires', 
     postStripeWebhook($payload)->assertOk();
 
     $this->assertDatabaseHas('audit_logs', [
-        'event' => AnalyticsEvent::BILLING_CHARGE_REFUNDED->value,
+        'event' => AuditEvent::BILLING_CHARGE_REFUNDED->value,
         'user_id' => $user->id,
     ]);
 });
 
-it('does not dispatch BILLING_CHARGE_REFUNDED when stripe customer has no local user', function () {
-    Queue::fake();
-
+it('does not persist BILLING_CHARGE_REFUNDED when stripe customer has no local user', function () {
     $payload = createStripeWebhookPayload('charge.refunded', [
         'id' => 'ch_no_user',
         'customer' => 'cus_no_local_user_refund',
@@ -786,14 +714,12 @@ it('does not dispatch BILLING_CHARGE_REFUNDED when stripe customer has no local 
 
     postStripeWebhook($payload)->assertOk();
 
-    Queue::assertNotPushed(DispatchAnalyticsEvent::class, function ($job) {
-        return $job->eventName === AnalyticsEvent::BILLING_CHARGE_REFUNDED->value;
-    });
+    $this->assertDatabaseMissing('audit_logs', [
+        'event' => AuditEvent::BILLING_CHARGE_REFUNDED->value,
+    ]);
 });
 
-it('dispatches SUBSCRIPTION_RESUMED analytics event when cancel_at_period_end flips to false', function () {
-    Queue::fake();
-
+it('persists SUBSCRIPTION_RESUMED to audit_logs when cancel_at_period_end flips to false', function () {
     $user = User::factory()->create(['stripe_id' => 'cus_ana_resumed']);
     createSubscription($user, ['stripe_id' => 'sub_ana_resumed']);
 
@@ -808,15 +734,13 @@ it('dispatches SUBSCRIPTION_RESUMED analytics event when cancel_at_period_end fl
 
     postStripeWebhook($payload)->assertOk();
 
-    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
-        return $job->eventName === AnalyticsEvent::SUBSCRIPTION_RESUMED->value
-            && $job->userId === $user->id;
-    });
+    $this->assertDatabaseHas('audit_logs', [
+        'event' => AuditEvent::SUBSCRIPTION_RESUMED->value,
+        'user_id' => $user->id,
+    ]);
 });
 
-it('does not dispatch SUBSCRIPTION_RESUMED when cancel_at_period_end does not flip to false', function () {
-    Queue::fake();
-
+it('does not persist SUBSCRIPTION_RESUMED when cancel_at_period_end does not flip to false', function () {
     $user = User::factory()->create(['stripe_id' => 'cus_ana_no_resume']);
     createSubscription($user, ['stripe_id' => 'sub_ana_no_resume']);
 
@@ -832,14 +756,13 @@ it('does not dispatch SUBSCRIPTION_RESUMED when cancel_at_period_end does not fl
 
     postStripeWebhook($payload)->assertOk();
 
-    Queue::assertNotPushed(DispatchAnalyticsEvent::class, function ($job) {
-        return $job->eventName === AnalyticsEvent::SUBSCRIPTION_RESUMED->value;
-    });
+    $this->assertDatabaseMissing('audit_logs', [
+        'event' => AuditEvent::SUBSCRIPTION_RESUMED->value,
+        'user_id' => $user->id,
+    ]);
 });
 
-it('skips SUBSCRIPTION_RESUMED dispatch when user-initiated resume cache key is set (deduplication)', function () {
-    Queue::fake();
-
+it('skips SUBSCRIPTION_RESUMED persistence when user-initiated resume cache key is set (deduplication)', function () {
     $user = User::factory()->create(['stripe_id' => 'cus_ana_dedup_resume']);
     createSubscription($user, ['stripe_id' => 'sub_ana_dedup_resume']);
 
@@ -857,12 +780,13 @@ it('skips SUBSCRIPTION_RESUMED dispatch when user-initiated resume cache key is 
 
     postStripeWebhook($payload)->assertOk();
 
-    // Webhook must NOT re-dispatch — analytics already sent by SubscriptionController
-    Queue::assertNotPushed(DispatchAnalyticsEvent::class, function ($job) {
-        return $job->eventName === AnalyticsEvent::SUBSCRIPTION_RESUMED->value;
-    });
+    // Webhook must NOT re-persist — analytics already sent by SubscriptionController
+    $this->assertDatabaseMissing('audit_logs', [
+        'event' => AuditEvent::SUBSCRIPTION_RESUMED->value,
+        'user_id' => $user->id,
+    ]);
 
-    // Cache key consumed (Cache::pull) — subsequent webhooks (Stripe retries) would dispatch
+    // Cache key consumed (Cache::pull) — subsequent webhooks (Stripe retries) would persist
     expect(Cache::has("billing.resume_analytics_sent:{$user->id}"))->toBeFalse();
 });
 

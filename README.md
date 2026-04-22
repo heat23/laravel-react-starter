@@ -43,7 +43,6 @@ A production-ready Laravel + React starter with 11 toggleable feature flags, Red
 
 ### Admin Panel
 - [x] User management with search, filters, and bulk actions
-- [x] User impersonation (login as any user)
 - [x] Health monitoring (database, cache, queue, disk)
 - [x] Audit logs with IP and user agent tracking
 - [x] Billing dashboard (MRR, churn, trial conversion, tier distribution)

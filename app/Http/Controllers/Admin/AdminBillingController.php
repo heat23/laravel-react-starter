@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminSubscriptionIndexRequest;
 use App\Models\AuditLog;
@@ -48,13 +48,12 @@ class AdminBillingController extends Controller
             'trial_stats' => $this->statsService->getTrialStats(),
             'recent_events' => $recentEvents,
             'cohort_retention' => $this->statsService->getCohortRetention(),
-            'analyticsThresholds' => config('analytics-thresholds'),
         ]);
     }
 
     public function subscriptions(AdminSubscriptionIndexRequest $request): Response
     {
-        $this->auditService->log(AnalyticsEvent::ADMIN_BILLING_SUBSCRIPTIONS_VIEWED, [
+        $this->auditService->log(AuditEvent::ADMIN_BILLING_SUBSCRIPTIONS_VIEWED, [
             'filters' => $request->validated(),
         ]);
 
@@ -70,9 +69,9 @@ class AdminBillingController extends Controller
     {
         $subscription->load(['owner' => fn ($q) => $q->withTrashed(), 'items']);
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_BILLING_SUBSCRIPTION_VIEWED, [
+        $this->auditService->log(AuditEvent::ADMIN_BILLING_SUBSCRIPTION_VIEWED, [
             'subscription_id' => $subscription->id,
-            'user_id' => $subscription->user_id,
+            'subject_user_id' => $subscription->user_id,
         ]);
 
         $items = $subscription->items->map(fn ($item) => [
@@ -121,7 +120,7 @@ class AdminBillingController extends Controller
 
     public function export(AdminSubscriptionIndexRequest $request): StreamedResponse
     {
-        $this->auditService->log(AnalyticsEvent::ADMIN_SUBSCRIPTIONS_EXPORTED, [
+        $this->auditService->log(AuditEvent::ADMIN_SUBSCRIPTIONS_EXPORTED, [
             'filters' => $request->validated(),
         ]);
 

@@ -7,7 +7,6 @@ import { Link, usePage } from '@inertiajs/react';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { AnalyticsEvents } from '@/lib/events';
 
-import { ImpersonationBanner } from '@/Components/admin/ImpersonationBanner';
 import { Logo, TextLogo } from '@/Components/branding/Logo';
 import {
   CommandPalette,
@@ -234,7 +233,6 @@ function SidebarInner({
           </Link>
         </header>
 
-        <ImpersonationBanner />
         {banner}
 
         <main id="main-content" className="flex-1">

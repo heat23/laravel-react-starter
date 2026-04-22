@@ -223,10 +223,6 @@ class SeoController extends Controller
             }
         }
 
-        if (config('features.api_docs.enabled', false)) {
-            $urls[] = ['loc' => $base.'/docs', 'priority' => '0.6', 'changefreq' => 'weekly', 'lastmod' => '2026-03-01T00:00:00+00:00'];
-        }
-
         return $urls;
     }
 }

@@ -113,11 +113,6 @@ test('isSecurityEvent returns true for unauthorized access attempts', function (
     expect(AuditLog::isSecurityEvent('admin.unauthorized_access_attempt'))->toBeTrue();
 });
 
-test('isSecurityEvent returns true for impersonation events', function () {
-    expect(AuditLog::isSecurityEvent('admin.impersonation_started'))->toBeTrue();
-    expect(AuditLog::isSecurityEvent('admin.impersonation_stopped'))->toBeTrue();
-});
-
 test('isSecurityEvent returns false for non-security events', function (string $event) {
     expect(AuditLog::isSecurityEvent($event))->toBeFalse();
 })->with([

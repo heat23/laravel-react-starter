@@ -4,7 +4,6 @@ import {
   ChevronRight,
   CreditCard,
   Flame,
-  Heart,
   Key,
   MailWarning,
   Settings,
@@ -35,7 +34,6 @@ import type { PageProps } from '@/types';
 
 interface DashboardStats {
   days_since_signup: number;
-  health_score: number;
   email_verified: boolean;
   has_subscription: boolean;
   plan_name: string | null;
@@ -54,19 +52,10 @@ interface DashboardProps {
   recent_activity: RecentActivityItem[];
 }
 
-function healthLabel(score: number): { label: string; color: string } {
-  if (score >= 76) return { label: 'Healthy', color: 'text-success' };
-  if (score >= 51) return { label: 'Moderate', color: 'text-warning' };
-  if (score >= 26) return { label: 'At Risk', color: 'text-orange-500' };
-  return { label: 'Getting Started', color: 'text-muted-foreground' };
-}
-
 export default function Dashboard({ stats, recent_activity }: DashboardProps) {
   const { track } = useAnalytics();
   const { auth, flash, features, limit_warnings } = usePage<PageProps>().props;
-  const health = healthLabel(stats.health_score);
   const activationFiredRef = useRef(false);
-  const healthCelebrationFiredRef = useRef(false);
   const limitWarningsFiredRef = useRef(false);
   const [resendingVerification, setResendingVerification] = useState(false);
 
@@ -88,25 +77,13 @@ export default function Dashboard({ stats, recent_activity }: DashboardProps) {
     }
   }, [track]);
 
-  // Activation milestone: health_score >= 51 AND has at least one API token
+  // Activation milestone: fires once when the user has created an API token.
   useEffect(() => {
-    if (
-      !activationFiredRef.current &&
-      stats.health_score >= 51 &&
-      stats.tokens_count > 0
-    ) {
+    if (!activationFiredRef.current && stats.tokens_count > 0) {
       activationFiredRef.current = true;
       track(AnalyticsEvents.ACTIVATION_MILESTONE, { trigger: 'api_token_created' });
     }
-  }, [stats.health_score, stats.tokens_count, track]);
-
-  // Health milestone celebration (health >= 76 first time this session)
-  useEffect(() => {
-    if (!healthCelebrationFiredRef.current && stats.health_score >= 76) {
-      healthCelebrationFiredRef.current = true;
-      track(AnalyticsEvents.ACTIVATION_MILESTONE, { trigger: 'health_score_healthy' });
-    }
-  }, [stats.health_score, track]);
+  }, [stats.tokens_count, track]);
 
   // PQL limit warnings — fire threshold events for resources approaching plan limits
   useEffect(() => {
@@ -160,20 +137,11 @@ export default function Dashboard({ stats, recent_activity }: DashboardProps) {
   // Explore-next actions shown once all basics are done
   const exploreActions = [
     ...(features?.webhooks ? [{ label: 'Set up webhooks', href: '/settings/webhooks' }] : []),
-    ...(features?.apiDocs ? [{ label: 'Read the API docs', href: '/docs' }] : []),
     { label: 'View the roadmap', href: '/roadmap' },
     { label: 'Submit feedback', href: '#feedback' },
   ];
 
   const statCards = [
-    {
-      title: 'Account Health',
-      value: `${stats.health_score}/100`,
-      description: health.label,
-      icon: Heart,
-      valueClass: health.color,
-      extra: null,
-    },
     {
       title: 'Plan',
       value: stats.plan_name ?? 'Free',
@@ -253,7 +221,7 @@ export default function Dashboard({ stats, recent_activity }: DashboardProps) {
         )}
 
         {/* Stats Grid */}
-        <div className="mb-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-8 grid gap-4 md:grid-cols-3">
           {statCards.map((stat) => (
             <Card key={stat.title}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

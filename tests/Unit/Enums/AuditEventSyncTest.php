@@ -1,11 +1,11 @@
 <?php
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 
 it('has all shared events defined as enum cases', function () {
-    foreach (AnalyticsEvent::sharedEvents() as $event) {
-        expect(AnalyticsEvent::tryFrom($event))->not->toBeNull(
-            "Shared event '{$event}' missing from AnalyticsEvent enum"
+    foreach (AuditEvent::sharedEvents() as $event) {
+        expect(AuditEvent::tryFrom($event))->not->toBeNull(
+            "Shared event '{$event}' missing from AuditEvent enum"
         );
     }
 });
@@ -23,7 +23,7 @@ it('has shared events list matching frontend events.ts values', function () {
 
     expect($frontendValues)->not->toBeEmpty('Could not extract any event values from events.ts');
 
-    $sharedEvents = AnalyticsEvent::sharedEvents();
+    $sharedEvents = AuditEvent::sharedEvents();
 
     // Every frontend event should be in the shared list
     $missingFromShared = array_diff($frontendValues, $sharedEvents);
@@ -40,8 +40,8 @@ it('has shared events list matching frontend events.ts values', function () {
 });
 
 it('shared events list covers all non-admin enum cases', function () {
-    $sharedEvents = AnalyticsEvent::sharedEvents();
-    $allCases = array_map(fn ($case) => $case->value, AnalyticsEvent::cases());
+    $sharedEvents = AuditEvent::sharedEvents();
+    $allCases = array_map(fn ($case) => $case->value, AuditEvent::cases());
     $nonAdminCases = array_values(array_filter($allCases, fn ($e) => ! str_starts_with($e, 'admin.')));
 
     $missingFromShared = array_diff($nonAdminCases, $sharedEvents);

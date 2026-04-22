@@ -23,7 +23,6 @@ vi.mock('@inertiajs/react', async () => {
           userSettings: true,
           notifications: false,
           onboarding: false,
-          apiDocs: false,
           twoFactor: false,
           webhooks: false,
           admin: true,
@@ -79,6 +78,7 @@ const createFlag = (
   user_override_count: 0,
   is_protected: false,
   is_route_dependent: true,
+  blocked_by_dependency: null,
   ...overrides,
 });
 
@@ -161,5 +161,44 @@ describe('FeatureFlagsIndex', () => {
 
     // The notifications flag has env_default=false and global_override=true
     expect(screen.getByText('Route unavailable')).toBeInTheDocument();
+  });
+
+  it('shows blocked-by-dependency badge when hard dep is off', () => {
+    // Mirror the server-side shape from FeatureFlagService::getAdminSummary:
+    // onboarding's env is true but user_settings is off, so the runtime gate
+    // forces effective=false and surfaces the dep name via blocked_by_dependency.
+    const propsWithBlocked: AdminFeatureFlagsIndexProps = {
+      flags: [
+        createFlag({
+          flag: 'onboarding',
+          env_default: true,
+          effective: false,
+          is_route_dependent: false,
+          blocked_by_dependency: 'user_settings',
+        }),
+      ],
+    };
+
+    render(<FeatureFlagsIndex {...propsWithBlocked} />);
+
+    expect(screen.getByText('Blocked by user_settings')).toBeInTheDocument();
+  });
+
+  it('does not show blocked-by-dependency badge when dep is satisfied', () => {
+    const propsWithoutBlocked: AdminFeatureFlagsIndexProps = {
+      flags: [
+        createFlag({
+          flag: 'onboarding',
+          env_default: true,
+          effective: true,
+          is_route_dependent: false,
+          blocked_by_dependency: null,
+        }),
+      ],
+    };
+
+    render(<FeatureFlagsIndex {...propsWithoutBlocked} />);
+
+    expect(screen.queryByText(/Blocked by/)).not.toBeInTheDocument();
   });
 });

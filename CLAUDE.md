@@ -23,21 +23,24 @@
 
 Configure your app by toggling features in `config/features.php` (or `.env`). 11 feature flags control major subsystems.
 
-| Flag | Env Var | What it enables |
-|------|---------|-----------------|
-| `billing.enabled` | `FEATURE_BILLING` | Stripe Cashier, pricing page, billing portal |
-| `social_auth.enabled` | `FEATURE_SOCIAL_AUTH` | Google/GitHub OAuth (auto-detected by client ID presence) |
-| `email_verification.enabled` | `FEATURE_EMAIL_VERIFICATION` | Email verification flow (default: true) |
-| `api_tokens.enabled` | `FEATURE_API_TOKENS` | Sanctum token management UI (default: true) |
-| `user_settings.enabled` | `FEATURE_USER_SETTINGS` | Theme/timezone persistence (default: true) |
-| `notifications.enabled` | `FEATURE_NOTIFICATIONS` | In-app notification system |
-| `onboarding.enabled` | `FEATURE_ONBOARDING` | Welcome wizard for new users |
-| `api_docs.enabled` | `FEATURE_API_DOCS` | Scribe interactive API docs |
-| `two_factor.enabled` | `FEATURE_TWO_FACTOR` | TOTP 2FA authentication |
-| `webhooks.enabled` | `FEATURE_WEBHOOKS` | Incoming/outgoing webhooks |
-| `admin.enabled` | `FEATURE_ADMIN` | Admin panel: user management, health monitoring, audit logs, config viewer, system info |
+| Flag | Env Var | Default | What it enables |
+|------|---------|---------|-----------------|
+| `billing.enabled` | `FEATURE_BILLING` | false | Stripe Cashier, pricing page, billing portal |
+| `billing.tax_enabled` | `FEATURE_BILLING_TAX` + `BILLING_TAX_CONFIRM_COMPLIANT` | false | Stripe Tax (two-key gate — both env vars required) |
+| `social_auth.enabled` | `FEATURE_SOCIAL_AUTH` | false | Google/GitHub OAuth (buttons render only when CLIENT_ID env vars are set) |
+| `email_verification.enabled` | `FEATURE_EMAIL_VERIFICATION` | true | Email verification flow |
+| `api_tokens.enabled` | `FEATURE_API_TOKENS` | true | Sanctum token management UI |
+| `user_settings.enabled` | `FEATURE_USER_SETTINGS` | true | Theme/timezone persistence |
+| `notifications.enabled` | `FEATURE_NOTIFICATIONS` | false | In-app notification system |
+| `onboarding.enabled` | `FEATURE_ONBOARDING` | true | Welcome wizard (hard dep: `user_settings`) |
+| `two_factor.enabled` | `FEATURE_TWO_FACTOR` | false | TOTP 2FA authentication |
+| `webhooks.enabled` | `FEATURE_WEBHOOKS` | false | User-configurable incoming/outgoing webhooks (Stripe webhooks are always registered by Cashier, independent of this flag) |
+| `admin.enabled` | `FEATURE_ADMIN` | true | Admin panel: user management, health monitoring, audit logs, config viewer, system info |
+| `indexnow.enabled` | `FEATURE_INDEXNOW` | false | IndexNow instant-indexing pings (Bing/Yandex/etc.); `INDEXNOW_AUTO_PING_SITEMAP` inherits this flag when unset |
 
-**Common configurations:** SaaS with billing (enable `billing`, `webhooks`, `two_factor`, `api_tokens`) | Internal tool (enable `two_factor`, `api_tokens`, `notifications`) | Simple MVP (enable only `email_verification`, `user_settings`)
+**Hard dependencies are runtime-enforced** by `FeatureFlagService::resolve()` — if `onboarding` is on but `user_settings` is off, the dependent flag resolves to `false` and a `Log::warning` is emitted. See [docs/FEATURE_FLAGS.md](docs/FEATURE_FLAGS.md).
+
+**Common configurations:** SaaS with billing (enable `billing`, `webhooks`, `two_factor`, `api_tokens`) | Internal tool (enable `two_factor`, `api_tokens`, `notifications`) | Simple MVP (leave defaults as-is — `admin` + `onboarding` + `email_verification` + `user_settings` + `api_tokens` are on).
 
 **Disabling features:** Set env var to `false`. Feature-gated routes won't register, middleware won't apply, UI elements won't render. Database tables remain (safe to leave empty).
 
@@ -158,8 +161,6 @@ scripts/init.sh                             # First-time setup
 **Admin Cache (`AdminCacheKey`):** Dashboard stats cached 5-min TTL. Any mutation changing user count, subscription state, token count, or webhook stats MUST call `Cache::forget(AdminCacheKey::RELEVANT_KEY->value)` — stale admin dashboards are a known bug class.
 
 **Relationship Loading with SoftDeletes:** Use `->load(['relation' => fn ($q) => $q->withTrashed()])` for admin views. Always use null-safe operator (`?->`) with fallback: `$model->owner?->name ?? '[Deleted User]'`
-
-**Impersonation:** Stop-impersonation route must NOT use `verified` middleware (impersonated user may be unverified) and is intentionally outside the admin middleware group.
 
 ## Error Recovery & Test Quality
 

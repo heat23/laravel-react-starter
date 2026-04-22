@@ -4,23 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
 use App\Models\User;
-use App\Services\CustomerHealthService;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function __invoke(CustomerHealthService $healthService): Response
+    public function __invoke(): Response
     {
         /** @var User $user */
         $user = auth()->user();
         $user->loadCount(['settings', 'tokens']);
-        // Eager load subscriptions to avoid N+1 from subscribed(), subscription(), onTrial(), billingStatusScore()
+        // Eager load subscriptions to avoid N+1 from subscribed(), subscription(), onTrial()
         $user->load('subscriptions');
 
         $stats = [
             'days_since_signup' => (int) $user->created_at->diffInDays(now()),
-            'health_score' => $healthService->calculateHealthScore($user),
             'email_verified' => $user->hasVerifiedEmail(),
             'has_subscription' => method_exists($user, 'subscribed') && $user->subscribed('default'),
             'plan_name' => $this->getPlanName($user),

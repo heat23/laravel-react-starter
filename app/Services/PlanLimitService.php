@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Events\PqlThresholdReached;
 use App\Models\User;
 use Carbon\Carbon;
@@ -48,7 +48,8 @@ class PlanLimitService
         $user->trial_ends_at = $trialEndsAt;
 
         $auditService = app(AuditService::class);
-        $auditService->logProductEvent(AnalyticsEvent::TRIAL_STARTED, $user, [
+        $auditService->log(AuditEvent::TRIAL_STARTED, [
+            'user_id' => $user->id,
             'tier' => $tier,
             'trial_days' => $trialDays,
             'trial_ends_at' => $trialEndsAt->toISOString(),
@@ -197,11 +198,12 @@ class PlanLimitService
 
                 $auditService = app(AuditService::class);
                 $analyticsEvent = match ($threshold) {
-                    50 => AnalyticsEvent::LIMIT_THRESHOLD_50,
-                    80 => AnalyticsEvent::LIMIT_THRESHOLD_80,
-                    100 => AnalyticsEvent::LIMIT_THRESHOLD_100,
+                    50 => AuditEvent::LIMIT_THRESHOLD_50,
+                    80 => AuditEvent::LIMIT_THRESHOLD_80,
+                    100 => AuditEvent::LIMIT_THRESHOLD_100,
                 };
-                $auditService->logProductEvent($analyticsEvent, $user, [
+                $auditService->log($analyticsEvent, [
+                    'user_id' => $user->id,
                     'limit_key' => $limitKey,
                     'current' => $currentCount,
                     'max' => $limit,

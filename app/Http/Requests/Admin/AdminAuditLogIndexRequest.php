@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -16,7 +16,7 @@ class AdminAuditLogIndexRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'event' => ['nullable', 'string', Rule::in(array_column(AnalyticsEvent::cases(), 'value'))],
+            'event' => ['nullable', 'string', Rule::in(array_column(AuditEvent::cases(), 'value'))],
             'user_id' => ['nullable', 'integer', 'min:1'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],

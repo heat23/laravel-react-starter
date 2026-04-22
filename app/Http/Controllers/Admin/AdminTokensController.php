@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminCacheKey;
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminTokenExportRequest;
@@ -127,7 +127,7 @@ class AdminTokensController extends Controller
 
     public function export(AdminTokenExportRequest $request): StreamedResponse
     {
-        $this->auditService->log(AnalyticsEvent::ADMIN_TOKENS_EXPORTED, [
+        $this->auditService->log(AuditEvent::ADMIN_TOKENS_EXPORTED, [
             'filters' => $request->validated(),
         ]);
 
@@ -179,7 +179,7 @@ class AdminTokensController extends Controller
 
         DB::table('personal_access_tokens')->where('id', $id)->delete();
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_TOKEN_REVOKED, [
+        $this->auditService->log(AuditEvent::ADMIN_TOKEN_REVOKED, [
             'token_id' => $id,
             'token_name' => $token->name,
             'user_id' => $token->tokenable_id,

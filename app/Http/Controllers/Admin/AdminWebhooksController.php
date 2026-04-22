@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminCacheKey;
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Models\IncomingWebhook;
@@ -256,7 +256,7 @@ class AdminWebhooksController extends Controller
 
         $endpoint->restore();
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_WEBHOOK_ENDPOINT_RESTORED, [
+        $this->auditService->log(AuditEvent::ADMIN_WEBHOOK_ENDPOINT_RESTORED, [
             'endpoint_id' => $endpoint->id,
             'url' => $endpoint->url,
         ]);

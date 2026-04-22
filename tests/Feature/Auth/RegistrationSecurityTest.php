@@ -116,42 +116,6 @@ class RegistrationSecurityTest extends TestCase
     }
 
     // ============================================
-    // Session Migration Tests
-    // ============================================
-
-    public function test_registration_migrates_session_data(): void
-    {
-        // The SessionDataMigrationService is a placeholder
-        // This test documents the expected behavior
-        session(['anonymous_data' => ['item1', 'item2']]);
-
-        $this->post('/register', [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => 'Password123!',
-            'password_confirmation' => 'Password123!',
-        ]);
-
-        // Migration service's hasSessionData returns false by default
-        // So no migration should occur in placeholder implementation
-        $this->assertAuthenticated();
-    }
-
-    public function test_registration_handles_migration_failure_gracefully(): void
-    {
-        // Even if migration fails, registration should succeed
-        $this->post('/register', [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => 'Password123!',
-            'password_confirmation' => 'Password123!',
-        ]);
-
-        $this->assertDatabaseHas('users', ['email' => 'test@example.com']);
-        $this->assertAuthenticated();
-    }
-
-    // ============================================
     // Audit Logging Tests
     // ============================================
 

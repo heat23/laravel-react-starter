@@ -23,7 +23,6 @@ vi.mock("@inertiajs/react", async () => {
           userSettings: true,
           notifications: false,
           onboarding: false,
-          apiDocs: false,
           twoFactor: false,
           webhooks: false,
           admin: true,

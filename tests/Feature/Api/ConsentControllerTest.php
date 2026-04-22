@@ -1,7 +1,6 @@
 <?php
 
 use App\Models\User;
-use App\Services\AuditService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 
@@ -61,7 +60,7 @@ it('records consent with optional version and timestamp', function () {
         });
 });
 
-it('persists analytics consent setting for authenticated users', function () {
+it('accepts consent from authenticated users without persisting any setting', function () {
     Log::spy();
     $user = User::factory()->create();
 
@@ -75,24 +74,8 @@ it('persists analytics consent setting for authenticated users', function () {
         ])
         ->assertOk();
 
-    expect($user->fresh()->getSetting(AuditService::ANALYTICS_CONSENT_KEY))->toBeTrue();
-});
-
-it('persists analytics decline for authenticated users', function () {
-    Log::spy();
-    $user = User::factory()->create();
-
-    $this->actingAs($user, 'sanctum')
-        ->postJson('/api/consent', [
-            'categories' => [
-                'necessary' => true,
-                'analytics' => false,
-                'marketing' => false,
-            ],
-        ])
-        ->assertOk();
-
-    expect($user->fresh()->getSetting(AuditService::ANALYTICS_CONSENT_KEY))->toBeFalse();
+    // GA4 forwarding removed — no analytics_consent key is persisted (factory creates onboarding_completed).
+    $this->assertDatabaseMissing('user_settings', ['user_id' => $user->id, 'key' => 'analytics_consent']);
 });
 
 it('does not persist settings for guest users', function () {

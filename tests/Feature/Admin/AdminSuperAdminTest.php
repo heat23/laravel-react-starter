@@ -2,24 +2,6 @@
 
 use App\Models\User;
 
-it('regular admin cannot impersonate a user', function () {
-    $admin = User::factory()->admin()->create(['super_admin' => false]);
-    $target = User::factory()->create();
-
-    $this->actingAs($admin)
-        ->post("/admin/users/{$target->id}/impersonate")
-        ->assertForbidden();
-});
-
-it('super admin can impersonate a user', function () {
-    $admin = User::factory()->superAdmin()->create();
-    $target = User::factory()->create();
-
-    $this->actingAs($admin)
-        ->post("/admin/users/{$target->id}/impersonate")
-        ->assertRedirect();
-});
-
 it('regular admin cannot toggle another user admin status', function () {
     $admin = User::factory()->admin()->create(['super_admin' => false]);
     $target = User::factory()->create();
@@ -47,6 +29,6 @@ it('non-admin cannot access super-admin-gated route', function () {
     $user = User::factory()->create();
     $target = User::factory()->create();
     $this->actingAs($user)
-        ->post("/admin/users/{$target->id}/impersonate")
+        ->patch("/admin/users/{$target->id}/toggle-admin")
         ->assertForbidden();
 });

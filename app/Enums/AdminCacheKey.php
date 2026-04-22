@@ -52,19 +52,9 @@ enum AdminCacheKey: string
     // Feature Flags
     case FEATURE_FLAGS_GLOBAL = 'admin:feature_flags:global';
 
-    // Product Analytics
-    case PRODUCT_ANALYTICS_SIGNUP_TREND = 'admin:product_analytics:signup_trend';
-    case PRODUCT_ANALYTICS_ONBOARDING_FUNNEL = 'admin:product_analytics:onboarding_funnel';
-    case PRODUCT_ANALYTICS_ONBOARDING_COMPLETION = 'admin:product_analytics:onboarding_completion';
-    case PRODUCT_ANALYTICS_FEATURE_ADOPTION = 'admin:product_analytics:feature_adoption';
-
     // Lifecycle / CRM
     case STAGE_FUNNEL = 'admin:lifecycle:stage_funnel';
     case STAGE_VELOCITY = 'admin:lifecycle:stage_velocity';
-    case LEAD_SCORES = 'admin:lifecycle:lead_scores';
-
-    // Metrics
-    case METRICS_MRR_SNAPSHOT = 'metrics:mrr_snapshot';
 
     /** Default TTL in seconds for most admin caches. */
     public const DEFAULT_TTL = 300;

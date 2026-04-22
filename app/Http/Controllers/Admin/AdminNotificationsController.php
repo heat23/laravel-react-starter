@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminCacheKey;
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminSendNotificationRequest;
@@ -122,7 +122,7 @@ class AdminNotificationsController extends Controller
         Cache::forget(AdminCacheKey::NOTIFICATIONS_STATS->value);
         Cache::forget(AdminCacheKey::NOTIFICATIONS_VOLUME->value);
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_NOTIFICATION_SENT, [
+        $this->auditService->log(AuditEvent::ADMIN_NOTIFICATION_SENT, [
             'subject' => $validated['subject'],
             'recipient' => $validated['recipient'],
             'count' => $count,

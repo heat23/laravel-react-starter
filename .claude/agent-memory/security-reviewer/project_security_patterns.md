@@ -12,8 +12,6 @@ Security infrastructure in place as of 2026-04-04 (tenth full audit pass):
 - Replay protection for Stripe webhooks (5-min tolerance) BUT check happens AFTER signature verification (correct order)
 - BillingService wraps all Stripe mutations in Redis locks (35s) + DB transactions
 - StripeWebhookController refuses to boot in non-local environments without STRIPE_WEBHOOK_SECRET set
-- Impersonation guard: cannot impersonate another admin, deactivated user, or self; session encrypted with Crypt::encryptString
-- Stop-impersonation route intentionally lacks `verified` middleware (documented, correct)
 - Admin routes protected by `auth + verified + admin + throttle:60,1`; super_admin routes layer `super_admin` middleware
 - CSP enabled but defaults to report-only mode in local/testing; `style-src 'unsafe-inline'` required by Tailwind JIT
 - dangerouslySetInnerHTML: QR code uses DOMPurify with SVG profile; Blog/Show uses DOMPurify allowlist; JSON-LD scripts use `</script>` escaping only (no DOMPurify — documented as intentional to avoid JSON corruption); Pricing.tsx uses sanitizeHtml() on licenseFaqSchema (DOMPurify.sanitize with no options on JSON-LD — functionally may corrupt JSON but data is hardcoded server config, not user input); FaqJsonLd component also uses </script> escaping only — all FAQ data is hardcoded static data

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Http\Requests\ContactSalesRequest;
 use App\Models\ContactSubmission;
 use App\Notifications\ContactNotification;
@@ -34,7 +34,7 @@ class ContactSalesController extends Controller
             'status' => 'new',
         ]);
 
-        $this->auditService->log(AnalyticsEvent::CONTACT_SUBMITTED, [
+        $this->auditService->log(AuditEvent::CONTACT_SUBMITTED, [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'subject' => 'Enterprise pricing',

@@ -1,7 +1,6 @@
 <?php
 
-use App\Enums\AnalyticsEvent;
-use App\Jobs\DispatchAnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Models\User;
 use App\Services\AuditService;
 use Carbon\Carbon;
@@ -355,7 +354,7 @@ test('log generic event captures event name', function () {
     $this->service->log('custom.action');
 });
 
-test('log accepts AnalyticsEvent enum', function () {
+test('log accepts AuditEvent enum', function () {
     expectLogChannel();
 
     Log::shouldReceive('info')
@@ -365,7 +364,7 @@ test('log accepts AnalyticsEvent enum', function () {
                 && $context['event'] === 'auth.login';
         });
 
-    $this->service->log(AnalyticsEvent::AUTH_LOGIN);
+    $this->service->log(AuditEvent::AUTH_LOGIN);
 });
 
 test('log generic event passes context as metadata', function () {
@@ -438,102 +437,6 @@ test('log uses single channel', function () {
 });
 
 // ============================================
-// logProductEvent() tests
-// ============================================
-
-test('logProductEvent includes user tier and signup cohort in event metadata', function () {
-    expectLogChannel();
-
-    Log::shouldReceive('info')
-        ->once()
-        ->withArgs(function ($message, $context) {
-            return $message === 'product.test_event'
-                && isset($context['metadata']['plan_tier'])
-                && isset($context['metadata']['signup_cohort'])
-                && array_key_exists('is_activated', $context['metadata']);
-        });
-
-    Carbon::setTestNow('2024-06-15 12:00:00');
-    $user = User::factory()->create(['created_at' => Carbon::parse('2024-03-01')]);
-
-    $this->service->logProductEvent('product.test_event', $user, ['custom' => 'value']);
-
-    Carbon::setTestNow();
-});
-
-test('logProductEvent accepts AnalyticsEvent enum', function () {
-    expectLogChannel();
-
-    Log::shouldReceive('info')
-        ->once()
-        ->withArgs(function ($message, $context) {
-            return $message === 'limit.threshold_50';
-        });
-
-    $user = User::factory()->create();
-    $this->service->logProductEvent(AnalyticsEvent::LIMIT_THRESHOLD_50, $user);
-});
-
-test('logProductEvent defaults to free plan tier when billing disabled', function () {
-    config(['features.billing.enabled' => false]);
-
-    expectLogChannel();
-
-    Log::shouldReceive('info')
-        ->once()
-        ->withArgs(function ($message, $context) {
-            return $context['metadata']['plan_tier'] === 'free';
-        });
-
-    $user = User::factory()->create();
-    $this->service->logProductEvent('product.test', $user);
-});
-
-test('logProductEvent includes signup cohort as YYYY-MM', function () {
-    Carbon::setTestNow('2024-06-15 12:00:00');
-
-    expectLogChannel();
-
-    Log::shouldReceive('info')
-        ->once()
-        ->withArgs(function ($message, $context) {
-            return $context['metadata']['signup_cohort'] === '2024-03';
-        });
-
-    $user = User::factory()->create(['created_at' => Carbon::parse('2024-03-15')]);
-    $this->service->logProductEvent('product.cohort_test', $user);
-
-    Carbon::setTestNow();
-});
-
-test('logProductEvent merges custom context with product context', function () {
-    expectLogChannel();
-
-    Log::shouldReceive('info')
-        ->once()
-        ->withArgs(function ($message, $context) {
-            return $context['metadata']['custom_field'] === 'custom_value'
-                && isset($context['metadata']['plan_tier']);
-        });
-
-    $user = User::factory()->create();
-    $this->service->logProductEvent('product.merge_test', $user, ['custom_field' => 'custom_value']);
-});
-
-test('logProductEvent handles null user gracefully', function () {
-    expectLogChannel();
-
-    Log::shouldReceive('info')
-        ->once()
-        ->withArgs(function ($message, $context) {
-            return $context['user_id'] === null
-                && empty(array_filter($context['metadata'], fn ($v) => $v !== null));
-        });
-
-    $this->service->logProductEvent('product.null_user');
-});
-
-// ============================================
 // IP anonymization tests
 // ============================================
 
@@ -598,120 +501,34 @@ test('persist does not anonymize IP when config disabled', function () {
 });
 
 // ============================================
-// GA4 forwarding for billing payment events (ANA-007 regression)
+// Explicit user_id in log() context
 // ============================================
 
-test('billing.payment_failed is forwarded to GA4 for authenticated user', function () {
+test('log() uses explicit user_id from context when provided', function () {
     expectLogChannel();
-    Log::shouldReceive('info')->once();
 
-    // No analytics_consent set — null consent means legitimate-interest forwarding applies
-    // (GDPR Art. 6(1)(f)). AuditService::userDeclinedAnalytics() returns false for null,
-    // so the job is dispatched. Only an explicit false/declined value skips forwarding.
-    $user = User::factory()->create();
-    Auth::login($user);
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function ($message, $context) {
+            return $context['user_id'] === 99
+                && ! array_key_exists('user_id', $context['metadata']);
+        });
 
-    $this->service->log(AnalyticsEvent::BILLING_PAYMENT_FAILED);
-
-    // DispatchAnalyticsEvent constructor: public readonly string $eventName, public readonly int $userId
-    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
-        return $job->eventName === 'billing.payment_failed'
-            && $job->userId === $user->id;
-    });
+    // No Auth::login — but explicit user_id should be honored
+    $this->service->log('audit.explicit_actor', ['user_id' => 99, 'detail' => 'x']);
 });
 
-test('billing.payment_recovered is forwarded to GA4 for authenticated user', function () {
+test('log() falls back to Auth::id() when user_id absent from context', function () {
     expectLogChannel();
-    Log::shouldReceive('info')->once();
-
-    // No analytics_consent set — null consent means legitimate-interest forwarding applies
-    // (GDPR Art. 6(1)(f)). AuditService::userDeclinedAnalytics() returns false for null,
-    // so the job is dispatched. Only an explicit false/declined value skips forwarding.
-    $user = User::factory()->create();
-    Auth::login($user);
-
-    $this->service->log(AnalyticsEvent::BILLING_PAYMENT_RECOVERED);
-
-    // DispatchAnalyticsEvent constructor: public readonly string $eventName, public readonly int $userId
-    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
-        return $job->eventName === 'billing.payment_recovered'
-            && $job->userId === $user->id;
-    });
-});
-
-test('billing.payment_method_updated is forwarded to GA4 for authenticated user', function () {
-    expectLogChannel();
-    Log::shouldReceive('info')->once();
-
-    // No analytics_consent set — null consent means legitimate-interest forwarding applies
-    // (GDPR Art. 6(1)(f)). AuditService::userDeclinedAnalytics() returns false for null,
-    // so the job is dispatched. Only an explicit false/declined value skips forwarding.
-    $user = User::factory()->create();
-    Auth::login($user);
-
-    $this->service->log(AnalyticsEvent::BILLING_PAYMENT_METHOD_UPDATED);
-
-    // DispatchAnalyticsEvent constructor: public readonly string $eventName, public readonly int $userId
-    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
-        return $job->eventName === 'billing.payment_method_updated'
-            && $job->userId === $user->id;
-    });
-});
-
-test('billing.retention_coupon_applied is forwarded to GA4 for authenticated user', function () {
-    expectLogChannel();
-    Log::shouldReceive('info')->once();
-
-    // No analytics_consent set — null consent means legitimate-interest forwarding applies
-    // (GDPR Art. 6(1)(f)). AuditService::userDeclinedAnalytics() returns false for null,
-    // so the job is dispatched. Only an explicit false/declined value skips forwarding.
-    $user = User::factory()->create();
-    Auth::login($user);
-
-    $this->service->log(AnalyticsEvent::BILLING_RETENTION_COUPON_APPLIED);
-
-    // DispatchAnalyticsEvent constructor: public readonly string $eventName, public readonly int $userId
-    Queue::assertPushed(DispatchAnalyticsEvent::class, function ($job) use ($user) {
-        return $job->eventName === 'billing.retention_coupon_applied'
-            && $job->userId === $user->id;
-    });
-});
-
-test('billing.payment_failed is not forwarded to GA4 for anonymous user', function () {
-    expectLogChannel();
-    Log::shouldReceive('info')->once();
-
-    // No Auth::login — user_id will be null
-    $this->service->log(AnalyticsEvent::BILLING_PAYMENT_FAILED);
-
-    Queue::assertNotPushed(DispatchAnalyticsEvent::class);
-});
-
-test('billing.payment_failed is not forwarded to GA4 when user has explicitly declined analytics consent', function () {
-    expectLogChannel();
-    Log::shouldReceive('info')->once();
-
-    // Explicit false/declined value — this is the primary GDPR guard.
-    // AuditService::userDeclinedAnalytics() must return true for this user,
-    // blocking the DispatchAnalyticsEvent job regardless of event type.
-    $user = User::factory()->create();
-    $user->setSetting(AuditService::ANALYTICS_CONSENT_KEY, false);
-    Auth::login($user);
-
-    $this->service->log(AnalyticsEvent::BILLING_PAYMENT_FAILED);
-
-    Queue::assertNotPushed(DispatchAnalyticsEvent::class);
-});
-
-test('non-forwarded billing event is not dispatched to GA4', function () {
-    expectLogChannel();
-    Log::shouldReceive('info')->once();
 
     $user = User::factory()->create();
     Auth::login($user);
 
-    // billing.pricing_viewed is not in GA4_FORWARDED_EVENTS
-    $this->service->log(AnalyticsEvent::BILLING_PRICING_VIEWED);
+    Log::shouldReceive('info')
+        ->once()
+        ->withArgs(function ($message, $context) use ($user) {
+            return $context['user_id'] === $user->id;
+        });
 
-    Queue::assertNotPushed(DispatchAnalyticsEvent::class);
+    $this->service->log('audit.auth_actor', ['detail' => 'x']);
 });

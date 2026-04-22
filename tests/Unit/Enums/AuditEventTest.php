@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 
 it('contains all documented taxonomy events', function () {
     $taxonomyEvents = [
@@ -45,8 +45,6 @@ it('contains all documented taxonomy events', function () {
         'admin.user_deactivated',
         'admin.user_restored',
         'admin.user_viewed',
-        'admin.impersonation_started',
-        'admin.impersonation_stopped',
         'admin.audit_logs_exported',
         'admin.subscriptions_exported',
         'admin.users_exported',
@@ -77,19 +75,19 @@ it('contains all documented taxonomy events', function () {
     ];
 
     foreach ($taxonomyEvents as $event) {
-        expect(AnalyticsEvent::tryFrom($event))->not->toBeNull(
+        expect(AuditEvent::tryFrom($event))->not->toBeNull(
             "Missing enum case for taxonomy event: {$event}"
         );
     }
 });
 
 it('all enum values follow category.action format', function () {
-    foreach (AnalyticsEvent::cases() as $case) {
+    foreach (AuditEvent::cases() as $case) {
         expect($case->value)->toMatch('/^[a-z_0-9]+(\.[a-z_0-9]+)+$/');
     }
 });
 
 it('has no duplicate values', function () {
-    $values = array_map(fn ($case) => $case->value, AnalyticsEvent::cases());
+    $values = array_map(fn ($case) => $case->value, AuditEvent::cases());
     expect($values)->toHaveCount(count(array_unique($values)));
 });

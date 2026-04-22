@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminNpsResponseExportRequest;
@@ -87,7 +87,7 @@ class AdminNpsResponsesController extends Controller
 
     public function export(AdminNpsResponseExportRequest $request): StreamedResponse
     {
-        $this->auditService->log(AnalyticsEvent::ADMIN_NPS_EXPORTED, [
+        $this->auditService->log(AuditEvent::ADMIN_NPS_EXPORTED, [
             'filters' => $request->validated(),
         ]);
 

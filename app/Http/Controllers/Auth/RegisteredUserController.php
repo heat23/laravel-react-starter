@@ -6,12 +6,10 @@ use App\Enums\LifecycleStage;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
-use App\Models\UserSetting;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
 use App\Services\LifecycleService;
 use App\Services\PlanLimitService;
-use App\Services\SessionDataMigrationService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -25,7 +23,6 @@ use Inertia\Response;
 class RegisteredUserController extends Controller
 {
     public function __construct(
-        private SessionDataMigrationService $sessionDataMigration,
         private PlanLimitService $planLimitService,
         private AuditService $auditService,
         private CacheInvalidationManager $cacheInvalidation,
@@ -41,12 +38,7 @@ class RegisteredUserController extends Controller
             return redirect()->route('dashboard');
         }
 
-        $sessionDataSummary = $this->sessionDataMigration->hasSessionData()
-            ? $this->sessionDataMigration->getSessionDataSummary()
-            : null;
-
         return Inertia::render('Auth/Register', [
-            'sessionData' => $sessionDataSummary,
             'features' => [
                 'socialAuth' => config('features.social_auth.enabled', false),
             ],
@@ -98,24 +90,6 @@ class RegisteredUserController extends Controller
             session()->flash('warning', 'Account created, but we could not send the verification email. You can resend it from your profile settings.');
         }
 
-        // Migrate session data before logging in
-        if ($this->sessionDataMigration->hasSessionData()) {
-            try {
-                $migrationResult = $this->sessionDataMigration->migrateSessionData($user);
-
-                if ($migrationResult['project_items'] > 0) {
-                    $itemsText = $migrationResult['project_items'] === 1 ? 'package' : 'packages';
-                    session()->flash('success', "Welcome! We've imported {$migrationResult['project_items']} {$itemsText} from your quick scan.");
-                }
-            } catch (\Exception $e) {
-                Log::error('Failed to migrate session data during registration', [
-                    'user_id' => $user->id,
-                    'error' => $e->getMessage(),
-                ]);
-                // Don't block registration if migration fails
-            }
-        }
-
         Auth::login($user, $request->boolean('remember', false));
 
         // Lifecycle stage assignment
@@ -128,18 +102,9 @@ class RegisteredUserController extends Controller
             Log::error('lifecycle_transition_failed_on_registration', ['user_id' => $user->id, 'error' => $e->getMessage()]);
         }
 
-        // Persist first-touch UTM attribution captured by CaptureUtmParameters middleware
-        $utmData = session('utm_data');
-        if (is_array($utmData)) {
-            foreach ($utmData as $key => $value) {
-                UserSetting::setValue($user->id, $key, $value);
-            }
-        }
-
-        $this->auditService->logRegistration($user, array_merge(
-            ['plan_intent' => $request->query('plan')],
-            is_array($utmData) ? $utmData : []
-        ));
+        $this->auditService->logRegistration($user, [
+            'plan_intent' => $request->query('plan'),
+        ]);
         $this->cacheInvalidation->invalidateOnRegistration();
 
         // Preserve plan intent: if user came from a pricing page plan CTA, redirect

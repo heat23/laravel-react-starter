@@ -5,7 +5,6 @@ import { router } from '@inertiajs/react';
 export type AdminActionType =
   | 'toggleAdmin'
   | 'toggleActive'
-  | 'impersonate'
   | 'sendPasswordReset';
 
 export interface AdminActionTarget {
@@ -59,21 +58,6 @@ export function useAdminAction() {
         router.patch(`/admin/users/${user.id}/toggle-admin`, {}, options);
       } else if (type === 'toggleActive') {
         router.patch(`/admin/users/${user.id}/toggle-active`, {}, options);
-      } else if (type === 'impersonate') {
-        router.post(
-          `/admin/users/${user.id}/impersonate`,
-          {},
-          {
-            onSuccess: () => {
-              onSuccess?.();
-              resolve();
-            },
-            onError: () => {
-              onRollback?.();
-              reject();
-            },
-          }
-        );
       } else if (type === 'sendPasswordReset') {
         router.post(`/admin/users/${user.id}/send-password-reset`, {}, options);
       } else {
@@ -110,15 +94,6 @@ export function useAdminAction() {
           ? `Restore ${user.name}? They will be able to log in again.`
           : `Deactivate ${user.name}? They will not be able to log in.`,
         variant: user.deleted_at ? 'default' : 'destructive',
-        confirmLabel: 'Confirm',
-      };
-    }
-
-    if (type === 'impersonate') {
-      return {
-        title: 'Impersonate User',
-        description: `You will be logged in as ${user.name}. You can end impersonation from the top banner.`,
-        variant: 'default',
         confirmLabel: 'Confirm',
       };
     }

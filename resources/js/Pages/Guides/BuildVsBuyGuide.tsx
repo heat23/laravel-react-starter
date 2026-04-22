@@ -404,9 +404,7 @@ export default function BuildVsBuyGuide({
                   delete button. What a production admin panel actually
                   requires: user search and filtering with pagination, toggle
                   admin status (with audit log), deactivate and restore
-                  accounts, impersonation (the ability to log in as any user for
-                  debugging &mdash; with strict middleware to prevent privilege
-                  escalation), feature flag overrides per user or globally, a
+                  accounts, feature flag overrides per user or globally, a
                   billing stats dashboard with KPI metrics (MRR, churn, trial
                   conversion), an audit log viewer with searchable history, a
                   health monitoring dashboard (DB/cache/queue/disk), a config
@@ -415,11 +413,9 @@ export default function BuildVsBuyGuide({
                 <p>
                   Building this in React means component-level access control,
                   keyboard shortcuts for power users, and a responsive layout.
-                  The impersonation feature alone requires careful middleware
-                  design &mdash; the stop-impersonation route must not use{' '}
-                  <code>verified</code> middleware, because the impersonated
-                  user may not be verified. Getting that wrong creates a support
-                  nightmare or a security gap.
+                  Super-admin gating alone requires careful route-level
+                  middleware so that privileged mutations (role toggles,
+                  deactivation) can&apos;t be triggered by a regular admin.
                 </p>
                 <p>
                   Admin panels are also where caching complexity hits hardest.
@@ -802,7 +798,7 @@ export default function BuildVsBuyGuide({
                 <ul>
                   <li>
                     User management: search, filter, toggle admin,
-                    deactivate/restore, impersonation
+                    deactivate/restore
                   </li>
                   <li>
                     Feature flag overrides: global or per-user, with reason

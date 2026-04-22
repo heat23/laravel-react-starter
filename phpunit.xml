@@ -49,7 +49,6 @@
         <env name="FEATURE_USER_SETTINGS" value="true"/>
         <!-- FEATURE_NOTIFICATIONS defaults to false - let tests that need it set it explicitly -->
         <env name="FEATURE_ONBOARDING" value="true"/>
-        <!-- FEATURE_API_DOCS defaults to false - let tests that need it set it explicitly -->
         <env name="FEATURE_TWO_FACTOR" value="true"/>
         <env name="FEATURE_WEBHOOKS" value="true"/>
         <env name="FEATURE_INDEXNOW" value="true"/>

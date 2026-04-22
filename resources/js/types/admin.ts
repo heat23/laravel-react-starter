@@ -81,7 +81,6 @@ export interface AdminUser {
   created_at: string;
   tokens_count: number;
   deleted_at: string | null;
-  engagement_score: number;
 }
 
 /** Extended user detail for admin user show page */
@@ -407,10 +406,6 @@ export interface AdminDashboardProps {
   signup_chart: ChartDataPoint[];
   recent_activity: AuditLogSummary[];
   stage_funnel?: LifecycleFunnelStage[];
-  retention_stats?: {
-    d7_retention: number;
-    d30_retention: number;
-  };
 }
 
 export interface AdminUsersIndexProps {
@@ -466,12 +461,6 @@ export interface CohortRetention {
   week_8: number | null;
 }
 
-export interface AnalyticsThresholds {
-  churn_rate: { warning: number; critical: number };
-  mrr_drop_percent: { warning: number; critical: number };
-  trial_conversion: { warning_below: number; critical_below: number };
-}
-
 export interface AdminBillingDashboardProps {
   stats: BillingDashboardStats;
   tier_distribution: TierDistribution[];
@@ -480,7 +469,6 @@ export interface AdminBillingDashboardProps {
   trial_stats: BillingTrialStats;
   recent_events: BillingEvent[];
   cohort_retention: CohortRetention[];
-  analyticsThresholds: AnalyticsThresholds;
 }
 
 export interface AdminBillingSubscriptionsProps {
@@ -691,6 +679,9 @@ export interface FeatureFlagAdmin {
   user_override_count: number;
   is_protected: boolean;
   is_route_dependent: boolean;
+  // Name of the hard dependency that gated this flag off, if any.
+  // When non-null, `effective` is false even if env/override would otherwise be true.
+  blocked_by_dependency: string | null;
 }
 
 /** User override for a feature flag */

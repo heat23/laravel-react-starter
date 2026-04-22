@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\AuditService;
@@ -25,7 +25,7 @@ class CheckExpiredTrials extends Command
         // Lifetime idempotency: exclude users who have EVER had a TRIAL_EXPIRED event logged.
         // This is safer than a sliding window (which breaks if scheduler is down for 2+ days).
         $alreadyExpiredIds = AuditLog::query()
-            ->where('event', AnalyticsEvent::TRIAL_EXPIRED->value)
+            ->where('event', AuditEvent::TRIAL_EXPIRED->value)
             ->whereNotNull('user_id')
             ->pluck('user_id');
 
@@ -36,7 +36,8 @@ class CheckExpiredTrials extends Command
             ->whereNotIn('id', $alreadyExpiredIds)
             ->chunk(100, function ($users) use ($auditService) {
                 foreach ($users as $user) {
-                    $auditService->logProductEvent(AnalyticsEvent::TRIAL_EXPIRED, $user, [
+                    $auditService->log(AuditEvent::TRIAL_EXPIRED, [
+                        'user_id' => $user->id,
                         'trial_ends_at' => $user->trial_ends_at?->toISOString(),
                     ]);
                 }

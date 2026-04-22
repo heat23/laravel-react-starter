@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminEmailSendLogExportRequest;
@@ -55,7 +55,7 @@ class AdminEmailSendLogController extends Controller
 
     public function export(AdminEmailSendLogExportRequest $request): StreamedResponse
     {
-        $this->auditService->log(AnalyticsEvent::ADMIN_EMAIL_SEND_LOGS_EXPORTED, [
+        $this->auditService->log(AuditEvent::ADMIN_EMAIL_SEND_LOGS_EXPORTED, [
             'filters' => $request->validated(),
         ]);
 

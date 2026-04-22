@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminBulkFeedbackRequest;
@@ -93,7 +93,7 @@ class AdminFeedbackController extends Controller
 
         $feedback->update($validated);
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_FEEDBACK_UPDATED, [
+        $this->auditService->log(AuditEvent::ADMIN_FEEDBACK_UPDATED, [
             'feedback_id' => $feedback->id,
             'changes' => array_keys($validated),
         ]);
@@ -126,7 +126,7 @@ class AdminFeedbackController extends Controller
             }
         });
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_FEEDBACK_BULK_UPDATED, [
+        $this->auditService->log(AuditEvent::ADMIN_FEEDBACK_BULK_UPDATED, [
             'ids' => $ids,
             'action' => $action,
             'count' => $count,
@@ -139,7 +139,7 @@ class AdminFeedbackController extends Controller
 
     public function destroy(Feedback $feedback): RedirectResponse
     {
-        $this->auditService->log(AnalyticsEvent::ADMIN_FEEDBACK_DELETED, [
+        $this->auditService->log(AuditEvent::ADMIN_FEEDBACK_DELETED, [
             'feedback_id' => $feedback->id,
             'type' => $feedback->type,
             'status' => $feedback->status,
@@ -154,7 +154,7 @@ class AdminFeedbackController extends Controller
 
     public function export(AdminFeedbackExportRequest $request): StreamedResponse
     {
-        $this->auditService->log(AnalyticsEvent::ADMIN_FEEDBACK_EXPORTED, [
+        $this->auditService->log(AuditEvent::ADMIN_FEEDBACK_EXPORTED, [
             'filters' => $request->validated(),
         ]);
 

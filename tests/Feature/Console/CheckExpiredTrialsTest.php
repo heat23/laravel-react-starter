@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,7 +17,7 @@ it('skips execution when trials are disabled', function () {
         ->expectsOutputToContain('Trials are disabled')
         ->assertExitCode(0);
 
-    expect(AuditLog::where('event', AnalyticsEvent::TRIAL_EXPIRED->value)->count())->toBe(0);
+    expect(AuditLog::where('event', AuditEvent::TRIAL_EXPIRED->value)->count())->toBe(0);
 });
 
 it('logs TRIAL_EXPIRED for users whose trial has ended without an active subscription', function () {
@@ -30,7 +30,7 @@ it('logs TRIAL_EXPIRED for users whose trial has ended without an active subscri
 
     $this->artisan('trials:check-expired')->assertExitCode(0);
 
-    expect(AuditLog::where('event', AnalyticsEvent::TRIAL_EXPIRED->value)
+    expect(AuditLog::where('event', AuditEvent::TRIAL_EXPIRED->value)
         ->where('user_id', $user->id)
         ->exists()
     )->toBeTrue();
@@ -45,7 +45,7 @@ it('skips users whose trial has not yet expired', function () {
 
     $this->artisan('trials:check-expired')->assertExitCode(0);
 
-    expect(AuditLog::where('event', AnalyticsEvent::TRIAL_EXPIRED->value)
+    expect(AuditLog::where('event', AuditEvent::TRIAL_EXPIRED->value)
         ->where('user_id', $user->id)
         ->exists()
     )->toBeFalse();
@@ -67,7 +67,7 @@ it('skips users with an active subscription', function () {
 
     $this->artisan('trials:check-expired')->assertExitCode(0);
 
-    expect(AuditLog::where('event', AnalyticsEvent::TRIAL_EXPIRED->value)
+    expect(AuditLog::where('event', AuditEvent::TRIAL_EXPIRED->value)
         ->where('user_id', $user->id)
         ->exists()
     )->toBeFalse();
@@ -81,7 +81,7 @@ it('is idempotent — does not log TRIAL_EXPIRED twice for the same user', funct
     $this->artisan('trials:check-expired')->assertExitCode(0);
     $this->artisan('trials:check-expired')->assertExitCode(0);
 
-    expect(AuditLog::where('event', AnalyticsEvent::TRIAL_EXPIRED->value)
+    expect(AuditLog::where('event', AuditEvent::TRIAL_EXPIRED->value)
         ->where('user_id', $user->id)
         ->count()
     )->toBe(1);
@@ -94,7 +94,7 @@ it('skips users with no trial_ends_at set', function () {
 
     $this->artisan('trials:check-expired')->assertExitCode(0);
 
-    expect(AuditLog::where('event', AnalyticsEvent::TRIAL_EXPIRED->value)
+    expect(AuditLog::where('event', AuditEvent::TRIAL_EXPIRED->value)
         ->where('user_id', $user->id)
         ->exists()
     )->toBeFalse();

@@ -568,3 +568,63 @@ it('route constraint accepts all registered flag names', function () {
         );
     }
 });
+
+/*
+|--------------------------------------------------------------------------
+| Hard-dependency gating surfaces via Inertia props
+|--------------------------------------------------------------------------
+| The admin UI relies on getAdminSummary() emitting `blocked_by_dependency`
+| so the operator can see WHY an effective flag is OFF when the switch shows
+| ON. This guards against the service shape drifting away from the controller
+| contract and leaving the UI with a silent mismatch.
+*/
+
+it('exposes blocked_by_dependency on Inertia props when a hard dep is off', function () {
+    config([
+        'features.onboarding.enabled' => true,
+        'features.user_settings.enabled' => false,
+    ]);
+
+    $admin = User::factory()->admin()->create();
+
+    $response = $this->actingAs($admin)->get('/admin/feature-flags');
+
+    $response->assertStatus(200);
+    $response->assertInertia(function ($page) {
+        $page->component('Admin/FeatureFlags/Index');
+        $flags = collect($page->toArray()['props']['flags']);
+        $onboarding = $flags->firstWhere('flag', 'onboarding');
+
+        expect($onboarding)->not->toBeNull('onboarding flag missing from admin summary');
+        expect($onboarding['effective'])->toBeFalse(
+            'Admin effective state must match runtime resolve() — hard-dep gate should force false'
+        );
+        expect($onboarding['blocked_by_dependency'])->toBe(
+            'user_settings',
+            'Admin UI needs the dep name to render the Blocked-by badge'
+        );
+        // env_default should still reflect raw config — the gate is an overlay,
+        // not a rewrite of the underlying env intent.
+        expect($onboarding['env_default'])->toBeTrue();
+    });
+});
+
+it('leaves blocked_by_dependency null on Inertia props when deps are satisfied', function () {
+    config([
+        'features.onboarding.enabled' => true,
+        'features.user_settings.enabled' => true,
+    ]);
+
+    $admin = User::factory()->admin()->create();
+
+    $response = $this->actingAs($admin)->get('/admin/feature-flags');
+
+    $response->assertStatus(200);
+    $response->assertInertia(function ($page) {
+        $flags = collect($page->toArray()['props']['flags']);
+        $onboarding = $flags->firstWhere('flag', 'onboarding');
+
+        expect($onboarding['effective'])->toBeTrue();
+        expect($onboarding['blocked_by_dependency'])->toBeNull();
+    });
+});

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminSessionIndexRequest;
@@ -89,7 +89,7 @@ class AdminSessionsController extends Controller
             DB::table('sessions')->where('user_id', $userId)->delete();
         }
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_SESSION_TERMINATED, [
+        $this->auditService->log(AuditEvent::ADMIN_SESSION_TERMINATED, [
             'target_user_id' => $userId,
         ]);
 

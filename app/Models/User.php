@@ -54,9 +54,6 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
         'utm_source',
         'utm_medium',
         'utm_campaign',
-        'health_score',
-        'engagement_score',
-        'lead_score',
         'marketing_opt_out',
     ];
 
@@ -86,12 +83,7 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
             'is_admin' => 'boolean',
             'super_admin' => 'boolean',
             'lifecycle_stage' => 'string',
-            'health_score' => 'integer',
-            'engagement_score' => 'integer',
-            'lead_score' => 'integer',
             'marketing_opt_out' => 'boolean',
-            'lead_qualified_at' => 'datetime',
-            'scores_computed_at' => 'datetime',
         ];
     }
 

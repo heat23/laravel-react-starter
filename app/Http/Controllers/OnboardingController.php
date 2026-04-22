@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Enums\LifecycleStage;
 use App\Services\AuditService;
 use App\Services\LifecycleService;
@@ -51,7 +51,9 @@ class OnboardingController extends Controller
         }
 
         if ($user) {
-            $this->auditService->logProductEvent(AnalyticsEvent::ONBOARDING_COMPLETED, $user);
+            $this->auditService->log(AuditEvent::ONBOARDING_COMPLETED, [
+                'user_id' => $user->id,
+            ]);
         }
 
         session()->flash('success', 'Welcome aboard! Your account is all set.');

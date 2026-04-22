@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Http\Requests\ContactRequest;
 use App\Http\Requests\ContactSalesRequest;
 use App\Models\ContactSubmission;
@@ -35,7 +35,7 @@ class ContactController extends Controller
         ]);
 
         // Audit log (regression guard — keep existing behaviour)
-        $this->auditService->log(AnalyticsEvent::CONTACT_SUBMITTED, [
+        $this->auditService->log(AuditEvent::CONTACT_SUBMITTED, [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'subject' => $validated['subject'],
@@ -65,7 +65,7 @@ class ContactController extends Controller
             'status' => 'new',
         ]);
 
-        $this->auditService->log(AnalyticsEvent::CONTACT_SUBMITTED, [
+        $this->auditService->log(AuditEvent::CONTACT_SUBMITTED, [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'subject' => 'Enterprise pricing',

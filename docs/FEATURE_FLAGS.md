@@ -3,11 +3,23 @@
 ## Dependency Graph
 
 ### Hard Dependencies (will break if dependency disabled)
-- `onboarding` → requires `user_settings` (stores completion timestamp in user_settings table)
-- `billing` → requires `webhooks` for Stripe webhooks (auto-enabled in routes/api.php)
-- `two_factor` → requires `user_settings` for enrollment preference (optional fallback exists)
-- `api_docs` → requires `api_tokens` (documents token endpoints)
-- `admin` → protected flag: cannot be overridden via DB (FeatureFlagService enforces hard floor when env=false)
+
+**Runtime-enforced** by `FeatureFlagService::HARD_DEPENDENCIES` — if a listed dep is off, the dependent flag resolves to `false` and a `Log::warning(...)` is emitted. The warning is de-duped per-process (keyed by `"{flag}:{dependency}"`) so a misconfigured production doesn't flood logs on every Inertia request; workers re-emit after restart. The admin dashboard surfaces the same gate via `blocked_by_dependency` so the operator sees the runtime-accurate `effective` value. This prevents the "silent broken" bug class where a flag is on but its prerequisite is misconfigured.
+
+- `onboarding` → requires `user_settings` (completion timestamp lives in `user_settings`; without it the wizard can't record progress) — **enforced**
+
+**Documented but not runtime-enforced** (either a soft fallback exists, or the dependency lives at a different layer):
+
+- `billing` → Stripe webhooks are registered by Cashier at `/stripe/webhook` regardless of `FEATURE_WEBHOOKS`. The `webhooks` flag only gates the user-configurable outgoing-webhook system.
+- `two_factor` → uses `user_settings` for enrollment preference when available; falls back gracefully when `user_settings` is off (documented soft dep).
+- `admin` → protected flag: cannot be overridden via DB (FeatureFlagService enforces hard floor when env=false).
+
+### Adding a Hard Dependency
+
+1. Add an entry to `FeatureFlagService::HARD_DEPENDENCIES` (`'dependent' => ['prerequisite', ...]`).
+2. Add coverage in `tests/Unit/Services/FeatureFlagServiceTest.php` ("resolves X to false when Y is disabled") and `tests/Feature/FeatureFlagDependencyTest.php` if the integration path matters.
+3. Document the dep above with a one-line justification.
+4. Do NOT register a soft dependency here — reserve this for "will break if dep is off," not "degrades gracefully."
 
 ### Soft Dependencies (graceful degradation)
 - `notifications` + `webhooks` = webhook delivery notifications (webhook failures still logged to database)

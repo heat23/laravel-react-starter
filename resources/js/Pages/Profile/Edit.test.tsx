@@ -36,7 +36,6 @@ vi.mock('@inertiajs/react', async () => {
           userSettings: true,
           notifications: false,
           onboarding: false,
-          apiDocs: false,
           webhooks: false,
         },
         notifications_unread_count: 0,

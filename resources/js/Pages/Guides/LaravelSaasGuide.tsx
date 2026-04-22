@@ -533,10 +533,10 @@ export default function LaravelSaasGuide({
                   <strong>User list with search:</strong> Essential from day
                   one. Customers will email you about their accounts, and you
                   need to find them fast. Full-text search on name and email,
-                  filters for admin status and verification state, and the
-                  ability to impersonate a user to see exactly what they see.
-                  Pagination is non-negotiable &mdash; you&apos;ll have
-                  thousands of users sooner than you think.
+                  filters for admin status and verification state, and
+                  super-admin-only actions like role toggles and account
+                  deactivation. Pagination is non-negotiable &mdash; you&apos;ll
+                  have thousands of users sooner than you think.
                 </p>
                 <p>
                   <strong>Subscription overview:</strong> Which users are on

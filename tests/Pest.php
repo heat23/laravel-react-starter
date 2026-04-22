@@ -9,7 +9,6 @@ use App\Http\Controllers\Admin\AdminDataHealthController;
 use App\Http\Controllers\Admin\AdminFailedJobsController;
 use App\Http\Controllers\Admin\AdminFeatureFlagController;
 use App\Http\Controllers\Admin\AdminHealthController;
-use App\Http\Controllers\Admin\AdminImpersonationController;
 use App\Http\Controllers\Admin\AdminIndexNowController;
 use App\Http\Controllers\Admin\AdminNotificationsController;
 use App\Http\Controllers\Admin\AdminSocialAuthController;
@@ -27,7 +26,6 @@ use App\Models\FeatureFlagOverride;
 use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Laravel\Cashier\Http\Controllers\PaymentController;
@@ -319,8 +317,6 @@ function registerAdminRoutes(): void
                 $router->patch('/users/{user}/toggle-active', [AdminUsersController::class, 'toggleActive'])->withTrashed()->middleware('super_admin')->name('users.toggle-active');
                 $router->post('/users/{user}/send-password-reset', [AdminUsersController::class, 'sendPasswordReset'])->name('users.send-password-reset');
 
-                $router->post('/users/{user}/impersonate', [AdminImpersonationController::class, 'start'])->withTrashed()->middleware('super_admin')->name('users.impersonate');
-
                 $router->get('/health', [AdminHealthController::class, '__invoke'])->name('health');
                 $router->get('/config', [AdminConfigController::class, '__invoke'])->name('config');
 
@@ -337,11 +333,6 @@ function registerAdminRoutes(): void
 
                 $router->get('/data-health', [AdminDataHealthController::class, 'index'])->name('data-health.index');
             });
-
-        // Stop impersonation — outside admin middleware
-        $router->middleware(['web', 'auth'])
-            ->post('/admin/impersonate/stop', [AdminImpersonationController::class, 'stop'])
-            ->name('admin.impersonation.stop');
 
         $needsRefresh = true;
     }
@@ -501,17 +492,6 @@ function adminDelete(string $uri, ?User $admin = null): TestResponse
     $admin ??= User::factory()->admin()->create();
 
     return test()->actingAs($admin)->delete($uri);
-}
-
-/**
- * Build an impersonation session array (encrypted admin ID).
- */
-function impersonationSession(int $adminId, string $adminName = 'Admin'): array
-{
-    return [
-        'admin_impersonating_from' => Crypt::encryptString((string) $adminId),
-        'admin_impersonating_name' => $adminName,
-    ];
 }
 
 /**

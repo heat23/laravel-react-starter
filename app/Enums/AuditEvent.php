@@ -2,7 +2,16 @@
 
 namespace App\Enums;
 
-enum AnalyticsEvent: string
+/**
+ * Audit event types persisted to `audit_logs` via AuditService::log().
+ *
+ * This enum is the single source of truth for server-side audit events.
+ * Client-side analytics events (GA4 gtag) live in `resources/js/lib/events.ts`
+ * and are kept in sync via AuditEventSyncTest — the frontend emits a superset
+ * (adds engagement / feature / activation / error page-view events that are
+ * only ever fired from the browser).
+ */
+enum AuditEvent: string
 {
     // Auth
     case AUTH_LOGIN = 'auth.login';
@@ -59,8 +68,6 @@ enum AnalyticsEvent: string
     case ADMIN_USER_DEACTIVATED = 'admin.user_deactivated';
     case ADMIN_USER_RESTORED = 'admin.user_restored';
     case ADMIN_USER_VIEWED = 'admin.user_viewed';
-    case ADMIN_IMPERSONATION_STARTED = 'admin.impersonation_started';
-    case ADMIN_IMPERSONATION_STOPPED = 'admin.impersonation_stopped';
     case ADMIN_AUDIT_LOGS_EXPORTED = 'admin.audit_logs_exported';
     case ADMIN_SUBSCRIPTIONS_EXPORTED = 'admin.subscriptions_exported';
     case ADMIN_BILLING_SUBSCRIPTIONS_VIEWED = 'admin.billing.subscriptions_viewed';
@@ -109,25 +116,26 @@ enum AnalyticsEvent: string
     case SALES_INQUIRY_SUBMITTED = 'sales_inquiry.submitted';
     case FEEDBACK_SUBMITTED = 'feedback.submitted';
 
-    // Feature usage (frontend-originated, GA4-forwarded)
+    // Feature usage (frontend-originated, fired via client-side GA4 gtag;
+    // listed here to satisfy the FE/BE sync contract, not logged server-side).
     case FEATURE_USED = 'feature.used';
     case FEATURE_SETTINGS_UPDATED = 'feature.settings_updated';
 
-    // Engagement (frontend-originated, GA4-forwarded)
+    // Engagement (frontend-originated, fired via client-side GA4 gtag).
     case ENGAGEMENT_PAGE_VIEWED = 'engagement.page_viewed';
     case ENGAGEMENT_CTA_CLICKED = 'engagement.cta_clicked';
     case ENGAGEMENT_CONTACT_FORM_SUBMITTED = 'engagement.contact_form_submitted';
 
-    // Activation (frontend-originated, GA4-forwarded)
+    // Activation (frontend-originated, fired via client-side GA4 gtag).
     case ACTIVATION_MILESTONE = 'activation.milestone';
 
-    // Errors (frontend-originated, GA4-forwarded)
+    // Errors (frontend-originated, fired via client-side GA4 gtag).
     case ERROR_PAGE_VIEWED = 'error.page_viewed';
 
-    // Lifecycle email sends (server-side only, not forwarded to GA4)
+    // Lifecycle email sends (server-side, emitted by the welcome sequence command).
     case LIFECYCLE_EMAIL_SENT = 'lifecycle.email_sent';
 
-    // Limit (PQL signals)
+    // Limit (PQL signals emitted by PlanLimitService).
     case LIMIT_THRESHOLD_50 = 'limit.threshold_50';
     case LIMIT_THRESHOLD_80 = 'limit.threshold_80';
     case LIMIT_THRESHOLD_100 = 'limit.threshold_100';
@@ -135,7 +143,7 @@ enum AnalyticsEvent: string
     /**
      * Shared event names that must exist in both backend (this enum)
      * and frontend (resources/js/lib/events.ts). The sync test in
-     * tests/Unit/Enums/AnalyticsEventSyncTest.php enforces parity.
+     * tests/Unit/Enums/AuditEventSyncTest.php enforces parity.
      */
     private const SHARED_EVENTS = [
         'auth.login',

@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Models\EmailSendLog;
 use App\Models\User;
 
@@ -40,7 +40,7 @@ it('export logs an audit event', function () {
         ->get('/admin/email-send-logs/export');
 
     $this->assertDatabaseHas('audit_logs', [
-        'event' => AnalyticsEvent::ADMIN_EMAIL_SEND_LOGS_EXPORTED->value,
+        'event' => AuditEvent::ADMIN_EMAIL_SEND_LOGS_EXPORTED->value,
         'user_id' => $admin->id,
     ]);
 });

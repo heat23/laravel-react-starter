@@ -37,7 +37,6 @@ vi.mock('@inertiajs/react', async () => {
           userSettings: true,
           notifications: true,
           onboarding: false,
-          apiDocs: false,
           twoFactor: true,
           webhooks: true,
           admin: true,
@@ -165,7 +164,6 @@ describe('Admin UI Smoke Tests', () => {
                 deleted_at: null,
                 last_login_at: null,
                 tokens_count: 0,
-                engagement_score: 0,
               },
             ],
             current_page: 1,
@@ -202,7 +200,6 @@ describe('Admin UI Smoke Tests', () => {
                 deleted_at: null,
                 last_login_at: null,
                 tokens_count: 0,
-                engagement_score: 0,
               },
             ],
             current_page: 1,
@@ -321,11 +318,6 @@ describe('Admin UI Smoke Tests', () => {
           trial_stats={{ active_trials: 1, expiring_soon: 0 }}
           recent_events={[]}
           cohort_retention={[]}
-          analyticsThresholds={{
-            churn_rate: { warning: 5, critical: 10 },
-            mrr_drop_percent: { warning: 10, critical: 20 },
-            trial_conversion: { warning_below: 10, critical_below: 5 },
-          }}
         />
       );
 
@@ -614,6 +606,7 @@ describe('Admin UI Smoke Tests', () => {
               user_override_count: 0,
               is_protected: false,
               is_route_dependent: false,
+              blocked_by_dependency: null,
             },
             {
               flag: 'social_auth',
@@ -623,6 +616,7 @@ describe('Admin UI Smoke Tests', () => {
               user_override_count: 2,
               is_protected: false,
               is_route_dependent: true,
+              blocked_by_dependency: null,
             },
           ]}
         />

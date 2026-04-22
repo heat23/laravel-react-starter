@@ -20,7 +20,6 @@ class AuditLog extends Model
     private const SECURITY_EVENT_PREFIXES = [
         'auth.',
         'admin.unauthorized_access',
-        'admin.impersonation',
     ];
 
     /**

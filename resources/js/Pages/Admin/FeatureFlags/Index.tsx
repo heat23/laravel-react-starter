@@ -323,6 +323,16 @@ export default function FeatureFlagsIndex({
                                   Route unavailable
                                 </Badge>
                               )}
+                            {flag.blocked_by_dependency !== null && (
+                              <Badge
+                                variant="destructive"
+                                className="gap-1"
+                                title={`Hard dependency '${flag.blocked_by_dependency}' is disabled, so this flag resolves to OFF at runtime regardless of the switch state.`}
+                              >
+                                <AlertTriangle className="h-3 w-3" />
+                                Blocked by {flag.blocked_by_dependency}
+                              </Badge>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>

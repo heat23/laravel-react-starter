@@ -390,7 +390,6 @@ export default function AdminUsersIndex({
                   onSort={handleSort}
                 />
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Engagement</TableHead>
                 <TableHead className="w-[50px]" />
               </TableRow>
             </TableHeader>
@@ -462,19 +461,6 @@ export default function AdminUsersIndex({
                         <Badge variant="success">Active</Badge>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
-                      <span
-                        className={
-                          user.engagement_score >= 70
-                            ? 'text-success font-medium'
-                            : user.engagement_score >= 40
-                              ? 'text-foreground'
-                              : 'text-muted-foreground'
-                        }
-                      >
-                        {user.engagement_score}
-                      </span>
-                    </TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -539,21 +525,6 @@ export default function AdminUsersIndex({
                                 : 'Deactivate User'}
                             </DropdownMenuItem>
                           )}
-                          {isSuperAdmin &&
-                            !user.is_admin &&
-                            !user.deleted_at &&
-                            user.id !== currentUserId && (
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  setConfirmAction({
-                                    type: 'impersonate',
-                                    user,
-                                  })
-                                }
-                              >
-                                Impersonate
-                              </DropdownMenuItem>
-                            )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

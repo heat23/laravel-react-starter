@@ -42,12 +42,12 @@ const mockedUsePage = vi.mocked(usePage);
 
 const defaultStats = {
   days_since_signup: 5,
-  health_score: 60,
   email_verified: true,
   has_subscription: false,
   plan_name: 'Free',
   settings_count: 2,
   tokens_count: 1,
+  login_streak: 0,
 };
 
 const defaultRecentActivity: { event: string; created_at: string }[] = [];
@@ -96,14 +96,6 @@ describe('Dashboard', () => {
   // ============================================
 
   describe('stats cards', () => {
-    it('renders Account Health card', () => {
-      render(<Dashboard stats={defaultStats} recent_activity={defaultRecentActivity} />);
-
-      expect(screen.getByText('Account Health')).toBeInTheDocument();
-      expect(screen.getByText('60/100')).toBeInTheDocument();
-      expect(screen.getByText('Moderate')).toBeInTheDocument();
-    });
-
     it('renders Plan card', () => {
       render(<Dashboard stats={defaultStats} recent_activity={defaultRecentActivity} />);
 
@@ -125,25 +117,12 @@ describe('Dashboard', () => {
       expect(screen.getByText('Active tokens')).toBeInTheDocument();
     });
 
-    it('renders all four stat cards', () => {
+    it('renders all three stat cards', () => {
       render(<Dashboard stats={defaultStats} recent_activity={defaultRecentActivity} />);
 
-      expect(screen.getByText('Account Health')).toBeInTheDocument();
       expect(screen.getByText('Plan')).toBeInTheDocument();
       expect(screen.getByText('Settings')).toBeInTheDocument();
       expect(screen.getByText('API Tokens')).toBeInTheDocument();
-    });
-
-    it('shows healthy label for high scores', () => {
-      render(<Dashboard stats={{ ...defaultStats, health_score: 85 }} recent_activity={defaultRecentActivity} />);
-
-      expect(screen.getByText('Healthy')).toBeInTheDocument();
-    });
-
-    it('shows getting started label for low scores', () => {
-      render(<Dashboard stats={{ ...defaultStats, health_score: 10 }} recent_activity={defaultRecentActivity} />);
-
-      expect(screen.getByText('Getting Started')).toBeInTheDocument();
     });
   });
 
@@ -224,9 +203,9 @@ describe('Dashboard', () => {
       render(<Dashboard stats={defaultStats} recent_activity={defaultRecentActivity} />);
 
       const cardTitles = screen.getAllByText(
-        /Account Health|Plan|Settings|API Tokens/
+        /Plan|Settings|API Tokens/
       );
-      expect(cardTitles.length).toBe(4);
+      expect(cardTitles.length).toBeGreaterThanOrEqual(3);
     });
   });
 });

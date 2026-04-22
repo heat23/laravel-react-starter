@@ -25,12 +25,17 @@ return [
         // Trial config is in config/plans.php (plans.trial.days, plans.trial.enabled)
         //
         // Tax compliance (PRODUCTION REQUIRED in many jurisdictions):
-        // Enable Stripe Tax by setting FEATURE_BILLING_TAX=true and configuring tax settings
-        // in your Stripe Dashboard (stripe.com/tax). Once enabled, BillingService will
-        // pass automatic_tax: { enabled: true } to all new subscriptions.
+        // Enabling Stripe Tax is a two-key gate — you must set BOTH env vars to true:
+        //   FEATURE_BILLING_TAX=true            # switch the feature on
+        //   BILLING_TAX_CONFIRM_COMPLIANT=true  # explicit attestation that you've registered
+        //                                       # for Stripe Tax in all applicable jurisdictions
+        //                                       # (stripe.com/tax) and verified tax codes per plan.
+        // Both keys required so that a single "remember to turn on tax" checklist item can't
+        // ship uncollected tax liability to production. BillingService reads this composite flag
+        // and passes automatic_tax: { enabled: true } to all new subscriptions only if it is true.
         // See app/Services/BillingService.php and the Stripe Tax documentation.
-        // WARNING: Do not enable without verifying your Stripe Tax registration settings first.
-        'tax_enabled' => env('FEATURE_BILLING_TAX', false),
+        'tax_enabled' => env('FEATURE_BILLING_TAX', false)
+            && env('BILLING_TAX_CONFIRM_COMPLIANT', false),
     ],
 
     /*
@@ -43,10 +48,11 @@ return [
     |
     */
     'social_auth' => [
-        // Defaults to true: auto-detection of providers by CLIENT_ID presence means no buttons
-        // render unless GOOGLE_CLIENT_ID / GITHUB_CLIENT_ID are actually set — safe default.
-        // Set FEATURE_SOCIAL_AUTH=false to suppress the feature-flag config entirely.
-        'enabled' => env('FEATURE_SOCIAL_AUTH', true),
+        // Defaults to false so a fresh install doesn't claim to support social login.
+        // Enable by setting FEATURE_SOCIAL_AUTH=true AND configuring provider credentials
+        // (GOOGLE_CLIENT_ID and/or GITHUB_CLIENT_ID). Provider buttons render only for
+        // providers whose CLIENT_ID is set; the feature flag is the master switch.
+        'enabled' => env('FEATURE_SOCIAL_AUTH', false),
         'providers' => array_filter([
             env('GOOGLE_CLIENT_ID') ? 'google' : null,
             env('GITHUB_CLIENT_ID') ? 'github' : null,
@@ -125,19 +131,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | API Documentation (Scribe)
-    |--------------------------------------------------------------------------
-    |
-    | When enabled, interactive API documentation is available at /docs.
-    | Requires: knuckleswtf/scribe dev dependency.
-    |
-    */
-    'api_docs' => [
-        'enabled' => env('FEATURE_API_DOCS', false),
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Two-Factor Authentication
     |--------------------------------------------------------------------------
     |
@@ -174,7 +167,12 @@ return [
     |
     */
     'admin' => [
-        'enabled' => env('FEATURE_ADMIN', false),
+        // Defaults to true because this starter is used by sole operators who need admin
+        // access to their own app's dashboard (user management, health, audit logs, feature
+        // flag overrides). The admin middleware still requires a user with is_admin=true,
+        // so enabling this flag without an admin user grants nothing. Set FEATURE_ADMIN=false
+        // only if you are shipping a public/anonymous app with no internal operations UI.
+        'enabled' => env('FEATURE_ADMIN', true),
     ],
 
     /*
@@ -189,7 +187,10 @@ return [
     */
     'indexnow' => [
         'enabled' => env('FEATURE_INDEXNOW', false),
-        'auto_ping_sitemap' => env('INDEXNOW_AUTO_PING_SITEMAP', false),
+        // Defaults to true when FEATURE_INDEXNOW is on so turning the parent flag on
+        // isn't a silent no-op. Set INDEXNOW_AUTO_PING_SITEMAP=false explicitly to opt
+        // out of the 24h-cached sitemap-wide ping and only ping manually-submitted URLs.
+        'auto_ping_sitemap' => env('INDEXNOW_AUTO_PING_SITEMAP', env('FEATURE_INDEXNOW', false)),
         'max_urls_per_submission' => 10000,
         'debounce_minutes' => env('INDEXNOW_DEBOUNCE_MINUTES', 10),
     ],

@@ -4,11 +4,15 @@ use App\Models\FeatureFlagOverride;
 use App\Models\User;
 use App\Services\FeatureFlagService;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 beforeEach(function () {
     ensureFeatureFlagOverridesTableExists();
     clearFeatureFlagOverrides();
     Cache::flush();
+    // Per-process hard-dep warning dedup must be reset between tests so each
+    // case observes a fresh first-time warning rather than inheriting state.
+    FeatureFlagService::resetDependencyWarningCache();
 });
 
 it('resolves flag from config default when no overrides exist', function () {
@@ -160,8 +164,10 @@ it('resolveAll returns all defined flags', function () {
 
     $result = $service->resolveAll();
 
-    // Should have all defined flags
-    expect($result)->toHaveKeys([
+    // Must match config/features.php exactly — using array_keys (not toHaveKeys,
+    // which is a subset check) so a flag added to config without a matching
+    // update here fails the test.
+    expect(array_keys($result))->toEqualCanonicalizing([
         'billing',
         'social_auth',
         'email_verification',
@@ -169,10 +175,10 @@ it('resolveAll returns all defined flags', function () {
         'user_settings',
         'notifications',
         'onboarding',
-        'api_docs',
         'two_factor',
         'webhooks',
         'admin',
+        'indexnow',
     ]);
 });
 
@@ -226,6 +232,7 @@ it('getAdminSummary returns correct shape', function () {
         'user_override_count',
         'is_protected',
         'is_route_dependent',
+        'blocked_by_dependency',
         'reason',
         'updated_at',
     ]);
@@ -427,4 +434,157 @@ it('route-dependent flags cannot be enabled via DB override when env is false', 
         FeatureFlagOverride::where('flag', $flag)->delete();
         Cache::flush();
     }
+});
+
+/*
+|--------------------------------------------------------------------------
+| Hard-Dependency Enforcement (FeatureFlagService::HARD_DEPENDENCIES)
+|--------------------------------------------------------------------------
+| When a flag has a hard dependency and that dependency is disabled, the
+| flag MUST resolve to false and a warning MUST be logged. This prevents
+| the "silent broken" class of bugs where a feature's prerequisites are
+| misconfigured and the feature half-works.
+*/
+
+it('resolves onboarding to false when user_settings is disabled', function () {
+    $service = app(FeatureFlagService::class);
+
+    config([
+        'features.onboarding.enabled' => true,
+        'features.user_settings.enabled' => false,
+    ]);
+
+    expect($service->resolve('onboarding'))->toBeFalse();
+});
+
+it('logs a warning when a hard dependency is off', function () {
+    $service = app(FeatureFlagService::class);
+
+    config([
+        'features.onboarding.enabled' => true,
+        'features.user_settings.enabled' => false,
+    ]);
+
+    Log::spy();
+
+    $service->resolve('onboarding');
+
+    Log::shouldHaveReceived('warning')
+        ->once()
+        ->withArgs(fn (string $message) => str_contains($message, "'onboarding'")
+            && str_contains($message, "'user_settings'"));
+});
+
+it('does not log a warning when all hard dependencies are satisfied', function () {
+    $service = app(FeatureFlagService::class);
+
+    config([
+        'features.onboarding.enabled' => true,
+        'features.user_settings.enabled' => true,
+    ]);
+
+    Log::spy();
+
+    $service->resolve('onboarding');
+
+    Log::shouldNotHaveReceived('warning');
+});
+
+it('hard dependency gate overrides user override on the dependent flag', function () {
+    $service = app(FeatureFlagService::class);
+    $user = User::factory()->create();
+
+    // Dependency is off
+    config([
+        'features.onboarding.enabled' => true,
+        'features.user_settings.enabled' => false,
+    ]);
+
+    // User tries to explicitly enable onboarding — dep gate still wins
+    $service->setUserOverride('onboarding', $user->id, true);
+
+    expect($service->resolve('onboarding', $user))->toBeFalse();
+});
+
+it('does not log a dependency warning when the dependent flag is off', function () {
+    $service = app(FeatureFlagService::class);
+
+    // onboarding off; user_settings off too. Warning should NOT fire because
+    // the caller wasn't trying to turn onboarding on — no broken state to flag.
+    config([
+        'features.onboarding.enabled' => false,
+        'features.user_settings.enabled' => false,
+    ]);
+
+    Log::spy();
+
+    expect($service->resolve('onboarding'))->toBeFalse();
+    Log::shouldNotHaveReceived('warning');
+});
+
+it('honors dependency resolution through global overrides', function () {
+    $service = app(FeatureFlagService::class);
+
+    // Dependency disabled in config, but globally overridden to true
+    config([
+        'features.onboarding.enabled' => true,
+        'features.user_settings.enabled' => false,
+    ]);
+    $service->setGlobalOverride('user_settings', true);
+
+    // Dep check uses override-aware resolution, so onboarding resolves true
+    expect($service->resolve('onboarding'))->toBeTrue();
+});
+
+it('de-dups hard-dependency warnings within a process', function () {
+    $service = app(FeatureFlagService::class);
+
+    config([
+        'features.onboarding.enabled' => true,
+        'features.user_settings.enabled' => false,
+    ]);
+
+    Log::spy();
+
+    // resolveAll runs once per request in HandleInertiaRequests — simulating a
+    // handful of requests under a misconfiguration should not flood the log.
+    $service->resolve('onboarding');
+    $service->resolve('onboarding');
+    $service->resolve('onboarding');
+
+    Log::shouldHaveReceived('warning')->once();
+});
+
+it('getAdminSummary applies hard-dependency gate to effective', function () {
+    $service = app(FeatureFlagService::class);
+
+    // onboarding is configured on but its hard dep user_settings is off
+    config([
+        'features.onboarding.enabled' => true,
+        'features.user_settings.enabled' => false,
+    ]);
+
+    $summary = $service->getAdminSummary();
+    $onboarding = collect($summary)->firstWhere('flag', 'onboarding');
+
+    // Admin UI must report the same effective value that resolve() returns at runtime
+    expect($onboarding['effective'])->toBeFalse();
+    expect($onboarding['blocked_by_dependency'])->toBe('user_settings');
+    // env_default should still reflect the raw config — the gate is an overlay
+    expect($onboarding['env_default'])->toBeTrue();
+});
+
+it('getAdminSummary leaves blocked_by_dependency null when deps are satisfied', function () {
+    $service = app(FeatureFlagService::class);
+
+    config([
+        'features.onboarding.enabled' => true,
+        'features.user_settings.enabled' => true,
+    ]);
+
+    $summary = $service->getAdminSummary();
+    $onboarding = collect($summary)->firstWhere('flag', 'onboarding');
+
+    expect($onboarding['effective'])->toBeTrue();
+    expect($onboarding['blocked_by_dependency'])->toBeNull();
 });

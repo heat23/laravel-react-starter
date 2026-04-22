@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Http\Middleware\EnsureIsAdmin;
 use App\Models\User;
 use App\Services\AuditService;
@@ -37,7 +37,7 @@ it('logs audit event when non-admin user attempts admin access', function () {
     $auditService = Mockery::mock(AuditService::class);
     $auditService->shouldReceive('log')
         ->once()
-        ->with(AnalyticsEvent::ADMIN_UNAUTHORIZED_ACCESS, Mockery::type('array'))
+        ->with(AuditEvent::ADMIN_UNAUTHORIZED_ACCESS, Mockery::type('array'))
         ->andReturnUsing(function ($event, $context) use (&$logged) {
             $logged = ['event' => $event, 'context' => $context];
         });
@@ -56,7 +56,7 @@ it('logs audit event when non-admin user attempts admin access', function () {
         // expected
     }
 
-    expect($logged['event'])->toBe(AnalyticsEvent::ADMIN_UNAUTHORIZED_ACCESS);
+    expect($logged['event'])->toBe(AuditEvent::ADMIN_UNAUTHORIZED_ACCESS);
     expect($logged['context'])->toHaveKey('path');
     expect($logged['context'])->toHaveKey('route');
 });
@@ -82,7 +82,7 @@ it('returns 403 for unauthenticated requests', function () {
     $auditService = Mockery::mock(AuditService::class);
     $auditService->shouldReceive('log')
         ->once()
-        ->with(AnalyticsEvent::ADMIN_UNAUTHORIZED_ACCESS, Mockery::type('array'))
+        ->with(AuditEvent::ADMIN_UNAUTHORIZED_ACCESS, Mockery::type('array'))
         ->andReturnUsing(function ($event, $context) use (&$logged) {
             $logged = ['event' => $event, 'context' => $context];
         });
@@ -100,7 +100,7 @@ it('returns 403 for unauthenticated requests', function () {
         // expected
     }
 
-    expect($logged['event'])->toBe(AnalyticsEvent::ADMIN_UNAUTHORIZED_ACCESS);
+    expect($logged['event'])->toBe(AuditEvent::ADMIN_UNAUTHORIZED_ACCESS);
 });
 
 it('returns 403 for super_admin-only users without is_admin set', function () {

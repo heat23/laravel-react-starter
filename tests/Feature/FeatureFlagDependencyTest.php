@@ -8,6 +8,12 @@ beforeEach(function () {
     ensureFeatureFlagOverridesTableExists();
     clearFeatureFlagOverrides();
     Cache::flush();
+    // Hard-dep warnings are de-duped via a per-process static set inside
+    // FeatureFlagService. Tests in this file exercise the dep path, so the
+    // cache must be reset between cases to prevent static state from leaking
+    // across tests within the same worker — otherwise any future Log::spy
+    // assertion added here would become order-dependent.
+    FeatureFlagService::resetDependencyWarningCache();
 });
 
 /*
@@ -91,7 +97,6 @@ it('enforces hard floor for all route-dependent flags', function (string $flag) 
     'billing',
     'social_auth',
     'api_tokens',
-    'api_docs',
 ]);
 
 /*
@@ -199,6 +204,18 @@ it('does not redirect to onboarding when onboarding feature is disabled', functi
     $response = $this->actingAs($user)->get('/dashboard');
 
     $response->assertStatus(200);
+});
+
+it('resolves onboarding to false when user_settings is disabled, even with env=true', function () {
+    config([
+        'features.onboarding.enabled' => true,
+        'features.user_settings.enabled' => false,
+    ]);
+
+    $user = User::factory()->create();
+    $service = app(FeatureFlagService::class);
+
+    expect($service->resolve('onboarding', $user))->toBeFalse();
 });
 
 /*

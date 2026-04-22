@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use RuntimeException;
 
@@ -29,25 +30,99 @@ class FeatureFlagService
         'billing',      // web.php:68, admin.php:97
         'social_auth',  // auth.php:81, admin.php:111
         'api_tokens',   // web.php:61, api.php:57, admin.php:107
-        'api_docs',     // scribe.php:71 (package-level conditional)
         'admin',        // web.php:128
     ];
+
+    /**
+     * Hard dependencies: if any listed dependency is off, the dependent flag
+     * resolves to false (with a logged warning). Prevents the "silent broken"
+     * class of bugs where a feature's prerequisites are misconfigured.
+     *
+     * Only register dependencies that have NO runtime fallback. Soft deps
+     * (graceful degradation) live in docs/FEATURE_FLAGS.md and are NOT
+     * enforced here. Route-dependent prerequisites are already covered by
+     * ROUTE_DEPENDENT_FLAGS.
+     *
+     * Current entries:
+     * - onboarding → user_settings: onboarding stores completion timestamp
+     *   in user_settings table. Without it, the wizard can't record progress.
+     *
+     * @var array<string, array<int, string>>
+     */
+    private const HARD_DEPENDENCIES = [
+        'onboarding' => ['user_settings'],
+    ];
+
+    /**
+     * Per-process de-dup set for hard-dependency warnings.
+     *
+     * resolveAll() is called once per request via HandleInertiaRequests::share(),
+     * so a naive Log::warning inside resolve() would fire on every authenticated
+     * page load when a misconfiguration exists — swamping logs. Keyed by
+     * "{flag}:{dependency}". Workers restart cleanly, so the warning still
+     * surfaces after a deploy or queue worker cycle.
+     *
+     * @var array<string, true>
+     */
+    private static array $warnedDependencies = [];
 
     /**
      * Resolve a single feature flag for a given user.
      *
      * Resolution order:
-     * 1. User-specific override (if user provided and override exists)
-     * 2. Global override (if exists)
-     * 3. Config default
-     *
-     * Special case: Route-dependent flags with env=false return false
-     * regardless of DB overrides (routes aren't registered).
+     * 1. Raw resolution: route-dependent hard floor → user override → global → config
+     * 2. If the raw resolution is true, enforce hard dependencies: if any listed
+     *    dep is off, return false and log a warning. The warning is only emitted
+     *    when the caller actually tried to turn the flag on (i.e. raw = true), so
+     *    disabled features don't generate noise.
      */
     public function resolve(string $flag, ?User $user = null): bool
     {
         $this->validateFlag($flag);
 
+        $raw = $this->resolveRaw($flag, $user);
+
+        if (! $raw) {
+            return false;
+        }
+
+        if (isset(self::HARD_DEPENDENCIES[$flag])) {
+            foreach (self::HARD_DEPENDENCIES[$flag] as $dependency) {
+                if (! $this->resolveRaw($dependency, $user)) {
+                    $warnKey = $flag.':'.$dependency;
+                    if (! isset(self::$warnedDependencies[$warnKey])) {
+                        self::$warnedDependencies[$warnKey] = true;
+                        Log::warning(sprintf(
+                            "Feature flag '%s' resolved to false because hard dependency '%s' is disabled",
+                            $flag,
+                            $dependency
+                        ));
+                    }
+
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Reset the per-process hard-dependency warning de-dup set. Test-only.
+     * Allows each test to observe a fresh first-time warning without leaking
+     * state from a prior test case.
+     */
+    public static function resetDependencyWarningCache(): void
+    {
+        self::$warnedDependencies = [];
+    }
+
+    /**
+     * Resolve without hard-dependency checks. Used internally so dep evaluation
+     * doesn't recurse through its own dep chain and generate cascading warnings.
+     */
+    private function resolveRaw(string $flag, ?User $user = null): bool
+    {
         $configDefault = $this->getConfigDefault($flag);
 
         // Route-dependent flags: if env is false, DB overrides can't help
@@ -121,6 +196,7 @@ class FeatureFlagService
      *     user_override_count: int,
      *     is_protected: bool,
      *     is_route_dependent: bool,
+     *     blocked_by_dependency: string|null,
      *     reason: string|null,
      *     updated_at: string|null
      * }>
@@ -132,17 +208,38 @@ class FeatureFlagService
         $userOverrideCounts = $this->getUserOverrideCounts();
         $globalOverrideMetadata = $this->getGlobalOverrideMetadata();
 
+        // First pass: compute each flag's pre-dep "effective" value (env + global override,
+        // with the route-dependent floor applied). We need this for every flag before we
+        // can evaluate hard-dep gating, because a dep may itself be a flag with overrides.
+        $preDepEffective = [];
+        foreach ($flags as $flag => $envDefault) {
+            $globalOverride = $globalOverrides[$flag] ?? null;
+            $isRouteDependentWithEnvFalse = in_array($flag, self::ROUTE_DEPENDENT_FLAGS, true) && ! $envDefault;
+            $value = $globalOverride ?? $envDefault;
+            if ($isRouteDependentWithEnvFalse) {
+                $value = false;
+            }
+            $preDepEffective[$flag] = $value;
+        }
+
         $result = [];
 
         foreach ($flags as $flag => $envDefault) {
             $globalOverride = $globalOverrides[$flag] ?? null;
-            $isRouteDependentWithEnvFalse = in_array($flag, self::ROUTE_DEPENDENT_FLAGS, true) && ! $envDefault;
+            $effective = $preDepEffective[$flag];
 
-            // Effective value: user override checked at request time, so for admin summary
-            // we show global-level effective (without user context)
-            $effective = $globalOverride ?? $envDefault;
-            if ($isRouteDependentWithEnvFalse) {
-                $effective = false;
+            // Apply hard-dependency gate to stay consistent with resolve() runtime behavior.
+            // Without this, the admin UI could show onboarding.effective=true while
+            // FeatureFlagService::resolve('onboarding') returns false at request time.
+            $blockedBy = null;
+            if ($effective && isset(self::HARD_DEPENDENCIES[$flag])) {
+                foreach (self::HARD_DEPENDENCIES[$flag] as $dependency) {
+                    if (! ($preDepEffective[$dependency] ?? false)) {
+                        $blockedBy = $dependency;
+                        $effective = false;
+                        break;
+                    }
+                }
             }
 
             $metadata = $globalOverrideMetadata[$flag] ?? null;
@@ -155,6 +252,7 @@ class FeatureFlagService
                 'user_override_count' => $userOverrideCounts[$flag] ?? 0,
                 'is_protected' => in_array($flag, self::PROTECTED_FLAGS, true),
                 'is_route_dependent' => in_array($flag, self::ROUTE_DEPENDENT_FLAGS, true),
+                'blocked_by_dependency' => $blockedBy,
                 'reason' => $metadata['reason'] ?? null,
                 'updated_at' => $metadata['updated_at'] ?? null,
             ];

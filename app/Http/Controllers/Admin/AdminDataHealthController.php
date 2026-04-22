@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Http\Controllers\Controller;
 use App\Services\AuditService;
 use App\Services\DataHealthService;
@@ -19,7 +19,7 @@ class AdminDataHealthController extends Controller
     {
         $checks = $dataHealth->runAllChecks();
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_DATA_HEALTH_VIEWED, [
+        $this->auditService->log(AuditEvent::ADMIN_DATA_HEALTH_VIEWED, [
             'check_count' => count($checks),
         ]);
 

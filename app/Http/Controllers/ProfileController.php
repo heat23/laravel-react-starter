@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Http\Requests\DeleteAccountRequest;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Jobs\CancelOrphanedStripeSubscription;
@@ -53,7 +53,7 @@ class ProfileController extends Controller
 
         $user->save();
 
-        $this->auditService->log(AnalyticsEvent::PROFILE_UPDATED, [
+        $this->auditService->log(AuditEvent::PROFILE_UPDATED, [
             'email_changed' => $emailChanged,
         ]);
 
@@ -89,7 +89,7 @@ class ProfileController extends Controller
             }
         }
 
-        $this->auditService->log(AnalyticsEvent::ACCOUNT_DELETED, array_filter([
+        $this->auditService->log(AuditEvent::ACCOUNT_DELETED, array_filter([
             'user_id' => $user->id,
             'reason' => $request->validated('reason'),
         ], fn ($v) => $v !== null));

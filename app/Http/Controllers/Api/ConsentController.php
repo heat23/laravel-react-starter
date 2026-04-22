@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -30,15 +29,6 @@ class ConsentController extends Controller
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
         ]);
-
-        // Persist the analytics consent decision for authenticated users so that
-        // AuditService can gate server-side GA4 forwarding against explicit declines.
-        if ($request->user()) {
-            $request->user()->setSetting(
-                AuditService::ANALYTICS_CONSENT_KEY,
-                (bool) ($validated['categories']['analytics'] ?? false)
-            );
-        }
 
         return response()->json(['success' => true]);
     }

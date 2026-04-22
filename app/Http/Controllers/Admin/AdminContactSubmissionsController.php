@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AdminCacheKey;
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminBulkContactSubmissionRequest;
@@ -89,7 +89,7 @@ class AdminContactSubmissionsController extends Controller
 
         Cache::forget(AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value);
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_CONTACT_SUBMISSION_UPDATED, [
+        $this->auditService->log(AuditEvent::ADMIN_CONTACT_SUBMISSION_UPDATED, [
             'submission_id' => $contactSubmission->id,
             'status' => $newStatus,
         ]);
@@ -122,7 +122,7 @@ class AdminContactSubmissionsController extends Controller
 
         Cache::forget(AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value);
 
-        $this->auditService->log(AnalyticsEvent::ADMIN_CONTACT_SUBMISSION_BULK_UPDATED, [
+        $this->auditService->log(AuditEvent::ADMIN_CONTACT_SUBMISSION_BULK_UPDATED, [
             'ids' => $ids,
             'action' => $action,
             'count' => $count,
@@ -133,7 +133,7 @@ class AdminContactSubmissionsController extends Controller
 
     public function destroy(ContactSubmission $contactSubmission): RedirectResponse
     {
-        $this->auditService->log(AnalyticsEvent::ADMIN_CONTACT_SUBMISSION_DELETED, [
+        $this->auditService->log(AuditEvent::ADMIN_CONTACT_SUBMISSION_DELETED, [
             'submission_id' => $contactSubmission->id,
             'email' => $contactSubmission->email,
         ]);
@@ -147,7 +147,7 @@ class AdminContactSubmissionsController extends Controller
 
     public function export(AdminContactSubmissionExportRequest $request): StreamedResponse
     {
-        $this->auditService->log(AnalyticsEvent::ADMIN_CONTACT_SUBMISSIONS_EXPORTED, [
+        $this->auditService->log(AuditEvent::ADMIN_CONTACT_SUBMISSIONS_EXPORTED, [
             'filters' => $request->validated(),
         ]);
 

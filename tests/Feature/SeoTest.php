@@ -74,24 +74,6 @@ it('excludes pricing URL from sitemap when billing disabled', function () {
     expect($content)->not->toContain('/pricing</loc>');
 });
 
-it('includes docs URL in sitemap when api docs enabled', function () {
-    config(['features.api_docs.enabled' => true]);
-
-    $response = $this->get('/sitemap.xml');
-
-    $content = $response->getContent();
-    expect($content)->toContain('<loc>'.config('app.url').'/docs</loc>');
-});
-
-it('excludes docs URL from sitemap when api docs disabled', function () {
-    config(['features.api_docs.enabled' => false]);
-
-    $response = $this->get('/sitemap.xml');
-
-    $content = $response->getContent();
-    expect($content)->not->toContain('/docs</loc>');
-});
-
 it('includes changelog, roadmap, and contact URLs in sitemap', function () {
     $response = $this->get('/sitemap.xml');
 

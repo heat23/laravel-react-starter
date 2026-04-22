@@ -112,6 +112,8 @@ php artisan route:list | head -50
 - [ ] Contract tests pass (CRITICAL)
 - [ ] All feature flag tests pass
 - [ ] Routes correctly gated by feature flags
+- [ ] If the flag has a prerequisite that would break the feature (not just degrade it), the dependency is registered in `FeatureFlagService::HARD_DEPENDENCIES` with test coverage — not just documented
+- [ ] If the flag is `billing.tax_enabled`: verify BOTH `FEATURE_BILLING_TAX` and `BILLING_TAX_CONFIRM_COMPLIANT` are set to true, and that Stripe Tax is registered in every applicable jurisdiction (stripe.com/tax) with tax codes assigned per product/price. The two-key gate exists so a single checklist oversight can't ship uncollected-tax liability to production.
 
 ---
 

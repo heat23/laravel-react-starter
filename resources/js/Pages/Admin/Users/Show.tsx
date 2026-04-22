@@ -110,20 +110,6 @@ export default function AdminUserShow({
                   {user.deleted_at ? 'Restore' : 'Deactivate'}
                 </Button>
               )}
-              {isSuperAdmin &&
-                !user.is_admin &&
-                !user.deleted_at &&
-                user.id !== currentUserId && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setConfirmAction({ type: 'impersonate', user })
-                    }
-                  >
-                    Impersonate
-                  </Button>
-                )}
               {user.has_password && !user.deleted_at && (
                 <Button
                   variant="outline"

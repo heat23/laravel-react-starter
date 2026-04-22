@@ -15,22 +15,14 @@ Schedule::command('webhooks:prune-stale')->daily()->onOneServer();
 // Do NOT lower below 60 days without auditing all lifecycle sequence max_days values.
 Schedule::command('prune-read-notifications --days=60')->daily()->onOneServer();
 
-// Lifecycle email sequences
+// Lifecycle email sequences (welcome only — other stage-specific emails were
+// removed; re-introduce purpose-built jobs if you need deeper lifecycle coverage).
 Schedule::command('emails:send-welcome-sequence')->dailyAt('09:00');
-Schedule::command('notifications:send-onboarding')->dailyAt('11:00');
-Schedule::command('emails:send-re-engagement')->weekly()->mondays()->at('09:00');
-Schedule::command('emails:qualify-leads')->dailyAt('07:00')->onOneServer();
 
 if (config('features.billing.enabled', false)) {
     Schedule::command('subscriptions:check-incomplete')->hourly();
-    // emails:send-trial-nudges owns all trial windows (7-day, 3-day, expired) via EmailSendLog dedup.
-    Schedule::command('emails:send-trial-nudges')->dailyAt('10:00');
-    Schedule::command('notifications:send-dunning')->daily();
     Schedule::command('billing:enforce-grace-period')->dailyAt('01:00')->onOneServer();
-    Schedule::command('emails:send-win-back')->dailyAt('10:30');
 }
-
-Schedule::command('users:compute-scores')->dailyAt('02:00');
 
 if (config('features.admin.enabled', false)) {
     Schedule::command('admin:health-alert')->everyFifteenMinutes();

@@ -8,7 +8,6 @@ use App\Helpers\QueryHelper;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\User;
-use App\Services\CustomerHealthService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -16,7 +15,7 @@ use Inertia\Response;
 
 class AdminDashboardController extends Controller
 {
-    public function __invoke(CustomerHealthService $healthService): Response
+    public function __invoke(): Response
     {
         $stats = Cache::remember(AdminCacheKey::DASHBOARD_STATS->value, AdminCacheKey::DEFAULT_TTL, function () {
             $stats = [
@@ -38,11 +37,6 @@ class AdminDashboardController extends Controller
 
             return $stats;
         });
-
-        $retentionStats = [
-            'd7_retention' => $healthService->getD7RetentionRate(),
-            'd30_retention' => $healthService->getD30RetentionRate(),
-        ];
 
         $signupChart = Cache::remember(AdminCacheKey::DASHBOARD_SIGNUP_CHART->value, AdminCacheKey::CHART_TTL, function () {
             return User::select(QueryHelper::dateExpression('created_at'), DB::raw('COUNT(*) as count'))
@@ -76,7 +70,6 @@ class AdminDashboardController extends Controller
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,
-            'retention_stats' => $retentionStats,
             'signup_chart' => $signupChart,
             'recent_activity' => $recentActivity,
             'stage_funnel' => $stageFunnel,

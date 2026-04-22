@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
-use App\Enums\AnalyticsEvent;
+use App\Enums\AuditEvent;
 use App\Exceptions\ConcurrentOperationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Billing\CancelSubscriptionRequest;
@@ -153,7 +153,8 @@ class SubscriptionController extends Controller
             $isVariantPrice = ($tierConfig['stripe_price_monthly_variant'] ?? null) !== null
                 && $priceId === $tierConfig['stripe_price_monthly_variant'];
 
-            $this->auditService->logProductEvent(AnalyticsEvent::SUBSCRIPTION_CREATED, $user, array_filter([
+            $this->auditService->log(AuditEvent::SUBSCRIPTION_CREATED, array_filter([
+                'user_id' => $user->id,
                 'price_id' => $priceId,
                 'tier' => $tier,
                 'quantity' => $quantity,
@@ -167,7 +168,8 @@ class SubscriptionController extends Controller
                 $user->update(['trial_ends_at' => null]);
                 $this->planLimitService->invalidateUserPlanCache($user);
 
-                $this->auditService->logProductEvent(AnalyticsEvent::TRIAL_CONVERTED, $user, [
+                $this->auditService->log(AuditEvent::TRIAL_CONVERTED, [
+                    'user_id' => $user->id,
                     'tier' => $tier,
                     'trial_ends_at' => $trialEndsAt?->toISOString(),
                 ]);
@@ -178,7 +180,8 @@ class SubscriptionController extends Controller
             $newSubscription = $user->subscription('default');
             if ($newSubscription && $newSubscription->onTrial()) {
                 $trialDays = config('plans.trial.days', 14);
-                $this->auditService->logProductEvent(AnalyticsEvent::TRIAL_STARTED, $user, [
+                $this->auditService->log(AuditEvent::TRIAL_STARTED, [
+                    'user_id' => $user->id,
                     'tier' => $tier,
                     'trial_days' => $trialDays,
                     'trial_ends_at' => $newSubscription->trial_ends_at?->toISOString(),
@@ -223,7 +226,7 @@ class SubscriptionController extends Controller
         try {
             $this->billingService->cancelSubscription($user, $immediately);
 
-            $this->auditService->log(AnalyticsEvent::SUBSCRIPTION_CANCELED, array_filter([
+            $this->auditService->log(AuditEvent::SUBSCRIPTION_CANCELED, array_filter([
                 'user_id' => $user->id,
                 'immediately' => $immediately,
                 'reason' => $request->validated('reason'),
@@ -284,7 +287,7 @@ class SubscriptionController extends Controller
             // its own dispatch (preventing a double-count in analytics).
             Cache::put("billing.resume_analytics_sent:{$user->id}", true, now()->addSeconds(90));
 
-            $this->auditService->log(AnalyticsEvent::SUBSCRIPTION_RESUMED, [
+            $this->auditService->log(AuditEvent::SUBSCRIPTION_RESUMED, [
                 'user_id' => $user->id,
             ]);
 
@@ -368,7 +371,7 @@ class SubscriptionController extends Controller
 
             $newTier = $this->billingService->resolveTierFromPrice($newPriceId) ?? 'unknown';
 
-            $this->auditService->log(AnalyticsEvent::SUBSCRIPTION_SWAPPED, [
+            $this->auditService->log(AuditEvent::SUBSCRIPTION_SWAPPED, [
                 'user_id' => $user->id,
                 'new_price_id' => $newPriceId,
                 'new_tier' => $newTier,
@@ -414,7 +417,7 @@ class SubscriptionController extends Controller
         try {
             $this->billingService->updateQuantity($user, $quantity);
 
-            $this->auditService->log(AnalyticsEvent::SUBSCRIPTION_QUANTITY_UPDATED, [
+            $this->auditService->log(AuditEvent::SUBSCRIPTION_QUANTITY_UPDATED, [
                 'user_id' => $user->id,
                 'quantity' => $quantity,
             ]);
@@ -450,7 +453,7 @@ class SubscriptionController extends Controller
                 $request->validated('payment_method'),
             );
 
-            $this->auditService->log(AnalyticsEvent::BILLING_PAYMENT_METHOD_UPDATED, [
+            $this->auditService->log(AuditEvent::BILLING_PAYMENT_METHOD_UPDATED, [
                 'user_id' => $user->id,
             ]);
 
@@ -495,11 +498,11 @@ class SubscriptionController extends Controller
         try {
             $subscription->applyCoupon($couponId);
 
-            // Use logProductEvent() so plan_tier and cohort context are auto-enriched.
             // subscription_id and churn_save_context enable 30/60/90-day retention queries:
-            //   SELECT event, context->>'$.subscription_id', context->>'$.churn_save_context'
+            //   SELECT event, metadata->>'$.subscription_id', metadata->>'$.churn_save_context'
             //   FROM audit_logs WHERE event = 'billing.retention_coupon_applied'
-            $this->auditService->logProductEvent(AnalyticsEvent::BILLING_RETENTION_COUPON_APPLIED, $user, [
+            $this->auditService->log(AuditEvent::BILLING_RETENTION_COUPON_APPLIED, [
+                'user_id' => $user->id,
                 'coupon_id' => $couponId,
                 'subscription_id' => $subscription->stripe_id,
                 'churn_save_context' => true,
