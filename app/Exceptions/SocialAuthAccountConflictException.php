@@ -3,9 +3,8 @@
 namespace App\Exceptions;
 
 use App\Models\User;
-use Exception;
 
-class SocialAuthAccountConflictException extends Exception
+class SocialAuthAccountConflictException extends \RuntimeException
 {
     public function __construct(public readonly User $existingUser)
     {
