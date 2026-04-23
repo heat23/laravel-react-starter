@@ -20,6 +20,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $trigger
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ *
+ * @method static \Database\Factories\IndexNowSubmissionFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IndexNowSubmission newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IndexNowSubmission newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|IndexNowSubmission query()
+ *
+ * @mixin \Eloquent
  */
 class IndexNowSubmission extends Model
 {

@@ -6,7 +6,43 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int|null $user_id
+ * @property string $type
+ * @property string $message
+ * @property string $status
+ * @property string $priority
+ * @property string|null $admin_notes
+ * @property Carbon|null $resolved_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property int|null $roadmap_entry_id
+ * @property-read RoadmapEntry|null $roadmapEntry
+ * @property-read User|null $user
+ *
+ * @method static Builder<static>|Feedback byStatus(string $status)
+ * @method static Builder<static>|Feedback byType(string $type)
+ * @method static \Database\Factories\FeedbackFactory factory($count = null, $state = [])
+ * @method static Builder<static>|Feedback newModelQuery()
+ * @method static Builder<static>|Feedback newQuery()
+ * @method static Builder<static>|Feedback query()
+ * @method static Builder<static>|Feedback whereAdminNotes($value)
+ * @method static Builder<static>|Feedback whereCreatedAt($value)
+ * @method static Builder<static>|Feedback whereId($value)
+ * @method static Builder<static>|Feedback whereMessage($value)
+ * @method static Builder<static>|Feedback wherePriority($value)
+ * @method static Builder<static>|Feedback whereResolvedAt($value)
+ * @method static Builder<static>|Feedback whereRoadmapEntryId($value)
+ * @method static Builder<static>|Feedback whereStatus($value)
+ * @method static Builder<static>|Feedback whereType($value)
+ * @method static Builder<static>|Feedback whereUpdatedAt($value)
+ * @method static Builder<static>|Feedback whereUserId($value)
+ *
+ * @mixin \Eloquent
+ */
 class Feedback extends Model
 {
     use HasFactory;

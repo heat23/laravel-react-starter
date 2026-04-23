@@ -5,12 +5,23 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * Social Account Model
  *
  * Stores OAuth provider credentials for social login.
  * Only used when FEATURE_SOCIAL_AUTH=true
+ *
+ * @property Carbon|null $token_expires_at
+ * @property-read User|null $user
+ *
+ * @method static \Database\Factories\SocialAccountFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SocialAccount newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SocialAccount newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|SocialAccount query()
+ *
+ * @mixin \Eloquent
  */
 class SocialAccount extends Model
 {
