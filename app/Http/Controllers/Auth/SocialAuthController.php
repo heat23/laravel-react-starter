@@ -83,7 +83,7 @@ class SocialAuthController extends Controller
         try {
             $user = $this->socialAuthService->findOrCreateUser($socialUser, $provider);
         } catch (SocialAuthAccountConflictException $e) {
-            $this->auditService->log(AuditEvent::SocialAuthConflict, [
+            $this->auditService->log(AuditEvent::AUTH_SOCIAL_CONFLICT, [
                 'user_id' => $e->existingUser->id,
                 'provider' => $provider,
             ]);

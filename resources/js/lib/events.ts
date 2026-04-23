@@ -26,6 +26,7 @@ export const AnalyticsEvents = {
   AUTH_2FA_RECOVERY_REGENERATED: 'auth.2fa_recovery_regenerated',
   AUTH_SOCIAL_LOGIN: 'auth.social_login',
   AUTH_SOCIAL_DISCONNECTED: 'auth.social_disconnected',
+  AUTH_SOCIAL_CONFLICT: 'social_auth.conflict',
 
   // Onboarding
   ONBOARDING_STARTED: 'onboarding.started',
@@ -164,6 +165,7 @@ type _EventPropertyMapEntries = {
     | undefined;
   [AnalyticsEvents.AUTH_SOCIAL_LOGIN]: { provider?: string } | undefined;
   [AnalyticsEvents.AUTH_SOCIAL_DISCONNECTED]: { provider?: string } | undefined;
+  [AnalyticsEvents.AUTH_SOCIAL_CONFLICT]: { provider?: string } | undefined;
   [AnalyticsEvents.ONBOARDING_STARTED]: undefined;
   [AnalyticsEvents.ONBOARDING_STEP_COMPLETED]: { step: string };
   [AnalyticsEvents.ONBOARDING_COMPLETED]: undefined;
