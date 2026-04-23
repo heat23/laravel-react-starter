@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
+use App\Http\Controllers\Admin\Concerns\ListsAdminResources;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminBulkDeactivateRequest;
 use App\Http\Requests\Admin\AdminBulkRestoreRequest;
@@ -32,6 +33,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminUsersController extends Controller
 {
+    use ListsAdminResources;
+
     public function __construct(
         private AuditService $auditService,
         private CacheInvalidationManager $cacheManager,
@@ -74,15 +77,13 @@ class AdminUsersController extends Controller
 
     public function index(AdminUserIndexRequest $request): Response
     {
-        $validated = $request->validated();
-
-        $query = $this->buildUserQuery($validated)
+        $query = $this->buildUserQuery($request->validated())
             ->withCount('tokens', 'settings', 'webhookEndpoints');
 
-        $perPage = (int) ($validated['per_page'] ?? config('pagination.admin.users', 25));
-        $users = $query->paginate($perPage);
+        $perPage = (int) ($request->validated('per_page') ?? config('pagination.admin.users', 25));
+        $users = $this->paginateAdminList($query, $request, ['name', 'email', 'created_at', 'last_login_at', 'is_admin'], 'created_at', 'desc', $perPage);
 
-        $users->through(fn (User $user) => [
+        $users->through(fn ($user) => [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
@@ -390,11 +391,6 @@ class AdminUsersController extends Controller
                 $query->whereNull('email_verified_at');
             }
         }
-
-        $allowedSorts = ['name', 'email', 'created_at', 'last_login_at', 'is_admin'];
-        $sort = in_array($validated['sort'] ?? null, $allowedSorts, true) ? $validated['sort'] : 'created_at';
-        $dir = ($validated['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
-        $query->orderBy($sort, $dir);
 
         return $query;
     }

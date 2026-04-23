@@ -886,9 +886,8 @@ it('returns 403 for non-admin on update', function () {
     ])->assertStatus(403);
 });
 
-it('allows plain admin to update user name and email', function () {
-    // update does NOT require super_admin — plain admin is sufficient
-    $admin = User::factory()->admin()->create();
+it('allows super admin to update user name and email', function () {
+    $admin = User::factory()->superAdmin()->create();
     $target = User::factory()->create(['name' => 'Original', 'email' => 'original@test.com']);
 
     $response = $this->actingAs($admin)->patch("/admin/users/{$target->id}", [
@@ -914,7 +913,7 @@ it('rejects update for a deactivated (soft-deleted) user', function () {
 });
 
 it('rejects duplicate email on update', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $target = User::factory()->create(['email' => 'target@test.com']);
     User::factory()->create(['email' => 'taken@test.com']);
 

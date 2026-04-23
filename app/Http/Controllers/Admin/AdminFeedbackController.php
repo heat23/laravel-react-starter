@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
+use App\Http\Controllers\Admin\Concerns\ListsAdminResources;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminBulkFeedbackRequest;
 use App\Http\Requests\Admin\AdminFeedbackExportRequest;
@@ -21,6 +22,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminFeedbackController extends Controller
 {
+    use ListsAdminResources;
+
     public function __construct(
         private AuditService $auditService,
         private CacheInvalidationManager $cacheManager,
@@ -28,12 +31,7 @@ class AdminFeedbackController extends Controller
 
     public function index(AdminFeedbackIndexRequest $request): Response
     {
-        $allowedSorts = ['created_at', 'priority', 'status', 'type'];
-        $sort = in_array($request->validated('sort'), $allowedSorts, true) ? $request->validated('sort') : 'created_at';
-        $dir = ($request->validated('dir') ?? 'desc') === 'asc' ? 'asc' : 'desc';
-
-        $query = Feedback::with(['user' => fn ($q) => $q->withTrashed()])
-            ->orderBy($sort, $dir);
+        $query = Feedback::with(['user' => fn ($q) => $q->withTrashed()]);
 
         if ($request->validated('type')) {
             $query->byType($request->validated('type'));
@@ -53,8 +51,7 @@ class AdminFeedbackController extends Controller
         }
 
         $perPage = (int) ($request->validated('per_page') ?? config('pagination.admin.feedback', 50));
-        $feedback = $query->paginate($perPage)
-            ->withQueryString();
+        $feedback = $this->paginateAdminList($query, $request, ['created_at', 'priority', 'status', 'type'], 'created_at', 'desc', $perPage);
 
         return Inertia::render('Admin/Feedback/Index', [
             'feedback' => $feedback,

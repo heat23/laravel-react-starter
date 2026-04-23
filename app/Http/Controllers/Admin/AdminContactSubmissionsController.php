@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AdminCacheKey;
 use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
+use App\Http\Controllers\Admin\Concerns\ListsAdminResources;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminBulkContactSubmissionRequest;
 use App\Http\Requests\Admin\AdminContactSubmissionExportRequest;
@@ -22,17 +23,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminContactSubmissionsController extends Controller
 {
+    use ListsAdminResources;
+
     public function __construct(
         private AuditService $auditService,
     ) {}
 
     public function index(AdminContactSubmissionsIndexRequest $request): Response
     {
-        $allowedSorts = ['created_at', 'status', 'name', 'email'];
-        $sort = in_array($request->validated('sort'), $allowedSorts, true) ? $request->validated('sort') : 'created_at';
-        $dir = ($request->validated('dir') ?? 'desc') === 'asc' ? 'asc' : 'desc';
-
-        $query = ContactSubmission::orderBy($sort, $dir);
+        $query = ContactSubmission::query();
 
         if ($request->validated('status')) {
             $query->byStatus($request->validated('status'));
@@ -47,8 +46,7 @@ class AdminContactSubmissionsController extends Controller
             });
         }
 
-        $submissions = $query->paginate(config('pagination.admin.contact_submissions', 50))
-            ->withQueryString();
+        $submissions = $this->paginateAdminList($query, $request, ['created_at', 'status', 'name', 'email'], 'created_at', 'desc', config('pagination.admin.contact_submissions', 50));
 
         $counts = Cache::remember(
             AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value,

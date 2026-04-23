@@ -2,24 +2,20 @@
 
 namespace App\Http\Requests\Admin;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class AdminNpsResponseIndexRequest extends FormRequest
+class AdminNpsResponseIndexRequest extends AdminListRequest
 {
-    public function authorize(): bool
+    protected function allowedSorts(): array
     {
-        return $this->user()?->isAdmin() === true;
+        return ['score', 'created_at'];
     }
 
     public function rules(): array
     {
-        return [
-            'search' => ['nullable', 'string', 'max:100'],
+        return array_merge(parent::rules(), [
             'category' => ['nullable', 'string', Rule::in(['promoter', 'passive', 'detractor'])],
             'survey_trigger' => ['nullable', 'string', 'max:60'],
-            'sort' => ['nullable', 'string', Rule::in(['score', 'created_at'])],
-            'dir' => ['nullable', 'string', Rule::in(['asc', 'desc'])],
-        ];
+        ]);
     }
 }

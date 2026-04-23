@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
+use App\Http\Controllers\Admin\Concerns\ListsAdminResources;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminEmailSendLogExportRequest;
 use App\Http\Requests\Admin\AdminEmailSendLogIndexRequest;
@@ -16,18 +17,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminEmailSendLogController extends Controller
 {
+    use ListsAdminResources;
+
     public function __construct(
         private AuditService $auditService,
     ) {}
 
     public function index(AdminEmailSendLogIndexRequest $request): Response
     {
-        $allowedSorts = ['sent_at', 'sequence_type', 'email_number'];
-        $sort = in_array($request->validated('sort'), $allowedSorts, true) ? $request->validated('sort') : 'sent_at';
-        $dir = ($request->validated('dir') ?? 'desc') === 'asc' ? 'asc' : 'desc';
-
-        $query = EmailSendLog::with(['user' => fn ($q) => $q->withTrashed()])
-            ->orderBy($sort, $dir);
+        $query = EmailSendLog::with(['user' => fn ($q) => $q->withTrashed()]);
 
         if ($sequenceType = $request->validated('sequence_type')) {
             $query->where('sequence_type', $sequenceType);
@@ -41,8 +39,7 @@ class AdminEmailSendLogController extends Controller
             );
         }
 
-        $logs = $query->paginate(config('pagination.admin.email_send_logs', 50))
-            ->withQueryString();
+        $logs = $this->paginateAdminList($query, $request, ['sent_at', 'sequence_type', 'email_number'], 'sent_at', 'desc', config('pagination.admin.email_send_logs', 50));
 
         $sequenceTypes = EmailSendLog::distinct()->orderBy('sequence_type')->pluck('sequence_type');
 

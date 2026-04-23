@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AdminCacheKey;
 use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
+use App\Http\Controllers\Admin\Concerns\ListsAdminResources;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminAuditLogIndexRequest;
 use App\Http\Requests\Admin\AdminExportRequest;
@@ -19,6 +20,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminAuditLogController extends Controller
 {
+    use ListsAdminResources;
+
     public function __construct(
         private AuditService $auditService,
     ) {}
@@ -28,13 +31,9 @@ class AdminAuditLogController extends Controller
         $validated = $request->validated();
         $query = $this->applyFilters(AuditLog::with('user'), $validated);
 
-        $allowedSorts = ['event', 'created_at'];
-        $sort = in_array($validated['sort'] ?? null, $allowedSorts, true) ? $validated['sort'] : 'created_at';
-        $dir = ($validated['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
-        $query->orderBy($sort, $dir);
-
-        $perPage = (int) ($validated['per_page'] ?? config('pagination.admin.audit_logs', 50));
-        $logs = $query->paginate($perPage)->through(fn (AuditLog $log) => $log->toDetailArray());
+        $perPage = (int) ($request->validated('per_page') ?? config('pagination.admin.audit_logs', 50));
+        $logs = $this->paginateAdminList($query, $request, ['event', 'created_at'], 'created_at', 'desc', $perPage)
+            ->through(fn (AuditLog $log) => $log->toDetailArray());
 
         $eventTypes = Cache::remember(AdminCacheKey::AUDIT_EVENT_TYPES->value, AdminCacheKey::DEFAULT_TTL, function () {
             return AuditLog::distinct()->pluck('event')->sort()->values();
