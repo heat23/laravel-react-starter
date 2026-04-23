@@ -27,6 +27,7 @@ enum AuditEvent: string
     case AUTH_2FA_RECOVERY_REGENERATED = 'auth.2fa_recovery_regenerated';
     case AUTH_SOCIAL_LOGIN = 'auth.social_login';
     case AUTH_SOCIAL_DISCONNECTED = 'auth.social_disconnected';
+    case AUTH_SOCIAL_CONFLICT = 'social_auth.conflict';
 
     // Onboarding
     case ONBOARDING_STARTED = 'onboarding.started';
@@ -107,6 +108,7 @@ enum AuditEvent: string
     case ADMIN_NPS_EXPORTED = 'admin.nps.exported';
     case ADMIN_EMAIL_SEND_LOGS_EXPORTED = 'admin.email_send_logs.exported';
     case ADMIN_WEBHOOK_DELIVERY_BLOCKED = 'admin.webhook_delivery.blocked';
+    case ADMIN_STRIPE_ORPHAN_CANCELED = 'admin.stripe_orphan_canceled';
 
     // User actions
     case PROFILE_UPDATED = 'profile.updated';
@@ -160,6 +162,7 @@ enum AuditEvent: string
         'auth.2fa_recovery_regenerated',
         'auth.social_login',
         'auth.social_disconnected',
+        'social_auth.conflict',
         'onboarding.started',
         'onboarding.step_completed',
         'onboarding.completed',

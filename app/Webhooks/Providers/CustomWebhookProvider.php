@@ -5,6 +5,7 @@ namespace App\Webhooks\Providers;
 use App\Webhooks\Contracts\WebhookProvider;
 use App\Webhooks\Dto\IncomingWebhookEvent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class CustomWebhookProvider implements WebhookProvider
 {
@@ -39,13 +40,19 @@ class CustomWebhookProvider implements WebhookProvider
     public function parseEvent(string $rawPayload, array $headers): IncomingWebhookEvent
     {
         $payload = json_decode($rawPayload, true) ?? [];
-        $externalId = $payload['id'] ?? null;
         $eventType = $payload['type'] ?? '';
+
+        if (isset($payload['id'])) {
+            $externalId = (string) $payload['id'];
+        } else {
+            $externalId = hash('sha256', $rawPayload);
+            Log::warning('Provider emitted synthetic webhook id', ['provider' => $this->name()]);
+        }
 
         return new IncomingWebhookEvent(
             provider: $this->name(),
             eventType: $eventType,
-            externalId: $externalId ? (string) $externalId : null,
+            externalId: $externalId,
             payload: $payload,
         );
     }

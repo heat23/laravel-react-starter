@@ -20,7 +20,7 @@ beforeEach(function () {
     }
 });
 
-function makeEvent(string $provider, ?string $externalId, string $eventType, array $payload): IncomingWebhookEvent
+function makeEvent(string $provider, string $externalId, string $eventType, array $payload): IncomingWebhookEvent
 {
     return new IncomingWebhookEvent($provider, $eventType, $externalId, $payload);
 }
@@ -66,13 +66,13 @@ it('checks if webhook was already processed', function () {
     expect($service->isProcessed('github', 'ext-123'))->toBeTrue();
 });
 
-it('processes webhook without external_id (no idempotency)', function () {
+it('deduplicates events with the same provider+externalId', function () {
     $service = new IncomingWebhookService;
 
-    $result1 = $service->process(makeEvent('custom', null, 'event', ['data' => '1']));
-    $result2 = $service->process(makeEvent('custom', null, 'event', ['data' => '2']));
+    $result1 = $service->process(makeEvent('custom', 'evt-abc', 'event', ['data' => '1']));
+    $result2 = $service->process(makeEvent('custom', 'evt-abc', 'event', ['data' => '2']));
 
     expect($result1)->not->toBeNull();
-    expect($result2)->not->toBeNull();
-    expect(IncomingWebhook::count())->toBe(2);
+    expect($result2)->toBeNull();
+    expect(IncomingWebhook::count())->toBe(1);
 });
