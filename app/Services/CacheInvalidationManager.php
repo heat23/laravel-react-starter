@@ -95,5 +95,6 @@ class CacheInvalidationManager
     public function invalidateLifecycle(): void
     {
         Cache::forget(AdminCacheKey::STAGE_FUNNEL->value);
+        Cache::forget(AdminCacheKey::STAGE_VELOCITY->value);
     }
 }
