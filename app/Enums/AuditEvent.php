@@ -27,6 +27,7 @@ enum AuditEvent: string
     case AUTH_2FA_RECOVERY_REGENERATED = 'auth.2fa_recovery_regenerated';
     case AUTH_SOCIAL_LOGIN = 'auth.social_login';
     case AUTH_SOCIAL_DISCONNECTED = 'auth.social_disconnected';
+    case SocialAuthConflict = 'social_auth.conflict';
 
     // Onboarding
     case ONBOARDING_STARTED = 'onboarding.started';
