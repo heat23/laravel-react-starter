@@ -30,8 +30,7 @@
         "nunomaduro/collision": "^8.6",
         "pestphp/pest": "^4.0",
         "pestphp/pest-plugin-laravel": "^4.0",
-        "phpstan/phpstan": "^2.1",
-        "phpunit/phpunit": "^12.0"
+        "phpstan/phpstan": "^2.1"
     },
     "suggest": {
         "laravel/cashier": "Required for billing features (^16.2)",
