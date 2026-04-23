@@ -62,8 +62,11 @@ Configure your app by toggling features in `config/features.php` (or `.env`). 11
 **Tenancy:** Single-tenant. Do not add account/org/workspace scoping unless explicitly requested.
 
 **Routes:**
-- `routes/web.php` — pages (feature-gated with `if (config('features.*.enabled'))`)
-- `routes/admin.php` — admin panel (loaded from web.php when `admin.enabled`), middleware: `['auth', 'verified', 'admin', 'throttle:60,1']`
+- `routes/web.php` — thin orchestrator that requires the three domain files below
+- `routes/marketing.php` — public/SEO surface (no auth): /, /compare/*, /features/*, /guides/*, /blog/*, /changelog, /roadmap, etc.
+- `routes/app.php` — authenticated user surface: dashboard, profile, settings, billing, onboarding, NPS, export
+- `routes/dev.php` — infrastructure: /health, /robots.txt, /sitemap.xml, /llms.txt, /favicon.ico, IndexNow key
+- `routes/admin.php` — admin panel (required from web.php when `admin.enabled`), middleware: `['auth', 'verified', 'admin', 'throttle:60,1']`
 - `routes/auth.php` — auth (Breeze + social auth + email verification)
 - `routes/api.php` — Sanctum-protected API (user, settings, tokens)
 - Health check: `/up` (Laravel built-in) + `/health` (custom `HealthCheckController` with token/IP/local auth)
