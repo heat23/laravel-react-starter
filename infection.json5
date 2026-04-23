@@ -6,7 +6,10 @@
         html: "storage/logs/infection.html"
     },
     mutators: { "@default": true },
-    testFramework: "pest",
+    testFramework: "phpunit",
+    phpUnit: {
+        customPath: "vendor/bin/pest"
+    },
     minMsi: 50,
     minCoveredMsi: 65,
 }
