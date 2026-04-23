@@ -3,17 +3,29 @@
 namespace App\Services;
 
 use App\Enums\AdminCacheKey;
-use App\Enums\PlanTier;
-use App\Helpers\QueryHelper;
+use App\Services\Billing\Stats\ChurnBreakdownCalculator;
+use App\Services\Billing\Stats\CohortRetentionCalculator;
+use App\Services\Billing\Stats\DashboardStatsCalculator;
+use App\Services\Billing\Stats\GrowthChartCalculator;
+use App\Services\Billing\Stats\StatusBreakdownCalculator;
+use App\Services\Billing\Stats\SubscriptionQueryBuilder;
+use App\Services\Billing\Stats\TierDistributionCalculator;
+use App\Services\Billing\Stats\TrialStatsCalculator;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class AdminBillingStatsService
 {
     public function __construct(
-        private BillingService $billingService,
+        private DashboardStatsCalculator $dashboardStats,
+        private TierDistributionCalculator $tierDistribution,
+        private StatusBreakdownCalculator $statusBreakdown,
+        private GrowthChartCalculator $growthChart,
+        private TrialStatsCalculator $trialStats,
+        private ChurnBreakdownCalculator $churnBreakdown,
+        private CohortRetentionCalculator $cohortRetention,
+        private SubscriptionQueryBuilder $subscriptionQuery,
     ) {}
 
     /**
@@ -21,115 +33,73 @@ class AdminBillingStatsService
      */
     public function getDashboardStats(): array
     {
-        return Cache::remember(AdminCacheKey::BILLING_STATS->value, AdminCacheKey::DEFAULT_TTL, function () {
-            return [
-                'active_subscriptions' => DB::table('subscriptions')
-                    ->where('stripe_status', 'active')
-                    ->whereNull('ends_at')
-                    ->count(),
-                'trialing' => DB::table('subscriptions')
-                    ->where('stripe_status', 'trialing')
-                    ->count(),
-                'past_due' => DB::table('subscriptions')
-                    ->where('stripe_status', 'past_due')
-                    ->count(),
-                // Only truly canceled (ends_at in the past); scheduled cancellations (future ends_at) are separate
-                'canceled' => DB::table('subscriptions')
-                    ->whereNotNull('ends_at')
-                    ->where('ends_at', '<=', now())
-                    ->count(),
-                // Still paying but scheduled to cancel (ends_at in the future, status still active)
-                'scheduled_cancellations' => DB::table('subscriptions')
-                    ->whereNotNull('ends_at')
-                    ->where('ends_at', '>', now())
-                    ->where('stripe_status', 'active')
-                    ->count(),
-                'total_ever' => DB::table('subscriptions')->count(),
-                'mrr' => $this->calculateMrr(),
-                'churn_rate' => $this->calculateChurnRate(),
-                'trial_conversion_rate' => $this->calculateTrialConversion(),
-                'activation_rate' => $this->calculateActivationRate(),
-                'activation_rate_all_time' => $this->calculateActivationRateAllTime(),
-                'signup_to_paid_conversion' => $this->calculateSignupToPaidConversion(),
-                'cohort_conversion_30d' => $this->calculateCohortedConversion(),
-                'cached_at' => now()->toISOString(),
-            ];
-        });
+        return Cache::remember(
+            AdminCacheKey::BILLING_STATS->value,
+            AdminCacheKey::DEFAULT_TTL,
+            fn () => $this->dashboardStats->calculate()
+        );
     }
 
     /** @return array<int, array{tier: string, count: int}> */
     public function getTierDistribution(): array
     {
-        return Cache::remember(AdminCacheKey::BILLING_TIER_DIST->value, AdminCacheKey::DEFAULT_TTL, function () {
-            return DB::table('subscriptions')
-                ->join('subscription_items', 'subscriptions.id', '=', 'subscription_items.subscription_id')
-                ->whereNull('subscriptions.ends_at')
-                ->whereIn('subscriptions.stripe_status', ['active', 'trialing'])
-                ->select('subscription_items.stripe_price', DB::raw('COUNT(*) as count'))
-                ->groupBy('subscription_items.stripe_price')
-                ->get()
-                ->map(fn ($row) => [
-                    'tier' => PlanTier::safeValue($this->billingService->resolveTierFromPrice($row->stripe_price)),
-                    'count' => (int) $row->count,
-                ])
-                ->groupBy('tier')
-                ->map(fn ($group, $tier) => [
-                    'tier' => PlanTier::tryFrom($tier)?->label() ?? ucfirst($tier),
-                    'count' => $group->sum('count'),
-                ])
-                ->values()
-                ->toArray();
-        });
+        return Cache::remember(
+            AdminCacheKey::BILLING_TIER_DIST->value,
+            AdminCacheKey::DEFAULT_TTL,
+            fn () => $this->tierDistribution->calculate()
+        );
     }
 
     /** @return array<int, array{status: string, count: int}> */
     public function getStatusBreakdown(): array
     {
-        return Cache::remember(AdminCacheKey::BILLING_STATUS->value, AdminCacheKey::DEFAULT_TTL, function () {
-            return DB::table('subscriptions')
-                ->select('stripe_status', DB::raw('COUNT(*) as count'))
-                ->groupBy('stripe_status')
-                ->get()
-                ->map(fn ($row) => [
-                    'status' => $row->stripe_status,
-                    'count' => (int) $row->count,
-                ])
-                ->toArray();
-        });
+        return Cache::remember(
+            AdminCacheKey::BILLING_STATUS->value,
+            AdminCacheKey::DEFAULT_TTL,
+            fn () => $this->statusBreakdown->calculate()
+        );
     }
 
     /** @return array<int, array{date: string, count: int}> */
     public function getGrowthChart(): array
     {
-        return Cache::remember(AdminCacheKey::BILLING_GROWTH_CHART->value, AdminCacheKey::CHART_TTL, function () {
-            return DB::table('subscriptions')
-                ->select(QueryHelper::dateExpression('created_at'), DB::raw('COUNT(*) as count'))
-                ->where('created_at', '>=', now()->subDays(30))
-                ->groupBy('date')
-                ->orderBy('date')
-                ->get()
-                ->map(fn ($row) => ['date' => $row->date, 'count' => (int) $row->count])
-                ->toArray();
-        });
+        return Cache::remember(
+            AdminCacheKey::BILLING_GROWTH_CHART->value,
+            AdminCacheKey::CHART_TTL,
+            fn () => $this->growthChart->calculate()
+        );
     }
 
     /** @return array{active_trials: int, expiring_soon: int} */
     public function getTrialStats(): array
     {
-        return Cache::remember(AdminCacheKey::BILLING_TRIALS->value, AdminCacheKey::DEFAULT_TTL, function () {
-            return [
-                'active_trials' => DB::table('subscriptions')
-                    ->where('stripe_status', 'trialing')
-                    ->whereNotNull('trial_ends_at')
-                    ->where('trial_ends_at', '>', now())
-                    ->count(),
-                'expiring_soon' => DB::table('subscriptions')
-                    ->where('stripe_status', 'trialing')
-                    ->whereNotNull('trial_ends_at')
-                    ->whereBetween('trial_ends_at', [now(), now()->addDays(3)])
-                    ->count(),
-            ];
-        });
+        return Cache::remember(
+            AdminCacheKey::BILLING_TRIALS->value,
+            AdminCacheKey::DEFAULT_TTL,
+            fn () => $this->trialStats->calculate()
+        );
+    }
+
+    /** @return array{voluntary: int, involuntary: int} */
+    public function getChurnBreakdown(): array
+    {
+        return Cache::remember(
+            AdminCacheKey::BILLING_STATS->value.'_churn_breakdown',
+            AdminCacheKey::DEFAULT_TTL,
+            fn () => $this->churnBreakdown->calculate()
+        );
+    }
+
+    /**
+     * @return array<int, array{cohort: string, total: int, week_1: float|null, week_2: float|null, week_4: float|null, week_8: float|null}>
+     */
+    public function getCohortRetention(): array
+    {
+        return Cache::remember(
+            AdminCacheKey::BILLING_COHORT_RETENTION->value,
+            AdminCacheKey::CHART_TTL,
+            fn () => $this->cohortRetention->calculate()
+        );
     }
 
     /**
@@ -137,21 +107,7 @@ class AdminBillingStatsService
      */
     public function getFilteredSubscriptions(array $validated): LengthAwarePaginator
     {
-        $query = $this->buildSubscriptionQuery($validated);
-        $billingService = $this->billingService;
-
-        return $query->paginate(config('pagination.admin.users', 25))->through(fn ($row) => [
-            'id' => $row->id,
-            'user_id' => $row->user_id,
-            'user_name' => $row->user_name,
-            'user_email' => $row->user_email,
-            'stripe_status' => $row->stripe_status,
-            'tier' => PlanTier::safeValue($billingService->resolveTierFromPrice($row->item_price)),
-            'quantity' => $row->quantity,
-            'trial_ends_at' => $row->trial_ends_at,
-            'ends_at' => $row->ends_at,
-            'created_at' => $row->created_at,
-        ]);
+        return $this->subscriptionQuery->paginated($validated);
     }
 
     /**
@@ -159,356 +115,6 @@ class AdminBillingStatsService
      */
     public function buildSubscriptionQuery(array $validated): Builder
     {
-        $firstItem = DB::table('subscription_items')
-            ->select('subscription_id', 'stripe_price')
-            ->whereIn('id', function ($sub) {
-                // MIN() is ANSI SQL — works on MySQL and SQLite.
-                $sub->from('subscription_items')
-                    ->select(DB::raw('MIN(id)'))
-                    ->groupBy('subscription_id');
-            });
-
-        $query = DB::table('subscriptions')
-            ->leftJoin('users', function ($join) {
-                $join->on('subscriptions.user_id', '=', 'users.id')
-                    ->whereNull('users.deleted_at');
-            })
-            ->leftJoinSub($firstItem, 'first_item', 'subscriptions.id', '=', 'first_item.subscription_id')
-            ->select(
-                'subscriptions.id',
-                'subscriptions.user_id',
-                'subscriptions.stripe_id',
-                'subscriptions.stripe_status',
-                'subscriptions.quantity',
-                'subscriptions.trial_ends_at',
-                'subscriptions.ends_at',
-                'subscriptions.created_at',
-                QueryHelper::coalesceExpr('users.name', '[Deleted User]', 'user_name'),
-                QueryHelper::coalesceExpr('users.email', '', 'user_email'),
-                'first_item.stripe_price as item_price',
-            );
-
-        if (! empty($validated['search'])) {
-            $query->where(function ($q) use ($validated) {
-                QueryHelper::whereLike($q, 'users.name', $validated['search']);
-                QueryHelper::whereLike($q, 'users.email', $validated['search'], 'or');
-                QueryHelper::whereLike($q, 'subscriptions.stripe_id', $validated['search'], 'or');
-            });
-        }
-
-        if (! empty($validated['status'])) {
-            $query->where('subscriptions.stripe_status', $validated['status']);
-        }
-
-        if (! empty($validated['tier'])) {
-            $tier = $validated['tier'];
-            $monthlyPrice = config("plans.{$tier}.stripe_price_monthly");
-            $annualPrice = config("plans.{$tier}.stripe_price_annual");
-            $query->where(function ($q) use ($monthlyPrice, $annualPrice) {
-                $q->where('first_item.stripe_price', $monthlyPrice);
-                if ($annualPrice) {
-                    $q->orWhere('first_item.stripe_price', $annualPrice);
-                }
-            });
-        }
-
-        $sortMap = [
-            'created_at' => 'subscriptions.created_at',
-            'stripe_status' => 'subscriptions.stripe_status',
-            'quantity' => 'subscriptions.quantity',
-            'user_name' => 'users.name',
-        ];
-        $sort = $sortMap[$validated['sort'] ?? 'created_at'] ?? 'subscriptions.created_at';
-        $dir = $validated['dir'] ?? 'desc';
-        $query->orderBy($sort, $dir);
-
-        return $query;
-    }
-
-    /**
-     * @return array{voluntary: int, involuntary: int}
-     */
-    public function getChurnBreakdown(): array
-    {
-        return Cache::remember(AdminCacheKey::BILLING_STATS->value.'_churn_breakdown', AdminCacheKey::DEFAULT_TTL, function () {
-            $thirtyDaysAgo = now()->subDays(30);
-
-            // Keep both canonical and legacy event names until a production backfill
-            // migrates 'stripe.subscription.deleted' rows to 'subscription.canceled'.
-            // Dropping the legacy name silently excludes pre-migration audit rows.
-            $rows = DB::table('audit_logs')
-                ->whereIn('event', ['subscription.canceled', 'stripe.subscription.deleted'])
-                ->where('created_at', '>=', $thirtyDaysAgo)
-                ->select('metadata')
-                ->get();
-
-            $voluntary = 0;
-            $involuntary = 0;
-
-            foreach ($rows as $row) {
-                $meta = is_string($row->metadata) ? json_decode($row->metadata, true) : (array) $row->metadata;
-                $churnType = $meta['churn_type'] ?? null;
-
-                if ($churnType === 'voluntary') {
-                    $voluntary++;
-                } elseif ($churnType === 'involuntary') {
-                    $involuntary++;
-                }
-            }
-
-            return compact('voluntary', 'involuntary');
-        });
-    }
-
-    private function calculateMrr(): float
-    {
-        $grouped = DB::table('subscriptions')
-            ->join('subscription_items', 'subscriptions.id', '=', 'subscription_items.subscription_id')
-            ->where('subscriptions.stripe_status', 'active')
-            ->whereNull('subscriptions.ends_at')
-            ->select('subscription_items.stripe_price', DB::raw('SUM(COALESCE(subscriptions.quantity, 1)) as total_quantity'))
-            ->groupBy('subscription_items.stripe_price')
-            ->get();
-
-        $mrr = 0;
-        foreach ($grouped as $row) {
-            $tier = $this->billingService->resolveTierFromPrice($row->stripe_price);
-
-            if ($tier === null) {
-                // Skip unknown prices — they're already logged by resolveTierFromPrice
-                continue;
-            }
-
-            $monthlyPrice = (float) config("plans.{$tier->value}.price_monthly", 0);
-
-            $annualPriceId = config("plans.{$tier->value}.stripe_price_annual");
-            if ($row->stripe_price === $annualPriceId) {
-                $monthlyPrice = (float) config("plans.{$tier->value}.price_annual", 0) / 12;
-            }
-
-            $mrr += $monthlyPrice * (int) $row->total_quantity;
-        }
-
-        return round($mrr, 2);
-    }
-
-    private function calculateChurnRate(): float
-    {
-        $thirtyDaysAgo = now()->subDays(30);
-
-        $canceledInPeriod = DB::table('subscriptions')
-            ->whereNotNull('ends_at')
-            ->where('ends_at', '>=', $thirtyDaysAgo)
-            ->where(function ($q) {
-                $q->where('stripe_status', 'canceled')
-                    ->orWhere('ends_at', '<', now());
-            })
-            ->count();
-
-        // Only paying subscribers (active or past_due) count in the denominator.
-        // Trialing subscriptions are excluded to avoid artificially deflating churn rate.
-        $activeAtStart = DB::table('subscriptions')
-            ->where('created_at', '<', $thirtyDaysAgo)
-            ->whereIn('stripe_status', ['active', 'past_due'])
-            ->where(function ($q) use ($thirtyDaysAgo) {
-                $q->whereNull('ends_at')
-                    ->orWhere('ends_at', '>', $thirtyDaysAgo);
-            })
-            ->count();
-
-        if ($activeAtStart === 0) {
-            return 0;
-        }
-
-        return round(($canceledInPeriod / $activeAtStart) * 100, 1);
-    }
-
-    /**
-     * Activation rate (rolling 90-day cohort): of users who signed up in the last 90 days,
-     * what % completed onboarding? This avoids denominator inflation from pre-onboarding users.
-     *
-     * @param  int  $windowDays  Cohort window in days (default 90)
-     */
-    private function calculateActivationRate(int $windowDays = 90): float
-    {
-        $since = now()->subDays($windowDays);
-
-        $cohortUsers = DB::table('users')
-            ->whereNull('deleted_at')
-            ->where('created_at', '>=', $since)
-            ->count();
-
-        if ($cohortUsers === 0) {
-            return 0;
-        }
-
-        $activatedUsers = DB::table('user_settings')
-            ->join('users', 'user_settings.user_id', '=', 'users.id')
-            ->whereNull('users.deleted_at')
-            ->where('users.created_at', '>=', $since)
-            ->where('user_settings.key', 'onboarding_completed')
-            ->distinct('user_settings.user_id')
-            ->count('user_settings.user_id');
-
-        return round(($activatedUsers / $cohortUsers) * 100, 1);
-    }
-
-    /**
-     * All-time activation rate (legacy): users who completed onboarding / total signups.
-     * Kept for transparency alongside the rolling cohort metric.
-     */
-    private function calculateActivationRateAllTime(): float
-    {
-        $totalUsers = DB::table('users')->whereNull('deleted_at')->count();
-
-        if ($totalUsers === 0) {
-            return 0;
-        }
-
-        $activatedUsers = DB::table('user_settings')
-            ->join('users', 'user_settings.user_id', '=', 'users.id')
-            ->whereNull('users.deleted_at')
-            ->where('user_settings.key', 'onboarding_completed')
-            ->distinct('user_settings.user_id')
-            ->count('user_settings.user_id');
-
-        return round(($activatedUsers / $totalUsers) * 100, 1);
-    }
-
-    /**
-     * Signup-to-paid conversion: users with active subscriptions / total signups.
-     */
-    private function calculateSignupToPaidConversion(): float
-    {
-        $totalUsers = DB::table('users')->whereNull('deleted_at')->count();
-
-        if ($totalUsers === 0) {
-            return 0;
-        }
-
-        $paidUsers = DB::table('subscriptions')
-            ->where('stripe_status', 'active')
-            ->whereNull('ends_at')
-            ->distinct('user_id')
-            ->count('user_id');
-
-        return round(($paidUsers / $totalUsers) * 100, 1);
-    }
-
-    /**
-     * Cohort retention: group users by signup week, show % active at week 1, 2, 4, 8.
-     *
-     * @return array<int, array{cohort: string, total: int, week_1: float, week_2: float, week_4: float, week_8: float}>
-     */
-    public function getCohortRetention(): array
-    {
-        return Cache::remember(AdminCacheKey::BILLING_COHORT_RETENTION->value, AdminCacheKey::CHART_TTL, function () {
-            $cohorts = [];
-            $now = now();
-
-            // Last 8 weeks of cohorts
-            for ($i = 8; $i >= 0; $i--) {
-                $weekStart = $now->copy()->subWeeks($i)->startOfWeek();
-                $weekEnd = $weekStart->copy()->endOfWeek();
-
-                $usersInCohort = DB::table('users')
-                    ->whereNull('deleted_at')
-                    ->whereBetween('created_at', [$weekStart, $weekEnd])
-                    ->pluck('id');
-
-                $total = $usersInCohort->count();
-
-                if ($total === 0) {
-                    continue;
-                }
-
-                $retention = [
-                    'cohort' => $weekStart->format('M d'),
-                    'total' => $total,
-                ];
-
-                foreach ([1, 2, 4, 8] as $week) {
-                    $checkDate = $weekStart->copy()->addWeeks($week);
-
-                    if ($checkDate->isAfter($now)) {
-                        $retention["week_{$week}"] = null;
-                    } else {
-                        // API-heavy users update last_active_at (not last_login_at) on each request.
-                        // Use an OR to retain both session-based and API-based active users.
-                        $activeCount = DB::table('users')
-                            ->whereIn('id', $usersInCohort)
-                            ->where(function ($q) use ($checkDate) {
-                                $q->where('last_login_at', '>=', $checkDate)
-                                    ->orWhere('last_active_at', '>=', $checkDate);
-                            })
-                            ->count();
-
-                        $retention["week_{$week}"] = round(($activeCount / $total) * 100, 1);
-                    }
-                }
-
-                $cohorts[] = $retention;
-            }
-
-            return $cohorts;
-        });
-    }
-
-    private function calculateTrialConversion(): float
-    {
-        $totalTrialed = DB::table('subscriptions')
-            ->whereNotNull('trial_ends_at')
-            ->where('trial_ends_at', '<', now())
-            ->count();
-
-        if ($totalTrialed === 0) {
-            return 0;
-        }
-
-        // Proxy for "ever converted": subscription was in trial AND ever moved to a paid status.
-        // Counts subscriptions that converted even if they later churned — avoids survivor bias.
-        // A subscription "ever converted" if it is now active, OR if it is canceled/past_due
-        // and has an ends_at (meaning it was once billing and then canceled/expired).
-        $converted = DB::table('subscriptions')
-            ->whereNotNull('trial_ends_at')
-            ->where('trial_ends_at', '<', now())
-            ->where(function ($q) {
-                $q->where('stripe_status', 'active')
-                    ->orWhere(function ($q2) {
-                        $q2->whereIn('stripe_status', ['canceled', 'past_due', 'incomplete_expired'])
-                            ->whereNotNull('ends_at');
-                    });
-            })
-            ->count();
-
-        return round(($converted / $totalTrialed) * 100, 1);
-    }
-
-    private function calculateCohortedConversion(): float
-    {
-        $thirtyDaysAgo = now()->subDays(30);
-
-        $cohortUsers = DB::table('users')
-            ->whereNull('deleted_at')
-            ->where('created_at', '>=', $thirtyDaysAgo)
-            ->count();
-
-        if ($cohortUsers === 0) {
-            return 0;
-        }
-
-        $converted = DB::table('users')
-            ->whereNull('deleted_at')
-            ->where('created_at', '>=', $thirtyDaysAgo)
-            ->whereExists(function ($q) {
-                $q->select(DB::raw(1))
-                    ->from('subscriptions')
-                    ->whereColumn('subscriptions.user_id', 'users.id')
-                    ->where('stripe_status', 'active')
-                    ->whereNull('ends_at');
-            })
-            ->count();
-
-        return round(($converted / $cohortUsers) * 100, 1);
+        return $this->subscriptionQuery->build($validated);
     }
 }
