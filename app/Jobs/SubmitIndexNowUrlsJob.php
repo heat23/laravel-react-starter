@@ -2,12 +2,11 @@
 
 namespace App\Jobs;
 
-use App\Enums\AdminCacheKey;
 use App\Models\IndexNowSubmission;
+use App\Services\CacheInvalidationManager;
 use App\Services\IndexNowService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -28,7 +27,7 @@ class SubmitIndexNowUrlsJob implements ShouldQueue
         private readonly int $submissionId,
     ) {}
 
-    public function handle(IndexNowService $service): void
+    public function handle(IndexNowService $service, CacheInvalidationManager $cacheManager): void
     {
         $submission = IndexNowSubmission::find($this->submissionId);
 
@@ -41,7 +40,7 @@ class SubmitIndexNowUrlsJob implements ShouldQueue
                 'status' => 'failed',
                 'response_body' => 'IndexNow not configured (feature flag off or key missing).',
             ]);
-            Cache::forget(AdminCacheKey::INDEXNOW_STATS->value);
+            $cacheManager->invalidateIndexNow();
 
             return;
         }
@@ -74,7 +73,7 @@ class SubmitIndexNowUrlsJob implements ShouldQueue
                     'response_body' => $responseBody,
                     'submitted_at' => now(),
                 ]);
-                Cache::forget(AdminCacheKey::INDEXNOW_STATS->value);
+                $cacheManager->invalidateIndexNow();
 
                 return;
             }
@@ -87,7 +86,7 @@ class SubmitIndexNowUrlsJob implements ShouldQueue
                     'response_code' => $status,
                     'response_body' => $responseBody,
                 ]);
-                Cache::forget(AdminCacheKey::INDEXNOW_STATS->value);
+                $cacheManager->invalidateIndexNow();
                 Log::channel('single')->warning('IndexNow submission rejected (non-retryable)', [
                     'submission_id' => $submission->id,
                     'status' => $status,
@@ -106,7 +105,7 @@ class SubmitIndexNowUrlsJob implements ShouldQueue
 
             if ($this->attempts() >= $this->tries) {
                 $submission->update(['status' => 'failed']);
-                Cache::forget(AdminCacheKey::INDEXNOW_STATS->value);
+                $cacheManager->invalidateIndexNow();
             }
 
             throw new \RuntimeException("IndexNow returned transient status {$status}");
@@ -136,7 +135,7 @@ class SubmitIndexNowUrlsJob implements ShouldQueue
                     'status' => 'failed',
                     'response_body' => substr($e->getMessage(), 0, 1000),
                 ]);
-                Cache::forget(AdminCacheKey::INDEXNOW_STATS->value);
+                $cacheManager->invalidateIndexNow();
             }
 
             throw $e;

@@ -6,6 +6,7 @@ use App\Enums\AdminCacheKey;
 use App\Http\Controllers\Controller;
 use App\Jobs\SubmitIndexNowUrlsJob;
 use App\Models\IndexNowSubmission;
+use App\Services\CacheInvalidationManager;
 use App\Services\IndexNowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,10 @@ use Inertia\Response;
 
 class AdminIndexNowController extends Controller
 {
+    public function __construct(
+        private CacheInvalidationManager $cacheManager,
+    ) {}
+
     public function __invoke(Request $request): Response
     {
         abort_unless(config('features.indexnow.enabled', false), 404);
@@ -142,7 +147,7 @@ class AdminIndexNowController extends Controller
         SubmitIndexNowUrlsJob::dispatch($retry->id)
             ->onQueue(config('indexnow.queue', 'default'));
 
-        Cache::forget(AdminCacheKey::INDEXNOW_STATS->value);
+        $this->cacheManager->invalidateIndexNow();
 
         return redirect()->route('admin.indexnow.show', $retry->id)
             ->with('success', 'IndexNow submission re-queued.');

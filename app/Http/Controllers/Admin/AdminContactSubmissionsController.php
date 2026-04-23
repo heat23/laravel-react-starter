@@ -13,6 +13,7 @@ use App\Http\Requests\Admin\AdminContactSubmissionsIndexRequest;
 use App\Http\Requests\Admin\AdminUpdateContactSubmissionRequest;
 use App\Models\ContactSubmission;
 use App\Services\AuditService;
+use App\Services\CacheInvalidationManager;
 use App\Support\CsvExport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
@@ -27,6 +28,7 @@ class AdminContactSubmissionsController extends Controller
 
     public function __construct(
         private AuditService $auditService,
+        private CacheInvalidationManager $cacheManager,
     ) {}
 
     public function index(AdminContactSubmissionsIndexRequest $request): Response
@@ -85,7 +87,7 @@ class AdminContactSubmissionsController extends Controller
 
         $contactSubmission->update($data);
 
-        Cache::forget(AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value);
+        $this->cacheManager->invalidateContactSubmissions();
 
         $this->auditService->log(AuditEvent::ADMIN_CONTACT_SUBMISSION_UPDATED, [
             'submission_id' => $contactSubmission->id,
@@ -118,7 +120,7 @@ class AdminContactSubmissionsController extends Controller
             }
         });
 
-        Cache::forget(AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value);
+        $this->cacheManager->invalidateContactSubmissions();
 
         $this->auditService->log(AuditEvent::ADMIN_CONTACT_SUBMISSION_BULK_UPDATED, [
             'ids' => $ids,
@@ -138,7 +140,7 @@ class AdminContactSubmissionsController extends Controller
 
         $contactSubmission->delete();
 
-        Cache::forget(AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value);
+        $this->cacheManager->invalidateContactSubmissions();
 
         return redirect()->route('admin.contact-submissions.index')->with('success', 'Submission deleted.');
     }

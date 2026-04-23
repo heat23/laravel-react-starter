@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\AdminCacheKey;
 use App\Jobs\SubmitIndexNowUrlsJob;
 use App\Models\IndexNowSubmission;
 use Illuminate\Support\Facades\Cache;
@@ -19,6 +18,10 @@ use Illuminate\Support\Str;
  */
 class IndexNowService
 {
+    public function __construct(
+        private CacheInvalidationManager $cacheManager,
+    ) {}
+
     /**
      * Submit a batch of URLs to IndexNow.
      *
@@ -70,7 +73,7 @@ class IndexNowService
             $first ??= $submission;
         }
 
-        Cache::forget(AdminCacheKey::INDEXNOW_STATS->value);
+        $this->cacheManager->invalidateIndexNow();
 
         return $first;
     }

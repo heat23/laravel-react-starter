@@ -2,6 +2,7 @@
 
 use App\Jobs\SubmitIndexNowUrlsJob;
 use App\Models\IndexNowSubmission;
+use App\Services\CacheInvalidationManager;
 use App\Services\IndexNowService;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -34,7 +35,7 @@ function runJob(IndexNowSubmission $submission, int $attempts = 1): void
         }
     };
 
-    $job->handle(app(IndexNowService::class));
+    $job->handle(app(IndexNowService::class), app(CacheInvalidationManager::class));
 }
 
 it('marks submission success on 200 response and records submitted_at', function () {
@@ -162,7 +163,7 @@ it('no-ops gracefully when submission row is missing', function () {
     Http::fake();
 
     $job = new SubmitIndexNowUrlsJob(999999);
-    $job->handle(app(IndexNowService::class));
+    $job->handle(app(IndexNowService::class), app(CacheInvalidationManager::class));
 
     Http::assertNothingSent();
 });
