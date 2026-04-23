@@ -21,8 +21,6 @@ class BillingController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $user->loadMissing('subscriptions.items');
-
         $subscription = $user->subscription('default');
         $subscriptionInfo = null;
         $incompletePayment = null;

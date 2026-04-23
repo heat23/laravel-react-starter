@@ -18,9 +18,12 @@ use App\Http\Controllers\Admin\AdminTwoFactorController;
 use App\Http\Controllers\Admin\AdminUsersController;
 use App\Http\Controllers\Admin\AdminWebhooksController;
 use App\Http\Controllers\Billing\BillingController;
+use App\Http\Controllers\Billing\PaymentMethodController;
 use App\Http\Controllers\Billing\PricingController;
+use App\Http\Controllers\Billing\RetentionController;
 use App\Http\Controllers\Billing\StripeWebhookController;
-use App\Http\Controllers\Billing\SubscriptionController;
+use App\Http\Controllers\Billing\SubscriptionCheckoutController;
+use App\Http\Controllers\Billing\SubscriptionLifecycleController;
 use App\Http\Middleware\EnsureIsSuperAdmin;
 use App\Models\FeatureFlagOverride;
 use App\Models\User;
@@ -233,15 +236,15 @@ function registerBillingRoutes(): void
 
     $router->middleware(['web', 'auth', 'verified'])->group(function () use ($router) {
         $router->get('/billing', [BillingController::class, 'index'])->name('billing.index');
-        $router->post('/billing/checkout', [SubscriptionController::class, 'checkout'])->name('billing.checkout');
-        $router->post('/billing/subscribe', [SubscriptionController::class, 'subscribe'])->name('billing.subscribe');
-        $router->post('/billing/cancel', [SubscriptionController::class, 'cancel'])->name('billing.cancel');
-        $router->post('/billing/resume', [SubscriptionController::class, 'resume'])->name('billing.resume');
-        $router->post('/billing/swap', [SubscriptionController::class, 'swap'])->name('billing.swap');
-        $router->post('/billing/quantity', [SubscriptionController::class, 'updateQuantity'])->name('billing.quantity');
-        $router->post('/billing/payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->name('billing.payment-method');
-        $router->post('/billing/retention-coupon', [SubscriptionController::class, 'applyRetentionCoupon'])->middleware('throttle:3,60')->name('billing.retention-coupon');
-        $router->get('/billing/portal', [SubscriptionController::class, 'portal'])->name('billing.portal');
+        $router->post('/billing/checkout', [SubscriptionCheckoutController::class, 'checkout'])->name('billing.checkout');
+        $router->post('/billing/subscribe', [SubscriptionCheckoutController::class, 'subscribe'])->name('billing.subscribe');
+        $router->post('/billing/cancel', [SubscriptionLifecycleController::class, 'cancel'])->name('billing.cancel');
+        $router->post('/billing/resume', [SubscriptionLifecycleController::class, 'resume'])->name('billing.resume');
+        $router->post('/billing/swap', [SubscriptionLifecycleController::class, 'swap'])->name('billing.swap');
+        $router->post('/billing/quantity', [SubscriptionLifecycleController::class, 'updateQuantity'])->name('billing.quantity');
+        $router->post('/billing/payment-method', [PaymentMethodController::class, 'updatePaymentMethod'])->name('billing.payment-method');
+        $router->post('/billing/retention-coupon', [RetentionController::class, 'applyRetentionCoupon'])->middleware('throttle:3,60')->name('billing.retention-coupon');
+        $router->get('/billing/portal', [SubscriptionCheckoutController::class, 'portal'])->name('billing.portal');
     });
 
     // Cashier payment confirmation page (SCA/3DS redirect target)

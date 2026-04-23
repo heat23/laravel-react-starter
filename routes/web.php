@@ -1,9 +1,12 @@
 <?php
 
 use App\Http\Controllers\Billing\BillingController;
+use App\Http\Controllers\Billing\PaymentMethodController;
 use App\Http\Controllers\Billing\PricingController;
+use App\Http\Controllers\Billing\RetentionController;
 use App\Http\Controllers\Billing\StripeWebhookController;
-use App\Http\Controllers\Billing\SubscriptionController;
+use App\Http\Controllers\Billing\SubscriptionCheckoutController;
+use App\Http\Controllers\Billing\SubscriptionLifecycleController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BuyController;
 use App\Http\Controllers\ChangelogController;
@@ -156,18 +159,18 @@ if (config('features.billing.enabled', false)) {
     Route::middleware(['auth', 'verified', 'billing.context'])->group(function () {
         Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
         // Canonical subscription path: creates a Stripe Hosted Checkout session.
-        Route::post('/billing/checkout', [SubscriptionController::class, 'checkout'])->middleware('throttle:5,1')->name('billing.checkout');
+        Route::post('/billing/checkout', [SubscriptionCheckoutController::class, 'checkout'])->middleware('throttle:5,1')->name('billing.checkout');
         // Legacy direct-API path (deprecated): requires pre-collected payment method token.
         // Prefer checkout() for new integrations. Retained for backward compatibility.
-        Route::post('/billing/subscribe', [SubscriptionController::class, 'subscribe'])->middleware('throttle:5,1')->name('billing.subscribe');
-        Route::post('/billing/cancel', [SubscriptionController::class, 'cancel'])->middleware('throttle:5,1')->name('billing.cancel');
-        Route::post('/billing/resume', [SubscriptionController::class, 'resume'])->middleware('throttle:5,1')->name('billing.resume');
-        Route::get('/billing/swap/preview', [SubscriptionController::class, 'swapPreview'])->middleware('throttle:20,1')->name('billing.swap.preview');
-        Route::post('/billing/swap', [SubscriptionController::class, 'swap'])->middleware('throttle:5,1')->name('billing.swap');
-        Route::post('/billing/quantity', [SubscriptionController::class, 'updateQuantity'])->middleware('throttle:5,1')->name('billing.quantity');
-        Route::post('/billing/payment-method', [SubscriptionController::class, 'updatePaymentMethod'])->middleware('throttle:5,1')->name('billing.payment-method');
-        Route::post('/billing/retention-coupon', [SubscriptionController::class, 'applyRetentionCoupon'])->middleware('throttle:3,60')->name('billing.retention-coupon');
-        Route::get('/billing/portal', [SubscriptionController::class, 'portal'])->name('billing.portal');
+        Route::post('/billing/subscribe', [SubscriptionCheckoutController::class, 'subscribe'])->middleware('throttle:5,1')->name('billing.subscribe');
+        Route::post('/billing/cancel', [SubscriptionLifecycleController::class, 'cancel'])->middleware('throttle:5,1')->name('billing.cancel');
+        Route::post('/billing/resume', [SubscriptionLifecycleController::class, 'resume'])->middleware('throttle:5,1')->name('billing.resume');
+        Route::get('/billing/swap/preview', [SubscriptionLifecycleController::class, 'swapPreview'])->middleware('throttle:20,1')->name('billing.swap.preview');
+        Route::post('/billing/swap', [SubscriptionLifecycleController::class, 'swap'])->middleware('throttle:5,1')->name('billing.swap');
+        Route::post('/billing/quantity', [SubscriptionLifecycleController::class, 'updateQuantity'])->middleware('throttle:5,1')->name('billing.quantity');
+        Route::post('/billing/payment-method', [PaymentMethodController::class, 'updatePaymentMethod'])->middleware('throttle:5,1')->name('billing.payment-method');
+        Route::post('/billing/retention-coupon', [RetentionController::class, 'applyRetentionCoupon'])->middleware('throttle:3,60')->name('billing.retention-coupon');
+        Route::get('/billing/portal', [SubscriptionCheckoutController::class, 'portal'])->name('billing.portal');
     });
 
     // Cashier payment confirmation page (SCA/3DS redirect target)
