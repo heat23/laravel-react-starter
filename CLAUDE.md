@@ -137,20 +137,14 @@ npm test               # Vitest frontend tests
 npm run build          # Production build
 npm run lint           # ESLint
 php artisan subscriptions:check-incomplete  # Find failed payments, send reminders
+php artisan billing:enforce-grace-period    # Downgrade past-due subscriptions after grace window
+php artisan trials:check-expired            # Handle expired trial transitions
+php artisan emails:send-welcome-sequence    # Send scheduled welcome emails (2, 3)
 php artisan audit:prune                     # Delete old audit logs (--days=N)
 php artisan webhooks:mark-abandoned         # Mark orphaned webhook deliveries as abandoned (--hours=N)
 php artisan webhooks:delete-old             # Delete old terminal webhook deliveries (--days=N)
 php artisan admin:health-alert              # Run health checks, alert on failures
-php artisan trials:check-expired            # Handle expired trial transitions
-php artisan scores:compute                  # Recompute engagement/health scores
-php artisan leads:qualify                   # Run lead qualification scoring
-php artisan lifecycle:send-dunning          # Send payment recovery (dunning) emails
-php artisan lifecycle:send-onboarding       # Send onboarding reminder sequence
-php artisan lifecycle:send-re-engagement    # Re-engagement emails to inactive users
-php artisan lifecycle:send-trial-ending     # Notify users of approaching trial expiry
-php artisan lifecycle:send-trial-nudges     # Trial conversion nudges
-php artisan lifecycle:send-welcome          # Welcome email sequence
-php artisan lifecycle:send-win-back         # Win-back emails to churned users
+php artisan indexnow:generate-key           # Generate an IndexNow verification key
 php artisan prune-read-notifications        # Delete old read notifications
 scripts/init.sh                             # First-time setup
 ```

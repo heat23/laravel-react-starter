@@ -3,7 +3,8 @@
  * All analytics tracking must use these constants — never raw strings.
  *
  * Naming convention: category.action (snake_case)
- * See docs/EVENT_TAXONOMY.md for full specification.
+ * The PHP source of truth is `app/Enums/AuditEvent.php`; parity is enforced
+ * by `tests/Feature/AuditEventSyncTest.php`.
  *
  * Feature tracking pattern: all feature actions use FEATURE_USED with a
  * consistent `feature_name` value (e.g. 'api_token_created', 'webhook_created',
