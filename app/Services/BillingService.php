@@ -15,6 +15,7 @@ use Laravel\Cashier\Subscription;
 use Laravel\Cashier\SubscriptionItem;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException as StripeInvalidRequestException;
+use Stripe\StripeClient;
 
 class BillingService
 {
@@ -44,6 +45,11 @@ class BillingService
      * Create a Stripe Checkout session for a new subscriber.
      * Returns the hosted Checkout URL to redirect the user to.
      * Use this for first-time subscribers who have no stored payment method.
+     *
+     * Wrapped in a Redis lock (same pattern as createSubscription) to prevent
+     * concurrent double-submits from opening duplicate Checkout sessions.
+     *
+     * @throws ConcurrentOperationException When a concurrent checkout is already in progress.
      */
     public function createCheckoutSession(
         User $user,
@@ -53,24 +59,26 @@ class BillingService
         string $cancelUrl,
         ?string $coupon = null,
     ): string {
-        $builder = $user->newSubscription('default', $priceId)->quantity($quantity);
+        return $this->withLock($this->lockKey('checkout', $user), function () use ($user, $priceId, $quantity, $successUrl, $cancelUrl, $coupon) {
+            $builder = $user->newSubscription('default', $priceId)->quantity($quantity);
 
-        $checkoutOptions = [
-            'success_url' => $successUrl,
-            'cancel_url' => $cancelUrl,
-        ];
+            $checkoutOptions = [
+                'success_url' => $successUrl,
+                'cancel_url' => $cancelUrl,
+            ];
 
-        if ($coupon) {
-            $checkoutOptions['discounts'] = [['coupon' => $coupon]];
-        }
+            if ($coupon) {
+                $checkoutOptions['discounts'] = [['coupon' => $coupon]];
+            }
 
-        if (config('features.billing.tax_enabled')) {
-            $checkoutOptions['automatic_tax'] = ['enabled' => true];
-        }
+            if (config('features.billing.tax_enabled')) {
+                $checkoutOptions['automatic_tax'] = ['enabled' => true];
+            }
 
-        $checkout = $builder->checkout($checkoutOptions);
+            $checkout = $builder->checkout($checkoutOptions);
 
-        return $checkout->url;
+            return $checkout->url;
+        });
     }
 
     /**
@@ -460,6 +468,80 @@ class BillingService
                 'churn_save_context' => true,
             ]);
         });
+    }
+
+    /**
+     * Cancel all active Stripe subscriptions for a customer that are orphaned
+     * (not tracked by a local Cashier subscription record).
+     *
+     * For subscriptions that have a matching local record, the cancel is routed
+     * through the owning user's `cancelSubscription()` path (Redis-locked, audited).
+     * For subscriptions with no local record, the Stripe API is called directly
+     * inside a DB transaction, and an audit log entry is written.
+     *
+     * @return int Count of subscriptions canceled.
+     */
+    public function cancelOrphanedStripeSubscription(string $stripeCustomerId, ?int $userId = null): int
+    {
+        $stripe = $this->stripeClient();
+        $stripeSubscriptions = $stripe->subscriptions->all([
+            'customer' => $stripeCustomerId,
+            'status' => 'active',
+        ]);
+
+        $canceledCount = 0;
+
+        foreach ($stripeSubscriptions->data as $stripeSub) {
+            /** @var \Stripe\Subscription $stripeSub */
+            $localSub = Subscription::where('stripe_id', $stripeSub->id)->first();
+
+            if ($localSub !== null) {
+                // Route through BillingService to honour Redis lock + lifecycle transition.
+                /** @var User|null $user */
+                $user = $localSub->owner;
+                if ($user instanceof User) {
+                    $this->cancelSubscription($user, immediately: true);
+                    $canceledCount++;
+                }
+
+                continue;
+            }
+
+            // No local record — truly orphaned. Cancel via Stripe SDK inside a transaction.
+            DB::transaction(function () use ($stripe, $stripeSub, $stripeCustomerId, $userId, &$canceledCount) {
+                $stripe->subscriptions->cancel($stripeSub->id);
+
+                app(AuditService::class)->log(AuditEvent::ADMIN_STRIPE_ORPHAN_CANCELED, [
+                    'stripe_customer_id' => $stripeCustomerId,
+                    'stripe_subscription_id' => $stripeSub->id,
+                    'user_id' => $userId,
+                ]);
+
+                $canceledCount++;
+            });
+
+            Log::info('Canceled orphaned Stripe subscription', [
+                'stripe_customer_id' => $stripeCustomerId,
+                'stripe_subscription_id' => $stripeSub->id,
+                'user_id' => $userId,
+            ]);
+        }
+
+        return $canceledCount;
+    }
+
+    /**
+     * Return a Stripe API client instance.
+     *
+     * Extracted as a protected method so tests can override it via a partial mock
+     * without hitting the real Stripe API.
+     */
+    /**
+     * @return StripeClient
+     */
+    protected function stripeClient(): mixed
+    {
+        return Cashier::stripe();
     }
 
     /**

@@ -18,8 +18,14 @@ class SubscriptionCreatedHandler implements StripeEventHandler
         private CacheInvalidationManager $cacheManager,
     ) {}
 
+    use DeduplicatesStripeEvents;
+
     public function handle(StripeEvent $event): void
     {
+        if ($this->alreadyProcessed($event->payload['id'] ?? '')) {
+            return;
+        }
+
         $payload = $event->payload;
 
         Log::channel('single')->info('Stripe webhook: subscription.created', [

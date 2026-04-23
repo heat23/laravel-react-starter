@@ -10,8 +10,14 @@ use Illuminate\Support\Facades\Log;
 
 class InvoicePaymentActionRequiredHandler implements StripeEventHandler
 {
+    use DeduplicatesStripeEvents;
+
     public function handle(StripeEvent $event): void
     {
+        if ($this->alreadyProcessed($event->payload['id'] ?? '')) {
+            return;
+        }
+
         $payload = $event->payload;
         $customerId = $payload['data']['object']['customer'] ?? null;
         $hostedInvoiceUrl = $payload['data']['object']['hosted_invoice_url'] ?? null;

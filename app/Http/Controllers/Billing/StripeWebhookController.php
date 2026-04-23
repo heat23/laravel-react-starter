@@ -54,7 +54,10 @@ class StripeWebhookController extends WebhookController
         $ts = $payload['created'] ?? null;
         $sub = $subId ? Subscription::where('stripe_id', $subId)->first() : null;
 
-        if ($sub && $sub->last_webhook_at && $ts && $ts <= $sub->last_webhook_at) {
+        // Equal timestamps are legitimate cascading events (e.g. Stripe fires
+        // multiple events in the same second for a single user action). Only
+        // strict "less-than" is truly out-of-order; equal means "process again".
+        if ($sub && $sub->last_webhook_at && $ts && $ts < $sub->last_webhook_at) {
             Log::warning('Out-of-order webhook rejected', ['subscription_id' => $subId, 'event_timestamp' => $ts, 'last_processed_at' => $sub->last_webhook_at]);
 
             return $this->successMethod();

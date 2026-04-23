@@ -116,6 +116,7 @@ class AuditLog extends Model
         'ip',
         'user_agent',
         'metadata',
+        'idempotency_key',
     ];
 
     protected function casts(): array
