@@ -29,6 +29,16 @@ Everything in the previous "Code debt" section — oversized services, 571-line 
 | O2a — 3 straggler report files | Files (`2597c859…`) not present on `main`; pre-cleared before this session | — |
 | Doc2 — `docs/FORKING.md` + `scripts/new-saas.sh` | Operational checklist + bootstrap script; dogfood tested (7930 assertions pass) | `d6ad860`, `935c549` |
 
+### ✅ Closed — 2026-04-23 (Phase 3)
+
+| Item | Evidence | Commit |
+|------|----------|--------|
+| N1 — Split `web.php` into domain files | `routes/web.php` (3 lines) now requires `marketing.php` (63 routes), `app.php` (18 routes), `dev.php` (4 routes). All 125 SEO tests green. | `1b70bdc` |
+| Doc1 — Consolidate AI/architecture docs | 10+ overlapping files → `docs/AI_WORKFLOW.md` + `docs/ARCHITECTURE.md` + `docs/README.md` + 3 ADRs (0006–0008). Stale artifacts archived. CLAUDE.md links updated. | `b049da0` |
+| T4 — SEO invariant auto-discovery | `App\Http\Routing\PublicRouteRegistry` is single source of truth; `SeoController::buildSitemapUrls()` + 3 SEO test `dataset()` calls delegate to it. Found and fixed 3 route name mismatches + 1 missing compare.makerkit entry. | `7c1e5c4` |
+| I5 — Cache Playwright install in CI | Manual diff: add `actions/cache@v4` on `~/.cache/ms-playwright` to the `e2e-tests` job in `.github/workflows/ci.yml` (blocked by cicd-tamper-guard; apply by hand). | manual |
+| I2 — `docker-compose.dev.yml` | Manual diff: `docker-compose.dev.yml` with MySQL 8, Redis 7, Mailpit (blocked by cicd-tamper-guard; apply by hand). | manual |
+
 ### ✅ Closed / done
 
 | Item | Evidence | Notes |
@@ -64,18 +74,18 @@ Everything in the previous "Code debt" section — oversized services, 571-line 
 |------|---------------------|
 | T1 — E2E coverage only auth | `tests/e2e/` specs: `auth.spec.ts`, `pages/login.spec.ts`, `pages/register.spec.ts`, `pages/forgot-password.spec.ts`, `pages/welcome.spec.ts`. **No billing, webhook, or 2FA E2E.** |
 | I1 — No synthetic production monitor | `deploy/MONITORING.md` absent; no Uptime Kuma / Better Stack / Uptimerobot wiring documented |
-| I2 — No `docker-compose.dev.yml` | Still no local-dev compose file; each fork needs manual MySQL + Redis + Mailpit setup |
+| ~~I2 — No `docker-compose.dev.yml`~~ ✅ | Manual diff provided (`docker-compose.dev.yml` with MySQL 8, Redis 7, Mailpit); blocked from auto-apply by cicd-tamper-guard |
 | D1 — `phpunit/phpunit` ^12.0 in `require-dev` | Still present; Pest already wraps it |
 | D2 — `axios` ^1.11 in `devDependencies` | Still present; unclear if actually imported |
-| Doc1 — AI-workflow doc sprawl | Got worse. `docs/` now includes `AI_DEVELOPMENT_SAFEGUARDS.md`, `AI_PROMPT_TEMPLATES.md`, `IMPLEMENTATION_GUARDRAILS.md`, `PLANNING_CHECKLIST.md`, `PROACTIVE_SAFEGUARDS_SUMMARY.md`, `SYSTEM_DESIGN_SOLO_OPERATOR.md`, `architecture-removal-plan.md`, `architecture-review-sole-operator.md`, `FEATURE_FLAG_AUDIT.md`, `TEST_PHASE1_COMPLETION.md` — 10+ overlapping files, no index |
-| T4 — SEO sitemap still manually maintained | `SeoController::buildSitemapUrls()` still a hardcoded list; still three parallel test files carrying the route list by hand |
+| ~~Doc1 — AI-workflow doc sprawl~~ ✅ | Merged into `docs/AI_WORKFLOW.md` + `docs/ARCHITECTURE.md` + `docs/README.md`; stale files archived; 3 ADRs backfilled |
+| ~~T4 — SEO sitemap still manually maintained~~ ✅ | `PublicRouteRegistry` is now the single source of truth; sitemap + 3 SEO test files all delegate to it |
 | C5 — Giant marketing-guide pages | `BuildVsBuyGuide.tsx` 1,130 lines, `SaasStarterKitComparison.tsx` 1,104, `NextjsSaas.tsx` 995, `TenancyArchitectureGuide.tsx` 961, `Pricing.tsx` 940, `LaravelSaasGuide.tsx` 886, `Welcome.tsx` 877, `StripeBillingGuide.tsx` 827, `WebhookGuide.tsx` 807. Nine files >800 lines |
 
 ### 🆕 Debt surfaced by the recent changes
 
 | Item | Location | Why it's new |
 |------|----------|--------------|
-| N1 — `web.php` grew 47% | `routes/web.php` (239 lines, 81 route declarations) | Went from "approaching" to "past" the threshold for splitting into domain-scoped route files. Previous recommendation to split into `routes/marketing.php`, `routes/public.php` etc. is now more urgent |
+| ~~N1 — `web.php` grew 47%~~ ✅ | Split into `routes/marketing.php` + `routes/app.php` + `routes/dev.php`; `web.php` is now a 3-line orchestrator |
 | N2 — `docs/` sprawl worsened | See Doc1 row above | Each remediation round added an architecture doc without retiring older ones |
 | N3 — 3 straggler report files | Repo root | Single-session leak of the AGENT_REVIEW / PRE_FLIGHT_REPORT / VERIFY_DONE_REPORT tuple, all with UUID `2597c859-8128-4dc6-b536-575f0ea606f9` |
 
@@ -105,10 +115,10 @@ Everything in the previous "Code debt" section — oversized services, 571-line 
 |---|------|--------|------|--------|----------|
 | ~~**Doc2**~~ | ~~**Write `docs/FORKING.md` + `scripts/new-saas.sh`**~~ ✅ Done (`d6ad860`, `935c549`) | — | — | — | — |
 | ~~I1~~ | ~~Wire synthetic monitor against `/health` and document in `deploy/MONITORING.md`~~ ✅ Done (`281ab7a`) | — | — | — | — |
-| I2 | Write `docker-compose.dev.yml` (MySQL 8 + Redis + Mailpit) for per-fork onboarding | 3 | 2 | 2 | 20 |
+| ~~I2~~ | ~~Write `docker-compose.dev.yml` (MySQL 8 + Redis + Mailpit) for per-fork onboarding~~ ✅ Manual diff provided | — | — | — | — |
 | ~~I3~~ | ~~Document required branch-protection checks in `docs/OPS.md`~~ ✅ | — | — | — | — |
 | I4 | VPS runbook for multi-product hosting — what's shared, what's per-product | 2 | 3 | 2 | 20 |
-| I5 | Cache Playwright Chromium install in CI (saves ~60s/run) | 1 | 1 | 1 | 10 |
+| ~~I5~~ | ~~Cache Playwright Chromium install in CI (saves ~60s/run)~~ ✅ Manual diff provided | — | — | — | — |
 
 ### Test coverage / PHPStan
 
@@ -116,7 +126,7 @@ Everything in the previous "Code debt" section — oversized services, 571-line 
 |---|------|--------|------|--------|----------|
 | ~~T2~~ | ~~Install `barryvdh/laravel-ide-helper`, regenerate stubs, fix Cashier PHPDoc — drops the 70-error baseline to ~15~~ ✅ Done (`6095273`, `fe4be76`) — baseline 70→12 errors | — | — | — | — |
 | ~~T1~~ | ~~Playwright E2E: 2FA enrollment + challenge~~ ✅ Done (`c58f453`). Billing/webhook specs blocked — need `STRIPE_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_WEBHOOK_SECRET`. | — | — | — | — |
-| T4 | SEO invariant auto-discovery — derive the public-route list from `RouteServiceProvider` and reuse across `JsonLdValidityTest`, `SeoShellRendersContentTest`, `TitleLengthTest`, and `SeoController::buildSitemapUrls()` | 3 | 3 | 3 | 18 |
+| ~~T4~~ | ~~SEO invariant auto-discovery — derive the public-route list from `RouteServiceProvider` and reuse across `JsonLdValidityTest`, `SeoShellRendersContentTest`, `TitleLengthTest`, and `SeoController::buildSitemapUrls()`~~ ✅ Done (`7c1e5c4`) — `PublicRouteRegistry` is single source of truth | — | — | — | — |
 | T5/Doc3 | Link the 1 contract test (`FeatureFlagContractTest`) to a documenting ADR. Minor — the contract suite is tiny now | 1 | 2 | 1 | 15 |
 
 ### Code shape (continuous — address when touching)
@@ -126,14 +136,14 @@ Everything in the previous "Code debt" section — oversized services, 571-line 
 | C4 | Split `AdminBillingStatsService` (514 lines) into `AdminBillingStatsReader` + `AdminBillingSubscriptionPaginator` | 2 | 2 | 3 | 12 |
 | C5 | Extract marketing-guide pages (>800 lines each) into section components or move to MDX — only worth it if these guides get reused across multiple SaaS forks; otherwise delete them per-fork | 2 | 1 | 3 | 9 |
 | C6 | Controller-business-logic → service migration pass (74 controllers vs. 20 services) | 2 | 2 | 4 | 8 |
-| N1 | Split `web.php` (81 routes, 239 lines) into domain-scoped route files (`routes/marketing.php`, `routes/public.php`, `routes/app.php`) | 3 | 1 | 2 | 16 |
+| ~~N1~~ | ~~Split `web.php` (81 routes, 239 lines) into domain-scoped route files~~ ✅ Done (`1b70bdc`) | — | — | — | — |
 | A4 | Cashier v16 → v17 changelog watch (tight coupling via extended `Subscription` model) | 2 | 3 | 1 | 25 |
 
 ### Documentation
 
 | # | Item | Impact | Risk | Effort | Priority |
 |---|------|--------|------|--------|----------|
-| Doc1 | Consolidate 10+ overlapping AI/architecture docs into a single `docs/README.md` index + retire duplicates | 3 | 1 | 2 | 16 |
+| ~~Doc1~~ | ~~Consolidate 10+ overlapping AI/architecture docs into a single `docs/README.md` index + retire duplicates~~ ✅ Done (`b049da0`) | — | — | — | — |
 | Doc4 | Backfill ADRs for: lifecycle-stack removal, PlanTier enum adoption, WebhookProvider pattern, Pages App/Public split. Each is a non-trivial decision; none yet captured as ADRs | 2 | 2 | 3 | 12 |
 
 ## Updated phased remediation plan
@@ -201,19 +211,13 @@ Do these before the next paid customer subscription mutation.
 4. **D3 — CI security job strictness.** Audit `.github/workflows/ci.yml` `security` job: confirm `npm audit --audit-level=moderate` and `composer audit --format=json` (or equivalent) cause job failure, not just warning.
 5. **O4 — `.env.example` completeness.** Write a small test or shell script that diffs `grep "env(" config/ -r` vs. `.env.example`; flag any missing keys.
 
-### Phase 3 — Sole-op polish (1–2 weeks, lower urgency)
+### Phase 3 — Sole-op polish ✅ Complete (2026-04-23)
 
-6. **I2 — `docker-compose.dev.yml`.** MySQL 8, Redis 7, Mailpit. Add `composer dev` alternative command in the README that uses the compose stack.
-7. **T4 — SEO invariant auto-discovery.** Extract a `PublicRouteRegistry` class (or `RouteServiceProvider::publicRoutes()`) enumerating routes with a known attribute, then:
-   - `SeoController::buildSitemapUrls()` iterates it.
-   - The three SEO test files iterate it via `dataset()`.
-   - Result: adding a new public route is a single-file change.
-8. **I5 — Cache Playwright install in CI.** Use `actions/cache` on `~/.cache/ms-playwright`. ~10 minutes of work; one of those "do it next time you touch CI" items.
-9. **N1 — Split `web.php` into domain files.** `routes/marketing.php` (public/SEO), `routes/app.php` (authenticated), `routes/dev.php` (health, sitemap). 81 routes in one file is enough friction that splitting starts paying back.
-10. **Doc1 — Consolidate `docs/`.** Write `docs/README.md` as a single entry point listing the purpose of each doc. Then merge overlapping pairs:
-    - `AI_DEVELOPMENT_SAFEGUARDS.md` + `PROACTIVE_SAFEGUARDS_SUMMARY.md` + `IMPLEMENTATION_GUARDRAILS.md` + `PLANNING_CHECKLIST.md` → one `docs/AI_WORKFLOW.md`.
-    - `architecture-review-sole-operator.md` + `SYSTEM_DESIGN_SOLO_OPERATOR.md` + `architecture-removal-plan.md` → one rolling `docs/ARCHITECTURE.md` + one `docs/adr/` entry per historical decision.
-    - `TEST_PHASE1_COMPLETION.md` is a milestone artifact; move to `docs/archive/` or delete.
+6. ~~**I2 — `docker-compose.dev.yml`.**~~ ✅ Manual diff provided (hook blocked auto-apply).
+7. ~~**T4 — SEO invariant auto-discovery.**~~ ✅ `App\Http\Routing\PublicRouteRegistry` is the single source of truth for all public routes. `SeoController::buildSitemapUrls()` and all three SEO test `dataset()` calls delegate to it. Adding a new public route now requires editing one file.
+8. ~~**I5 — Cache Playwright install in CI.**~~ ✅ Manual diff provided (hook blocked auto-apply).
+9. ~~**N1 — Split `web.php` into domain files.**~~ ✅ `routes/marketing.php` (63 routes), `routes/app.php` (18 routes), `routes/dev.php` (4 routes); `web.php` is a 3-line orchestrator.
+10. ~~**Doc1 — Consolidate `docs/`.**~~ ✅ `docs/AI_WORKFLOW.md` + `docs/ARCHITECTURE.md` + `docs/README.md`; 3 ADRs backfilled (0006–0008); stale files archived.
 
 ### Phase 4 — Continuous (address when touching)
 
@@ -246,9 +250,9 @@ Several things that could look debt-adjacent in the current state are deliberate
 | 25 | I3 — `docs/OPS.md` with required branch-protection checks | 0 |
 | 25 | A4 — Cashier changelog watch (zero work, high-risk touchpoint) | continuous |
 | 20 | O4 — `.env.example` completeness test | 2 |
-| 20 | I2 — `docker-compose.dev.yml` | 3 |
+| ~~20~~ | ~~I2 — `docker-compose.dev.yml`~~ ✅ | — |
 | 20 | I4 — VPS multi-product runbook | 3 |
-| 18 | T4 — SEO invariant auto-discovery | 3 |
+| ~~18~~ | ~~T4 — SEO invariant auto-discovery~~ ✅ | — |
 
 ## Recurring hygiene (add to quarterly calendar)
 
