@@ -19,8 +19,8 @@ class AdminSystemController extends Controller
                 'laravel_version' => $this->redactVersion(app()->version()),
                 'node_version' => $this->redactNullableVersion($this->getNodeVersion()),
                 'server' => [
-                    'os' => PHP_OS_FAMILY.' '.php_uname('r'),
-                    'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'CLI',
+                    'os' => PHP_OS_FAMILY,
+                    'server_software' => $this->redactServerSoftware($_SERVER['SERVER_SOFTWARE'] ?? 'CLI'),
                 ],
                 'database' => [
                     'driver' => config('database.default'),
@@ -47,6 +47,12 @@ class AdminSystemController extends Controller
         }
 
         return 'unknown';
+    }
+
+    /** Strip the version token from "nginx/1.24.0" → "nginx", "Apache/2.4.x" → "Apache". */
+    private function redactServerSoftware(string $software): string
+    {
+        return preg_replace('/\/[\d.]+.*$/', '', $software);
     }
 
     private function redactNullableVersion(?string $version): ?string
