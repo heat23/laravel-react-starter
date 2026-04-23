@@ -15,6 +15,8 @@ export default [
             "storage/**",
             "coverage/**",
             "coverage-report/**",
+            ".worktrees/**",
+            ".claude/**",
             "*.config.js",
             "*.config.ts",
             "resources/js/ziggy.js",

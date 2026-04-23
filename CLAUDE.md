@@ -5,8 +5,7 @@
 ## AI Development Safeguards
 
 **Workflow docs** (follow for all tasks):
-- [docs/PLANNING_CHECKLIST.md](docs/PLANNING_CHECKLIST.md) — before writing code
-- [docs/IMPLEMENTATION_GUARDRAILS.md](docs/IMPLEMENTATION_GUARDRAILS.md) — during implementation (TDD, run tests after each change, PHPStan after PHP changes)
+- [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md) — planning checklist, implementation guardrails, TDD cycle, defense layers
 - [docs/TESTING_GUIDELINES.md](docs/TESTING_GUIDELINES.md) — test standards, verification, and edge case checklist
 - [docs/DEBUGGING_GUIDE.md](docs/DEBUGGING_GUIDE.md) — test failure diagnosis protocol
 - [docs/AI_PROMPT_TEMPLATES.md](docs/AI_PROMPT_TEMPLATES.md) — structured request templates
@@ -62,8 +61,11 @@ Configure your app by toggling features in `config/features.php` (or `.env`). 11
 **Tenancy:** Single-tenant. Do not add account/org/workspace scoping unless explicitly requested.
 
 **Routes:**
-- `routes/web.php` — pages (feature-gated with `if (config('features.*.enabled'))`)
-- `routes/admin.php` — admin panel (loaded from web.php when `admin.enabled`), middleware: `['auth', 'verified', 'admin', 'throttle:60,1']`
+- `routes/web.php` — thin orchestrator that requires the three domain files below
+- `routes/marketing.php` — public/SEO surface (no auth): /, /compare/*, /features/*, /guides/*, /blog/*, /changelog, /roadmap, etc.
+- `routes/app.php` — authenticated user surface: dashboard, profile, settings, billing, onboarding, NPS, export
+- `routes/dev.php` — infrastructure: /health, /robots.txt, /sitemap.xml, /llms.txt, /favicon.ico, IndexNow key
+- `routes/admin.php` — admin panel (required from web.php when `admin.enabled`), middleware: `['auth', 'verified', 'admin', 'throttle:60,1']`
 - `routes/auth.php` — auth (Breeze + social auth + email verification)
 - `routes/api.php` — Sanctum-protected API (user, settings, tokens)
 - Health check: `/up` (Laravel built-in) + `/health` (custom `HealthCheckController` with token/IP/local auth)

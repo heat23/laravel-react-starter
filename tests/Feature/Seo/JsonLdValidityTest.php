@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Routing\PublicRouteRegistry;
 use Illuminate\Support\Str;
 
 if (! function_exists('extractJsonLdBlocks')) {
@@ -139,33 +140,30 @@ it('entities are cross-referenced: WebSite @id matches WebPage isPartOf', functi
     expect($site['@id'])->toBe($page['isPartOf']['@id']);
 });
 
-it('JSON-LD is valid on features page', function () {
-    $content = $this->get('/features')->getContent();
+/**
+ * Source of truth: PublicRouteRegistry::withJsonLd().
+ * To add a route here, add it to PublicRouteRegistry and include its path
+ * in the $jsonLdPaths list inside withJsonLd().
+ */
+dataset('routesWithJsonLd', fn () => PublicRouteRegistry::withJsonLd());
+
+it('JSON-LD blocks are present and have valid WebPage @id', function (string $url) {
+    $content = $this->get($url)->assertOk()->getContent();
     $blocks = extractJsonLdBlocks($content);
 
     expect($blocks)->not->toBeEmpty();
-    $org = findByType($blocks, 'Organization');
-    expect($org)->not->toBeNull()->and($org)->toHaveKey('@id');
-
-    $webPage = findByType($blocks, 'WebPage');
-    expect($webPage)->not->toBeNull()->and($webPage)->toHaveKey('@id');
-});
-
-it('JSON-LD is valid on compare page', function () {
-    $content = $this->get('/compare')->getContent();
-    $blocks = extractJsonLdBlocks($content);
 
     $webPage = findByType($blocks, 'WebPage');
     expect($webPage)->not->toBeNull()
         ->and($webPage)->toHaveKey('@id')
         ->and($webPage['@id'])->toContain('#webpage');
-});
+})->with('routesWithJsonLd');
 
-it('all JSON-LD blocks have @context set to schema.org', function () {
-    $content = $this->get('/')->getContent();
+it('all JSON-LD blocks have @context set to schema.org', function (string $url) {
+    $content = $this->get($url)->assertOk()->getContent();
     $blocks = extractJsonLdBlocks($content);
 
     foreach ($blocks as $block) {
         expect($block['@context'])->toBe('https://schema.org');
     }
-});
+})->with('routesWithJsonLd');
