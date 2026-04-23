@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Routing\PublicRouteRegistry;
 use App\Services\IndexNowService;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache;
@@ -163,56 +164,17 @@ class SeoController extends Controller
     {
         $base = rtrim(config('app.url'), '/');
 
-        // Static publish/update dates per URL — update when content changes
-        $urls = [
-            ['loc' => $base, 'priority' => '1.0', 'changefreq' => 'weekly', 'lastmod' => '2026-03-15T00:00:00+00:00'],
-        ];
+        $urls = collect(PublicRouteRegistry::all())
+            ->map(fn (array $entry): array => [
+                'loc' => rtrim($base.$entry['path'], '/'),
+                'priority' => $entry['priority'],
+                'changefreq' => $entry['changefreq'],
+                'lastmod' => $entry['lastmod'],
+            ])
+            ->values()
+            ->all();
 
-        if (config('features.billing.enabled', true)) {
-            $urls[] = ['loc' => $base.'/pricing', 'priority' => '0.9', 'changefreq' => 'monthly', 'lastmod' => '2026-03-01T00:00:00+00:00'];
-        }
-
-        $urls = array_merge($urls, [
-            ['loc' => $base.'/about', 'priority' => '0.5', 'changefreq' => 'monthly', 'lastmod' => '2026-01-15T00:00:00+00:00'],
-            ['loc' => $base.'/contact', 'priority' => '0.4', 'changefreq' => 'yearly', 'lastmod' => '2026-01-15T00:00:00+00:00'],
-            ['loc' => $base.'/changelog', 'priority' => '0.6', 'changefreq' => 'weekly', 'lastmod' => '2026-03-15T00:00:00+00:00'],
-            ['loc' => $base.'/roadmap', 'priority' => '0.5', 'changefreq' => 'weekly', 'lastmod' => '2026-03-15T00:00:00+00:00'],
-            ['loc' => $base.'/terms', 'priority' => '0.3', 'changefreq' => 'yearly', 'lastmod' => '2026-01-15T00:00:00+00:00'],
-            ['loc' => $base.'/privacy', 'priority' => '0.3', 'changefreq' => 'yearly', 'lastmod' => '2026-01-15T00:00:00+00:00'],
-            // Features hub + individual pages
-            ['loc' => $base.'/features', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
-            ['loc' => $base.'/features/billing', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
-            ['loc' => $base.'/features/feature-flags', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
-            ['loc' => $base.'/features/admin-panel', 'priority' => '0.8', 'changefreq' => 'yearly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
-            ['loc' => $base.'/features/webhooks', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
-            ['loc' => $base.'/features/two-factor-auth', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
-            ['loc' => $base.'/features/social-auth', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
-            // Compare hub + individual pages
-            ['loc' => $base.'/compare', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
-            ['loc' => $base.'/compare/laravel-jetstream', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
-            ['loc' => $base.'/compare/laravel-spark', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
-            ['loc' => $base.'/compare/saasykit', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
-            ['loc' => $base.'/compare/wave', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
-            ['loc' => $base.'/compare/shipfast', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
-            ['loc' => $base.'/compare/supastarter', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
-            ['loc' => $base.'/compare/larafast', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
-            ['loc' => $base.'/compare/laravel-vs-nextjs', 'priority' => '0.7', 'changefreq' => 'yearly', 'lastmod' => '2026-03-19T00:00:00+00:00'],
-            // Guides hub + individual pages
-            ['loc' => $base.'/guides', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => '2026-03-15T00:00:00+00:00'],
-            ['loc' => $base.'/guides/building-saas-with-laravel-12', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
-            ['loc' => $base.'/guides/laravel-stripe-billing-tutorial', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
-            ['loc' => $base.'/guides/laravel-feature-flags-tutorial', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => '2026-03-01T00:00:00+00:00'],
-            ['loc' => $base.'/guides/saas-starter-kit-comparison-2026', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => '2026-03-10T00:00:00+00:00'],
-            ['loc' => $base.'/guides/cost-of-building-saas-from-scratch', 'priority' => '0.8', 'changefreq' => 'monthly', 'lastmod' => '2026-03-15T00:00:00+00:00'],
-            ['loc' => $base.'/guides/laravel-two-factor-authentication', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => '2026-03-19T00:00:00+00:00'],
-            ['loc' => $base.'/guides/laravel-webhook-implementation', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => '2026-03-19T00:00:00+00:00'],
-            ['loc' => $base.'/guides/single-tenant-vs-multi-tenant-saas', 'priority' => '0.7', 'changefreq' => 'monthly', 'lastmod' => '2026-03-19T00:00:00+00:00'],
-        ]);
-
-        // Blog index
-        $urls[] = ['loc' => $base.'/blog', 'priority' => '0.7', 'changefreq' => 'weekly', 'lastmod' => '2026-03-20T00:00:00+00:00'];
-
-        // Blog posts — use file mtime when available
+        // Blog posts — dynamically discovered from content/blog/ (not in registry)
         $blogPath = resource_path('content/blog');
         if (is_dir($blogPath)) {
             $files = glob($blogPath.'/*.md') ?: [];
