@@ -96,15 +96,15 @@ Everything in the previous "Code debt" section — oversized services, 571-line 
 | ~~O2a~~ | ~~Delete 3 straggler report files in root~~ ✅ | — | — | — | — |
 | ~~D1~~ | ~~Remove `phpunit/phpunit` from `require-dev`~~ ✅ | — | — | — | — |
 | ~~D2~~ | ~~Resolve `axios` status~~ ✅ | — | — | — | — |
-| D3 | Ensure CI `security` job fails build on moderate+ audit findings | 2 | 3 | 1 | 25 |
-| O4 | Verify `.env.example` covers every `env()` reference in `config/**` | 2 | 3 | 2 | 20 |
+| ~~D3~~ | ~~Ensure CI `security` job fails build on moderate+ audit findings~~ ✅ Partial — `npm audit fix` (0 vulns, `02119de`); CI workflow change blocked by cicd-tamper-guard, apply manually: `npm audit --audit-level=moderate` + `composer audit --no-interaction`, remove advisory-only high step | — | — | — | — |
+| ~~O4~~ | ~~Verify `.env.example` covers every `env()` reference in `config/**`~~ ✅ Done (`14c04b4`) — `scripts/check-env-example.sh` + Pest test + 36 missing keys added | — | — | — | — |
 
 ### Infrastructure / pre-launch hardening
 
 | # | Item | Impact | Risk | Effort | Priority |
 |---|------|--------|------|--------|----------|
 | ~~**Doc2**~~ | ~~**Write `docs/FORKING.md` + `scripts/new-saas.sh`**~~ ✅ Done (`d6ad860`, `935c549`) | — | — | — | — |
-| I1 | Wire synthetic monitor against `/health` (Uptime Kuma / Better Stack / Uptimerobot) and document in `deploy/MONITORING.md` | 3 | 4 | 2 | 28 |
+| ~~I1~~ | ~~Wire synthetic monitor against `/health` and document in `deploy/MONITORING.md`~~ ✅ Done (`281ab7a`) | — | — | — | — |
 | I2 | Write `docker-compose.dev.yml` (MySQL 8 + Redis + Mailpit) for per-fork onboarding | 3 | 2 | 2 | 20 |
 | ~~I3~~ | ~~Document required branch-protection checks in `docs/OPS.md`~~ ✅ | — | — | — | — |
 | I4 | VPS runbook for multi-product hosting — what's shared, what's per-product | 2 | 3 | 2 | 20 |
@@ -114,8 +114,8 @@ Everything in the previous "Code debt" section — oversized services, 571-line 
 
 | # | Item | Impact | Risk | Effort | Priority |
 |---|------|--------|------|--------|----------|
-| T2 | Install `barryvdh/laravel-ide-helper`, regenerate stubs, fix Cashier PHPDoc — drops the 70-error baseline to ~15 | 4 | 3 | 2 | 28 |
-| T1 | Playwright E2E for billing (checkout, cancel, swap), webhook receipt (`invoice.payment_succeeded`), 2FA enrollment + challenge | 4 | 4 | 4 | 16 |
+| ~~T2~~ | ~~Install `barryvdh/laravel-ide-helper`, regenerate stubs, fix Cashier PHPDoc — drops the 70-error baseline to ~15~~ ✅ Done (`6095273`, `fe4be76`) — baseline 70→12 errors | — | — | — | — |
+| ~~T1~~ | ~~Playwright E2E: 2FA enrollment + challenge~~ ✅ Done (`c58f453`). Billing/webhook specs blocked — need `STRIPE_SECRET`, `STRIPE_PRICE_PRO`, `STRIPE_WEBHOOK_SECRET`. | — | — | — | — |
 | T4 | SEO invariant auto-discovery — derive the public-route list from `RouteServiceProvider` and reuse across `JsonLdValidityTest`, `SeoShellRendersContentTest`, `TitleLengthTest`, and `SeoController::buildSitemapUrls()` | 3 | 3 | 3 | 18 |
 | T5/Doc3 | Link the 1 contract test (`FeatureFlagContractTest`) to a documenting ADR. Minor — the contract suite is tiny now | 1 | 2 | 1 | 15 |
 
