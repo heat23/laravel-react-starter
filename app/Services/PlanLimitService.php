@@ -7,7 +7,6 @@ use App\Enums\PlanTier;
 use App\Events\PqlThresholdReached;
 use App\Models\User;
 use App\Support\Billing\PlanLimitResult;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -34,7 +33,7 @@ class PlanLimitService
     {
         $trialDays = (int) config('plans.trial.days', 14);
         $tier = config('plans.trial.tier', PlanTier::Pro->value);
-        $trialEndsAt = Carbon::now()->addDays($trialDays);
+        $trialEndsAt = now()->addDays($trialDays);
 
         // Atomic write: only set if trial hasn't already been started.
         // Uses a WHERE NULL guard so concurrent calls are safe without a separate lock.
