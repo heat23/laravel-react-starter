@@ -19,6 +19,16 @@ Everything in the previous "Code debt" section — oversized services, 571-line 
 
 ## Changelog: what moved since the 2026-04-22 audit
 
+### ✅ Closed — 2026-04-23 (Phase 0 + Phase 1)
+
+| Item | Evidence | Commit |
+|------|----------|--------|
+| D1 — Remove `phpunit/phpunit` from direct `require-dev` | No longer in `composer.json`; still available as transitive dep of Pest + paratest | `97ac37d` |
+| D2 — Resolve `axios` status | Confirmed used in 8 files; promoted from devDependencies → dependencies | `97ac37d` |
+| I3 — `docs/OPS.md` with required CI checks | `docs/OPS.md` lists the 5 required branch-protection checks | `97ac37d` |
+| O2a — 3 straggler report files | Files (`2597c859…`) not present on `main`; pre-cleared before this session | — |
+| Doc2 — `docs/FORKING.md` + `scripts/new-saas.sh` | Operational checklist + bootstrap script; dogfood tested (7930 assertions pass) | `d6ad860`, `935c549` |
+
 ### ✅ Closed / done
 
 | Item | Evidence | Notes |
@@ -83,9 +93,9 @@ Everything in the previous "Code debt" section — oversized services, 571-line 
 
 | # | Item | Impact | Risk | Effort | Priority |
 |---|------|--------|------|--------|----------|
-| O2a | Delete 3 straggler report files in root | 1 | 1 | 1 | 10 |
-| D1 | Remove `phpunit/phpunit` from `require-dev` (no direct imports found) | 1 | 1 | 1 | 10 |
-| D2 | Resolve `axios` status — confirm usage, remove or promote to `dependencies` | 1 | 2 | 1 | 15 |
+| ~~O2a~~ | ~~Delete 3 straggler report files in root~~ ✅ | — | — | — | — |
+| ~~D1~~ | ~~Remove `phpunit/phpunit` from `require-dev`~~ ✅ | — | — | — | — |
+| ~~D2~~ | ~~Resolve `axios` status~~ ✅ | — | — | — | — |
 | D3 | Ensure CI `security` job fails build on moderate+ audit findings | 2 | 3 | 1 | 25 |
 | O4 | Verify `.env.example` covers every `env()` reference in `config/**` | 2 | 3 | 2 | 20 |
 
@@ -93,10 +103,10 @@ Everything in the previous "Code debt" section — oversized services, 571-line 
 
 | # | Item | Impact | Risk | Effort | Priority |
 |---|------|--------|------|--------|----------|
-| **Doc2** | **Write `docs/FORKING.md` + `scripts/new-saas.sh`** (the `SYSTEM_DESIGN_SOLO_OPERATOR.md` is great but is architecture commentary, not an ops checklist) | **5** | **4** | **2** | **36** |
+| ~~**Doc2**~~ | ~~**Write `docs/FORKING.md` + `scripts/new-saas.sh`**~~ ✅ Done (`d6ad860`, `935c549`) | — | — | — | — |
 | I1 | Wire synthetic monitor against `/health` (Uptime Kuma / Better Stack / Uptimerobot) and document in `deploy/MONITORING.md` | 3 | 4 | 2 | 28 |
 | I2 | Write `docker-compose.dev.yml` (MySQL 8 + Redis + Mailpit) for per-fork onboarding | 3 | 2 | 2 | 20 |
-| I3 | Document required branch-protection checks (`php-tests`, `js-tests`, `build`, `code-quality`, `e2e-tests`) in a `docs/OPS.md` | 2 | 3 | 1 | 25 |
+| ~~I3~~ | ~~Document required branch-protection checks in `docs/OPS.md`~~ ✅ | — | — | — | — |
 | I4 | VPS runbook for multi-product hosting — what's shared, what's per-product | 2 | 3 | 2 | 20 |
 | I5 | Cache Playwright Chromium install in CI (saves ~60s/run) | 1 | 1 | 1 | 10 |
 
