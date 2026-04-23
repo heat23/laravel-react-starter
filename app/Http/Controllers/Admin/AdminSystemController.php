@@ -15,16 +15,16 @@ class AdminSystemController extends Controller
     {
         return Inertia::render('App/Admin/System', [
             'system' => [
-                'php_version' => PHP_VERSION,
-                'laravel_version' => app()->version(),
-                'node_version' => $this->getNodeVersion(),
+                'php_version' => $this->redactVersion(PHP_VERSION),
+                'laravel_version' => $this->redactVersion(app()->version()),
+                'node_version' => $this->redactNullableVersion($this->getNodeVersion()),
                 'server' => [
                     'os' => PHP_OS_FAMILY.' '.php_uname('r'),
                     'server_software' => $_SERVER['SERVER_SOFTWARE'] ?? 'CLI',
                 ],
                 'database' => [
                     'driver' => config('database.default'),
-                    'version' => $this->getDatabaseVersion(),
+                    'version' => $this->redactNullableVersion($this->getDatabaseVersion()),
                 ],
                 'queue' => [
                     'driver' => config('queue.default'),
@@ -34,6 +34,24 @@ class AdminSystemController extends Controller
                 'packages' => $this->getKeyPackages(),
             ],
         ]);
+    }
+
+    /**
+     * Reduce a version string to major.minor.x, stripping patch/hash/pre-release tags.
+     * Exposed externally on /admin/system; exact patch versions leak CVE-matchable build info.
+     */
+    private function redactVersion(string $version): string
+    {
+        if (preg_match('/^v?(\d+)\.(\d+)/', $version, $m)) {
+            return "{$m[1]}.{$m[2]}.x";
+        }
+
+        return 'unknown';
+    }
+
+    private function redactNullableVersion(?string $version): ?string
+    {
+        return $version === null ? null : $this->redactVersion($version);
     }
 
     private function getNodeVersion(): ?string
@@ -76,7 +94,7 @@ class AdminSystemController extends Controller
 
             return collect($lock['packages'] ?? [])
                 ->filter(fn ($pkg) => in_array($pkg['name'], $keyPackages))
-                ->map(fn ($pkg) => ['name' => $pkg['name'], 'version' => $pkg['version']])
+                ->map(fn ($pkg) => ['name' => $pkg['name'], 'version' => $this->redactVersion($pkg['version'])])
                 ->values()
                 ->toArray();
         } catch (\Throwable) {
