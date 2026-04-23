@@ -37,8 +37,8 @@ class SocialAuthService
             return $socialAccount->user;
         }
 
-        // Check if user exists with this email
-        $user = User::where('email', $socialUser->getEmail())->first();
+        // Check if user exists with this email (case-insensitive — providers may return different casing)
+        $user = User::whereRaw('LOWER(email) = ?', [strtolower($socialUser->getEmail() ?? '')])->first();
 
         if ($user) {
             // Email collision: existing user has no social account for THIS provider.
@@ -50,7 +50,7 @@ class SocialAuthService
         return DB::transaction(function () use ($socialUser, $provider): User {
             $user = User::create([
                 'name' => $socialUser->getName() ?? $socialUser->getNickname() ?? 'User',
-                'email' => $socialUser->getEmail(),
+                'email' => strtolower($socialUser->getEmail() ?? ''),
                 'password' => null, // No password for OAuth-only users
                 'signup_source' => $provider,
             ]);
