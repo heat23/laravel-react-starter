@@ -2,22 +2,10 @@
 
 namespace App\Http\Requests\Admin;
 
-use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
-
-class AdminSessionIndexRequest extends FormRequest
+class AdminSessionIndexRequest extends AdminListRequest
 {
-    public function authorize(): bool
+    protected function allowedSorts(): array
     {
-        return $this->user()?->isAdmin() === true;
-    }
-
-    public function rules(): array
-    {
-        return [
-            'search' => ['nullable', 'string', 'max:100'],
-            'sort' => ['nullable', 'string', Rule::in(['last_activity', 'ip_address'])],
-            'dir' => ['nullable', 'string', Rule::in(['asc', 'desc'])],
-        ];
+        return ['last_activity', 'ip_address'];
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
+use App\Http\Controllers\Admin\Concerns\ListsAdminResources;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminSessionIndexRequest;
 use App\Services\AuditService;
@@ -17,6 +18,8 @@ use Inertia\Response;
 
 class AdminSessionsController extends Controller
 {
+    use ListsAdminResources;
+
     public function __construct(
         private AuditService $auditService,
         private CacheInvalidationManager $cacheInvalidation,
@@ -28,12 +31,6 @@ class AdminSessionsController extends Controller
         $sessions = (object) [];
 
         if ($driver === 'database') {
-            $allowedSorts = ['last_activity', 'ip_address'];
-            $sort = in_array($request->validated('sort'), $allowedSorts, true)
-                ? $request->validated('sort')
-                : 'last_activity';
-            $dir = ($request->validated('dir') ?? 'desc') === 'asc' ? 'asc' : 'desc';
-
             $query = DB::table('sessions')
                 ->leftJoin('users', 'sessions.user_id', '=', 'users.id')
                 ->select(
@@ -55,26 +52,30 @@ class AdminSessionsController extends Controller
                 });
             }
 
-            $sessions = $query
-                ->orderBy("sessions.{$sort}", $dir)
-                ->paginate(config('pagination.admin.users', 25))
-                ->withQueryString()
-                ->through(fn ($row) => [
-                    'session_id' => $row->session_id,
-                    'user_id' => $row->user_id,
-                    'user_name' => $row->user_name ?? '[Deleted User]',
-                    'user_email' => $row->user_email ?? '',
-                    'ip_address' => $row->ip_address,
-                    'user_agent' => $row->user_agent,
-                    'last_activity' => date('c', $row->last_activity),
-                ]);
+            $perPage = (int) ($request->validated('per_page') ?? config('pagination.admin.users', 25));
+            $sessions = $this->paginateAdminList(
+                $query,
+                $request,
+                ['last_activity', 'ip_address'],
+                'last_activity',
+                'desc',
+                $perPage,
+            )->through(fn ($row) => [
+                'session_id' => $row->session_id,
+                'user_id' => $row->user_id,
+                'user_name' => $row->user_name ?? '[Deleted User]',
+                'user_email' => $row->user_email ?? '',
+                'ip_address' => $row->ip_address,
+                'user_agent' => $row->user_agent,
+                'last_activity' => date('c', $row->last_activity),
+            ]);
         }
 
         return Inertia::render('App/Admin/Sessions/Index', [
             'sessions' => $sessions,
             'driver' => $driver,
             'driverSupported' => $driver === 'database',
-            'filters' => $request->only('search', 'sort', 'dir'),
+            'filters' => $request->only('search', 'sort', 'dir', 'per_page'),
         ]);
     }
 
