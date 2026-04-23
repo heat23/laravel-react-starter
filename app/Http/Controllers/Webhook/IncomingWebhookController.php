@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Webhook;
 
 use App\Http\Controllers\Controller;
 use App\Services\IncomingWebhookService;
+use App\Webhooks\Contracts\WebhookProvider;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -11,50 +12,28 @@ use Illuminate\Support\Facades\Log;
 class IncomingWebhookController extends Controller
 {
     public function __construct(
-        private IncomingWebhookService $incomingWebhookService
+        private IncomingWebhookService $incomingWebhookService,
     ) {}
 
-    public function handle(Request $request, string $provider): JsonResponse
+    public function handle(Request $request): JsonResponse
     {
-        $payload = $request->all();
-        $externalId = $this->extractExternalId($request, $provider);
-        $eventType = $this->extractEventType($request, $provider);
+        /** @var WebhookProvider $provider */
+        $provider = $request->attributes->get('webhook_provider');
+        $rawPayload = $request->getContent();
+        $event = $provider->parseEvent($rawPayload, $request->headers->all());
 
-        $webhook = $this->incomingWebhookService->process(
-            $provider,
-            $externalId,
-            $eventType,
-            $payload
-        );
+        $webhook = $this->incomingWebhookService->process($event);
 
         if (! $webhook) {
             return response()->json(['message' => 'Already processed.'], 200);
         }
 
         Log::channel('single')->info('Incoming webhook received', [
-            'provider' => $provider,
-            'external_id' => $externalId,
-            'event_type' => $eventType,
+            'provider' => $event->provider,
+            'external_id' => $event->externalId,
+            'event_type' => $event->eventType,
         ]);
 
         return response()->json(['message' => 'Received.'], 200);
-    }
-
-    private function extractExternalId(Request $request, string $provider): ?string
-    {
-        return match ($provider) {
-            'github' => $request->header('X-GitHub-Delivery'),
-            'stripe' => $request->input('id'),
-            default => null,
-        };
-    }
-
-    private function extractEventType(Request $request, string $provider): ?string
-    {
-        return match ($provider) {
-            'github' => $request->header('X-GitHub-Event'),
-            'stripe' => $request->input('type'),
-            default => $request->input('type'),
-        };
     }
 }

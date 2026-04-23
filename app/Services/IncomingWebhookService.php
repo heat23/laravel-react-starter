@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\IncomingWebhook;
+use App\Webhooks\Dto\IncomingWebhookEvent;
 
 class IncomingWebhookService
 {
@@ -11,35 +12,30 @@ class IncomingWebhookService
      *
      * @return IncomingWebhook|null Returns null if already processed (idempotent)
      */
-    public function process(string $provider, ?string $externalId, ?string $eventType, array $payload): ?IncomingWebhook
+    public function process(IncomingWebhookEvent $event): ?IncomingWebhook
     {
-        // Use atomic firstOrCreate when external_id is available to avoid TOCTOU race
-        if ($externalId) {
+        if ($event->externalId) {
             $webhook = IncomingWebhook::firstOrCreate(
-                ['provider' => $provider, 'external_id' => $externalId],
+                ['provider' => $event->provider, 'external_id' => $event->externalId],
                 [
-                    'event_type' => $eventType,
-                    'payload' => $payload,
+                    'event_type' => $event->eventType,
+                    'payload' => $event->payload,
                     'status' => 'received',
                 ]
             );
 
-            // If it already existed, return null (idempotent)
             return $webhook->wasRecentlyCreated ? $webhook : null;
         }
 
         return IncomingWebhook::create([
-            'provider' => $provider,
-            'external_id' => $externalId,
-            'event_type' => $eventType,
-            'payload' => $payload,
+            'provider' => $event->provider,
+            'external_id' => $event->externalId,
+            'event_type' => $event->eventType,
+            'payload' => $event->payload,
             'status' => 'received',
         ]);
     }
 
-    /**
-     * Check if a webhook has already been processed (idempotency check).
-     */
     public function isProcessed(string $provider, string $externalId): bool
     {
         return IncomingWebhook::where('provider', $provider)

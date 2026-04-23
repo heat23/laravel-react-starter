@@ -1,5 +1,8 @@
 <?php
 
+use App\Webhooks\Providers\CustomWebhookProvider;
+use App\Webhooks\Providers\GithubWebhookProvider;
+
 /**
  * Webhook Configuration
  *
@@ -18,17 +21,18 @@ return [
     'incoming' => [
         'providers' => [
             'github' => [
+                'class' => GithubWebhookProvider::class,
                 'secret' => env('GITHUB_WEBHOOK_SECRET'),
                 'signature_header' => 'X-Hub-Signature-256',
                 'algorithm' => 'sha256',
             ],
-            'stripe' => [
-                'secret' => env('STRIPE_WEBHOOK_SECRET'),
-                'signature_header' => 'Stripe-Signature',
+            'custom' => [
+                'class' => CustomWebhookProvider::class,
+                'secret' => env('CUSTOM_WEBHOOK_SECRET'),
+                'signature_header' => 'X-Webhook-Signature',
                 'algorithm' => 'sha256',
             ],
         ],
-        'replay_tolerance' => 300, // seconds (5 minutes)
     ],
 
     /*

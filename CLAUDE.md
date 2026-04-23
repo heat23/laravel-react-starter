@@ -133,7 +133,8 @@ npm run build          # Production build
 npm run lint           # ESLint
 php artisan subscriptions:check-incomplete  # Find failed payments, send reminders
 php artisan audit:prune                     # Delete old audit logs (--days=N)
-php artisan webhooks:prune-stale            # Mark orphaned webhook deliveries as abandoned (--hours=N)
+php artisan webhooks:mark-abandoned         # Mark orphaned webhook deliveries as abandoned (--hours=N)
+php artisan webhooks:delete-old             # Delete old terminal webhook deliveries (--days=N)
 php artisan admin:health-alert              # Run health checks, alert on failures
 php artisan trials:check-expired            # Handle expired trial transitions
 php artisan scores:compute                  # Recompute engagement/health scores

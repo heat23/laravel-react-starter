@@ -54,7 +54,7 @@ class DataRetentionScheduleTest extends TestCase
             'created_at' => now(),
         ]);
 
-        $this->artisan('webhooks:prune-stale', ['--hours' => 1])
+        $this->artisan('webhooks:mark-abandoned', ['--hours' => 1])
             ->assertSuccessful();
 
         $this->assertDatabaseHas('webhook_deliveries', [

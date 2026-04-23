@@ -5,9 +5,9 @@ namespace App\Console\Commands;
 use App\Models\WebhookDelivery;
 use Illuminate\Console\Command;
 
-class PruneOldWebhookDeliveries extends Command
+class DeleteOldWebhookDeliveries extends Command
 {
-    protected $signature = 'webhooks:prune-old {--days=90 : Delete terminal deliveries older than this many days}';
+    protected $signature = 'webhooks:delete-old {--days=90 : Delete terminal deliveries older than this many days}';
 
     protected $description = 'Delete old webhook deliveries in terminal state (delivered, failed, abandoned)';
 
