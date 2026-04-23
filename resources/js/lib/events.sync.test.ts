@@ -52,6 +52,7 @@ describe('AnalyticsEvents sync', () => {
       'AUTH_PASSWORD_CHANGED',
       'AUTH_PASSWORD_RESET',
       'AUTH_REGISTER',
+      'AUTH_SOCIAL_CONFLICT',
       'AUTH_SOCIAL_DISCONNECTED',
       'AUTH_SOCIAL_LOGIN',
       'AUTH_VERIFY_EMAIL',
