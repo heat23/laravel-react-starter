@@ -9,3 +9,5 @@ These jobs must be green on every PR to main:
 - e2e-tests (Playwright)
 
 Configure GitHub branch protection accordingly.
+
+All five jobs are defined in `.github/workflows/ci.yml`.

@@ -24,6 +24,10 @@ die()  { echo "ERROR: $*" >&2; exit 1; }
 info() { echo "▸ $*"; }
 ok()   { echo "✓ $*"; }
 
+# Escape a string for use in the *replacement* side of a sed s|...|...|g command.
+# Escapes: backslash first, then & (matched-text metachar), then | (our delimiter).
+escape_for_sed() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/&/\\&/g' -e 's/|/\\|/g'; }
+
 # ── argument parsing ───────────────────────────────────────────────────────────
 
 TARGET_DIR=""
@@ -53,6 +57,7 @@ fi
 
 # Derive slug: lowercase, spaces → hyphens, strip non-alphanumeric except hyphens
 SLUG="$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | sed 's/[^a-z0-9-]//g')"
+[[ -n "$SLUG" ]] || die "--name '$APP_NAME' produced an empty slug (contains only special characters)"
 
 info "Template : $TEMPLATE_SRC"
 info "Target   : $TARGET_DIR"
@@ -105,16 +110,15 @@ info "Generating .env from .env.example..."
 
 [[ -f ".env.example" ]] || die ".env.example not found in $TARGET_DIR"
 
-# Substitute {{APP_NAME}} and {{APP_DOMAIN}} placeholders
-if [[ "$(uname)" == "Darwin" ]]; then
-    sed -e "s|{{APP_NAME}}|${APP_NAME}|g" \
-        -e "s|{{APP_DOMAIN}}|${DOMAIN}|g" \
-        .env.example > .env
-else
-    sed -e "s|{{APP_NAME}}|${APP_NAME}|g" \
-        -e "s|{{APP_DOMAIN}}|${DOMAIN}|g" \
-        .env.example > .env
-fi
+# Escape values for sed replacement (handles &, \, | in app name / domain).
+# No -i flag here: we read from .env.example and redirect to .env, so
+# macOS vs GNU sed differences don't apply to this step.
+APP_NAME_SAFE="$(escape_for_sed "$APP_NAME")"
+DOMAIN_SAFE="$(escape_for_sed "$DOMAIN")"
+
+sed -e "s|{{APP_NAME}}|${APP_NAME_SAFE}|g" \
+    -e "s|{{APP_DOMAIN}}|${DOMAIN_SAFE}|g" \
+    .env.example > .env
 
 # Set APP_URL to the domain
 if grep -q "^APP_URL=" .env; then

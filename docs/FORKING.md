@@ -124,7 +124,7 @@ Cross-references: `scripts/vps-setup.sh` (initial VPS provisioning) and `scripts
 ### Required Stripe setup steps
 
 1. **Create Products and Prices** in Stripe Dashboard matching `App\Enums\PlanTier` values (Free, Pro, ProTeam, Team, Enterprise). Copy the Price IDs into your `.env`.
-2. **Create a webhook endpoint** in Stripe Dashboard pointing to `https://www.yourdomain.com/stripe/webhook`. Select at minimum: `customer.subscription.*`, `invoice.payment_succeeded`, `invoice.payment_failed`.
+2. **Create a webhook endpoint** in Stripe Dashboard pointing to `https://www.yourdomain.com/stripe/webhook`. Select at minimum: `customer.subscription.*`, `invoice.payment_succeeded`, `invoice.payment_failed`. Use Stripe's "Send test event" button to verify the endpoint returns 200 **before go-live** — Stripe retries failed deliveries for up to 3 days, so a misconfigured endpoint on day 1 causes silent payment failures.
 3. **Copy webhook signing secret** → `STRIPE_WEBHOOK_SECRET` in `.env`.
 4. **Set Stripe keys**: `STRIPE_KEY` (publishable), `STRIPE_SECRET` (secret). Use test-mode keys until ready for live transactions.
 5. **Enable billing feature flag**: `FEATURE_BILLING=true` in `.env`.
