@@ -1,22 +1,14 @@
 <?php
 
+use App\Http\Routing\PublicRouteRegistry;
 use App\Models\User;
 
-dataset('publicRoutesWithTitle', [
-    'homepage' => ['/'],
-    'features' => ['/features'],
-    'features-billing' => ['/features/billing'],
-    'compare' => ['/compare'],
-    'compare-jetstream' => ['/compare/laravel-jetstream'],
-    'guides' => ['/guides'],
-    'about' => ['/about'],
-    'contact' => ['/contact'],
-    'changelog' => ['/changelog'],
-    'roadmap' => ['/roadmap'],
-    'blog' => ['/blog'],
-    'terms' => ['/terms'],
-    'privacy' => ['/privacy'],
-]);
+/**
+ * Source of truth: PublicRouteRegistry::forSeoShell().
+ * To add a route to this dataset, add it to PublicRouteRegistry and include its path
+ * in the $representativePaths list inside forSeoShell().
+ */
+dataset('publicRoutesWithTitle', fn () => PublicRouteRegistry::forSeoShell());
 
 it('renders seo-shell for guest visitors', function (string $url) {
     $response = $this->get($url);
