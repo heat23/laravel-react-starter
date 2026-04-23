@@ -5,8 +5,7 @@
 ## AI Development Safeguards
 
 **Workflow docs** (follow for all tasks):
-- [docs/PLANNING_CHECKLIST.md](docs/PLANNING_CHECKLIST.md) — before writing code
-- [docs/IMPLEMENTATION_GUARDRAILS.md](docs/IMPLEMENTATION_GUARDRAILS.md) — during implementation (TDD, run tests after each change, PHPStan after PHP changes)
+- [docs/AI_WORKFLOW.md](docs/AI_WORKFLOW.md) — planning checklist, implementation guardrails, TDD cycle, defense layers
 - [docs/TESTING_GUIDELINES.md](docs/TESTING_GUIDELINES.md) — test standards, verification, and edge case checklist
 - [docs/DEBUGGING_GUIDE.md](docs/DEBUGGING_GUIDE.md) — test failure diagnosis protocol
 - [docs/AI_PROMPT_TEMPLATES.md](docs/AI_PROMPT_TEMPLATES.md) — structured request templates
