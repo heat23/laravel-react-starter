@@ -67,7 +67,13 @@ class AuditService
             $ip = AuditLog::anonymizeIp($ip);
         }
 
-        PersistAuditLog::dispatch($event, $userId, $ip, $userAgent, $metadata);
+        // Idempotency key prevents duplicate rows when the job is retried or the
+        // queue delivers the same dispatch twice. Bucketed to the current minute so
+        // legitimate repeated events (e.g. login → login 90 seconds later) produce
+        // distinct rows while exact retries within the same minute are deduplicated.
+        $idempotencyKey = hash('sha256', $event.'|'.($userId ?? '').'|'.now()->startOfMinute()->timestamp.'|'.md5(json_encode($metadata) ?: ''));
+
+        PersistAuditLog::dispatch($event, $userId, $ip, $userAgent, $metadata, $idempotencyKey);
 
         Log::channel('single')->info($event, [
             'event' => $event,

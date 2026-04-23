@@ -51,4 +51,15 @@ php artisan test --coverage --min=80 2>&1 || {
 }
 
 echo ""
+echo "Mutation Testing (advisory)"
+echo "=============================="
+if [ -x vendor/bin/infection ]; then
+    # Infection is advisory here — failures do not block the gate on first adoption.
+    # minMsi/minCoveredMsi floors in infection.json5 will be tightened once a CI baseline lands.
+    vendor/bin/infection --threads=4 --show-mutations 2>&1 | tail -20 || true
+else
+    echo "Infection not available — skipping mutation tests"
+fi
+
+echo ""
 echo "✅ Test quality check complete!"

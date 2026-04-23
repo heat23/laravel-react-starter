@@ -1,0 +1,15 @@
+{
+    source: { directories: ["app"], excludes: ["Console/Commands"] },
+    timeout: 10,
+    logs: {
+        text: "storage/logs/infection.log",
+        html: "storage/logs/infection.html"
+    },
+    mutators: { "@default": true },
+    testFramework: "phpunit",
+    phpUnit: {
+        customPath: "vendor/bin/pest"
+    },
+    minMsi: 50,
+    minCoveredMsi: 65,
+}

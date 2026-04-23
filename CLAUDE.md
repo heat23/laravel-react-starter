@@ -15,7 +15,7 @@
 **Project-specific rules (beyond global CLAUDE.md):**
 - Contract tests in `tests/Contracts/` — do NOT modify without user approval
 - Full quality gate: `bash scripts/test-quality-check.sh` (or manually: `php artisan test --parallel && npm test && vendor/bin/phpstan analyse && vendor/bin/pint --test && npm run lint && npm run build`)
-- Defense layers: pre-commit hooks (`.husky/pre-commit`), CI gates (`.github/workflows/ci.yml`), mutation testing (`infection`), ADRs (`docs/adr/`)
+- Defense layers: pre-commit hooks (`.husky/pre-commit`), CI gates (`.github/workflows/ci.yml`), mutation testing (`infection`, see `infection.json5` — minMsi=50, minCoveredMsi=65), ADRs (`docs/adr/`)
 - Path-scoped rules in `.claude/rules/` — billing, webhooks, testing, accessibility, frontend, lifecycle, migrations (load automatically when touching relevant files)
 
 ## Feature Flags

@@ -5,6 +5,7 @@ namespace App\Webhooks\Providers;
 use App\Webhooks\Contracts\WebhookProvider;
 use App\Webhooks\Dto\IncomingWebhookEvent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class GithubWebhookProvider implements WebhookProvider
 {
@@ -36,8 +37,14 @@ class GithubWebhookProvider implements WebhookProvider
     public function parseEvent(string $rawPayload, array $headers): IncomingWebhookEvent
     {
         $payload = json_decode($rawPayload, true) ?? [];
-        $externalId = $headers['x-github-delivery'][0] ?? null;
         $eventType = $headers['x-github-event'][0] ?? '';
+
+        if (isset($headers['x-github-delivery'][0])) {
+            $externalId = $headers['x-github-delivery'][0];
+        } else {
+            $externalId = hash('sha256', $rawPayload);
+            Log::warning('Provider emitted synthetic webhook id', ['provider' => $this->name()]);
+        }
 
         return new IncomingWebhookEvent(
             provider: $this->name(),

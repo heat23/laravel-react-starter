@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Enums\AuditEvent;
+use App\Exceptions\SocialAuthAccountConflictException;
 use App\Http\Controllers\Controller;
 use App\Services\AuditService;
 use App\Services\CacheInvalidationManager;
@@ -79,7 +80,19 @@ class SocialAuthController extends Controller
         }
 
         // Find or create user
-        $user = $this->socialAuthService->findOrCreateUser($socialUser, $provider);
+        try {
+            $user = $this->socialAuthService->findOrCreateUser($socialUser, $provider);
+        } catch (SocialAuthAccountConflictException $e) {
+            $this->auditService->log(AuditEvent::AUTH_SOCIAL_CONFLICT, [
+                'user_id' => $e->existingUser->id,
+                'provider' => $provider,
+            ]);
+
+            return redirect()->route('login')->with(
+                'error',
+                'An account already exists with this email. Sign in with your password first, then link your social account in Settings.'
+            );
+        }
 
         // Link social account
         $this->socialAuthService->linkSocialAccount($user, $socialUser, $provider);

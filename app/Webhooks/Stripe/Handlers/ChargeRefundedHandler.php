@@ -12,8 +12,14 @@ use Illuminate\Support\Facades\Log;
 
 class ChargeRefundedHandler implements StripeEventHandler
 {
+    use DeduplicatesStripeEvents;
+
     public function handle(StripeEvent $event): void
     {
+        if ($this->alreadyProcessed($event->payload['id'] ?? '')) {
+            return;
+        }
+
         $payload = $event->payload;
         $customerId = $payload['data']['object']['customer'] ?? null;
 

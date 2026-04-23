@@ -79,24 +79,26 @@ it('includes database info', function () {
     );
 });
 
-it('php version matches runtime', function () {
+it('php version is redacted to major.minor.x', function () {
     $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->get('/admin/system');
 
-    $response->assertInertia(fn ($page) => $page
-        ->where('system.php_version', PHP_VERSION)
-    );
+    $response->assertInertia(function ($page) {
+        $phpVersion = $page->toArray()['props']['system']['php_version'];
+        expect($phpVersion)->toMatch('/^\d+\.\d+\.x$/');
+        expect($phpVersion)->toBe(PHP_MAJOR_VERSION.'.'.PHP_MINOR_VERSION.'.x');
+    });
 });
 
-it('laravel version matches app version', function () {
+it('laravel version is redacted to major.minor.x', function () {
     $admin = User::factory()->superAdmin()->create();
 
     $response = $this->actingAs($admin)->get('/admin/system');
 
-    $response->assertInertia(fn ($page) => $page
-        ->where('system.laravel_version', app()->version())
-    );
+    $response->assertInertia(function ($page) {
+        expect($page->toArray()['props']['system']['laravel_version'])->toMatch('/^\d+\.\d+\.x$/');
+    });
 });
 
 it('packages include laravel framework', function () {
@@ -121,6 +123,20 @@ it('packages have name and version', function () {
         foreach ($packages as $pkg) {
             expect($pkg)->toHaveKey('name');
             expect($pkg)->toHaveKey('version');
+        }
+    });
+});
+
+it('package versions are redacted to major.minor.x', function () {
+    $admin = User::factory()->superAdmin()->create();
+
+    $response = $this->actingAs($admin)->get('/admin/system');
+
+    $response->assertInertia(function ($page) {
+        $packages = $page->toArray()['props']['system']['packages'];
+        expect($packages)->not->toBeEmpty();
+        foreach ($packages as $pkg) {
+            expect($pkg['version'])->toMatch('/^\d+\.\d+\.x$/');
         }
     });
 });

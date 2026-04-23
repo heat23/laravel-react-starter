@@ -20,8 +20,14 @@ class SubscriptionDeletedHandler implements StripeEventHandler
         private CacheInvalidationManager $cacheManager,
     ) {}
 
+    use DeduplicatesStripeEvents;
+
     public function handle(StripeEvent $event): void
     {
+        if ($this->alreadyProcessed($event->payload['id'] ?? '')) {
+            return;
+        }
+
         $payload = $event->payload;
         $cancellationReason = $payload['data']['object']['cancellation_details']['reason'] ?? null;
         $churnType = $cancellationReason === 'payment_failed' ? 'involuntary' : 'voluntary';

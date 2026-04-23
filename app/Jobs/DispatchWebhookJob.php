@@ -2,8 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Enums\AuditEvent;
 use App\Models\WebhookDelivery;
+use App\Services\AuditService;
 use App\Services\WebhookService;
+use App\Webhooks\UrlPolicy;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Http;
@@ -23,7 +26,7 @@ class DispatchWebhookJob implements ShouldQueue
         private readonly int $deliveryId,
     ) {}
 
-    public function handle(WebhookService $webhookService): void
+    public function handle(WebhookService $webhookService, AuditService $auditService): void
     {
         $delivery = WebhookDelivery::with('endpoint')->find($this->deliveryId);
 
@@ -32,14 +35,49 @@ class DispatchWebhookJob implements ShouldQueue
         }
 
         $endpoint = $delivery->endpoint;
+
+        // Runtime SSRF guard — resolves DNS at dispatch time to defeat DNS rebinding.
+        $policy = new UrlPolicy;
+        $blockReason = $policy->check($endpoint->url);
+
+        if ($blockReason !== null) {
+            $delivery->update([
+                'status' => 'failed',
+                'response_body' => "BLOCKED: {$blockReason}",
+            ]);
+
+            Log::channel('single')->warning('Webhook delivery blocked by URL policy', [
+                'delivery_id' => $delivery->id,
+                'url' => $endpoint->url,
+                'reason' => $blockReason,
+            ]);
+
+            $auditService->log(AuditEvent::ADMIN_WEBHOOK_DELIVERY_BLOCKED, [
+                'delivery_id' => $delivery->id,
+                'endpoint_id' => $endpoint->id,
+                'url' => $endpoint->url,
+                'reason' => $blockReason,
+            ]);
+
+            return;
+        }
+
         $payloadJson = json_encode($delivery->payload);
         $signature = $webhookService->sign($payloadJson, $endpoint->secret);
         $timestamp = time();
 
+        // DNS pin: use the first IP resolved by the policy check to prevent rebinding
+        // between the DNS resolution above and the actual TCP connect below.
+        $resolvedIp = $policy->resolvedIps()[0] ?? null;
+        $parsed = parse_url($endpoint->url);
+        $host = $parsed['host'] ?? '';
+        $scheme = strtolower($parsed['scheme'] ?? 'https');
+        $port = $parsed['port'] ?? ($scheme === 'https' ? 443 : 80);
+
         $delivery->increment('attempts');
 
         try {
-            $response = Http::timeout(config('webhooks.outgoing.timeout', 30))
+            $httpClient = Http::timeout(config('webhooks.outgoing.timeout', 30))
                 ->withHeaders([
                     'Content-Type' => 'application/json',
                     'X-Webhook-Signature' => $signature,
@@ -47,7 +85,19 @@ class DispatchWebhookJob implements ShouldQueue
                     'X-Webhook-Id' => $delivery->uuid,
                     'X-Webhook-Event' => $delivery->event_type,
                     'User-Agent' => config('app.name').' Webhook/1.0',
-                ])
+                ]);
+
+            // Pin DNS resolution to the address we already validated so a race
+            // between our SSRF check and the HTTP connect cannot be exploited.
+            if ($resolvedIp !== null && $host !== '') {
+                $httpClient = $httpClient->withOptions([
+                    'curl' => [
+                        CURLOPT_RESOLVE => ["{$host}:{$port}:{$resolvedIp}"],
+                    ],
+                ]);
+            }
+
+            $response = $httpClient
                 ->withBody($payloadJson, 'application/json')
                 ->post($endpoint->url);
 
