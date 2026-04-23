@@ -105,7 +105,7 @@ class HealthCheckService
             $total = disk_total_space(base_path());
             $free = disk_free_space(base_path());
 
-            if ($total === false || $free === false || $total === 0) {
+            if ($total === false || $free === false || $total == 0) {
                 return ['status' => 'error', 'message' => 'Unable to read disk space'];
             }
 

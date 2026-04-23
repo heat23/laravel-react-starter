@@ -6,6 +6,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property-read WebhookEndpoint|null $endpoint
+ *
+ * @method static \Database\Factories\WebhookDeliveryFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WebhookDelivery newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WebhookDelivery newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|WebhookDelivery query()
+ *
+ * @mixin \Eloquent
+ */
 class WebhookDelivery extends Model
 {
     use HasFactory;

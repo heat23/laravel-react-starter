@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -17,6 +18,26 @@ use Illuminate\Support\Facades\Cache;
  * - 'theme': 'light' | 'dark' | 'system'
  * - 'timezone': IANA timezone string
  * - 'notifications_email': boolean
+ *
+ * @property int $id
+ * @property int $user_id
+ * @property string $key
+ * @property string|null $value
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read User|null $user
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSetting newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSetting newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSetting query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSetting whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSetting whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSetting whereKey($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSetting whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSetting whereUserId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|UserSetting whereValue($value)
+ *
+ * @mixin \Eloquent
  */
 class UserSetting extends Model
 {
@@ -66,7 +87,7 @@ class UserSetting extends Model
     /**
      * Set a setting value for a user.
      */
-    public static function setValue(int $userId, string $key, mixed $value): static
+    public static function setValue(int $userId, string $key, mixed $value): self
     {
         // Encode non-string values as JSON
         $storedValue = is_string($value) ? $value : json_encode($value);

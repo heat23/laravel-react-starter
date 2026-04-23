@@ -6,7 +6,32 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property int $score
+ * @property string|null $comment
+ * @property string $survey_trigger
+ * @property Carbon $created_at
+ * @property-read string $category
+ * @property-read User|null $user
+ *
+ * @method static \Database\Factories\NpsResponseFactory factory($count = null, $state = [])
+ * @method static Builder<static>|NpsResponse latestPerUser()
+ * @method static Builder<static>|NpsResponse newModelQuery()
+ * @method static Builder<static>|NpsResponse newQuery()
+ * @method static Builder<static>|NpsResponse query()
+ * @method static Builder<static>|NpsResponse whereComment($value)
+ * @method static Builder<static>|NpsResponse whereCreatedAt($value)
+ * @method static Builder<static>|NpsResponse whereId($value)
+ * @method static Builder<static>|NpsResponse whereScore($value)
+ * @method static Builder<static>|NpsResponse whereSurveyTrigger($value)
+ * @method static Builder<static>|NpsResponse whereUserId($value)
+ *
+ * @mixin \Eloquent
+ */
 class NpsResponse extends Model
 {
     use HasFactory;

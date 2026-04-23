@@ -6,7 +6,27 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property int $user_id
+ * @property string $sequence_type
+ * @property int $email_number
+ * @property Carbon $sent_at
+ * @property-read User|null $user
+ *
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EmailSendLog newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EmailSendLog newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EmailSendLog query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EmailSendLog whereEmailNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EmailSendLog whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EmailSendLog whereSentAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EmailSendLog whereSequenceType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|EmailSendLog whereUserId($value)
+ *
+ * @mixin \Eloquent
+ */
 class EmailSendLog extends Model
 {
     public $timestamps = false;

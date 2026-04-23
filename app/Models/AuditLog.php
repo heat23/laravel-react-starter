@@ -6,7 +6,35 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $event
+ * @property int|null $user_id
+ * @property string|null $ip
+ * @property string|null $user_agent
+ * @property array<array-key, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property-read User|null $user
+ *
+ * @method static Builder<static>|AuditLog byEvent(string $event)
+ * @method static Builder<static>|AuditLog byUser(int $userId)
+ * @method static \Database\Factories\AuditLogFactory factory($count = null, $state = [])
+ * @method static Builder<static>|AuditLog newModelQuery()
+ * @method static Builder<static>|AuditLog newQuery()
+ * @method static Builder<static>|AuditLog query()
+ * @method static Builder<static>|AuditLog recent(int $days = 30)
+ * @method static Builder<static>|AuditLog whereCreatedAt($value)
+ * @method static Builder<static>|AuditLog whereEvent($value)
+ * @method static Builder<static>|AuditLog whereId($value)
+ * @method static Builder<static>|AuditLog whereIp($value)
+ * @method static Builder<static>|AuditLog whereMetadata($value)
+ * @method static Builder<static>|AuditLog whereUserAgent($value)
+ * @method static Builder<static>|AuditLog whereUserId($value)
+ *
+ * @mixin \Eloquent
+ */
 class AuditLog extends Model
 {
     use HasFactory;
