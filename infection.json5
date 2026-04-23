@@ -1,0 +1,12 @@
+{
+    source: { directories: ["app"], excludes: ["Console/Commands"] },
+    timeout: 10,
+    logs: {
+        text: "storage/logs/infection.log",
+        html: "storage/logs/infection.html"
+    },
+    mutators: { "@default": true },
+    testFramework: "pest",
+    minMsi: 50,
+    minCoveredMsi: 65,
+}

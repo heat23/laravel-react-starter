@@ -107,3 +107,8 @@ GROWTH_AUDIT*
 MERGE_ALL_REPORT_*.md
 MESSAGING_AUDIT*
 LaravelReactStarter*audit*
+
+# Infection mutation testing artifacts
+.infection-cache/
+storage/logs/infection.log
+storage/logs/infection.html

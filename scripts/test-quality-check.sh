@@ -51,4 +51,14 @@ php artisan test --coverage --min=80 2>&1 || {
 }
 
 echo ""
+echo "Mutation Testing (advisory)"
+echo "=============================="
+if command -v vendor/bin/infection &> /dev/null; then
+    vendor/bin/infection --threads=4 --only-covered --show-mutations 2>&1 | tail -20 || true
+    # Note: minMsi floor will be tightened once baseline is established
+else
+    echo "Infection not available — skipping mutation tests"
+fi
+
+echo ""
 echo "✅ Test quality check complete!"
