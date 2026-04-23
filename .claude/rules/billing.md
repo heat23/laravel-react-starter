@@ -17,7 +17,7 @@ globs:
 
 **Pattern to follow:** See `app/Services/BillingService.php` lines 68-70 for correct eager loading pattern.
 
-**Billing route middleware:** `LoadBillingContext` middleware is applied to the billing route group in `routes/web.php`. It calls `$user->loadMissing('subscriptions.items')` once per request. Do NOT add per-method `loadMissing` calls in billing controllers — the middleware handles it.
+**Billing route middleware:** `LoadBillingContext` middleware is applied to the billing route group in `routes/app.php`. It calls `$user->loadMissing('subscriptions.items')` once per request. Do NOT add per-method `loadMissing` calls in billing controllers — the middleware handles it.
 
 **Redis locks:** All subscription mutations MUST use `BillingService` methods — direct Cashier calls will cause race conditions. Redis locks (35s timeout) prevent concurrent operations. If lock acquisition fails, operation is rejected with `ConcurrentOperationException`.
 
