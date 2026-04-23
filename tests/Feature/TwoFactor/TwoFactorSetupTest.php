@@ -35,7 +35,7 @@ it('shows not-enabled state by default', function () {
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->component('Settings/Security')
+        ->component('App/Settings/Security')
         ->where('enabled', false)
         ->where('qr_code', null)
     );
@@ -51,7 +51,7 @@ it('enables 2FA and shows QR code', function () {
     $response = $this->actingAs($user)->get('/settings/security');
 
     $response->assertInertia(fn ($page) => $page
-        ->component('Settings/Security')
+        ->component('App/Settings/Security')
         ->where('enabled', false)
         ->whereNot('qr_code', null)
         ->whereNot('secret', null)
@@ -168,7 +168,7 @@ it('shows enabled state after confirming 2FA', function () {
     $response = $this->actingAs($user)->get('/settings/security');
 
     $response->assertInertia(fn ($page) => $page
-        ->component('Settings/Security')
+        ->component('App/Settings/Security')
         ->where('enabled', true)
         ->where('qr_code', null)
         ->where('secret', null)

@@ -50,12 +50,14 @@ it('skips 2FA challenge when feature disabled', function () {
 it('renders challenge page when login.id in session', function () {
     $user = User::factory()->withTwoFactor()->create();
 
-    $response = $this->withSession(['login.id' => $user->id])
-        ->get('/two-factor-challenge');
+    $response = $this->withSession([
+        'login.id' => $user->id,
+        'login.expires_at' => now()->addMinutes(15)->getTimestamp(),
+    ])->get('/two-factor-challenge');
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->component('Auth/TwoFactorChallenge')
+        ->component('App/Auth/TwoFactorChallenge')
     );
 });
 

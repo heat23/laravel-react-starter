@@ -29,7 +29,7 @@ it('loads subscriptions list with pagination', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Billing/Subscriptions')
+        ->component('App/Admin/Billing/Subscriptions')
         ->has('subscriptions.data', 1)
         ->has('filters')
         ->has('statuses')

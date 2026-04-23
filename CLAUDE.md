@@ -40,6 +40,11 @@ Configure your app by toggling features in `config/features.php` (or `.env`). 11
 
 **Hard dependencies are runtime-enforced** by `FeatureFlagService::resolve()` — if `onboarding` is on but `user_settings` is off, the dependent flag resolves to `false` and a `Log::warning` is emitted. See [docs/FEATURE_FLAGS.md](docs/FEATURE_FLAGS.md).
 
+**Feature flag service layer (three classes):**
+- `FeatureFlagValidator` — pure validation; throws on unknown or protected flags; no external deps
+- `FeatureFlagOverrideStore` — all DB + cache access for global/user overrides
+- `FeatureFlagService` — slim orchestrator (≤200 LOC); delegates to the two classes above + `CacheInvalidationManager`
+
 **Common configurations:** SaaS with billing (enable `billing`, `webhooks`, `two_factor`, `api_tokens`) | Internal tool (enable `two_factor`, `api_tokens`, `notifications`) | Simple MVP (leave defaults as-is — `admin` + `onboarding` + `email_verification` + `user_settings` + `api_tokens` are on).
 
 **Disabling features:** Set env var to `false`. Feature-gated routes won't register, middleware won't apply, UI elements won't render. Database tables remain (safe to leave empty).
@@ -133,7 +138,8 @@ npm run build          # Production build
 npm run lint           # ESLint
 php artisan subscriptions:check-incomplete  # Find failed payments, send reminders
 php artisan audit:prune                     # Delete old audit logs (--days=N)
-php artisan webhooks:prune-stale            # Mark orphaned webhook deliveries as abandoned (--hours=N)
+php artisan webhooks:mark-abandoned         # Mark orphaned webhook deliveries as abandoned (--hours=N)
+php artisan webhooks:delete-old             # Delete old terminal webhook deliveries (--days=N)
 php artisan admin:health-alert              # Run health checks, alert on failures
 php artisan trials:check-expired            # Handle expired trial transitions
 php artisan scores:compute                  # Recompute engagement/health scores
@@ -158,7 +164,7 @@ scripts/init.sh                             # First-time setup
 
 **Health Check Auth:** `/health` supports 3 modes: token-based, IP allowlist, local-only. Configure in `config/health.php` — default is local-only in production.
 
-**Admin Cache (`AdminCacheKey`):** Dashboard stats cached 5-min TTL. Any mutation changing user count, subscription state, token count, or webhook stats MUST call `Cache::forget(AdminCacheKey::RELEVANT_KEY->value)` — stale admin dashboards are a known bug class.
+**Admin Cache (`AdminCacheKey`):** Dashboard stats cached 5-min TTL. Any mutation changing user count, subscription state, token count, or webhook stats MUST call the relevant semantic method on `CacheInvalidationManager` (e.g. `invalidateDashboardStats()`, `invalidateIndexNow()`) — never call `Cache::forget(AdminCacheKey::*)` directly outside that service. Stale admin dashboards are a known bug class.
 
 **Relationship Loading with SoftDeletes:** Use `->load(['relation' => fn ($q) => $q->withTrashed()])` for admin views. Always use null-safe operator (`?->`) with fallback: `$model->owner?->name ?? '[Deleted User]'`
 

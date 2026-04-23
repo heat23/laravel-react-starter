@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AdminCacheKey;
+use App\Enums\PlanTier;
 use App\Helpers\QueryHelper;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -68,12 +69,12 @@ class AdminBillingStatsService
                 ->groupBy('subscription_items.stripe_price')
                 ->get()
                 ->map(fn ($row) => [
-                    'tier' => $this->billingService->resolveTierFromPrice($row->stripe_price) ?? 'unknown',
+                    'tier' => PlanTier::safeValue($this->billingService->resolveTierFromPrice($row->stripe_price)),
                     'count' => (int) $row->count,
                 ])
                 ->groupBy('tier')
                 ->map(fn ($group, $tier) => [
-                    'tier' => ucfirst($tier),
+                    'tier' => PlanTier::tryFrom($tier)?->label() ?? ucfirst($tier),
                     'count' => $group->sum('count'),
                 ])
                 ->values()
@@ -145,7 +146,7 @@ class AdminBillingStatsService
             'user_name' => $row->user_name,
             'user_email' => $row->user_email,
             'stripe_status' => $row->stripe_status,
-            'tier' => $billingService->resolveTierFromPrice($row->item_price) ?? 'unknown',
+            'tier' => PlanTier::safeValue($billingService->resolveTierFromPrice($row->item_price)),
             'quantity' => $row->quantity,
             'trial_ends_at' => $row->trial_ends_at,
             'ends_at' => $row->ends_at,
@@ -278,11 +279,11 @@ class AdminBillingStatsService
                 continue;
             }
 
-            $monthlyPrice = (float) config("plans.{$tier}.price_monthly", 0);
+            $monthlyPrice = (float) config("plans.{$tier->value}.price_monthly", 0);
 
-            $annualPriceId = config("plans.{$tier}.stripe_price_annual");
+            $annualPriceId = config("plans.{$tier->value}.stripe_price_annual");
             if ($row->stripe_price === $annualPriceId) {
-                $monthlyPrice = (float) config("plans.{$tier}.price_annual", 0) / 12;
+                $monthlyPrice = (float) config("plans.{$tier->value}.price_annual", 0) / 12;
             }
 
             $mrr += $monthlyPrice * (int) $row->total_quantity;

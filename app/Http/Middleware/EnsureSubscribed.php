@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\PlanTier;
 use App\Services\BillingService;
 use Closure;
 use Illuminate\Http\Request;
@@ -37,12 +38,9 @@ class EnsureSubscribed
 
         if ($minimumTier) {
             $userTier = $this->billingService->resolveUserTier($user);
-            $hierarchy = config('plans.tier_hierarchy', ['free', 'pro', 'team', 'enterprise']);
+            $requiredTier = PlanTier::tryFrom($minimumTier);
 
-            $userLevel = array_search($userTier, $hierarchy, true);
-            $requiredLevel = array_search($minimumTier, $hierarchy, true);
-
-            if ($userLevel === false || $requiredLevel === false || $userLevel < $requiredLevel) {
+            if ($requiredTier === null || $userTier->rank() < $requiredTier->rank()) {
                 return $this->denyAccess($request, "This feature requires a {$minimumTier} plan or higher.");
             }
         }

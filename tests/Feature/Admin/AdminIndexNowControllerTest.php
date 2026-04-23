@@ -36,7 +36,7 @@ it('renders the dashboard for admins with stats + submissions', function () {
 
     $response->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('Admin/IndexNow/Dashboard')
+            ->component('App/Admin/IndexNow/Dashboard')
             ->has('stats')
             ->where('stats.total_submissions_30d', 3)
             ->where('stats.successful_submissions_30d', 1)
@@ -55,7 +55,7 @@ it('filters submissions by status', function () {
 
     $response->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('Admin/IndexNow/Dashboard')
+            ->component('App/Admin/IndexNow/Dashboard')
             ->has('submissions.data', 1)
             ->where('filters.status', 'failed')
         );
@@ -82,7 +82,7 @@ it('shows a submission detail page', function () {
 
     $response->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('Admin/IndexNow/SubmissionDetail')
+            ->component('App/Admin/IndexNow/SubmissionDetail')
             ->where('submission.id', $submission->id)
             ->where('submission.url_count', 2)
             ->has('submission.urls', 2)

@@ -20,7 +20,7 @@ class BlogController extends Controller
         $appUrl = rtrim(config('app.url'), '/');
         $posts = Cache::remember('blog.index', 3600, fn () => $this->loadAllPosts());
 
-        return Inertia::render('Blog/Index', [
+        return Inertia::render('Public/Blog/Index', [
             'title' => 'Laravel SaaS Blog — Tutorials and Best Practices',
             'metaDescription' => 'Practical guides on building SaaS with Laravel 12, React, and TypeScript. Redis billing, feature flags, admin panels, and production deployment.',
             'canonicalUrl' => $appUrl.'/blog',
@@ -37,7 +37,7 @@ class BlogController extends Controller
             abort(404);
         }
 
-        return Inertia::render('Blog/Show', [
+        return Inertia::render('Public/Blog/Show', [
             'title' => $post['title'].' — Laravel React Starter Blog',
             'metaDescription' => $post['description'],
             'canonicalUrl' => $appUrl.'/blog/'.$slug,

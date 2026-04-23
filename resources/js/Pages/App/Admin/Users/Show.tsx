@@ -265,7 +265,7 @@ export default function AdminUserShow({
         </div>
 
         {/* Edit Details */}
-        {!user.deleted_at && (
+        {!user.deleted_at && isSuperAdmin && (
           <Card>
             <CardHeader>
               <CardTitle>Edit Details</CardTitle>

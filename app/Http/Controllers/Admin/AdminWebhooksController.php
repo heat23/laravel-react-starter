@@ -110,7 +110,7 @@ class AdminWebhooksController extends Controller
                 ->toArray();
         });
 
-        return Inertia::render('Admin/Webhooks/Dashboard', [
+        return Inertia::render('App/Admin/Webhooks/Dashboard', [
             'stats' => $stats,
             'delivery_chart' => $deliveryChart,
             'recent_failures' => $recentFailures,
@@ -144,7 +144,7 @@ class AdminWebhooksController extends Controller
                 ];
             });
 
-        return Inertia::render('Admin/Webhooks/Endpoints', [
+        return Inertia::render('App/Admin/Webhooks/Endpoints', [
             'endpoints' => $endpoints,
         ]);
     }
@@ -195,7 +195,7 @@ class AdminWebhooksController extends Controller
 
         $providers = IncomingWebhook::distinct()->orderBy('provider')->pluck('provider')->toArray();
 
-        return Inertia::render('Admin/Webhooks/IncomingWebhooks', [
+        return Inertia::render('App/Admin/Webhooks/IncomingWebhooks', [
             'webhooks' => $webhooks,
             'providers' => $providers,
             'filters' => array_filter([
@@ -226,7 +226,7 @@ class AdminWebhooksController extends Controller
             $redactedResponseBody = $delivery->response_body;
         }
 
-        return Inertia::render('Admin/Webhooks/DeliveryDetail', [
+        return Inertia::render('App/Admin/Webhooks/DeliveryDetail', [
             'delivery' => [
                 'id' => $delivery->id,
                 'uuid' => $delivery->uuid,

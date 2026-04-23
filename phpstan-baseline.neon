@@ -19,24 +19,6 @@ parameters:
 			path: app/Console/Commands/CheckIncompletePayments.php
 
 		-
-			message: '#^Cannot call method toDateString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Console/Commands/SendTrialNudges.php
-
-		-
-			message: '#^Parameter \#2 \$trialEndsAt of class App\\Notifications\\TrialNudgeNotification constructor expects Carbon\\Carbon\|null, string\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Console/Commands/SendTrialNudges.php
-
-		-
-			message: '#^Method App\\Helpers\\QueryHelper\:\:dateExpression\(\) should return Illuminate\\Database\\Query\\Expression but returns Illuminate\\Contracts\\Database\\Query\\Expression\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Helpers/QueryHelper.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -44,12 +26,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Admin/AdminBillingController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Http/Controllers/Admin/AdminBillingController.php
@@ -69,12 +45,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$stripe_product\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Http/Controllers/Admin/AdminBillingController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\AuditLog\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
 			count: 1
 			path: app/Http/Controllers/Admin/AdminBillingController.php
 
@@ -105,19 +75,7 @@ parameters:
 		-
 			message: '#^Cannot call method toISOString\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 5
-			path: app/Http/Controllers/Admin/AdminUsersController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\UserStageHistory\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Http/Controllers/Admin/AdminUsersController.php
-
-		-
-			message: '#^Using nullsafe method call on non-nullable type string\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
+			count: 4
 			path: app/Http/Controllers/Admin/AdminUsersController.php
 
 		-
@@ -125,6 +83,12 @@ parameters:
 			identifier: argument.unresolvableType
 			count: 1
 			path: app/Http/Controllers/Admin/AdminUsersController.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Admin/AdminWebhooksController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$active\.$#'
@@ -223,12 +187,6 @@ parameters:
 			path: app/Http/Controllers/Billing/BillingController.php
 
 		-
-			message: '#^Access to an undefined property Laravel\\Cashier\\Payment\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 3
-			path: app/Http/Controllers/Billing/SubscriptionController.php
-
-		-
 			message: '#^Call to an undefined method Laravel\\Cashier\\Invoice\:\:invoicePdf\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -253,16 +211,22 @@ parameters:
 			path: app/Http/Controllers/Billing/PricingController.php
 
 		-
+			message: '#^Access to an undefined property Laravel\\Cashier\\Payment\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Billing/SubscriptionCheckoutController.php
+
+		-
 			message: '#^Cannot call method toISOString\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
-			path: app/Http/Controllers/Billing/SubscriptionController.php
+			path: app/Http/Controllers/Billing/SubscriptionCheckoutController.php
 
 		-
-			message: '#^Access to protected property Laravel\\Cashier\\Payment::\$paymentIntent\.$#'
-			identifier: property.protected
-			count: 3
-			path: app/Http/Controllers/Billing/SubscriptionController.php
+			message: '#^Access to an undefined property Laravel\\Cashier\\Payment\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Billing/SubscriptionLifecycleController.php
 
 		-
 			message: '#^Call to function method_exists\(\) with App\\Models\\User and ''subscribed'' will always evaluate to true\.$#'
@@ -275,24 +239,6 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: app/Http/Middleware/HandleInertiaRequests.php
-
-		-
-			message: '#^Call to method setTag\(\) on an unknown class Sentry\\State\\Scope\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Middleware/RequestIdMiddleware.php
-
-		-
-			message: '#^Function Sentry\\configureScope not found\.$#'
-			identifier: function.notFound
-			count: 1
-			path: app/Http/Middleware/RequestIdMiddleware.php
-
-		-
-			message: '#^Parameter \$scope of anonymous function has invalid type Sentry\\State\\Scope\.$#'
-			identifier: class.notFound
-			count: 1
-			path: app/Http/Middleware/RequestIdMiddleware.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$active\.$#'
@@ -317,18 +263,6 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: app/Listeners/StartUserTrial.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/AuditLog.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Models/AuditLog.php
 
 		-
 			message: '#^Cannot call method isPast\(\) on string\.$#'
@@ -415,12 +349,6 @@ parameters:
 			path: app/Services/PlanLimitService.php
 
 		-
-			message: '#^Cannot call method toISOString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Services/PlanLimitService.php
-
-		-
 			message: '#^Access to property \$expiresIn on an unknown class Laravel\\Socialite\\Contracts\\User\.$#'
 			identifier: class.notFound
 			count: 2
@@ -491,9 +419,3 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: routes/api.php
-
-		-
-			message: '#^Cannot call method toISOString\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: app/Http/Controllers/Admin/AdminWebhooksController.php

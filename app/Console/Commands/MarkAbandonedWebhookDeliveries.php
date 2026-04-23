@@ -5,9 +5,9 @@ namespace App\Console\Commands;
 use App\Models\WebhookDelivery;
 use Illuminate\Console\Command;
 
-class PruneStaleWebhookDeliveries extends Command
+class MarkAbandonedWebhookDeliveries extends Command
 {
-    protected $signature = 'webhooks:prune-stale {--hours=1 : Mark deliveries stale after this many hours}';
+    protected $signature = 'webhooks:mark-abandoned {--hours=1 : Mark deliveries stale after this many hours}';
 
     protected $description = 'Mark orphaned webhook deliveries as abandoned';
 

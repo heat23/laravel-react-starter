@@ -27,7 +27,7 @@ it('shows data health page for admin', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/DataHealth')
+        ->component('App/Admin/DataHealth')
         ->has('checks')
     );
 });

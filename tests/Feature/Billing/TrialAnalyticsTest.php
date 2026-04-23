@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\AuditEvent;
+use App\Enums\PlanTier;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\PlanLimitService;
@@ -49,7 +50,7 @@ it('returns pro plan tier during active trial', function () {
 
     $plan = app(PlanLimitService::class)->getUserPlan($user);
 
-    expect($plan)->toBe('pro');
+    expect($plan)->toBe(PlanTier::Pro);
 });
 
 it('returns free plan tier after trial expires', function () {
@@ -60,7 +61,7 @@ it('returns free plan tier after trial expires', function () {
 
     $plan = app(PlanLimitService::class)->getUserPlan($user);
 
-    expect($plan)->toBe('free');
+    expect($plan)->toBe(PlanTier::Free);
 });
 
 // ============================================

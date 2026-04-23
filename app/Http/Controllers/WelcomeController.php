@@ -10,7 +10,7 @@ class WelcomeController extends Controller
 {
     public function __invoke(): Response
     {
-        return Inertia::render('Welcome', [
+        return Inertia::render('Public/Welcome', [
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
             'appUrl' => rtrim(config('app.url'), '/'),

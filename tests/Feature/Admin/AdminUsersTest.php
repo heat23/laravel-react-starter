@@ -57,7 +57,7 @@ it('loads index with user list', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Users/Index')
+        ->component('App/Admin/Users/Index')
         ->has('users.data', 4)
     );
 });
@@ -175,7 +175,7 @@ it('shows user detail with audit logs', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Users/Show')
+        ->component('App/Admin/Users/Show')
         ->where('user.id', $user->id)
         ->has('recent_audit_logs', 1)
     );
@@ -282,7 +282,7 @@ it('shows soft-deleted user details', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Users/Show')
+        ->component('App/Admin/Users/Show')
         ->where('user.id', $user->id)
         ->has('user.deleted_at')
     );
@@ -779,7 +779,7 @@ it('renders create form for admin', function () {
     $this->actingAs($admin)
         ->get('/admin/users/create')
         ->assertStatus(200)
-        ->assertInertia(fn ($page) => $page->component('Admin/Users/Create'));
+        ->assertInertia(fn ($page) => $page->component('App/Admin/Users/Create'));
 });
 
 // --- store (POST /admin/users) ---
@@ -886,9 +886,8 @@ it('returns 403 for non-admin on update', function () {
     ])->assertStatus(403);
 });
 
-it('allows plain admin to update user name and email', function () {
-    // update does NOT require super_admin — plain admin is sufficient
-    $admin = User::factory()->admin()->create();
+it('allows super admin to update user name and email', function () {
+    $admin = User::factory()->superAdmin()->create();
     $target = User::factory()->create(['name' => 'Original', 'email' => 'original@test.com']);
 
     $response = $this->actingAs($admin)->patch("/admin/users/{$target->id}", [
@@ -914,7 +913,7 @@ it('rejects update for a deactivated (soft-deleted) user', function () {
 });
 
 it('rejects duplicate email on update', function () {
-    $admin = User::factory()->admin()->create();
+    $admin = User::factory()->superAdmin()->create();
     $target = User::factory()->create(['email' => 'target@test.com']);
     User::factory()->create(['email' => 'taken@test.com']);
 

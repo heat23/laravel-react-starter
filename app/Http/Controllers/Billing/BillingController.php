@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Enums\PlanTier;
 use App\Http\Controllers\Controller;
 use App\Services\BillingService;
 use App\Services\PlanLimitService;
@@ -20,19 +21,17 @@ class BillingController extends Controller
     public function index(Request $request): Response
     {
         $user = $request->user();
-        $user->loadMissing('subscriptions.items');
-
         $subscription = $user->subscription('default');
         $subscriptionInfo = null;
         $incompletePayment = null;
         $invoices = [];
 
         if ($subscription) {
-            $tier = $this->billingService->resolveTierFromPrice($subscription->stripe_price ?? '') ?? 'free';
-            $tierConfig = config("plans.{$tier}");
+            $tier = $this->billingService->resolveTierFromPrice($subscription->stripe_price ?? '') ?? PlanTier::Free;
+            $tierConfig = config("plans.{$tier->value}");
 
             $subscriptionInfo = [
-                'name' => $tierConfig['name'] ?? ucfirst($tier),
+                'name' => $tierConfig['name'] ?? $tier->label(),
                 'status' => $subscription->stripe_status,
                 'priceId' => $subscription->stripe_price,
                 'trialEndsAt' => $subscription->trial_ends_at?->toISOString(),
@@ -80,7 +79,7 @@ class BillingController extends Controller
             ];
         }
 
-        return Inertia::render('Billing/Index', [
+        return Inertia::render('App/Billing/Index', [
             'subscription' => $subscriptionInfo,
             'platformTrial' => $platformTrial,
             'incompletePayment' => $incompletePayment,

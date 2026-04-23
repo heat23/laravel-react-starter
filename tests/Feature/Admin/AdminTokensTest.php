@@ -27,7 +27,7 @@ it('loads tokens dashboard with stats', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Tokens/Dashboard')
+        ->component('App/Admin/Tokens/Dashboard')
         ->has('stats')
         ->where('stats.total_tokens', 0)
         ->where('stats.users_with_tokens', 0)

@@ -13,7 +13,7 @@ class AdminSystemController extends Controller
 {
     public function __invoke(): Response
     {
-        return Inertia::render('Admin/System', [
+        return Inertia::render('App/Admin/System', [
             'system' => [
                 'php_version' => PHP_VERSION,
                 'laravel_version' => app()->version(),

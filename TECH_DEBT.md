@@ -1,22 +1,75 @@
 # Tech Debt Audit — Laravel React Starter
 
-**Audit date:** 2026-04-22
+**Last audit:** 2026-04-22
+**This update:** 2026-04-23 (re-audit after significant remediation work)
 **Audited for:** Sole-operator use as a base template for multiple SaaS products
 **Optimization lenses:** (a) Maintainability over 6–12 months, (b) Pre-launch hardening for paid customers, (c) Speed to first ship when forking the template
 
-## TL;DR
+## TL;DR — what changed since last audit
 
-The codebase is well-structured and more mature than most starters — feature flags, contract tests, PCOV-backed CI, Redis-locked billing, a 500-line PHPStan baseline, 230 Pest tests, 401 Vitest tests. The debt that actually matters for a sole operator is clustered in three places:
+**Large net positive.** Most of the high-impact Code and Architecture items are closed, the repo is clean of committed audit artifacts, and two new docs (`SYSTEM_DESIGN_SOLO_OPERATOR.md`, `architecture-removal-plan.md`) show an active pruning discipline. The lifecycle stack was dramatically simplified — the old scoring/analytics/UTM surfaces were removed in favor of a lean audit-only trail, which retires several Phase-2 and Phase-3 items entirely.
 
-1. **Operational hygiene** — 18 one-off audit/review JSON files are committed to git; ~240 AI-generated report files sit in the repo root (gitignored but local clutter); 83 PHPStan errors are baselined rather than fixed.
-2. **Missing sole-op scaffolding** — there is no forking playbook, no `scripts/new-saas.sh`, no `docker-compose.dev.yml`, no synthetic production monitor beyond `/up`. These are the single biggest accelerators for the "stand up SaaS #2, #3, #4 from this base" use case.
-3. **Revenue-path test coverage is thin** — E2E only covers auth smoke. Billing, webhooks, and 2FA (the three areas that silently cost money when they break) have no end-to-end protection.
+The remaining debt clusters in **three specific places**, in decreasing priority:
 
-Everything else — oversize services, 571-line controllers, 1,000+ line marketing pages, doc sprawl — is real debt but it compounds slowly and is safe to address lazily when you next touch the code.
+1. **Forking / pre-launch scaffolding still missing.** No `docs/FORKING.md`, no `scripts/new-saas.sh`, no `docker-compose.dev.yml`, no synthetic production monitor, and **E2E still covers only auth** (billing, webhooks, 2FA have no end-to-end protection).
+2. **PHPStan baseline is still 70 errors across 421 lines.** Slight reduction (83 → 70), but the class of errors is the same — Cashier model dynamic property access, Carbon casts missing on date columns, unresolvable Collection::map callbacks. Installing `barryvdh/laravel-ide-helper` would close the majority in one sitting.
+3. **Documentation sprawl got worse, not better.** Four new docs added (`SYSTEM_DESIGN_SOLO_OPERATOR.md`, `architecture-removal-plan.md`, `architecture-review-sole-operator.md`, `FEATURE_FLAG_AUDIT.md`) on top of the pre-existing five-way overlap in AI guidance. Great content, but still no single-entry-point `docs/README.md` indexing it.
 
-## Scoring methodology
+Everything in the previous "Code debt" section — oversized services, 571-line controllers, marketing-page sprawl — is either done or materially smaller.
 
-Each item is scored per the standard framework:
+## Changelog: what moved since the 2026-04-22 audit
+
+### ✅ Closed / done
+
+| Item | Evidence | Notes |
+|------|----------|-------|
+| C2 — Split `SubscriptionController` (was 571 lines, 11 actions) | `app/Http/Controllers/Billing/` now has `SubscriptionCheckoutController`, `SubscriptionLifecycleController`, `PaymentMethodController`, `RetentionController` (+ `BillingController`, `PricingController`, `StripeWebhookController`) | Commit `b150cf0` split four ways; `LoadBillingContext` middleware extracted; shared `HandlesBillingErrors` trait introduced |
+| C3 — Split `FeatureFlagService` (was 496 lines, 12 methods) | Now `FeatureFlagService` 200 lines + `FeatureFlagOverrideStore` 163 lines + `FeatureFlagValidator` 43 lines | Commit `e476fc8`; `CacheInvalidationManager` wired exclusively |
+| O1 — 18 audit/review files tracked in git | `git ls-files \| grep -E "(audit-\|BILLING_REVIEWED_\|...)"` returns 0 | Cleaned via multiple `chore` commits |
+| A3 — `resources/js/Pages/` reorganization | Directory now has `App/` and `Public/` namespaces; page count 130 → 96 (34 deleted) | Commit `4926063` |
+| (was on the "not debt" list) PlanTier enum | `App\Enums\PlanTier` (Free, Pro, ProTeam, Team, Enterprise) now single source of truth for billing | Commit `873d93d` |
+| Webhook architecture | `WebhookProvider` interface + `StripeEventMap` dispatcher + per-event handlers in `app/Webhooks/Stripe/Handlers/` | Commit `ec80a52` |
+| Admin routes | Split out to `routes/admin.php` (15 lines), grouped via `ListsAdminResources` trait + `AdminListRequest` base class | Commit `68cadf8` |
+| Admin auth / 2FA gating | Hardened authorization and 2FA session/verification gates | Commit `4a4f46e` |
+| Lifecycle/scoring/analytics simplification | `EngagementScoringService`, `LeadScoringService`, `CustomerHealthService`, `AnalyticsGateway`, UTM middleware, GA4 forwarding — all removed per CLAUDE.md. Only `lifecycle:send-welcome-sequence` remains | Retires items T3 (trial Carbon bugs in dunning/nudge commands) — those commands no longer exist |
+| SEO hardening | JSON-LD numeric prices, @id + cross-refs, ImageObject logos, SEO Blade shell, title-length tests | Commit `d020e1f` |
+| IndexNow | New 12th feature flag `indexnow.enabled` for instant-indexing pings | Commit `a55e23c` |
+| Doc4 — ADRs | 4 → 5 ADRs (added `0005-admin-vs-super-admin-delegation.md`) | Continuing, on track |
+| T6 — `infection` mutation testing | Actually was always in `composer.json` (`^0.32.4`) — I misreported in the prior audit. **Not a debt item.** | Self-correction |
+
+### 🟡 Partially done
+
+| Item | Before | After | Remaining work |
+|------|--------|-------|----------------|
+| T2 — PHPStan baseline | 83 errors / 499 lines | 70 errors / 421 lines | 84% of errors remain; dominant patterns unchanged (Cashier dynamic properties, Carbon/string, unresolvable Collection::map) |
+| O2 — Stale report files in root | 285 total files in root | 47 total; **3 stragglers** share a single session UUID (`2597c859…`) | 3 files to delete: `AGENT_REVIEW_…md`, `PRE_FLIGHT_REPORT_…md`, `VERIFY_DONE_REPORT_…md` |
+| C1 — `BillingService` size | 486 lines, 16 methods | 501 lines (retention coupon moved in from controller) | Retention consolidation is a net-positive; class is still large but now better-aligned to a single "mutation orchestrator" role. Defer split; revisit only if it grows past ~600 |
+| C4 — `AdminBillingStatsService` size | 513 lines, 9 methods | 514 lines, 10 methods | Unchanged in size; still a candidate for reader/paginator split |
+| Doc2 — Forking playbook | Nothing | `docs/SYSTEM_DESIGN_SOLO_OPERATOR.md` exists + `architecture-removal-plan.md` exists | These are *architecture* docs. Still need an operational `docs/FORKING.md` checklist + a `scripts/new-saas.sh` that does the mechanical rewrites |
+| A1 — `web.php` route count | 55 routes | **81 routes, 239 lines** | Got worse; route-file splitting now past the pain threshold |
+
+### ❌ Still open (unchanged from prior audit)
+
+| Item | Still true because |
+|------|---------------------|
+| T1 — E2E coverage only auth | `tests/e2e/` specs: `auth.spec.ts`, `pages/login.spec.ts`, `pages/register.spec.ts`, `pages/forgot-password.spec.ts`, `pages/welcome.spec.ts`. **No billing, webhook, or 2FA E2E.** |
+| I1 — No synthetic production monitor | `deploy/MONITORING.md` absent; no Uptime Kuma / Better Stack / Uptimerobot wiring documented |
+| I2 — No `docker-compose.dev.yml` | Still no local-dev compose file; each fork needs manual MySQL + Redis + Mailpit setup |
+| D1 — `phpunit/phpunit` ^12.0 in `require-dev` | Still present; Pest already wraps it |
+| D2 — `axios` ^1.11 in `devDependencies` | Still present; unclear if actually imported |
+| Doc1 — AI-workflow doc sprawl | Got worse. `docs/` now includes `AI_DEVELOPMENT_SAFEGUARDS.md`, `AI_PROMPT_TEMPLATES.md`, `IMPLEMENTATION_GUARDRAILS.md`, `PLANNING_CHECKLIST.md`, `PROACTIVE_SAFEGUARDS_SUMMARY.md`, `SYSTEM_DESIGN_SOLO_OPERATOR.md`, `architecture-removal-plan.md`, `architecture-review-sole-operator.md`, `FEATURE_FLAG_AUDIT.md`, `TEST_PHASE1_COMPLETION.md` — 10+ overlapping files, no index |
+| T4 — SEO sitemap still manually maintained | `SeoController::buildSitemapUrls()` still a hardcoded list; still three parallel test files carrying the route list by hand |
+| C5 — Giant marketing-guide pages | `BuildVsBuyGuide.tsx` 1,130 lines, `SaasStarterKitComparison.tsx` 1,104, `NextjsSaas.tsx` 995, `TenancyArchitectureGuide.tsx` 961, `Pricing.tsx` 940, `LaravelSaasGuide.tsx` 886, `Welcome.tsx` 877, `StripeBillingGuide.tsx` 827, `WebhookGuide.tsx` 807. Nine files >800 lines |
+
+### 🆕 Debt surfaced by the recent changes
+
+| Item | Location | Why it's new |
+|------|----------|--------------|
+| N1 — `web.php` grew 47% | `routes/web.php` (239 lines, 81 route declarations) | Went from "approaching" to "past" the threshold for splitting into domain-scoped route files. Previous recommendation to split into `routes/marketing.php`, `routes/public.php` etc. is now more urgent |
+| N2 — `docs/` sprawl worsened | See Doc1 row above | Each remediation round added an architecture doc without retiring older ones |
+| N3 — 3 straggler report files | Repo root | Single-session leak of the AGENT_REVIEW / PRE_FLIGHT_REPORT / VERIFY_DONE_REPORT tuple, all with UUID `2597c859-8128-4dc6-b536-575f0ea606f9` |
+
+## Scoring methodology (unchanged)
 
 - **Impact (1–5):** how much this slows you down or compounds over time
 - **Risk (1–5):** what happens to revenue, security, uptime, or data if you don't fix it
@@ -24,242 +77,174 @@ Each item is scored per the standard framework:
 
 **Priority = (Impact + Risk) × (6 − Effort).** Higher is more urgent.
 
-## Prioritized debt inventory
+## Remaining debt inventory (only open items)
 
-### Code debt
+### Operational / hygiene
 
-| # | Item | Location | Impact | Risk | Effort | Priority |
-|---|------|----------|--------|------|--------|----------|
-| C1 | `BillingService` spans 16 public methods across resolution, mutations, coupons, previews, portal — one class doing too much | `app/Services/BillingService.php` (486 lines) | 3 | 3 | 4 | 12 |
-| C2 | `SubscriptionController` is a 571-line controller with 11 actions; Laravel convention is single-action controllers when this thick | `app/Http/Controllers/Billing/SubscriptionController.php` | 2 | 2 | 3 | 12 |
-| C3 | `FeatureFlagService` mixes evaluation, admin override management, and experiment variant assignment — three distinct concerns | `app/Services/FeatureFlagService.php` (496 lines) | 2 | 2 | 4 | 8 |
-| C4 | `AdminBillingStatsService` (513 lines) mixes aggregate metrics, cohort retention, and pagination — reasonable to split into Reader + Paginator | `app/Services/AdminBillingStatsService.php` | 2 | 2 | 3 | 12 |
-| C5 | 8 React page files over 800 lines (BuildVsBuyGuide 1,134; SaasStarterKitComparison 1,104; NextjsSaas 995; TenancyArchitectureGuide 961; Pricing 940; LaravelSaasGuide 886; Welcome 877; StripeBillingGuide 827). Hurts Vite HMR and IDE responsiveness | `resources/js/Pages/**` | 2 | 1 | 3 | 9 |
-| C6 | Controllers-to-services ratio 74:20 — business logic still lives in several controllers despite `BillingService` pattern existing as precedent | `app/Http/Controllers/**` | 2 | 2 | 4 | 8 |
+| # | Item | Impact | Risk | Effort | Priority |
+|---|------|--------|------|--------|----------|
+| O2a | Delete 3 straggler report files in root | 1 | 1 | 1 | 10 |
+| D1 | Remove `phpunit/phpunit` from `require-dev` (no direct imports found) | 1 | 1 | 1 | 10 |
+| D2 | Resolve `axios` status — confirm usage, remove or promote to `dependencies` | 1 | 2 | 1 | 15 |
+| D3 | Ensure CI `security` job fails build on moderate+ audit findings | 2 | 3 | 1 | 25 |
+| O4 | Verify `.env.example` covers every `env()` reference in `config/**` | 2 | 3 | 2 | 20 |
 
-### Test debt
+### Infrastructure / pre-launch hardening
 
-| # | Item | Location | Impact | Risk | Effort | Priority |
-|---|------|----------|--------|------|--------|----------|
-| T1 | E2E coverage is auth-only. Billing checkout, cancel, resume, swap, and webhook receipt have no end-to-end test | `tests/e2e/` | 4 | 4 | 4 | 16 |
-| T2 | 83 errors suppressed in `phpstan-baseline.neon` (499 lines). Dominant patterns: Cashier model dynamic properties, Carbon-vs-string in lifecycle commands, unnecessary nullsafe, unresolvable Collection::map callbacks | `phpstan-baseline.neon` | 4 | 3 | 2 | 28 |
-| T3 | Lifecycle commands carry real type bugs (String→Carbon in `CheckExpiredTrials`, `SendTrialNudges`). These run trials/dunning — bugs here lose revenue silently | `app/Console/Commands/*.php` (multiple) | 2 | 3 | 2 | 20 |
-| T4 | SEO invariants rely on three separate tests + `SeoController::buildSitemap()` being updated when any public route is added. Easy to forget, regressions are externally visible | `tests/Feature/Seo/*.php`, `SeoController` | 3 | 3 | 3 | 18 |
-| T5 | Contract tests in `tests/Contracts/` are marked "do not modify without approval" — fine as a guardrail, but the invariants they protect aren't indexed anywhere. Risk: you break one and accept it as "obviously wrong test" without understanding what it encoded | `tests/Contracts/` + `CLAUDE.md` | 2 | 3 | 2 | 20 |
-| T6 | Mutation testing (`infection`) is referenced in `CLAUDE.md` but isn't in `composer.json`. Either remove the reference or add and wire it | `composer.json`, `CLAUDE.md` | 1 | 1 | 2 | 8 |
+| # | Item | Impact | Risk | Effort | Priority |
+|---|------|--------|------|--------|----------|
+| **Doc2** | **Write `docs/FORKING.md` + `scripts/new-saas.sh`** (the `SYSTEM_DESIGN_SOLO_OPERATOR.md` is great but is architecture commentary, not an ops checklist) | **5** | **4** | **2** | **36** |
+| I1 | Wire synthetic monitor against `/health` (Uptime Kuma / Better Stack / Uptimerobot) and document in `deploy/MONITORING.md` | 3 | 4 | 2 | 28 |
+| I2 | Write `docker-compose.dev.yml` (MySQL 8 + Redis + Mailpit) for per-fork onboarding | 3 | 2 | 2 | 20 |
+| I3 | Document required branch-protection checks (`php-tests`, `js-tests`, `build`, `code-quality`, `e2e-tests`) in a `docs/OPS.md` | 2 | 3 | 1 | 25 |
+| I4 | VPS runbook for multi-product hosting — what's shared, what's per-product | 2 | 3 | 2 | 20 |
+| I5 | Cache Playwright Chromium install in CI (saves ~60s/run) | 1 | 1 | 1 | 10 |
 
-### Dependency debt
+### Test coverage / PHPStan
 
-| # | Item | Location | Impact | Risk | Effort | Priority |
-|---|------|----------|--------|------|--------|----------|
-| D1 | `phpunit/phpunit` ^12.0 is in `require-dev` alongside Pest 4. Pest wraps PHPUnit but the explicit PHPUnit dep is a redundancy unless directly invoked | `composer.json` | 1 | 1 | 1 | 10 |
-| D2 | `axios` ^1.11 in `devDependencies`. Inertia handles XHR — confirm it's actually used (search imports) and either move to `dependencies` or remove | `package.json` | 1 | 2 | 1 | 15 |
-| D3 | No `composer audit` / `npm audit` fail-the-build policy visible — the CI job "security" runs but verify it's non-blocking only on info-level findings, not moderate/high | `.github/workflows/ci.yml` (job: `security`) | 2 | 3 | 1 | 25 |
+| # | Item | Impact | Risk | Effort | Priority |
+|---|------|--------|------|--------|----------|
+| T2 | Install `barryvdh/laravel-ide-helper`, regenerate stubs, fix Cashier PHPDoc — drops the 70-error baseline to ~15 | 4 | 3 | 2 | 28 |
+| T1 | Playwright E2E for billing (checkout, cancel, swap), webhook receipt (`invoice.payment_succeeded`), 2FA enrollment + challenge | 4 | 4 | 4 | 16 |
+| T4 | SEO invariant auto-discovery — derive the public-route list from `RouteServiceProvider` and reuse across `JsonLdValidityTest`, `SeoShellRendersContentTest`, `TitleLengthTest`, and `SeoController::buildSitemapUrls()` | 3 | 3 | 3 | 18 |
+| T5/Doc3 | Link the 1 contract test (`FeatureFlagContractTest`) to a documenting ADR. Minor — the contract suite is tiny now | 1 | 2 | 1 | 15 |
 
-### Documentation debt
+### Code shape (continuous — address when touching)
 
-| # | Item | Location | Impact | Risk | Effort | Priority |
-|---|------|----------|--------|------|--------|----------|
-| Doc1 | Overlapping guidance across `docs/AI_DEVELOPMENT_SAFEGUARDS.md`, `docs/IMPLEMENTATION_GUARDRAILS.md`, `docs/PLANNING_CHECKLIST.md`, `docs/AI_PROMPT_TEMPLATES.md`, `docs/PROACTIVE_SAFEGUARDS_SUMMARY.md`. Six files, lots of duplication | `docs/` | 2 | 1 | 2 | 12 |
-| Doc2 | **No forking playbook.** Zero instruction on how to clone this as SaaS #2 — what to rename, which pricing tiers to zero out, which feature flags to flip, how to reset the AI-generated report clutter, where product branding lives | (missing) | **5** | **4** | **2** | **36** |
-| Doc3 | Contract tests protect invariants that aren't documented — see T5. Each contract test should link to a one-paragraph ADR explaining "what breaks in production if this test changes" | `tests/Contracts/` + `docs/adr/` | 2 | 3 | 2 | 20 |
-| Doc4 | ADR count in `docs/adr/` is 4 — plenty of decisions in this repo (feature flag registry, Redis locks on billing, boot-time route registration limitation, two-phase migration policy) haven't been captured as ADRs | `docs/adr/` | 2 | 2 | 3 | 12 |
+| # | Item | Impact | Risk | Effort | Priority |
+|---|------|--------|------|--------|----------|
+| C4 | Split `AdminBillingStatsService` (514 lines) into `AdminBillingStatsReader` + `AdminBillingSubscriptionPaginator` | 2 | 2 | 3 | 12 |
+| C5 | Extract marketing-guide pages (>800 lines each) into section components or move to MDX — only worth it if these guides get reused across multiple SaaS forks; otherwise delete them per-fork | 2 | 1 | 3 | 9 |
+| C6 | Controller-business-logic → service migration pass (74 controllers vs. 20 services) | 2 | 2 | 4 | 8 |
+| N1 | Split `web.php` (81 routes, 239 lines) into domain-scoped route files (`routes/marketing.php`, `routes/public.php`, `routes/app.php`) | 3 | 1 | 2 | 16 |
+| A4 | Cashier v16 → v17 changelog watch (tight coupling via extended `Subscription` model) | 2 | 3 | 1 | 25 |
 
-### Infrastructure debt
+### Documentation
 
-| # | Item | Location | Impact | Risk | Effort | Priority |
-|---|------|----------|--------|------|--------|----------|
-| I1 | **No synthetic production monitor.** `/up` and `/health` exist but nothing is calling them. A paid SaaS going silently down is a category-defining sole-op failure mode | (missing) | 3 | 4 | 2 | 28 |
-| I2 | **No `docker-compose.dev.yml`.** Every fresh clone requires provisioning MySQL, Redis, Mailpit locally. `CLAUDE.md` says "no Docker" but that's about production VPS deploy, not onboarding a new fork. A dev-only compose file cuts fork time from half a day to minutes | (missing) | 3 | 2 | 2 | 20 |
-| I3 | No branch protection / required-checks configuration is visible in the repo (expected to be configured at GitHub level, but `deploy/` or a README ops section should name what must be green before merge) | (missing) | 2 | 3 | 1 | 25 |
-| I4 | `deploy/` contains nginx + supervisor configs but no `ALLOWED_HOSTS`-style VPS firewall doc. For a sole-op running multiple SaaS on separate VPSes, a shared runbook would prevent drift | `deploy/`, `scripts/vps-setup.sh` | 2 | 3 | 2 | 20 |
-| I5 | CI E2E job downloads Playwright Chromium on every run (no caching on the browser install step). Adds ~60s per CI run | `.github/workflows/ci.yml` (line ~359) | 1 | 1 | 1 | 10 |
+| # | Item | Impact | Risk | Effort | Priority |
+|---|------|--------|------|--------|----------|
+| Doc1 | Consolidate 10+ overlapping AI/architecture docs into a single `docs/README.md` index + retire duplicates | 3 | 1 | 2 | 16 |
+| Doc4 | Backfill ADRs for: lifecycle-stack removal, PlanTier enum adoption, WebhookProvider pattern, Pages App/Public split. Each is a non-trivial decision; none yet captured as ADRs | 2 | 2 | 3 | 12 |
 
-### Architecture debt
+## Updated phased remediation plan
 
-| # | Item | Location | Impact | Risk | Effort | Priority |
-|---|------|----------|--------|------|--------|----------|
-| A1 | `web.php` has 55 routes in one file — approaching the pain threshold where splitting into `routes/marketing.php`, `routes/lifecycle.php`, `routes/public.php` starts paying back | `routes/web.php` | 2 | 1 | 2 | 12 |
-| A2 | Boot-time feature-flag route registration creates a tested-in-one-mode-only limitation (documented in `.claude/rules/testing.md`). The `BillingFeatureFlagTest.php` exists only to mark itself skipped. Consider converting to conditional route groups at request time so both enabled/disabled paths are testable | `bootstrap/app.php`, `routes/web.php`, `tests/Feature/Billing/BillingFeatureFlagTest.php` | 3 | 2 | 4 | 10 |
-| A3 | 130 React page files — when you fork for SaaS #2, the marketing guides (`BuildVsBuyGuide`, `LaravelSaasGuide`, `NextjsSaas`, `SaasStarterKitComparison`, etc.) are dead weight. No `marketing:clean` command or "unused pages" report | `resources/js/Pages/` | 3 | 1 | 2 | 16 |
-| A4 | `Subscription` model extends `CashierSubscription` (19 lines) — tight coupling to Cashier internals. Monitor Cashier 17.x changelog for property access changes | `app/Models/Subscription.php` | 2 | 3 | 1 | 25 |
+### Phase 0 — Under 30 minutes
 
-### Operational / repo hygiene
+```bash
+# O2a: remove the 3 straggler report files
+rm AGENT_REVIEW_2597c859*.md PRE_FLIGHT_REPORT_2597c859*.md VERIFY_DONE_REPORT_2597c859*.md
 
-| # | Item | Location | Impact | Risk | Effort | Priority |
-|---|------|----------|--------|------|--------|----------|
-| O1 | **18 audit/review files are tracked in git.** `BILLING_REVIEWED_*.md` (1), `audit-*.json` (17). These were committed before the `.gitignore` patterns covering AGENT_REVIEW_/IMPLEMENTATION_REPORT_/PRE_FLIGHT_REPORT_/VERIFY_DONE_REPORT_/ADMIN_AUDIT_/GROWTH_AUDIT_/SEO_AUDIT_ patterns were added | repo root | 2 | 2 | 1 | 20 |
-| O2 | ~240 AI-generated report files live in the repo root (gitignored, so they won't recommit, but they pollute tab-complete, IDE file pickers, `ls`, and any tar/zip of the working tree). No cleanup command | repo root | 2 | 1 | 1 | 15 |
-| O3 | `.gitignore` covers most generated-report prefixes but misses `audit-*.json` and `BILLING_REVIEWED_*.md`. Add patterns | `.gitignore` (lines 69-110) | 1 | 1 | 1 | 10 |
-| O4 | No `.env.example` audit verifying every `env()` reference in `config/*` has a corresponding documented default | `.env.example`, `config/**` | 2 | 3 | 2 | 20 |
-| O5 | `v-prompts/`, `content/`, `template.json`, `boost.json` directories/files at root with no README explaining purpose. If any is dead, delete; if alive, document in the root README | repo root | 1 | 1 | 1 | 10 |
+# D1: remove phpunit (after confirming no direct `use PHPUnit\` in tests/)
+grep -rE "use PHPUnit\\\\" tests/ && echo "STOP — has direct imports" || composer remove --dev phpunit/phpunit
 
-### Security / correctness quick-scan findings
+# D2: confirm axios status
+grep -rE "from ['\"]axios['\"]|require\(['\"]axios" resources/js/
+# If zero matches: npm uninstall axios
+# Otherwise: move axios to "dependencies" in package.json
 
-- **Positive:** No `dd(`, `dump(`, `var_dump(` in `app/`. `console.log` only in `ErrorBoundary`, `CookieConsent`, marketing `Compare` pages — all defensible. No hardcoded secrets. `APP_DEBUG` defaults to false. All 307 `env()` calls in `config/` are correct usage.
-- **No action items** in this category beyond what's covered elsewhere (D3 audit policy, I1 synthetic monitor, T3 lifecycle Carbon bugs).
+# I3: quick write-up
+cat > docs/OPS.md << 'EOF'
+# Ops — Required CI Checks
+These jobs must be green on every PR to main:
+- php-tests (Pest, parallel, PCOV coverage)
+- js-tests (Vitest)
+- build (Vite production build)
+- code-quality (Pint + PHPStan)
+- e2e-tests (Playwright)
+Configure GitHub branch protection accordingly.
+EOF
+```
 
-## Phased remediation plan
+### Phase 1 — The forking playbook (1–2 days)
 
-This is structured so every phase can be interleaved with feature work — no "stop shipping to pay down debt" weeks.
+This is the single highest-leverage item still open (priority 36) and is uniquely valuable for the sole-operator, multi-product use case.
 
-### Phase 0 — Under 30 minutes (do this first)
+**Deliverable 1: `docs/FORKING.md`** — an operational checklist, not architecture commentary. Contents:
 
-These are free wins with trivial effort.
+1. Pre-fork decisions to make: product name, domain, stripe account vs. sub-account, email-sending domain, target price points, which of the 12 feature flags to enable out of the box.
+2. Mechanical rewrites the script handles: `APP_NAME`, `config/app.php` defaults, SEO defaults (`title`, OG image, Organization JSON-LD name, canonical URL), email templates, `package.json` name, git remote reset.
+3. Content to delete per fork: the 9 marketing-guide pages (`BuildVsBuyGuide`, `SaasStarterKitComparison`, `NextjsSaas`, `TenancyArchitectureGuide`, `LaravelSaasGuide`, `StripeBillingGuide`, `WebhookGuide`, plus comparisons under `Pages/Public/Compare/`) that make sense only in the starter's own marketing context.
+4. First-deploy checklist: cross-link `scripts/vps-setup.sh` + `scripts/vps-verify.sh`; set monitoring; add domain to CloudFlare.
+5. Stripe-specific setup: test products, webhook endpoints, `STRIPE_WEBHOOK_SECRET`, tax setting decision (don't enable `FEATURE_BILLING_TAX` without compliance review).
 
-1. **O1 + O3 — Delete tracked audit files, extend `.gitignore`.**
-   ```bash
-   git rm BILLING_REVIEWED_*.md audit-*.json
-   # Append to .gitignore:
-   echo -e "\n# Orphaned AI audit outputs\naudit-*.json\nBILLING_REVIEWED_*.md" >> .gitignore
-   git add .gitignore && git commit -m "chore: clean up orphaned audit files from repo root"
-   ```
-2. **O2 — Local cleanup of ~240 gitignored report files.**
-   ```bash
-   rm AGENT_REVIEW_*.md IMPLEMENTATION_REPORT_*.md PRE_FLIGHT_REPORT_*.md VERIFY_DONE_REPORT_*.md ADMIN_AUDIT_REPORT_*.json GROWTH_AUDIT_*.json SEO_AUDIT_*.json audit-*.json
-   ```
-3. **D1 — Drop `phpunit/phpunit` from `require-dev` if no direct imports:**
-   ```bash
-   grep -rE "use PHPUnit\\\\" tests/  # confirm no direct uses
-   composer remove --dev phpunit/phpunit
-   composer require --dev pestphp/pest-plugin-type-coverage  # optional: replaces value PHPUnit 12 added
-   ```
-4. **D2 — Check axios usage:**
-   ```bash
-   grep -rE "from ['\"]axios['\"]|require\(['\"]axios['\"]" resources/js/
-   # If zero results: npm uninstall axios
-   # If found in dependencies: move to package.json "dependencies"
-   ```
+**Deliverable 2: `scripts/new-saas.sh`** — takes `--target-dir`, `--name`, `--domain` arguments. Does:
 
-### Phase 1 — Ship-speed foundations (1–2 days, highest priority items)
-
-Target the two items that most directly accelerate "spin up SaaS #2."
-
-5. **Doc2 — Write the forking playbook (priority 36).** Create `docs/FORKING.md` and `scripts/new-saas.sh`. The playbook should cover:
-   - Branding swap-out checklist (`APP_NAME`, logo paths, OG image, `config/app.php` defaults, SEO title templates, Organization JSON-LD name)
-   - Feature-flag starting point recommendation per SaaS archetype (B2C vs B2B vs internal)
-   - Pricing tier reset (`config/cashier.php` or Stripe dashboard pointers)
-   - Which marketing pages to delete (Build vs Buy guide, Laravel SaaS guide, etc., unless comparison content is reusable)
-   - Contract test re-review prompt (see T5/Doc3)
-   - First-deploy checklist cross-linking `scripts/vps-setup.sh`
-
-   The `scripts/new-saas.sh` should take a target directory + brand name and do the mechanical rewrites (find/replace of `laravel-react-starter`, `APP_NAME`, email addresses) plus delete the ~240 stale report files.
-
-6. **I2 — Write `docker-compose.dev.yml` for local development only.** MySQL 8, Redis, Mailpit. Document in README as "optional — run `docker compose up` instead of Herd/native if you prefer isolation per fork." This doesn't contradict the "no Docker in production" stance.
-
-7. **T3 — Fix lifecycle command type bugs.** Concrete fix: in `User` model `casts()` method, add `'trial_ends_at' => 'datetime'`, `'trial_starts_at' => 'datetime'`. This removes 2 of the 83 PHPStan baseline entries AND closes a real bug class where trial expiry comparison against strings silently fails.
+1. `git clone --depth=1` the template into target.
+2. Find-replace: `laravel-react-starter` → new slug across package.json, composer.json, README, CI configs.
+3. Delete marketing-guide pages enumerated in `FORKING.md`.
+4. Regenerate `.env` from `.env.example` with the new `APP_NAME`, `APP_URL`.
+5. `composer install && npm install && npm run build`.
+6. `git init` fresh in target dir (orphan first commit).
+7. Print the residual checklist from `FORKING.md` that requires human decisions.
 
 ### Phase 2 — Pre-launch hardening (1–2 weeks)
 
-Blocks for shipping a paid product to real customers.
+Do these before the next paid customer subscription mutation.
 
-8. **T2 — Reduce PHPStan baseline by ~70%.** Install `barryvdh/laravel-ide-helper` in `require-dev`, run `php artisan ide-helper:models -W`, run `php artisan ide-helper:generate`. Then for each remaining baseline entry, decide: fix properly, convert to `@phpstan-ignore-next-line` inline with a comment explaining why, or accept as architectural (rare — most entries here are missing PHPDoc or a missing cast).
+1. **T2 — PHPStan baseline reduction.** `composer require --dev barryvdh/laravel-ide-helper`, then `php artisan ide-helper:models -W`, `php artisan ide-helper:generate`. Re-run `vendor/bin/phpstan analyse` and rebuild the baseline. Target: 70 → ≤15 suppressed errors. This is a single afternoon of work and materially improves refactor safety.
+2. **I1 — Synthetic monitor.** Add Uptime Kuma (self-hosted, $0) or Better Stack ($25/mo) pinging `/health` every 60s with a token. Write `deploy/MONITORING.md` with the token rotation runbook. Wire alerting to your email/phone.
+3. **T1 — Billing/webhook/2FA E2E.** Minimum four Playwright specs:
+   - `billing-checkout.spec.ts` — free user → `/pricing` → Stripe test card `4242 4242 4242 4242` → land on dashboard with `pro` tier.
+   - `billing-cancel.spec.ts` — pro user → cancel → confirm retains access until period end; `subscriptions.stripe_status` is `canceled`.
+   - `webhook-stripe.spec.ts` — use Stripe CLI to trigger `invoice.payment_succeeded` locally; assert subscription row state.
+   - `two-factor.spec.ts` — enable 2FA → log out → log in → challenge step appears → correct TOTP succeeds.
+4. **D3 — CI security job strictness.** Audit `.github/workflows/ci.yml` `security` job: confirm `npm audit --audit-level=moderate` and `composer audit --format=json` (or equivalent) cause job failure, not just warning.
+5. **O4 — `.env.example` completeness.** Write a small test or shell script that diffs `grep "env(" config/ -r` vs. `.env.example`; flag any missing keys.
 
-   Target: baseline drops from 499 lines to under 150. Remaining entries get comments linking to a GitHub issue or "won't fix, tracked by ADR-X".
+### Phase 3 — Sole-op polish (1–2 weeks, lower urgency)
 
-9. **I1 — Wire synthetic monitoring.** Add Uptime Kuma or Better Stack check against `/health` with token auth (health.php already supports this). Document in `deploy/MONITORING.md`. This is the single most important production-readiness gap.
+6. **I2 — `docker-compose.dev.yml`.** MySQL 8, Redis 7, Mailpit. Add `composer dev` alternative command in the README that uses the compose stack.
+7. **T4 — SEO invariant auto-discovery.** Extract a `PublicRouteRegistry` class (or `RouteServiceProvider::publicRoutes()`) enumerating routes with a known attribute, then:
+   - `SeoController::buildSitemapUrls()` iterates it.
+   - The three SEO test files iterate it via `dataset()`.
+   - Result: adding a new public route is a single-file change.
+8. **I5 — Cache Playwright install in CI.** Use `actions/cache` on `~/.cache/ms-playwright`. ~10 minutes of work; one of those "do it next time you touch CI" items.
+9. **N1 — Split `web.php` into domain files.** `routes/marketing.php` (public/SEO), `routes/app.php` (authenticated), `routes/dev.php` (health, sitemap). 81 routes in one file is enough friction that splitting starts paying back.
+10. **Doc1 — Consolidate `docs/`.** Write `docs/README.md` as a single entry point listing the purpose of each doc. Then merge overlapping pairs:
+    - `AI_DEVELOPMENT_SAFEGUARDS.md` + `PROACTIVE_SAFEGUARDS_SUMMARY.md` + `IMPLEMENTATION_GUARDRAILS.md` + `PLANNING_CHECKLIST.md` → one `docs/AI_WORKFLOW.md`.
+    - `architecture-review-sole-operator.md` + `SYSTEM_DESIGN_SOLO_OPERATOR.md` + `architecture-removal-plan.md` → one rolling `docs/ARCHITECTURE.md` + one `docs/adr/` entry per historical decision.
+    - `TEST_PHASE1_COMPLETION.md` is a milestone artifact; move to `docs/archive/` or delete.
 
-10. **T1 — Playwright E2E for revenue-critical flows.** At minimum:
-    - Checkout happy path (free → pro via Stripe test card `4242...`)
-    - Subscription cancel (retain access until period end)
-    - Webhook receipt (`invoice.payment_succeeded` → subscription `active`)
-    - 2FA enrollment + challenge
+### Phase 4 — Continuous (address when touching)
 
-    Run against Stripe's webhook CLI in CI. Sign each test with the test secret from `config/webhooks.php`.
+11. **C4** — `AdminBillingStatsService` split, when next touching admin billing metrics.
+12. **C5** — Marketing page refactor, only if you find yourself reusing the guides across multiple forks. If you delete them per-fork (per Doc2), this debt evaporates.
+13. **C6** — Keep moving business logic from controllers into services as you touch each controller.
+14. **A4** — Watch Cashier v17 release notes; property-access changes in `Subscription` could break.
+15. **Doc4** — Write an ADR for each *new* non-obvious decision. Don't backfill old ones unless the decision comes up again.
+16. **T5/Doc3** — Annotate the 1 contract test (`FeatureFlagContractTest`) with a PHPDoc block pointing to the ADR that justifies the invariant.
 
-11. **T4 — SEO invariant auto-discovery.** Replace the three parallel test files' hardcoded route lists with a single enumeration derived from `RouteServiceProvider::$publicRoutes` (add this property). Auto-include in `buildSitemap()` too. Result: adding a public route is one-file-change instead of four.
+## Non-debt (worth restating since context has changed)
 
-12. **D3 — CI `security` job must fail the build on moderate+.** Confirm the existing `.github/workflows/ci.yml` job runs with `--audit-level=moderate` (npm) and `composer audit --abandoned=fail` equivalents.
+Several things that could look debt-adjacent in the current state are deliberate and correct:
 
-13. **I3 — Document required branch-protection checks in `docs/OPS.md`.** Name which CI jobs must be green before merge (php-tests, js-tests, build, code-quality, e2e-tests). This is a GitHub-side config but the source of truth belongs in the repo.
+- **Lifecycle simplification is net-positive.** Removing scoring, UTM, GA4 forwarding, and multi-stage email campaigns reduced real complexity. The `AuditService::log()` → `PersistAuditLog` job pipeline is the right level of abstraction for a sole-op running <1000-user SaaS products.
+- **`laravel/horizon` and `laravel/socialite` in `suggest`.** Correct — opt-in per fork.
+- **`phpstan-baseline.neon` exists.** Having a baseline is fine; treating it as permanent is the debt. Shrink it, don't try to eliminate it.
+- **Contract tests directory contains exactly 1 file (`FeatureFlagContractTest`).** Fine. Not every codebase needs heavy contract-test surface.
+- **Single-tenant architecture.** Explicitly correct per `CLAUDE.md`; don't change.
+- **No SSR.** Documented choice (per `.claude/rules/seo.md`); SEO shell covers crawlers.
 
-### Phase 3 — Done alongside feature work (continuous, no dedicated time block)
+## Prioritized cut-list (top 10)
 
-14. **C1 — Split `BillingService`** the next time you touch billing. Recommended split: `SubscriptionMutator` (cancel/resume/swap/updateQuantity), `TierResolver` (resolveUserTier/resolveTierFromPrice/isUpgrade), `CouponValidator`, `BillingPortalService`. Keep `BillingService` as a facade for backward compatibility in one release, then deprecate.
-
-15. **C2 — Split `SubscriptionController`** into single-action controllers (`CheckoutController`, `SubscribeController`, `CancelController`, etc.) when you next modify a billing route. Follow Laravel convention, reduces merge conflict surface, and makes per-action authorization/middleware explicit.
-
-16. **C4 — `AdminBillingStatsService` → `AdminBillingStatsReader` + `AdminBillingSubscriptionPaginator`.** Minor split but clarifies the two use cases (dashboard metrics vs. paginated list view) that currently share a class.
-
-17. **C3 — Extract `FeatureFlagAdminService`** from `FeatureFlagService` (move `setGlobalOverride`, `removeGlobalOverride`, `setUserOverride`, `removeUserOverride`, `removeAllUserOverrides`, `searchUsers`, `getAdminSummary`). Keeps runtime-hot `resolve()` path lean.
-
-18. **Doc1 — Consolidate AI documentation** into one `docs/AI_WORKFLOW.md` the next time you update any AI doc. Source of truth: a single file with sections for Planning, Implementation, Testing, Debugging, Prompt Templates.
-
-19. **Doc4 — Backfill ADRs** for each new decision — don't retroactively write 10 ADRs, but commit to the rule "if the decision has been debated once, write the ADR before shipping."
-
-20. **Doc3 + T5 — Link each contract test to an ADR.** Not retroactively; when you next open a contract test file, add a PHPDoc block at the top citing the ADR that justifies the invariant. Over 3–6 months all contract tests get annotated.
-
-21. **C5 — Marketing page refactor to MDX or section-components** only if you end up running more than one SaaS where these guides are reused. If you delete the guides in each fork (per Doc2), this debt evaporates.
-
-22. **A1 — Domain-scoped route files** when `web.php` crosses ~75 routes. Not now; monitor.
-
-23. **A2 — Conditional route groups at request-time** — real refactor, several days. Only pay this down when you hit a concrete bug caused by the boot-time limitation.
-
-24. **I5 — Cache Playwright browser install in CI.** 10-minute fix, do it the next time you touch the CI file for any reason.
-
-## What's NOT debt (worth stating explicitly)
-
-Several things that could look like debt on a quick scan are actually correct choices for this project and a sole-operator context:
-
-- **No Docker for production.** VPS-based deploys are intentional; reduces ops surface.
-- **Single-tenant.** Don't add workspace/org scoping until a product requires it.
-- **55 scheduled skipped tests.** 51 of those are conditional Playwright `test.skip(projectName !== 'chromium-desktop')` — legitimate multi-project gating, not test debt. The remaining 4 are feature-flag-gated in the test setup.
-- **`laravel/socialite` and `laravel/horizon` in `suggest` (not required).** Correct — the starter is designed so you opt in per fork.
-- **Pest 4 + Vitest + Playwright** — three frameworks, but each covers a distinct tier (unit/integration, component, E2E). Not redundancy.
-- **11 feature flags.** Feels like a lot, but each gates a genuinely swappable subsystem.
-- **Heavy `.claude/rules/*.md` coverage** (accessibility, billing, frontend, lifecycle, migrations, seo, testing, webhooks). Real value for AI-assisted work — this is the opposite of debt.
+| Priority | Item | Phase |
+|----------|------|-------|
+| 36 | Doc2 — `docs/FORKING.md` + `scripts/new-saas.sh` | 1 |
+| 28 | T2 — PHPStan baseline reduction via `laravel-ide-helper` | 2 |
+| 28 | I1 — Synthetic production monitor + `MONITORING.md` | 2 |
+| 25 | D3 — CI security job fails on moderate+ | 0 |
+| 25 | I3 — `docs/OPS.md` with required branch-protection checks | 0 |
+| 25 | A4 — Cashier changelog watch (zero work, high-risk touchpoint) | continuous |
+| 20 | O4 — `.env.example` completeness test | 2 |
+| 20 | I2 — `docker-compose.dev.yml` | 3 |
+| 20 | I4 — VPS multi-product runbook | 3 |
+| 18 | T4 — SEO invariant auto-discovery | 3 |
 
 ## Recurring hygiene (add to quarterly calendar)
 
-Schedule a 2-hour debt sweep every quarter. Agenda:
-
-1. Re-run `composer outdated` + `npm outdated`; bump non-major where CI stays green.
-2. Re-read `phpstan-baseline.neon` and delete any entries that no longer match (dead code has been removed).
-3. Count AGENT_REVIEW/IMPLEMENTATION_REPORT files in repo root — if over 20, purge.
-4. Re-run `php artisan test --coverage` on billing/webhook paths. If under 90% for those, add tests before next feature work.
+1. `composer outdated` + `npm outdated`; bump non-major where CI stays green.
+2. Re-read `phpstan-baseline.neon`; delete entries that no longer match (dead code removed).
+3. Count AGENT_REVIEW / IMPLEMENTATION_REPORT / PRE_FLIGHT / VERIFY_DONE files in repo root — if over 20, purge. (Currently 3.)
+4. `php artisan test --coverage` on billing/webhook paths — if under 90% for those, add tests before next feature work.
 5. Dependabot PRs — review and merge.
-
-## Summary of priorities (sorted)
-
-| Priority | Item | Category | Phase |
-|----------|------|----------|-------|
-| 36 | Doc2 — Forking playbook + `scripts/new-saas.sh` | Docs | 1 |
-| 28 | T2 — Reduce PHPStan baseline (install laravel-ide-helper) | Tests | 2 |
-| 28 | I1 — Synthetic production monitor | Infra | 2 |
-| 25 | D3 — CI security audit fails at moderate+ | Deps | 2 |
-| 25 | I3 — Branch-protection required-checks doc | Infra | 2 |
-| 25 | A4 — Cashier changelog watch | Arch | continuous |
-| 20 | O1 — Delete tracked audit files | Hygiene | 0 |
-| 20 | O4 — Verify `.env.example` completeness | Hygiene | 2 |
-| 20 | T3 — Lifecycle Carbon/string casts | Tests | 1 |
-| 20 | T5/Doc3 — Contract test ↔ ADR linking | Tests/Docs | 3 |
-| 20 | I2 — `docker-compose.dev.yml` | Infra | 1 |
-| 20 | I4 — VPS runbook | Infra | 2 |
-| 18 | T4 — SEO invariant auto-discovery | Tests | 2 |
-| 16 | T1 — Billing/webhook/2FA E2E coverage | Tests | 2 |
-| 16 | A3 — Dead-marketing-page report for forks | Arch | continuous |
-| 15 | O2 — Clear ~240 gitignored reports locally | Hygiene | 0 |
-| 15 | D2 — Resolve axios status | Deps | 0 |
-| 12 | C1 — Split `BillingService` | Code | 3 |
-| 12 | C2 — Single-action controllers for billing | Code | 3 |
-| 12 | C4 — Split `AdminBillingStatsService` | Code | 3 |
-| 12 | Doc1 — Consolidate AI docs | Docs | 3 |
-| 12 | Doc4 — ADR backfill | Docs | 3 |
-| 12 | A1 — Domain-scoped route files | Arch | 3 |
-| 10 | D1 — Drop phpunit/phpunit from require-dev | Deps | 0 |
-| 10 | A2 — Request-time feature-flag route registration | Arch | 3 |
-| 10 | I5 — Cache Playwright install in CI | Infra | 3 |
-| 10 | O3 — Extend `.gitignore` | Hygiene | 0 |
-| 10 | O5 — README for root directories | Hygiene | 0 |
-| 9 | C5 — Marketing page refactor to MDX | Code | 3 |
-| 8 | C3 — Extract `FeatureFlagAdminService` | Code | 3 |
-| 8 | C6 — Controller-logic-to-service migration | Code | 3 |
-| 8 | T6 — Remove or add `infection` | Tests | 3 |
-
-**Top 5 to execute first (Phase 0 + start of Phase 1):**
-
-1. Doc2 — Forking playbook (36)
-2. T2 — PHPStan baseline (28)
-3. I1 — Synthetic monitor (28)
-4. O1 + O2 + O3 — Clean audit files and extend .gitignore (trivial, do together)
-5. T3 — Lifecycle Carbon casts (20, also knocks out 4–6 PHPStan baseline entries)
+6. Re-read `.claude/rules/*.md` and `docs/ARCHITECTURE.md`; prune anything now stale.

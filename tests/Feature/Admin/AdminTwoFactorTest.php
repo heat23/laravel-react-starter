@@ -48,7 +48,7 @@ it('loads two-factor dashboard with stats', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/TwoFactor/Dashboard')
+        ->component('App/Admin/TwoFactor/Dashboard')
         ->has('stats')
         ->where('stats.total_users', 1)
         ->where('stats.two_factor_enabled', 0)

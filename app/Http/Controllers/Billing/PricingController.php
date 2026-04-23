@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Enums\PlanTier;
 use App\Http\Controllers\Controller;
 use App\Services\PlanLimitService;
 use Illuminate\Http\Request;
@@ -39,7 +40,7 @@ class PricingController extends Controller
             // Apply A/B variant prices for Pro tier when variant is configured and visitor is in cohort.
             // Both the display price and the Stripe price ID must swap atomically — never show a variant
             // display price while billing at the control Stripe price ID, or vice versa.
-            if ($tierKey === 'pro' && $isVariantCohort) {
+            if ($tierKey === PlanTier::Pro->value && $isVariantCohort) {
                 $hasMonthlyVariantPrice = isset($tierConfig['price_monthly_variant']);
                 $hasMonthlyVariantStripeId = ! empty($tierConfig['stripe_price_monthly_variant']);
 
@@ -97,7 +98,7 @@ class PricingController extends Controller
         $trial = null;
 
         if ($user) {
-            $currentPlan = $this->planLimitService->getUserPlan($user);
+            $currentPlan = $this->planLimitService->getUserPlan($user)->value;
 
             if ($this->planLimitService->isOnTrial($user)) {
                 $trial = [
@@ -108,7 +109,7 @@ class PricingController extends Controller
             }
         }
 
-        return Inertia::render('Pricing', [
+        return Inertia::render('Public/Pricing', [
             'tiers' => $tiers,
             'currentPlan' => $currentPlan,
             'trial' => $trial,

@@ -45,7 +45,7 @@ it('loads social auth dashboard with stats', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/SocialAuth/Dashboard')
+        ->component('App/Admin/SocialAuth/Dashboard')
         ->has('stats')
         ->where('stats.total_linked', 0)
         ->where('stats.users_with_social', 0)

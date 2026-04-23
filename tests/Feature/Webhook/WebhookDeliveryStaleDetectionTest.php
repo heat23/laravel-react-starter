@@ -39,7 +39,7 @@ it('marks stale pending deliveries as abandoned', function () {
         'attempts' => 0,
     ]);
 
-    $this->artisan('webhooks:prune-stale')->assertExitCode(0);
+    $this->artisan('webhooks:mark-abandoned')->assertExitCode(0);
 
     expect($stale->fresh()->status)->toBe('abandoned');
     expect($recent->fresh()->status)->toBe('pending');
@@ -66,7 +66,7 @@ it('does not affect successful or failed deliveries', function () {
     ]);
     WebhookDelivery::where('id', $failed->id)->update(['created_at' => now()->subHours(2)]);
 
-    $this->artisan('webhooks:prune-stale')->assertExitCode(0);
+    $this->artisan('webhooks:mark-abandoned')->assertExitCode(0);
 
     expect($success->fresh()->status)->toBe('success');
     expect($failed->fresh()->status)->toBe('failed');

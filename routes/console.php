@@ -10,7 +10,7 @@ Artisan::command('inspire', function () {
 
 Schedule::command('audit:prune --days=90')->daily()->onOneServer();
 Schedule::command('sanctum:prune-expired')->daily()->onOneServer();
-Schedule::command('webhooks:prune-stale')->daily()->onOneServer();
+Schedule::command('webhooks:mark-abandoned')->daily()->onOneServer();
 // Floor is 60 days: win-back sequence looks back up to 33 days (day-3, day-7, day-14, day-33 windows).
 // Do NOT lower below 60 days without auditing all lifecycle sequence max_days values.
 Schedule::command('prune-read-notifications --days=60')->daily()->onOneServer();

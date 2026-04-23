@@ -78,9 +78,9 @@ it('rejects IP filter longer than 45 characters', function () {
     $response->assertJsonValidationErrors(['ip']);
 });
 
-it('rejects search filter longer than 100 characters', function () {
+it('rejects search filter longer than 255 characters', function () {
     $admin = User::factory()->admin()->create();
-    $longSearch = str_repeat('x', 101);
+    $longSearch = str_repeat('x', 256);
 
     // Use getJson to trigger JSON validation response (422) rather than web redirect
     $response = $this->actingAs($admin)->getJson("/admin/audit-logs?search={$longSearch}");

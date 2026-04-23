@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PlanTier;
 use App\Models\User;
 use App\Services\PlanLimitService;
 use Illuminate\Support\Facades\Cache;
@@ -22,7 +23,7 @@ it('caches user plan tier', function () {
 
     // First call resolves and caches
     $plan = $service->getUserPlan($user);
-    expect($plan)->toBe('pro');
+    expect($plan)->toBe(PlanTier::Pro);
 
     // Verify it's cached
     expect(Cache::has("user:{$user->id}:plan_tier"))->toBeTrue();
@@ -58,7 +59,7 @@ it('returns fresh tier after cache invalidation', function () {
     $user = $user->fresh();
 
     // Cache as pro
-    expect($service->getUserPlan($user))->toBe('pro');
+    expect($service->getUserPlan($user))->toBe(PlanTier::Pro);
 
     // Simulate subscription cancellation (expired grace)
     $subscription->update([
@@ -67,11 +68,11 @@ it('returns fresh tier after cache invalidation', function () {
     ]);
 
     // Still cached as pro
-    expect($service->getUserPlan($user->fresh()))->toBe('pro');
+    expect($service->getUserPlan($user->fresh()))->toBe(PlanTier::Pro);
 
     // Invalidate cache
     $service->invalidateUserPlanCache($user);
 
     // Now returns free (subscription ended)
-    expect($service->getUserPlan($user->fresh()))->toBe('free');
+    expect($service->getUserPlan($user->fresh()))->toBe(PlanTier::Free);
 });

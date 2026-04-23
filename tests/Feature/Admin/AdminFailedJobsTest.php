@@ -45,7 +45,7 @@ it('shows failed jobs list for admin', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/FailedJobs/Index')
+        ->component('App/Admin/FailedJobs/Index')
         ->has('jobs.data', 1)
         ->where('jobs.data.0.queue', 'default')
         ->where('jobs.data.0.payload_summary', 'TestJob')
@@ -70,7 +70,7 @@ it('shows failed job detail', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/FailedJobs/Show')
+        ->component('App/Admin/FailedJobs/Show')
         ->where('job.id', $id)
         ->where('job.queue', 'default')
         ->has('job.payload')
@@ -112,7 +112,7 @@ it('redacts secrets in exception text on show', function () {
     $secretPw = 'hunt'.'er2';
 
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/FailedJobs/Show')
+        ->component('App/Admin/FailedJobs/Show')
         ->where('job.exception', fn (string $val) => ! str_contains($val, $secretDb)
             && ! str_contains($val, $secretToken)
             && ! str_contains($val, $secretJwt)
@@ -234,7 +234,7 @@ it('redacts sensitive tokens embedded in job exception', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/FailedJobs/Show')
+        ->component('App/Admin/FailedJobs/Show')
         ->where('job.exception', function (mixed $exceptionValue) use ($stripeKey, $bearerToken) {
             $str = is_string($exceptionValue) ? $exceptionValue : (string) $exceptionValue;
 
@@ -271,7 +271,7 @@ it('redacts serialized command and sensitive keys in job payload', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/FailedJobs/Show')
+        ->component('App/Admin/FailedJobs/Show')
         ->where('job.payload', function (mixed $payload) use ($sensitiveToken) {
             // Inertia wraps arrays as Collections in fluent assertions
             $arr = $payload instanceof Collection ? $payload->toArray() : (array) $payload;

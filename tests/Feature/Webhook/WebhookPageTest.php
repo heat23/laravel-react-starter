@@ -19,7 +19,7 @@ it('renders webhooks page when feature is enabled', function () {
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->component('Settings/Webhooks')
+        ->component('App/Settings/Webhooks')
         ->has('available_events')
     );
 });

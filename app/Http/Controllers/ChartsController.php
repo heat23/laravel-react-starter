@@ -9,6 +9,6 @@ class ChartsController extends Controller
 {
     public function index(): Response
     {
-        return Inertia::render('Dashboard/Charts');
+        return Inertia::render('App/Dashboard/Charts');
     }
 }

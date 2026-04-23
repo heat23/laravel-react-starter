@@ -72,7 +72,7 @@ class AdminTokensController extends Controller
                 ->toArray();
         });
 
-        return Inertia::render('Admin/Tokens/Dashboard', [
+        return Inertia::render('App/Admin/Tokens/Dashboard', [
             'stats' => $stats,
             'most_active' => $mostActive,
         ]);
@@ -119,7 +119,7 @@ class AdminTokensController extends Controller
                 'user_email' => $row->user_email,
             ]);
 
-        return Inertia::render('Admin/Tokens/Index', [
+        return Inertia::render('App/Admin/Tokens/Index', [
             'tokens' => $tokens,
             'filters' => $request->only('search'),
         ]);

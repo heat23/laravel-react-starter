@@ -5,16 +5,21 @@ globs:
   - app/Services/IncomingWebhook*
   - app/Http/Middleware/VerifyWebhookSignature*
   - app/Http/Controllers/Webhook/**
+  - app/Webhooks/**
   - app/Jobs/DispatchWebhookJob*
   - tests/**/Webhook/**
+  - tests/**/Webhooks/**
 ---
 
 # Webhook Signature Verification
 
-**Incoming:** `VerifyWebhookSignature` middleware validates `X-Webhook-Signature` header using HMAC-SHA256 with provider-specific secrets from `config/webhooks.php`. Signature format: `sha256=<hex-digest>` where digest = `hash_hmac('sha256', $rawPayload, $secret)`. Each provider (GitHub, Stripe, custom) has its own secret key.
+**Incoming:** `VerifyWebhookSignature` middleware resolves a `WebhookProvider` class from `config/webhooks.php` keyed by the `{provider}` route parameter, calls `$provider->verify($request, $rawPayload)`, then attaches the provider to `$request->attributes` for the controller. Provider classes live in `app/Webhooks/Providers/`.
 
-**Outgoing:** `DispatchWebhookJob` signs payloads with the endpoint's stored secret using same HMAC-SHA256 scheme, sent in `X-Webhook-Signature` header. Recipients verify: `hash_equals(hash_hmac('sha256', $body, $secret), $receivedSignature)`.
+**Outgoing:** `DispatchWebhookJob` signs payloads with the endpoint's stored secret using HMAC-SHA256, sent in `X-Webhook-Signature` header. Recipients verify: `hash_equals(hash_hmac('sha256', $body, $secret), $receivedSignature)`.
 
-**Stripe:** Uses its own signature scheme via Cashier (not our middleware). Stripe webhook route excluded from CSRF since Cashier verifies the Stripe signature internally.
+**Stripe:** Uses its own signature scheme via Cashier (not our middleware). Billing events arrive at `/stripe/webhook` and are handled by `StripeWebhookController` → `StripeEventMap` → per-event handlers in `app/Webhooks/Stripe/Handlers/`.
 
-**Adding a new provider:** Add secret to `config/webhooks.php`, create handler in `IncomingWebhookService`, register route in `routes/api.php` with `verify-webhook` middleware.
+**Adding a new incoming provider:**
+1. Create `app/Webhooks/Providers/YourProvider.php` implementing `WebhookProvider`
+2. Register in `config/webhooks.php` under `incoming.providers.{key}.class`
+3. The route `POST /api/webhooks/incoming/{provider}` is already registered — no route change needed

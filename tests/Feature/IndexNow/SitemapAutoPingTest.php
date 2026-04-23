@@ -2,6 +2,7 @@
 
 use App\Jobs\SubmitIndexNowUrlsJob;
 use App\Models\IndexNowSubmission;
+use App\Services\CacheInvalidationManager;
 use App\Services\IndexNowService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
@@ -63,7 +64,7 @@ it('still serves valid sitemap XML when IndexNow submission throws', function ()
     config(['features.indexnow.auto_ping_sitemap' => true]);
 
     // Bind a service that always throws
-    app()->instance(IndexNowService::class, new class extends IndexNowService
+    app()->instance(IndexNowService::class, new class(app(CacheInvalidationManager::class)) extends IndexNowService
     {
         public function submit(array $urls, ?string $trigger = null): ?IndexNowSubmission
         {

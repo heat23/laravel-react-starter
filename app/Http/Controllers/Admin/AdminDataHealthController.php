@@ -23,7 +23,7 @@ class AdminDataHealthController extends Controller
             'check_count' => count($checks),
         ]);
 
-        return Inertia::render('Admin/DataHealth', [
+        return Inertia::render('App/Admin/DataHealth', [
             'checks' => $checks,
             'ran_at' => now()->toISOString(),
         ]);

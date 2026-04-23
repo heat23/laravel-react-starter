@@ -12,7 +12,7 @@ it('shows onboarding page for authenticated user', function () {
     $response = $this->actingAs($user)->get('/onboarding');
 
     $response->assertOk();
-    $response->assertInertia(fn ($page) => $page->component('Onboarding'));
+    $response->assertInertia(fn ($page) => $page->component('App/Onboarding'));
 });
 
 it('redirects unauthenticated user to login', function () {
@@ -55,5 +55,5 @@ it('does not redirect loop on onboarding page itself', function () {
     $response = $this->actingAs($user)->get('/onboarding');
 
     $response->assertOk();
-    $response->assertInertia(fn ($page) => $page->component('Onboarding'));
+    $response->assertInertia(fn ($page) => $page->component('App/Onboarding'));
 });

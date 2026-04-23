@@ -7,6 +7,7 @@
  * field to BillingService::createCheckoutSession().
  */
 
+use App\Enums\PlanTier;
 use App\Models\User;
 use App\Services\BillingService;
 
@@ -22,7 +23,7 @@ it('passes coupon code to createCheckoutSession when provided', function () {
 
     $capturedCoupon = null;
     $mock = Mockery::mock(BillingService::class)->makePartial();
-    $mock->shouldReceive('resolveTierFromPrice')->andReturn('pro');
+    $mock->shouldReceive('resolveTierFromPrice')->andReturn(PlanTier::Pro);
     $mock->shouldReceive('validateSeatCount')->andReturn(null);
     $mock->shouldReceive('validateCouponCode')->andReturn(null); // null = valid
     $mock->shouldReceive('createCheckoutSession')
@@ -47,7 +48,7 @@ it('omits coupon when not provided', function () {
 
     $capturedCoupon = 'NOT_SET';
     $mock = Mockery::mock(BillingService::class)->makePartial();
-    $mock->shouldReceive('resolveTierFromPrice')->andReturn('pro');
+    $mock->shouldReceive('resolveTierFromPrice')->andReturn(PlanTier::Pro);
     $mock->shouldReceive('validateSeatCount')->andReturn(null);
     $mock->shouldReceive('createCheckoutSession')
         ->once()
@@ -80,7 +81,7 @@ it('rejects checkout when user already has active subscription', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
 
     $mock = Mockery::mock(BillingService::class)->makePartial();
-    $mock->shouldReceive('resolveTierFromPrice')->andReturn('pro');
+    $mock->shouldReceive('resolveTierFromPrice')->andReturn(PlanTier::Pro);
     $mock->shouldReceive('validateSeatCount')->andReturn(null);
     app()->instance(BillingService::class, $mock);
 

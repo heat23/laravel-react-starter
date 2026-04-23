@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Enums\AuditEvent;
 use App\Enums\LifecycleStage;
+use App\Enums\PlanTier;
 use App\Exceptions\ConcurrentOperationException;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
@@ -11,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Laravel\Cashier\Cashier;
 use Laravel\Cashier\Subscription;
 use Laravel\Cashier\SubscriptionItem;
+use Stripe\Exception\ApiErrorException;
 use Stripe\Exception\InvalidRequestException as StripeInvalidRequestException;
 
 class BillingService
@@ -26,15 +29,15 @@ class BillingService
     /**
      * Resolve which plan tier a user belongs to based on their active subscription's Stripe price.
      */
-    public function resolveUserTier(User $user): string
+    public function resolveUserTier(User $user): PlanTier
     {
         $subscription = $user->subscription('default');
 
         if (! $subscription || ! $subscription->active()) {
-            return 'free';
+            return PlanTier::Free;
         }
 
-        return $this->resolveTierFromPrice($subscription->stripe_price) ?? 'free';
+        return $this->resolveTierFromPrice($subscription->stripe_price) ?? PlanTier::Free;
     }
 
     /**
@@ -217,33 +220,14 @@ class BillingService
 
     /**
      * Returns true when the new tier is strictly higher than the current tier.
-     * Compares positions in the configured tier hierarchy.
      */
-    public function isUpgrade(?string $currentTier, ?string $newTier): bool
+    public function isUpgrade(?PlanTier $currentTier, ?PlanTier $newTier): bool
     {
         if ($currentTier === null || $newTier === null) {
             return false;
         }
 
-        $hierarchy = config('plans.tier_hierarchy', []);
-
-        if (empty($hierarchy)) {
-            Log::warning('billing.tier_hierarchy_not_configured', [
-                'current_tier' => $currentTier,
-                'new_tier' => $newTier,
-            ]);
-
-            return false;
-        }
-
-        $currentIndex = array_search($currentTier, $hierarchy, true);
-        $newIndex = array_search($newTier, $hierarchy, true);
-
-        if ($currentIndex === false || $newIndex === false) {
-            return false;
-        }
-
-        return $newIndex > $currentIndex;
+        return $currentTier->canUpgradeTo($newTier);
     }
 
     /**
@@ -289,7 +273,7 @@ class BillingService
         if (! $subscription) {
             return [
                 'subscribed' => false,
-                'tier' => 'free',
+                'tier' => PlanTier::Free->value,
                 'status' => null,
                 'on_trial' => $user->trial_ends_at?->isFuture() ?? false,
                 'on_grace_period' => false,
@@ -301,7 +285,7 @@ class BillingService
 
         return [
             'subscribed' => $subscription->active(),
-            'tier' => $this->resolveUserTier($user),
+            'tier' => $this->resolveUserTier($user)->value,
             'status' => $subscription->stripe_status,
             'on_trial' => $subscription->onTrial(),
             'on_grace_period' => $subscription->onGracePeriod(),
@@ -344,9 +328,9 @@ class BillingService
     /**
      * Validate the seat count for a given tier.
      */
-    public function validateSeatCount(string $tier, int $quantity): ?string
+    public function validateSeatCount(PlanTier $tier, int $quantity): ?string
     {
-        $tierConfig = config("plans.{$tier}");
+        $tierConfig = config("plans.{$tier->value}");
 
         if (! $tierConfig) {
             return 'Invalid plan tier.';
@@ -376,24 +360,17 @@ class BillingService
     /**
      * Resolve the tier for a given Stripe price ID.
      */
-    public function resolveTierFromPrice(string $priceId): ?string
+    public function resolveTierFromPrice(string $priceId): ?PlanTier
     {
-        $paidTiers = array_reverse(array_filter(config('plans.tier_hierarchy', []), fn ($t) => $t !== 'free'));
+        $tier = PlanTier::tryFromStripePriceId($priceId);
 
-        foreach ($paidTiers as $tier) {
-            $monthlyPrice = config("plans.{$tier}.stripe_price_monthly");
-            $annualPrice = config("plans.{$tier}.stripe_price_annual");
-
-            if ($priceId === $monthlyPrice || $priceId === $annualPrice) {
-                return $tier;
-            }
+        if ($tier === null) {
+            Log::warning('Unknown Stripe price ID encountered during tier resolution', [
+                'price_id' => $priceId,
+            ]);
         }
 
-        Log::warning('Unknown Stripe price ID encountered during tier resolution', [
-            'price_id' => $priceId,
-        ]);
-
-        return null;
+        return $tier;
     }
 
     /**
@@ -406,7 +383,7 @@ class BillingService
      */
     public function previewSwapProration(User $user, string $newPriceId): array
     {
-        if ($this->resolveTierFromPrice($newPriceId) === null) {
+        if (PlanTier::tryFromStripePriceId($newPriceId) === null) {
             throw new \InvalidArgumentException("Invalid price ID: {$newPriceId}");
         }
 
@@ -445,6 +422,44 @@ class BillingService
                 ? date('Y-m-d', $stripeInvoice->next_payment_attempt)
                 : null,
         ];
+    }
+
+    /**
+     * Apply a retention coupon to the user's active subscription.
+     *
+     * Follows the same Redis-lock + eager-load pattern as other mutation methods.
+     * Audit log is written on the success path only, outside the DB transaction.
+     *
+     * @throws ConcurrentOperationException When a concurrent subscription operation is in progress.
+     * @throws \DomainException When the user has no active subscription.
+     * @throws ApiErrorException When Stripe rejects the coupon (e.g. unknown coupon ID).
+     */
+    public function applyRetentionCoupon(User $user, string $couponId): void
+    {
+        $this->withLock($this->lockKey('coupon', $user), function () use ($user, $couponId) {
+            $stripeSubscriptionId = DB::transaction(function () use ($user, $couponId) {
+                $subscription = $user->subscription('default');
+
+                if (! $subscription || ! $subscription->active()) {
+                    throw new \DomainException('No active subscription found.');
+                }
+
+                $subscription->setRelation('owner', $user);
+                $subscription->loadMissing('items');
+                $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
+
+                $subscription->applyCoupon($couponId);
+
+                return $subscription->stripe_id;
+            });
+
+            app(AuditService::class)->log(AuditEvent::BILLING_RETENTION_COUPON_APPLIED, [
+                'user_id' => $user->id,
+                'coupon_id' => $couponId,
+                'subscription_id' => $stripeSubscriptionId,
+                'churn_save_context' => true,
+            ]);
+        });
     }
 
     /**

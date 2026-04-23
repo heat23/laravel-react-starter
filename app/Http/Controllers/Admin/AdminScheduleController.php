@@ -32,7 +32,7 @@ class AdminScheduleController extends Controller
             ->values()
             ->toArray();
 
-        return Inertia::render('Admin/Schedule/Index', [
+        return Inertia::render('App/Admin/Schedule/Index', [
             'tasks' => $tasks,
         ]);
     }

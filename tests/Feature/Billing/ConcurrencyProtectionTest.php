@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PlanTier;
 use App\Exceptions\ConcurrentOperationException;
 use App\Models\User;
 use App\Services\BillingService;
@@ -50,7 +51,7 @@ it('returns error when concurrent swap requests are made', function () {
     config(['plans.pro.stripe_price_monthly' => 'price_pro_monthly']);
 
     $mock = Mockery::mock(BillingService::class)->makePartial();
-    $mock->shouldReceive('resolveTierFromPrice')->andReturn('pro');
+    $mock->shouldReceive('resolveTierFromPrice')->andReturn(PlanTier::Pro);
     $mock->shouldReceive('swapPlan')
         ->once()
         ->andThrow(new ConcurrentOperationException);
@@ -69,7 +70,7 @@ it('returns error when concurrent quantity update requests are made', function (
     createSubscription($user, ['stripe_price' => 'price_team_monthly', 'quantity' => 5]);
 
     $mock = Mockery::mock(BillingService::class)->makePartial();
-    $mock->shouldReceive('resolveUserTier')->andReturn('team');
+    $mock->shouldReceive('resolveUserTier')->andReturn(PlanTier::Team);
     $mock->shouldReceive('validateSeatCount')->andReturn(null);
     $mock->shouldReceive('updateQuantity')
         ->once()
@@ -90,7 +91,7 @@ it('returns error when concurrent subscribe requests are made', function () {
     config(['features.billing.coming_soon' => false]);
 
     $mock = Mockery::mock(BillingService::class)->makePartial();
-    $mock->shouldReceive('resolveTierFromPrice')->andReturn('pro');
+    $mock->shouldReceive('resolveTierFromPrice')->andReturn(PlanTier::Pro);
     $mock->shouldReceive('validateSeatCount')->andReturn(null);
     $mock->shouldReceive('createSubscription')
         ->once()

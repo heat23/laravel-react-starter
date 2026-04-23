@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\PlanTier;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Webhook\CreateWebhookEndpointRequest;
 use App\Http\Requests\Webhook\UpdateWebhookEndpointRequest;
@@ -47,7 +48,7 @@ class WebhookEndpointController extends Controller
         $user = $request->user();
         $currentCount = $user->webhookEndpoints()->count();
         $plan = $this->planLimitService->getUserPlan($user);
-        $maxKey = $plan === 'free' ? 'max_endpoints_free' : 'max_endpoints_pro';
+        $maxKey = $plan === PlanTier::Free ? 'max_endpoints_free' : 'max_endpoints_pro';
         $limit = config("features.webhooks.{$maxKey}", 3);
 
         if ($currentCount >= $limit) {

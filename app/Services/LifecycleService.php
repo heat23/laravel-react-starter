@@ -13,6 +13,10 @@ use Illuminate\Support\Facades\Log;
 
 class LifecycleService
 {
+    public function __construct(
+        private CacheInvalidationManager $cacheManager,
+    ) {}
+
     /**
      * Transition a user to a new lifecycle stage.
      * Records the transition in audit_logs and user_stage_history.
@@ -78,7 +82,7 @@ class LifecycleService
         }
 
         // Invalidate stage funnel cache
-        Cache::forget(AdminCacheKey::STAGE_FUNNEL->value);
+        $this->cacheManager->invalidateLifecycle();
 
         // Side-effects on specific transitions
         if ($to === LifecycleStage::CHURNED) {

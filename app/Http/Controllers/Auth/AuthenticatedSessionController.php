@@ -28,7 +28,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return Inertia::render('Auth/Login', [
+        return Inertia::render('App/Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
             'rememberDays' => config('auth.remember.duration', 30),
@@ -52,6 +52,7 @@ class AuthenticatedSessionController extends Controller
             Auth::logout();
             $request->session()->put('login.id', $user->id);
             $request->session()->put('login.remember', $request->boolean('remember'));
+            $request->session()->put('login.expires_at', now()->addMinutes(15)->getTimestamp());
 
             return redirect()->route('two-factor.challenge');
         }

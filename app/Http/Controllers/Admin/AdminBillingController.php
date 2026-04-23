@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
+use App\Enums\PlanTier;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminSubscriptionIndexRequest;
 use App\Models\AuditLog;
@@ -40,7 +41,7 @@ class AdminBillingController extends Controller
                 'created_at' => $log->created_at?->toISOString(),
             ]);
 
-        return Inertia::render('Admin/Billing/Dashboard', [
+        return Inertia::render('App/Admin/Billing/Dashboard', [
             'stats' => $this->statsService->getDashboardStats(),
             'tier_distribution' => $this->statsService->getTierDistribution(),
             'status_breakdown' => $this->statsService->getStatusBreakdown(),
@@ -57,7 +58,7 @@ class AdminBillingController extends Controller
             'filters' => $request->validated(),
         ]);
 
-        return Inertia::render('Admin/Billing/Subscriptions', [
+        return Inertia::render('App/Admin/Billing/Subscriptions', [
             'subscriptions' => $this->statsService->getFilteredSubscriptions($request->validated()),
             'filters' => $request->only('search', 'status', 'tier', 'sort', 'dir'),
             'statuses' => ['active', 'trialing', 'past_due', 'canceled', 'incomplete', 'incomplete_expired'],
@@ -79,7 +80,7 @@ class AdminBillingController extends Controller
             'stripe_price' => $item->stripe_price,
             'stripe_product' => $item->stripe_product,
             'quantity' => $item->quantity,
-            'tier' => $this->billingService->resolveTierFromPrice($item->stripe_price) ?? 'unknown',
+            'tier' => PlanTier::safeValue($this->billingService->resolveTierFromPrice($item->stripe_price)),
         ]);
 
         $auditLogs = AuditLog::where('user_id', $subscription->user_id)
@@ -97,7 +98,7 @@ class AdminBillingController extends Controller
                 'created_at' => $log->created_at?->toISOString(),
             ]);
 
-        return Inertia::render('Admin/Billing/Show', [
+        return Inertia::render('App/Admin/Billing/Show', [
             'subscription' => [
                 'id' => $subscription->id,
                 'user_name' => $subscription->owner?->name ?? '[Deleted User]',
@@ -106,8 +107,8 @@ class AdminBillingController extends Controller
                 'stripe_id' => $subscription->stripe_id,
                 'stripe_status' => $subscription->stripe_status,
                 'tier' => $items->isNotEmpty()
-                    ? ($this->billingService->resolveTierFromPrice($items->first()['stripe_price']) ?? 'unknown')
-                    : 'free',
+                    ? PlanTier::safeValue($this->billingService->resolveTierFromPrice($items->first()['stripe_price']))
+                    : PlanTier::Free->value,
                 'quantity' => $subscription->quantity,
                 'trial_ends_at' => $subscription->trial_ends_at?->toISOString(),
                 'ends_at' => $subscription->ends_at?->toISOString(),
@@ -145,7 +146,7 @@ class AdminBillingController extends Controller
                     [
                         $row->user_name,
                         $row->user_email,
-                        $billingService->resolveTierFromPrice($row->item_price) ?? 'unknown',
+                        PlanTier::safeValue($billingService->resolveTierFromPrice($row->item_price)),
                         $row->stripe_status,
                         $row->quantity,
                         $row->trial_ends_at,

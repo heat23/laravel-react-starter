@@ -34,7 +34,7 @@ class AdminSocialAuthController extends Controller
             ];
         });
 
-        return Inertia::render('Admin/SocialAuth/Dashboard', [
+        return Inertia::render('App/Admin/SocialAuth/Dashboard', [
             'stats' => $stats,
         ]);
     }

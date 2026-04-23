@@ -15,7 +15,7 @@ class WebhookPageController extends Controller
 
     public function __invoke(): Response
     {
-        return Inertia::render('Settings/Webhooks', [
+        return Inertia::render('App/Settings/Webhooks', [
             'available_events' => config('webhooks.outgoing.events', []),
         ]);
     }

@@ -19,7 +19,7 @@ it('renders billing page for authenticated user', function () {
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->component('Billing/Index')
+        ->component('App/Billing/Index')
         ->has('subscription')
         ->has('platformTrial')
         ->has('incompletePayment')

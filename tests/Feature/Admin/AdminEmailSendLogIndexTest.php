@@ -30,7 +30,7 @@ it('admin can view email send logs index', function () {
     $this->actingAs($admin)
         ->get('/admin/email-send-logs')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('Admin/EmailSendLogs/Index')
+        ->assertInertia(fn ($page) => $page->component('App/Admin/EmailSendLogs/Index')
             ->has('logs')
             ->has('sequenceTypes')
             ->has('filters')

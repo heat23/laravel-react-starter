@@ -14,7 +14,7 @@ it('renders pricing page for guests', function () {
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->component('Pricing')
+        ->component('Public/Pricing')
         ->has('tiers')
         ->has('trialEnabled')
         ->has('trialDays')

@@ -71,7 +71,7 @@ class AdminRoadmapController extends Controller
         $entries = $query->paginate(config('pagination.admin.roadmap', 100));
         $filters = array_filter($validated, fn ($v) => $v !== null);
 
-        return Inertia::render('Admin/Roadmap/Index', [
+        return Inertia::render('App/Admin/Roadmap/Index', [
             'entries' => $entries,
             'filters' => $filters,
         ]);
@@ -79,7 +79,7 @@ class AdminRoadmapController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Admin/Roadmap/Create');
+        return Inertia::render('App/Admin/Roadmap/Create');
     }
 
     public function store(AdminStoreRoadmapRequest $request): RedirectResponse

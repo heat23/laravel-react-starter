@@ -5,7 +5,7 @@ it('renders roadmap page', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Roadmap')
+        ->component('Public/Roadmap')
         ->has('entries')
     );
 });

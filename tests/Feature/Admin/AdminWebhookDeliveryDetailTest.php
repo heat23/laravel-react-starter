@@ -93,7 +93,7 @@ it('shows delivery detail with all fields', function () {
         ->get("/admin/webhooks/deliveries/{$deliveryId}")
         ->assertStatus(200)
         ->assertInertia(fn ($page) => $page
-            ->component('Admin/Webhooks/DeliveryDetail')
+            ->component('App/Admin/Webhooks/DeliveryDetail')
             ->has('delivery')
             ->where('delivery.id', $deliveryId)
             ->where('delivery.event_type', 'user.created')
@@ -158,7 +158,7 @@ it('redacts sensitive fields from payload and response body', function () {
         ->get("/admin/webhooks/deliveries/{$deliveryId}")
         ->assertStatus(200)
         ->assertInertia(fn ($page) => $page
-            ->component('Admin/Webhooks/DeliveryDetail')
+            ->component('App/Admin/Webhooks/DeliveryDetail')
             ->where('delivery.payload.user_id', 42)
             ->where('delivery.payload.email', 'user@example.com')
             ->where('delivery.payload.token', '[REDACTED]')
@@ -208,7 +208,7 @@ it('redacts sensitive key=value patterns in non-JSON response body', function ()
         ->get("/admin/webhooks/deliveries/{$deliveryId}")
         ->assertStatus(200)
         ->assertInertia(fn ($page) => $page
-            ->component('Admin/Webhooks/DeliveryDetail')
+            ->component('App/Admin/Webhooks/DeliveryDetail')
             ->where('delivery.id', $deliveryId)
         )
         ->tap(function ($response) {
@@ -304,7 +304,7 @@ it('shows delivery detail with deleted endpoint gracefully', function () {
         ->get("/admin/webhooks/deliveries/{$deliveryId}")
         ->assertStatus(200)
         ->assertInertia(fn ($page) => $page
-            ->component('Admin/Webhooks/DeliveryDetail')
+            ->component('App/Admin/Webhooks/DeliveryDetail')
             ->where('delivery.endpoint_deleted', true)
             ->where('delivery.status', 'success')
         );

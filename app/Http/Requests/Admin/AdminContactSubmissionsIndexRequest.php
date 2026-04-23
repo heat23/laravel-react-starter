@@ -2,23 +2,19 @@
 
 namespace App\Http\Requests\Admin;
 
-use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class AdminContactSubmissionsIndexRequest extends FormRequest
+class AdminContactSubmissionsIndexRequest extends AdminListRequest
 {
-    public function authorize(): bool
+    protected function allowedSorts(): array
     {
-        return $this->user()?->isAdmin() === true;
+        return ['created_at', 'status', 'name', 'email'];
     }
 
     public function rules(): array
     {
-        return [
+        return array_merge(parent::rules(), [
             'status' => ['nullable', 'string', Rule::in(['new', 'replied', 'spam'])],
-            'search' => ['nullable', 'string', 'max:100'],
-            'sort' => ['nullable', 'string', Rule::in(['created_at', 'status', 'name', 'email'])],
-            'dir' => ['nullable', 'string', Rule::in(['asc', 'desc'])],
-        ];
+        ]);
     }
 }

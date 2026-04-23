@@ -37,7 +37,7 @@ it('loads index with audit logs', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/AuditLogs/Index')
+        ->component('App/Admin/AuditLogs/Index')
         ->has('logs.data', 1)
         ->has('eventTypes')
     );
@@ -89,7 +89,7 @@ it('shows log detail with metadata', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/AuditLogs/Show')
+        ->component('App/Admin/AuditLogs/Show')
         ->where('auditLog.id', $log->id)
         ->where('auditLog.event', 'auth.login')
         ->has('auditLog.metadata')

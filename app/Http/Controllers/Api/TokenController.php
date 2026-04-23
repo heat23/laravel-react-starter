@@ -67,7 +67,8 @@ class TokenController extends Controller
         $user = $request->user();
         $currentCount = $user->tokens()->count();
 
-        if (! $this->planLimitService->canPerform($user, 'api_tokens', $currentCount)) {
+        $limitResult = $this->planLimitService->canPerform($user, 'api_tokens', $currentCount);
+        if (! $limitResult->allowed) {
             return response()->json([
                 'message' => 'You have reached the API token limit for your plan. Upgrade to create more tokens.',
             ], 403);

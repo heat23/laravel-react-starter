@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\AdminCacheKey;
 use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
+use App\Http\Controllers\Admin\Concerns\ListsAdminResources;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminBulkContactSubmissionRequest;
 use App\Http\Requests\Admin\AdminContactSubmissionExportRequest;
@@ -12,6 +13,7 @@ use App\Http\Requests\Admin\AdminContactSubmissionsIndexRequest;
 use App\Http\Requests\Admin\AdminUpdateContactSubmissionRequest;
 use App\Models\ContactSubmission;
 use App\Services\AuditService;
+use App\Services\CacheInvalidationManager;
 use App\Support\CsvExport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
@@ -22,17 +24,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminContactSubmissionsController extends Controller
 {
+    use ListsAdminResources;
+
     public function __construct(
         private AuditService $auditService,
+        private CacheInvalidationManager $cacheManager,
     ) {}
 
     public function index(AdminContactSubmissionsIndexRequest $request): Response
     {
-        $allowedSorts = ['created_at', 'status', 'name', 'email'];
-        $sort = in_array($request->validated('sort'), $allowedSorts, true) ? $request->validated('sort') : 'created_at';
-        $dir = ($request->validated('dir') ?? 'desc') === 'asc' ? 'asc' : 'desc';
-
-        $query = ContactSubmission::orderBy($sort, $dir);
+        $query = ContactSubmission::query();
 
         if ($request->validated('status')) {
             $query->byStatus($request->validated('status'));
@@ -47,8 +48,7 @@ class AdminContactSubmissionsController extends Controller
             });
         }
 
-        $submissions = $query->paginate(config('pagination.admin.contact_submissions', 50))
-            ->withQueryString();
+        $submissions = $this->paginateAdminList($query, $request, ['created_at', 'status', 'name', 'email'], 'created_at', 'desc', config('pagination.admin.contact_submissions', 50));
 
         $counts = Cache::remember(
             AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value,
@@ -60,7 +60,7 @@ class AdminContactSubmissionsController extends Controller
             ]
         );
 
-        return Inertia::render('Admin/ContactSubmissions/Index', [
+        return Inertia::render('App/Admin/ContactSubmissions/Index', [
             'submissions' => $submissions,
             'filters' => $request->only('status', 'search', 'sort', 'dir'),
             'counts' => $counts,
@@ -69,7 +69,7 @@ class AdminContactSubmissionsController extends Controller
 
     public function show(ContactSubmission $contactSubmission): Response
     {
-        return Inertia::render('Admin/ContactSubmissions/Show', [
+        return Inertia::render('App/Admin/ContactSubmissions/Show', [
             'submission' => $contactSubmission,
         ]);
     }
@@ -87,7 +87,7 @@ class AdminContactSubmissionsController extends Controller
 
         $contactSubmission->update($data);
 
-        Cache::forget(AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value);
+        $this->cacheManager->invalidateContactSubmissions();
 
         $this->auditService->log(AuditEvent::ADMIN_CONTACT_SUBMISSION_UPDATED, [
             'submission_id' => $contactSubmission->id,
@@ -120,7 +120,7 @@ class AdminContactSubmissionsController extends Controller
             }
         });
 
-        Cache::forget(AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value);
+        $this->cacheManager->invalidateContactSubmissions();
 
         $this->auditService->log(AuditEvent::ADMIN_CONTACT_SUBMISSION_BULK_UPDATED, [
             'ids' => $ids,
@@ -140,7 +140,7 @@ class AdminContactSubmissionsController extends Controller
 
         $contactSubmission->delete();
 
-        Cache::forget(AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value);
+        $this->cacheManager->invalidateContactSubmissions();
 
         return redirect()->route('admin.contact-submissions.index')->with('success', 'Submission deleted.');
     }

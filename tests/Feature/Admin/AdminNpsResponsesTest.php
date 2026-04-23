@@ -22,7 +22,7 @@ it('admin can view NPS responses index', function () {
     $this->actingAs($admin)
         ->get('/admin/nps-responses')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('Admin/NpsResponses/Index'));
+        ->assertInertia(fn ($page) => $page->component('App/Admin/NpsResponses/Index'));
 });
 
 // ── Summary Stats ──────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ it('index returns correct category counts in summary', function () {
         ->get('/admin/nps-responses')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('Admin/NpsResponses/Index')
+            ->component('App/Admin/NpsResponses/Index')
             ->where('summary.promoters', 3)
             ->where('summary.passives', 2)
             ->where('summary.detractors', 1)

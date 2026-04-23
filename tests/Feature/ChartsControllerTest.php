@@ -8,7 +8,7 @@ test('charts page renders for authenticated user', function () {
     $this->actingAs($user)
         ->get('/dashboard/charts')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('Dashboard/Charts'));
+        ->assertInertia(fn ($page) => $page->component('App/Dashboard/Charts'));
 });
 
 test('charts page requires authentication', function () {

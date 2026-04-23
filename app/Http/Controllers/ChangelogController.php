@@ -18,7 +18,7 @@ class ChangelogController extends Controller
             $entries = json_decode(file_get_contents($path), true) ?? [];
         }
 
-        return Inertia::render('Changelog', [
+        return Inertia::render('Public/Changelog', [
             'entries' => $entries,
         ]);
     }

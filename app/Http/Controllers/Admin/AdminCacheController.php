@@ -28,7 +28,7 @@ class AdminCacheController extends Controller
             'exists' => Cache::has($key->value),
         ]);
 
-        return Inertia::render('Admin/Cache/Index', [
+        return Inertia::render('App/Admin/Cache/Index', [
             'cacheKeys' => $cacheKeys,
             'scopes' => ['all', 'billing', 'tokens', 'webhooks', 'two_factor', 'social_auth', 'dashboard'],
         ]);

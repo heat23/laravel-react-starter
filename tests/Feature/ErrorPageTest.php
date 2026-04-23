@@ -7,7 +7,7 @@ test('404 returns inertia error component', function () {
 
     $response->assertStatus(404);
     $response->assertInertia(fn ($page) => $page
-        ->component('Error')
+        ->component('App/Error')
         ->where('status', 404)
     );
 });
@@ -19,7 +19,7 @@ test('403 returns inertia error component', function () {
 
     $response->assertStatus(403);
     $response->assertInertia(fn ($page) => $page
-        ->component('Error')
+        ->component('App/Error')
         ->where('status', 403)
     );
 });

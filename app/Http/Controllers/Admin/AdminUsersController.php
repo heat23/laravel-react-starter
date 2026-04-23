@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
+use App\Http\Controllers\Admin\Concerns\ListsAdminResources;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminBulkDeactivateRequest;
 use App\Http\Requests\Admin\AdminBulkRestoreRequest;
@@ -32,6 +33,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminUsersController extends Controller
 {
+    use ListsAdminResources;
+
     public function __construct(
         private AuditService $auditService,
         private CacheInvalidationManager $cacheManager,
@@ -39,7 +42,7 @@ class AdminUsersController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Admin/Users/Create', [
+        return Inertia::render('App/Admin/Users/Create', [
             'isSuperAdmin' => auth()->user()?->isSuperAdmin() ?? false,
         ]);
     }
@@ -74,15 +77,13 @@ class AdminUsersController extends Controller
 
     public function index(AdminUserIndexRequest $request): Response
     {
-        $validated = $request->validated();
-
-        $query = $this->buildUserQuery($validated)
+        $query = $this->buildUserQuery($request->validated())
             ->withCount('tokens', 'settings', 'webhookEndpoints');
 
-        $perPage = (int) ($validated['per_page'] ?? config('pagination.admin.users', 25));
-        $users = $query->paginate($perPage);
+        $perPage = (int) ($request->validated('per_page') ?? config('pagination.admin.users', 25));
+        $users = $this->paginateAdminList($query, $request, ['name', 'email', 'created_at', 'last_login_at', 'is_admin'], 'created_at', 'desc', $perPage);
 
-        $users->through(fn (User $user) => [
+        $users->through(fn ($user) => [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
@@ -94,7 +95,7 @@ class AdminUsersController extends Controller
             'deleted_at' => $user->deleted_at?->toISOString(),
         ]);
 
-        return Inertia::render('Admin/Users/Index', [
+        return Inertia::render('App/Admin/Users/Index', [
             'users' => $users,
             'filters' => array_merge(
                 $request->only('search', 'admin', 'verified', 'status', 'sort', 'dir'),
@@ -152,7 +153,7 @@ class AdminUsersController extends Controller
                 'created_at' => $h->created_at->toISOString(),
             ]);
 
-        return Inertia::render('Admin/Users/Show', [
+        return Inertia::render('App/Admin/Users/Show', [
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -196,13 +197,24 @@ class AdminUsersController extends Controller
             return back()->with('error', 'Cannot change own admin status.');
         }
 
-        if ($user->is_admin && User::where('is_admin', true)->whereNull('deleted_at')->count() <= 2) {
+        $wasAdmin = $user->is_admin;
+
+        $blocked = DB::transaction(function () use ($user, $wasAdmin) {
+            $adminCount = User::where('is_admin', true)->whereNull('deleted_at')->lockForUpdate()->count();
+
+            if ($wasAdmin && $adminCount <= 2) {
+                return true;
+            }
+
+            $user->is_admin = ! $wasAdmin;
+            $user->save();
+
+            return false;
+        });
+
+        if ($blocked) {
             return back()->with('error', 'Cannot remove admin status. At least two admin accounts must exist.');
         }
-
-        $wasAdmin = $user->is_admin;
-        $user->is_admin = ! $user->is_admin;
-        $user->save();
 
         $this->cacheManager->invalidateDashboard();
 
@@ -379,11 +391,6 @@ class AdminUsersController extends Controller
                 $query->whereNull('email_verified_at');
             }
         }
-
-        $allowedSorts = ['name', 'email', 'created_at', 'last_login_at', 'is_admin'];
-        $sort = in_array($validated['sort'] ?? null, $allowedSorts, true) ? $validated['sort'] : 'created_at';
-        $dir = ($validated['dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
-        $query->orderBy($sort, $dir);
 
         return $query;
     }

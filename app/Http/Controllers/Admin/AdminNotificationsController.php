@@ -10,6 +10,7 @@ use App\Http\Requests\Admin\AdminSendNotificationRequest;
 use App\Jobs\BroadcastAnnouncementJob;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\CacheInvalidationManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,7 @@ class AdminNotificationsController extends Controller
 {
     public function __construct(
         private AuditService $auditService,
+        private CacheInvalidationManager $cacheManager,
     ) {}
 
     public function __invoke(): Response
@@ -93,7 +95,7 @@ class AdminNotificationsController extends Controller
             })
             ->toArray();
 
-        return Inertia::render('Admin/Notifications/Dashboard', [
+        return Inertia::render('App/Admin/Notifications/Dashboard', [
             'stats' => $stats,
             'volume_chart' => $volumeChart,
             'recent_notifications' => $recentNotifications,
@@ -119,8 +121,7 @@ class AdminNotificationsController extends Controller
             sentBy: $request->user()->name,
         );
 
-        Cache::forget(AdminCacheKey::NOTIFICATIONS_STATS->value);
-        Cache::forget(AdminCacheKey::NOTIFICATIONS_VOLUME->value);
+        $this->cacheManager->invalidateNotifications();
 
         $this->auditService->log(AuditEvent::ADMIN_NOTIFICATION_SENT, [
             'subject' => $validated['subject'],

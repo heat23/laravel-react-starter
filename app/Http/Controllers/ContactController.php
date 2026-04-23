@@ -19,7 +19,7 @@ class ContactController extends Controller
 
     public function show(): Response
     {
-        return Inertia::render('Contact');
+        return Inertia::render('Public/Contact');
     }
 
     public function store(ContactRequest $request): RedirectResponse

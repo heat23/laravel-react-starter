@@ -1,134 +1,97 @@
 <?php
 
 use App\Http\Middleware\VerifyWebhookSignature;
+use App\Webhooks\Providers\CustomWebhookProvider;
+use App\Webhooks\Providers\GithubWebhookProvider;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 beforeEach(function () {
     config([
-        'webhooks.incoming.providers.stripe' => [
-            'secret' => 'whsec_test_secret',
-            'signature_header' => 'Stripe-Signature',
-            'algorithm' => 'sha256',
-        ],
         'webhooks.incoming.providers.github' => [
+            'class' => GithubWebhookProvider::class,
             'secret' => 'github_test_secret',
             'signature_header' => 'X-Hub-Signature-256',
             'algorithm' => 'sha256',
         ],
-        'webhooks.incoming.replay_tolerance' => 300,
+        'webhooks.incoming.providers.custom' => [
+            'class' => CustomWebhookProvider::class,
+            'secret' => 'custom_test_secret',
+            'signature_header' => 'X-Webhook-Signature',
+            'algorithm' => 'sha256',
+        ],
     ]);
 });
 
-it('verifies stripe signature using timestamp.payload format', function () {
-    $middleware = new VerifyWebhookSignature;
-
-    $payload = '{"type":"invoice.paid"}';
-    $timestamp = time();
-    $secret = 'whsec_test_secret';
-
-    // Stripe signs: timestamp.payload
-    $expectedSignature = hash_hmac('sha256', $timestamp.'.'.$payload, $secret);
-    $signatureHeader = "t={$timestamp},v1={$expectedSignature}";
-
-    $request = Request::create('/api/webhooks/incoming/stripe', 'POST', [], [], [], [], $payload);
-    $request->headers->set('Stripe-Signature', $signatureHeader);
-    $request->setRouteResolver(function () {
+function makeWebhookRequest(string $provider, string $path, string $body): Request
+{
+    $request = Request::create($path, 'POST', [], [], [], [], $body);
+    $request->setRouteResolver(function () use ($provider, $path) {
         $route = new Route('POST', '/api/webhooks/incoming/{provider}', []);
-        $route->bind(Request::create('/api/webhooks/incoming/stripe'));
-        $route->setParameter('provider', 'stripe');
+        $route->bind(Request::create($path));
+        $route->setParameter('provider', $provider);
 
         return $route;
     });
 
-    $response = $middleware->handle($request, fn ($req) => response('OK'));
-
-    expect($response->getContent())->toBe('OK');
-});
-
-it('rejects stripe signature computed without timestamp', function () {
-    $middleware = new VerifyWebhookSignature;
-
-    $payload = '{"type":"invoice.paid"}';
-    $timestamp = time();
-    $secret = 'whsec_test_secret';
-
-    // Wrong: sign payload only (without timestamp prefix)
-    $wrongSignature = hash_hmac('sha256', $payload, $secret);
-    $signatureHeader = "t={$timestamp},v1={$wrongSignature}";
-
-    $request = Request::create('/api/webhooks/incoming/stripe', 'POST', [], [], [], [], $payload);
-    $request->headers->set('Stripe-Signature', $signatureHeader);
-    $request->setRouteResolver(function () {
-        $route = new Route('POST', '/api/webhooks/incoming/{provider}', []);
-        $route->bind(Request::create('/api/webhooks/incoming/stripe'));
-        $route->setParameter('provider', 'stripe');
-
-        return $route;
-    });
-
-    $middleware->handle($request, fn ($req) => response('OK'));
-})->throws(HttpException::class);
-
-it('rejects stripe webhook with expired timestamp', function () {
-    $middleware = new VerifyWebhookSignature;
-
-    $payload = '{"type":"invoice.paid"}';
-    $timestamp = time() - 600; // 10 minutes ago, exceeds 5-min tolerance
-    $secret = 'whsec_test_secret';
-
-    $expectedSignature = hash_hmac('sha256', $timestamp.'.'.$payload, $secret);
-    $signatureHeader = "t={$timestamp},v1={$expectedSignature}";
-
-    $request = Request::create('/api/webhooks/incoming/stripe', 'POST', [], [], [], [], $payload);
-    $request->headers->set('Stripe-Signature', $signatureHeader);
-    $request->setRouteResolver(function () {
-        $route = new Route('POST', '/api/webhooks/incoming/{provider}', []);
-        $route->bind(Request::create('/api/webhooks/incoming/stripe'));
-        $route->setParameter('provider', 'stripe');
-
-        return $route;
-    });
-
-    $middleware->handle($request, fn ($req) => response('OK'));
-})->throws(HttpException::class);
+    return $request;
+}
 
 it('verifies github signature using payload-only hmac', function () {
     $middleware = new VerifyWebhookSignature;
 
     $payload = '{"action":"push"}';
     $secret = 'github_test_secret';
-
-    // GitHub signs: just the payload
     $signature = hash_hmac('sha256', $payload, $secret);
 
-    $request = Request::create('/api/webhooks/incoming/github', 'POST', [], [], [], [], $payload);
+    $request = makeWebhookRequest('github', '/api/webhooks/incoming/github', $payload);
     $request->headers->set('X-Hub-Signature-256', 'sha256='.$signature);
-    $request->setRouteResolver(function () {
-        $route = new Route('POST', '/api/webhooks/incoming/{provider}', []);
-        $route->bind(Request::create('/api/webhooks/incoming/github'));
-        $route->setParameter('provider', 'github');
-
-        return $route;
-    });
 
     $response = $middleware->handle($request, fn ($req) => response('OK'));
 
     expect($response->getContent())->toBe('OK');
 });
 
+it('rejects github webhook with wrong signature', function () {
+    $middleware = new VerifyWebhookSignature;
+
+    $payload = '{"action":"push"}';
+    $request = makeWebhookRequest('github', '/api/webhooks/incoming/github', $payload);
+    $request->headers->set('X-Hub-Signature-256', 'sha256=invalidsignature');
+
+    $middleware->handle($request, fn ($req) => response('OK'));
+})->throws(HttpException::class);
+
 it('rejects missing signature header', function () {
     $middleware = new VerifyWebhookSignature;
 
-    $request = Request::create('/api/webhooks/incoming/stripe', 'POST', [], [], [], [], '{}');
-    $request->setRouteResolver(function () {
-        $route = new Route('POST', '/api/webhooks/incoming/{provider}', []);
-        $route->bind(Request::create('/api/webhooks/incoming/stripe'));
-        $route->setParameter('provider', 'stripe');
+    $request = makeWebhookRequest('github', '/api/webhooks/incoming/github', '{}');
 
-        return $route;
-    });
+    $middleware->handle($request, fn ($req) => response('OK'));
+})->throws(HttpException::class);
+
+it('verifies custom provider signature using configurable header', function () {
+    $middleware = new VerifyWebhookSignature;
+
+    $payload = '{"id":"evt_123","type":"user.created"}';
+    $secret = 'custom_test_secret';
+    $signature = hash_hmac('sha256', $payload, $secret);
+
+    $request = makeWebhookRequest('custom', '/api/webhooks/incoming/custom', $payload);
+    $request->headers->set('X-Webhook-Signature', $signature);
+
+    $response = $middleware->handle($request, fn ($req) => response('OK'));
+
+    expect($response->getContent())->toBe('OK');
+});
+
+it('rejects custom provider webhook with wrong signature', function () {
+    $middleware = new VerifyWebhookSignature;
+
+    $payload = '{"id":"evt_123","type":"user.created"}';
+    $request = makeWebhookRequest('custom', '/api/webhooks/incoming/custom', $payload);
+    $request->headers->set('X-Webhook-Signature', 'invalidsignature');
 
     $middleware->handle($request, fn ($req) => response('OK'));
 })->throws(HttpException::class);
@@ -136,21 +99,34 @@ it('rejects missing signature header', function () {
 it('does not leak configuration details for unconfigured provider', function () {
     $middleware = new VerifyWebhookSignature;
 
-    $request = Request::create('/api/webhooks/incoming/unknown_provider', 'POST', [], [], [], [], '{}');
-    $request->setRouteResolver(function () {
-        $route = new Route('POST', '/api/webhooks/incoming/{provider}', []);
-        $route->bind(Request::create('/api/webhooks/incoming/unknown_provider'));
-        $route->setParameter('provider', 'unknown_provider');
-
-        return $route;
-    });
+    $request = makeWebhookRequest('unknown_provider', '/api/webhooks/incoming/unknown_provider', '{}');
 
     try {
         $middleware->handle($request, fn ($req) => response('OK'));
-        $this->fail('Expected HttpException was not thrown');
+        test()->fail('Expected HttpException was not thrown');
     } catch (HttpException $e) {
         expect($e->getStatusCode())->toBe(403);
         expect($e->getMessage())->not->toContain('not configured');
         expect($e->getMessage())->not->toContain('provider');
     }
+});
+
+it('attaches provider instance to request attributes on success', function () {
+    $middleware = new VerifyWebhookSignature;
+
+    $payload = '{"action":"push"}';
+    $secret = 'github_test_secret';
+    $signature = hash_hmac('sha256', $payload, $secret);
+
+    $capturedRequest = null;
+    $request = makeWebhookRequest('github', '/api/webhooks/incoming/github', $payload);
+    $request->headers->set('X-Hub-Signature-256', 'sha256='.$signature);
+
+    $middleware->handle($request, function ($req) use (&$capturedRequest) {
+        $capturedRequest = $req;
+
+        return response('OK');
+    });
+
+    expect($capturedRequest->attributes->get('webhook_provider'))->toBeInstanceOf(GithubWebhookProvider::class);
 });

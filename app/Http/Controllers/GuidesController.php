@@ -13,7 +13,7 @@ class GuidesController extends Controller
     {
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Guides/Index', [
+        return Inertia::render('Public/Guides/Index', [
             'title' => 'Laravel SaaS Guides — Tutorials, Architecture, and Best Practices',
             'metaDescription' => 'In-depth guides for building production Laravel SaaS: Stripe billing, feature flags, architecture decisions, and cost analysis. Free, no signup required.',
             'canonicalUrl' => $appUrl.'/guides',
@@ -61,7 +61,7 @@ class GuidesController extends Controller
         $appName = config('app.name', 'Laravel React Starter');
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Guides/LaravelSaasGuide', [
+        return Inertia::render('Public/Guides/LaravelSaasGuide', [
             'title' => 'Complete Guide to Building a SaaS with Laravel 12 in 2026',
             'metaDescription' => 'Everything you need to ship a production Laravel 12 SaaS: auth, billing, admin panel, feature flags, webhooks, and testing — with code examples and a working starter kit.',
             'appName' => $appName,
@@ -80,7 +80,7 @@ class GuidesController extends Controller
         $appName = config('app.name', 'Laravel React Starter');
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Guides/StripeBillingGuide', [
+        return Inertia::render('Public/Guides/StripeBillingGuide', [
             'title' => 'Laravel Stripe Billing Tutorial — Subscriptions & Race Conditions',
             'metaDescription' => 'How to implement production-grade Stripe billing in Laravel 12: subscriptions with Cashier, webhook handling, race condition prevention with Redis locks, and dunning emails.',
             'appName' => $appName,
@@ -99,7 +99,7 @@ class GuidesController extends Controller
         $appName = config('app.name', 'Laravel React Starter');
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Guides/FeatureFlagsGuide', [
+        return Inertia::render('Public/Guides/FeatureFlagsGuide', [
             'title' => 'Laravel Feature Flags — Runtime Toggles Without Unleash',
             'metaDescription' => 'Implement feature flags in Laravel without a third-party service: env-based toggles, database overrides, per-user targeting, and a React UI for runtime control.',
             'appName' => $appName,
@@ -118,7 +118,7 @@ class GuidesController extends Controller
         $appName = config('app.name', 'Laravel React Starter');
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Guides/SaasStarterKitComparison', [
+        return Inertia::render('Public/Guides/SaasStarterKitComparison', [
             'title' => 'Best Laravel SaaS Starter Kits 2026 — Ranked & Reviewed',
             'metaDescription' => 'Comparison of 8 Laravel SaaS boilerplates with feature matrix, pricing, and honest pros/cons. Updated March 2026.',
             'appName' => $appName,
@@ -137,7 +137,7 @@ class GuidesController extends Controller
         $appName = config('app.name', 'Laravel React Starter');
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Guides/BuildVsBuyGuide', [
+        return Inertia::render('Public/Guides/BuildVsBuyGuide', [
             'title' => 'True Cost of Building SaaS from Scratch in 2026',
             'metaDescription' => 'Building a SaaS from scratch costs 200–400 developer hours before you write a line of business logic. See the full breakdown vs using a starter kit.',
             'appName' => $appName,
@@ -156,7 +156,7 @@ class GuidesController extends Controller
         $appName = config('app.name', 'Laravel React Starter');
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Guides/TwoFactorGuide', [
+        return Inertia::render('Public/Guides/TwoFactorGuide', [
             'title' => 'Laravel Two-Factor Authentication Guide 2026',
             'metaDescription' => 'Step-by-step guide to adding TOTP-based 2FA in Laravel using laragear/two-factor. Includes recovery codes, React UI, and Pest tests. 2026 edition.',
             'appName' => $appName,
@@ -175,7 +175,7 @@ class GuidesController extends Controller
         $appName = config('app.name', 'Laravel React Starter');
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Guides/WebhookGuide', [
+        return Inertia::render('Public/Guides/WebhookGuide', [
             'title' => 'Laravel Webhook Implementation Guide 2026',
             'metaDescription' => 'How to add production-grade outgoing webhooks to Laravel SaaS: HMAC-SHA256 signing, queue-based retry, and delivery tracking. With Pest tests. 2026 guide.',
             'appName' => $appName,
@@ -194,7 +194,7 @@ class GuidesController extends Controller
         $appName = config('app.name', 'Laravel React Starter');
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Guides/TenancyArchitectureGuide', [
+        return Inertia::render('Public/Guides/TenancyArchitectureGuide', [
             'title' => 'Single-Tenant vs Multi-Tenant SaaS — Architecture Guide 2026',
             'metaDescription' => 'When should you choose single-tenant vs multi-tenant for your SaaS? Honest comparison of complexity, cost, and performance tradeoffs for Laravel apps in 2026.',
             'appName' => $appName,

@@ -65,7 +65,7 @@ it('renders index page for admin', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/ContactSubmissions/Index')
+        ->component('App/Admin/ContactSubmissions/Index')
         ->has('submissions.data', 3)
         ->has('filters')
         ->has('counts')
@@ -155,7 +155,7 @@ it('renders show page for admin', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/ContactSubmissions/Show')
+        ->component('App/Admin/ContactSubmissions/Show')
         ->where('submission.id', $submission->id)
         ->where('submission.subject', 'Test subject')
     );

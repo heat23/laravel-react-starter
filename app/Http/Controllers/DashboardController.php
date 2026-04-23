@@ -37,7 +37,7 @@ class DashboardController extends Controller
             ])
             ->toArray();
 
-        return Inertia::render('Dashboard', [
+        return Inertia::render('App/Dashboard', [
             'stats' => $stats,
             'recent_activity' => $recentActivity,
         ]);

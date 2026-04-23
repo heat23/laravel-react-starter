@@ -70,4 +70,31 @@ class CacheInvalidationManager
         Cache::forget(AdminCacheKey::DASHBOARD_STATS->value);
         Cache::forget(AdminCacheKey::DASHBOARD_SIGNUP_CHART->value);
     }
+
+    public function invalidateNotifications(): void
+    {
+        Cache::forget(AdminCacheKey::NOTIFICATIONS_STATS->value);
+        Cache::forget(AdminCacheKey::NOTIFICATIONS_VOLUME->value);
+    }
+
+    public function invalidateContactSubmissions(): void
+    {
+        Cache::forget(AdminCacheKey::CONTACT_SUBMISSIONS_STATS->value);
+    }
+
+    public function invalidateIndexNow(): void
+    {
+        Cache::forget(AdminCacheKey::INDEXNOW_STATS->value);
+    }
+
+    public function invalidateFeatureFlagsGlobal(): void
+    {
+        Cache::forget(AdminCacheKey::FEATURE_FLAGS_GLOBAL->value);
+    }
+
+    public function invalidateLifecycle(): void
+    {
+        Cache::forget(AdminCacheKey::STAGE_FUNNEL->value);
+        Cache::forget(AdminCacheKey::STAGE_VELOCITY->value);
+    }
 }

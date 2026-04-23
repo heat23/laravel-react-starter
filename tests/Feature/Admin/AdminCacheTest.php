@@ -9,7 +9,7 @@ it('admin can view the cache management page', function () {
     $this->actingAs($admin)
         ->get('/admin/cache')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('Admin/Cache/Index'));
+        ->assertInertia(fn ($page) => $page->component('App/Admin/Cache/Index'));
 });
 
 it('super admin can flush billing cache', function () {

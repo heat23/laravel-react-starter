@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\AuditEvent;
 use App\Helpers\QueryHelper;
+use App\Http\Controllers\Admin\Concerns\ListsAdminResources;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\AdminNpsResponseExportRequest;
 use App\Http\Requests\Admin\AdminNpsResponseIndexRequest;
@@ -16,18 +17,15 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminNpsResponsesController extends Controller
 {
+    use ListsAdminResources;
+
     public function __construct(
         private AuditService $auditService,
     ) {}
 
     public function index(AdminNpsResponseIndexRequest $request): Response
     {
-        $allowedSorts = ['score', 'created_at'];
-        $sort = in_array($request->validated('sort'), $allowedSorts, true) ? $request->validated('sort') : 'created_at';
-        $dir = ($request->validated('dir') ?? 'desc') === 'asc' ? 'asc' : 'desc';
-
-        $query = NpsResponse::with(['user' => fn ($q) => $q->withTrashed()])
-            ->orderBy($sort, $dir);
+        $query = NpsResponse::with(['user' => fn ($q) => $q->withTrashed()]);
 
         if ($category = $request->validated('category')) {
             $query->when($category === 'promoter', fn ($q) => $q->where('score', '>=', 9))
@@ -50,8 +48,7 @@ class AdminNpsResponsesController extends Controller
             });
         }
 
-        $responses = $query->paginate(config('pagination.admin.nps_responses', 50))
-            ->withQueryString();
+        $responses = $this->paginateAdminList($query, $request, ['score', 'created_at'], 'created_at', 'desc', config('pagination.admin.nps_responses', 50));
 
         // Single aggregation query replaces 3 separate count queries
         $stats = NpsResponse::selectRaw(
@@ -71,7 +68,7 @@ class AdminNpsResponsesController extends Controller
 
         $surveyTriggers = NpsResponse::distinct()->orderBy('survey_trigger')->pluck('survey_trigger');
 
-        return Inertia::render('Admin/NpsResponses/Index', [
+        return Inertia::render('App/Admin/NpsResponses/Index', [
             'responses' => $responses,
             'filters' => $request->only('category', 'survey_trigger', 'search', 'sort', 'dir'),
             'summary' => [

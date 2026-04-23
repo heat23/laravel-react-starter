@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PlanTier;
 use App\Services\BillingService;
 
 it('resolves tier from config tier_hierarchy instead of hardcoded list', function () {
@@ -22,9 +23,9 @@ it('resolveTierFromPrice checks all paid tiers from config', function () {
 
     $service = app(BillingService::class);
 
-    expect($service->resolveTierFromPrice('price_pro_monthly'))->toBe('pro')
-        ->and($service->resolveTierFromPrice('price_team_annual'))->toBe('team')
-        ->and($service->resolveTierFromPrice('price_ent_monthly'))->toBe('enterprise')
+    expect($service->resolveTierFromPrice('price_pro_monthly'))->toBe(PlanTier::Pro)
+        ->and($service->resolveTierFromPrice('price_team_annual'))->toBe(PlanTier::Team)
+        ->and($service->resolveTierFromPrice('price_ent_monthly'))->toBe(PlanTier::Enterprise)
         ->and($service->resolveTierFromPrice('price_unknown'))->toBeNull();
 });
 

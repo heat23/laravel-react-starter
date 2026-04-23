@@ -9,16 +9,16 @@ class LegalController extends Controller
 {
     public function terms(): Response
     {
-        return Inertia::render('Legal/Terms');
+        return Inertia::render('Public/Legal/Terms');
     }
 
     public function privacy(): Response
     {
-        return Inertia::render('Legal/Privacy');
+        return Inertia::render('Public/Legal/Privacy');
     }
 
     public function about(): Response
     {
-        return Inertia::render('About');
+        return Inertia::render('Public/About');
     }
 }

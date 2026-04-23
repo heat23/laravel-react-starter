@@ -15,7 +15,7 @@ class AdminHealthController extends Controller
 
     public function __invoke(): Response
     {
-        return Inertia::render('Admin/Health', [
+        return Inertia::render('App/Admin/Health', [
             'health' => $this->healthCheckService->runAllChecks(),
         ]);
     }

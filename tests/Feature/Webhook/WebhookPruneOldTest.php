@@ -39,7 +39,7 @@ it('deletes old terminal webhook deliveries', function () {
         'created_at' => now()->subDays(100),
     ]);
 
-    $this->artisan('webhooks:prune-old')
+    $this->artisan('webhooks:delete-old')
         ->expectsOutputToContain('Pruned 3 old webhook deliveries')
         ->assertSuccessful();
 
@@ -60,14 +60,14 @@ it('accepts custom retention days', function () {
         'created_at' => now()->subDays(40),
     ]);
 
-    $this->artisan('webhooks:prune-old --days=30')
+    $this->artisan('webhooks:delete-old --days=30')
         ->assertSuccessful();
 
     expect(WebhookDelivery::find($delivery->id))->toBeNull();
 });
 
 it('does nothing when no old deliveries exist', function () {
-    $this->artisan('webhooks:prune-old')
+    $this->artisan('webhooks:delete-old')
         ->expectsOutputToContain('Pruned 0 old webhook deliveries')
         ->assertSuccessful();
 });

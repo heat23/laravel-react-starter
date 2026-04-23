@@ -68,7 +68,7 @@ class AdminDashboardController extends Controller
             ])->values()->all();
         });
 
-        return Inertia::render('Admin/Dashboard', [
+        return Inertia::render('App/Admin/Dashboard', [
             'stats' => $stats,
             'signup_chart' => $signupChart,
             'recent_activity' => $recentActivity,
