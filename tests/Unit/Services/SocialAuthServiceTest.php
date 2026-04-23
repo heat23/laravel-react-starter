@@ -2,6 +2,7 @@
 
 namespace Tests\Unit\Services;
 
+use App\Exceptions\SocialAuthAccountConflictException;
 use App\Models\SocialAccount;
 use App\Models\User;
 use App\Services\SocialAuthService;
@@ -95,7 +96,7 @@ class SocialAuthServiceTest extends TestCase
         $this->assertEquals('existing@example.com', $user->email);
     }
 
-    public function test_find_or_create_returns_existing_user_by_email_without_social_account(): void
+    public function test_find_or_create_throws_conflict_when_email_exists_without_social_account(): void
     {
         $existingUser = User::factory()->create(['email' => 'test@example.com']);
 
@@ -104,9 +105,9 @@ class SocialAuthServiceTest extends TestCase
             'email' => 'test@example.com',
         ]);
 
-        $user = $this->service->findOrCreateUser($socialUser, 'github');
+        $this->expectException(SocialAuthAccountConflictException::class);
 
-        $this->assertEquals($existingUser->id, $user->id);
+        $this->service->findOrCreateUser($socialUser, 'github');
     }
 
     public function test_find_or_create_creates_new_user_when_no_match(): void
@@ -216,7 +217,7 @@ class SocialAuthServiceTest extends TestCase
         $this->assertNull($user->password);
     }
 
-    public function test_find_or_create_does_not_modify_existing_user_data(): void
+    public function test_find_or_create_throws_conflict_preserving_existing_user_identity(): void
     {
         $existingUser = User::factory()->create([
             'email' => 'existing@example.com',
@@ -227,14 +228,17 @@ class SocialAuthServiceTest extends TestCase
         $socialUser = $this->mockSocialUser([
             'id' => 'new-social-id',
             'email' => 'existing@example.com',
-            'name' => 'OAuth Name', // Different name
+            'name' => 'OAuth Name',
         ]);
 
-        $user = $this->service->findOrCreateUser($socialUser, 'google');
-
-        // Should not update existing user's data
-        $this->assertEquals('Original Name', $user->name);
-        $this->assertEquals('email', $user->signup_source);
+        try {
+            $this->service->findOrCreateUser($socialUser, 'google');
+            $this->fail('Expected SocialAuthAccountConflictException');
+        } catch (SocialAuthAccountConflictException $e) {
+            $this->assertEquals($existingUser->id, $e->existingUser->id);
+            $this->assertEquals('Original Name', $e->existingUser->name);
+            $this->assertEquals('email', $e->existingUser->signup_source);
+        }
     }
 
     // ============================================

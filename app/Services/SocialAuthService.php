@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\SocialAuthAccountConflictException;
 use App\Models\SocialAccount;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,9 @@ class SocialAuthService
 {
     /**
      * Find an existing user or create a new one from OAuth data.
+     *
+     * @throws SocialAuthAccountConflictException when a local account exists with the same email
+     *                                            but no linked social account for this provider
      */
     public function findOrCreateUser(SocialUser $socialUser, string $provider): User
     {
@@ -37,7 +41,9 @@ class SocialAuthService
         $user = User::where('email', $socialUser->getEmail())->first();
 
         if ($user) {
-            return $user;
+            // Email collision: existing user has no social account for THIS provider.
+            // Refuse to auto-link — attacker scenario.
+            throw new SocialAuthAccountConflictException($user);
         }
 
         // Create new user — wrapped in transaction so INSERT + UPDATE are atomic
