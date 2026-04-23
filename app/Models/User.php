@@ -50,11 +50,6 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
         'signup_source',
         'trial_ends_at',
         'lifecycle_stage',
-        'acquisition_channel',
-        'utm_source',
-        'utm_medium',
-        'utm_campaign',
-        'marketing_opt_out',
     ];
 
     /**
@@ -83,7 +78,6 @@ class User extends Authenticatable implements MustVerifyEmail, TwoFactorAuthenti
             'is_admin' => 'boolean',
             'super_admin' => 'boolean',
             'lifecycle_stage' => 'string',
-            'marketing_opt_out' => 'boolean',
         ];
     }
 

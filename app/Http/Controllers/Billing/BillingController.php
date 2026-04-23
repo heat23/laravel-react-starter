@@ -86,8 +86,6 @@ class BillingController extends Controller
             'invoices' => $invoices,
             'graceDays' => config('plans.past_due_grace_days', 7),
             'proPriceId' => $platformTrial ? config('plans.pro.stripe_price_monthly') : null,
-            'sqlQualified' => $user->sql_qualified_at !== null,
-            'contactEmail' => config('mail.from.address', 'hello@example.com'),
         ]);
     }
 

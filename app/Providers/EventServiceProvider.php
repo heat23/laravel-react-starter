@@ -2,9 +2,7 @@
 
 namespace App\Providers;
 
-use App\Events\LeadQualifiedEvent;
 use App\Events\PqlThresholdReached;
-use App\Listeners\LeadQualifiedListener;
 use App\Listeners\SendEmailVerificationNotification;
 use App\Listeners\SendPqlUpgradeNudge;
 use App\Listeners\StartUserTrial;
@@ -24,9 +22,6 @@ class EventServiceProvider extends ServiceProvider
         ],
         PqlThresholdReached::class => [
             SendPqlUpgradeNudge::class,
-        ],
-        LeadQualifiedEvent::class => [
-            LeadQualifiedListener::class,
         ],
     ];
 

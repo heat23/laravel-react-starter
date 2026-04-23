@@ -152,8 +152,8 @@ test('write-ability token can mark a single notification read', function () {
     $user = User::factory()->create();
     $user->notifications()->create([
         'id' => (string) Str::uuid(),
-        'type' => 'App\\Notifications\\UpgradeNudgeNotification',
-        'data' => ['type' => 'upgrade_nudge', 'score' => 50],
+        'type' => 'App\\Notifications\\WelcomeSequenceNotification',
+        'data' => ['type' => 'welcome', 'emailNumber' => 1],
         'read_at' => null,
     ]);
     $notificationId = $user->notifications()->first()->id;
@@ -187,8 +187,8 @@ test('delete-ability token can delete a notification', function () {
     // Notification subclass and would throw a TypeError.
     $user->notifications()->create([
         'id' => (string) Str::uuid(),
-        'type' => 'App\\Notifications\\UpgradeNudgeNotification',
-        'data' => ['type' => 'upgrade_nudge', 'score' => 50],
+        'type' => 'App\\Notifications\\WelcomeSequenceNotification',
+        'data' => ['type' => 'welcome', 'emailNumber' => 1],
         'read_at' => null,
     ]);
     $notificationId = $user->notifications()->first()->id;

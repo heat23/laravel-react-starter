@@ -66,8 +66,6 @@ interface BillingPageProps {
   invoices?: Invoice[];
   graceDays?: number;
   proPriceId?: string | null;
-  sqlQualified?: boolean;
-  contactEmail?: string;
 }
 
 function formatSubscriptionDate(dateString: string): {
@@ -109,8 +107,6 @@ export default function BillingIndex() {
     invoices = [],
     graceDays = 7,
     proPriceId,
-    sqlQualified = false,
-    contactEmail = 'hello@example.com',
   } = usePage<BillingPageProps>().props;
   const { track } = useAnalytics();
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -217,33 +213,6 @@ export default function BillingIndex() {
                 {!subscription
                   ? "You're now subscribed! It may take a moment for your subscription details to appear."
                   : 'Thanks for upgrading! It may take a moment for your subscription details to appear.'}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {sqlQualified && !subscription?.active && (
-            <Alert className="border-primary/30 bg-primary/5">
-              <HelpCircle className="h-4 w-4 text-primary" />
-              <AlertTitle>Ready to talk?</AlertTitle>
-              <AlertDescription>
-                Based on how you&apos;ve been using the product, you look like a
-                great fit for a Pro or Team plan. If you have questions before
-                upgrading, we&apos;re happy to walk you through the right
-                option.{' '}
-                <a
-                  href={`mailto:${encodeURIComponent(contactEmail)}?subject=Upgrade%20question`}
-                  className="underline font-medium rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  Email us
-                </a>{' '}
-                or{' '}
-                <Link
-                  href="/pricing"
-                  className="underline font-medium rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  view pricing
-                </Link>
-                .
               </AlertDescription>
             </Alert>
           )}

@@ -1,19 +1,13 @@
 <?php
 
 use App\Models\User;
-use App\Notifications\DunningReminderNotification;
-use App\Notifications\ExpansionNudgeNotification;
 use App\Notifications\IncompletePaymentReminder;
 use App\Notifications\InvoluntaryChurnWinBackNotification;
 use App\Notifications\LimitThresholdNotification;
-use App\Notifications\OnboardingReminderNotification;
 use App\Notifications\PaymentActionRequiredNotification;
 use App\Notifications\PaymentFailedNotification;
 use App\Notifications\PaymentRecoveredNotification;
-use App\Notifications\ReEngagementNotification;
 use App\Notifications\RefundProcessedNotification;
-use App\Notifications\TrialNudgeNotification;
-use App\Notifications\UpgradeNudgeNotification;
 use App\Notifications\WelcomeSequenceNotification;
 use App\Notifications\WinBackNotification;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -39,24 +33,6 @@ beforeEach(function () {
     registerBillingRoutes();
     // The 'unsubscribe' route is always registered via routes/web.php (no feature-flag guard),
     // so URL::signedRoute('unsubscribe', ...) works in all test contexts without manual registration.
-});
-
-it('includes unsubscribe link in DunningReminderNotification', function () {
-    $user = User::factory()->create();
-    $notification = new DunningReminderNotification(emailNumber: 1);
-
-    $mail = $notification->toMail($user);
-
-    assertHasUnsubscribeLine($mail, $user);
-});
-
-it('includes unsubscribe link in ExpansionNudgeNotification', function () {
-    $user = User::factory()->create();
-    $notification = new ExpansionNudgeNotification;
-
-    $mail = $notification->toMail($user);
-
-    assertHasUnsubscribeLine($mail, $user);
 });
 
 it('includes unsubscribe link in IncompletePaymentReminder', function () {
@@ -98,15 +74,6 @@ it('includes unsubscribe link in LimitThresholdNotification at 100 percent', fun
     assertHasUnsubscribeLine($mail, $user);
 });
 
-it('includes unsubscribe link in OnboardingReminderNotification', function () {
-    $user = User::factory()->create();
-    $notification = new OnboardingReminderNotification(emailNumber: 1);
-
-    $mail = $notification->toMail($user);
-
-    assertHasUnsubscribeLine($mail, $user);
-});
-
 it('includes unsubscribe link in PaymentActionRequiredNotification', function () {
     $user = User::factory()->create();
     $notification = new PaymentActionRequiredNotification(
@@ -140,39 +107,12 @@ it('includes unsubscribe link in PaymentRecoveredNotification', function () {
     assertHasUnsubscribeLine($mail, $user);
 });
 
-it('includes unsubscribe link in ReEngagementNotification', function () {
-    $user = User::factory()->create();
-    $notification = new ReEngagementNotification(emailNumber: 1);
-
-    $mail = $notification->toMail($user);
-
-    assertHasUnsubscribeLine($mail, $user);
-});
-
 it('includes unsubscribe link in RefundProcessedNotification', function () {
     $user = User::factory()->create();
     $notification = new RefundProcessedNotification(
         chargeId: 'ch_test123',
         amountRefunded: 1000
     );
-
-    $mail = $notification->toMail($user);
-
-    assertHasUnsubscribeLine($mail, $user);
-});
-
-it('includes unsubscribe link in TrialNudgeNotification', function () {
-    $user = User::factory()->create();
-    $notification = new TrialNudgeNotification(emailNumber: 1);
-
-    $mail = $notification->toMail($user);
-
-    assertHasUnsubscribeLine($mail, $user);
-});
-
-it('includes unsubscribe link in UpgradeNudgeNotification', function () {
-    $user = User::factory()->create();
-    $notification = new UpgradeNudgeNotification(score: 75);
 
     $mail = $notification->toMail($user);
 
