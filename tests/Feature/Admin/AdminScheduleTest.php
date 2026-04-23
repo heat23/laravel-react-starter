@@ -11,7 +11,7 @@ it('admin can view the schedule page', function () {
     $this->actingAs($admin)
         ->get('/admin/schedule')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('Admin/Schedule/Index'));
+        ->assertInertia(fn ($page) => $page->component('App/Admin/Schedule/Index'));
 });
 
 it('schedule page returns task list', function () {

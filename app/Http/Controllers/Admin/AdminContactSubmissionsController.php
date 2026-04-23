@@ -60,7 +60,7 @@ class AdminContactSubmissionsController extends Controller
             ]
         );
 
-        return Inertia::render('Admin/ContactSubmissions/Index', [
+        return Inertia::render('App/Admin/ContactSubmissions/Index', [
             'submissions' => $submissions,
             'filters' => $request->only('status', 'search', 'sort', 'dir'),
             'counts' => $counts,
@@ -69,7 +69,7 @@ class AdminContactSubmissionsController extends Controller
 
     public function show(ContactSubmission $contactSubmission): Response
     {
-        return Inertia::render('Admin/ContactSubmissions/Show', [
+        return Inertia::render('App/Admin/ContactSubmissions/Show', [
             'submission' => $contactSubmission,
         ]);
     }

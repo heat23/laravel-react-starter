@@ -23,7 +23,7 @@ class RoadmapController extends Controller
             $entries = $this->entriesFromJson($user);
         }
 
-        return Inertia::render('Roadmap', [
+        return Inertia::render('Public/Roadmap', [
             'entries' => $entries,
         ]);
     }

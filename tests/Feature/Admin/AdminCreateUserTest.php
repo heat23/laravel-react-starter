@@ -7,7 +7,7 @@ it('admin can view the create user form', function () {
     $this->actingAs($admin)
         ->get('/admin/users/create')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('Admin/Users/Create'));
+        ->assertInertia(fn ($page) => $page->component('App/Admin/Users/Create'));
 });
 
 it('admin can create a new user', function () {

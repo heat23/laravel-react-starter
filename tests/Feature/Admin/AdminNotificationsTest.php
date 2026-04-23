@@ -29,7 +29,7 @@ it('loads notifications dashboard with stats', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Notifications/Dashboard')
+        ->component('App/Admin/Notifications/Dashboard')
         ->has('stats')
         ->where('stats.total_sent', 0)
         ->where('stats.unread', 0)

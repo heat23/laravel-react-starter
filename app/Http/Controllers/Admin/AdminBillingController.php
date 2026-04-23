@@ -41,7 +41,7 @@ class AdminBillingController extends Controller
                 'created_at' => $log->created_at?->toISOString(),
             ]);
 
-        return Inertia::render('Admin/Billing/Dashboard', [
+        return Inertia::render('App/Admin/Billing/Dashboard', [
             'stats' => $this->statsService->getDashboardStats(),
             'tier_distribution' => $this->statsService->getTierDistribution(),
             'status_breakdown' => $this->statsService->getStatusBreakdown(),
@@ -58,7 +58,7 @@ class AdminBillingController extends Controller
             'filters' => $request->validated(),
         ]);
 
-        return Inertia::render('Admin/Billing/Subscriptions', [
+        return Inertia::render('App/Admin/Billing/Subscriptions', [
             'subscriptions' => $this->statsService->getFilteredSubscriptions($request->validated()),
             'filters' => $request->only('search', 'status', 'tier', 'sort', 'dir'),
             'statuses' => ['active', 'trialing', 'past_due', 'canceled', 'incomplete', 'incomplete_expired'],
@@ -98,7 +98,7 @@ class AdminBillingController extends Controller
                 'created_at' => $log->created_at?->toISOString(),
             ]);
 
-        return Inertia::render('Admin/Billing/Show', [
+        return Inertia::render('App/Admin/Billing/Show', [
             'subscription' => [
                 'id' => $subscription->id,
                 'user_name' => $subscription->owner?->name ?? '[Deleted User]',

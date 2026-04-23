@@ -95,7 +95,7 @@ class AdminNotificationsController extends Controller
             })
             ->toArray();
 
-        return Inertia::render('Admin/Notifications/Dashboard', [
+        return Inertia::render('App/Admin/Notifications/Dashboard', [
             'stats' => $stats,
             'volume_chart' => $volumeChart,
             'recent_notifications' => $recentNotifications,

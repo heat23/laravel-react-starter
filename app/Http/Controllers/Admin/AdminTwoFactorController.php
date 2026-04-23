@@ -35,7 +35,7 @@ class AdminTwoFactorController extends Controller
             ];
         });
 
-        return Inertia::render('Admin/TwoFactor/Dashboard', [
+        return Inertia::render('App/Admin/TwoFactor/Dashboard', [
             'stats' => $stats,
         ]);
     }

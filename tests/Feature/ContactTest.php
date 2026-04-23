@@ -7,7 +7,7 @@ it('renders contact page', function () {
     $response = $this->get('/contact');
 
     $response->assertStatus(200);
-    $response->assertInertia(fn ($page) => $page->component('Contact'));
+    $response->assertInertia(fn ($page) => $page->component('Public/Contact'));
 });
 
 it('submits contact form and creates audit log', function () {

@@ -20,7 +20,7 @@ class OnboardingController extends Controller
     {
         $user = auth()->user();
 
-        return Inertia::render('Onboarding', [
+        return Inertia::render('App/Onboarding', [
             'email_verified' => $user?->hasVerifiedEmail() ?? false,
         ]);
     }

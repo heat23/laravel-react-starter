@@ -10,6 +10,6 @@ class ApiTokenPageController extends Controller
 {
     public function __invoke(): Response
     {
-        return Inertia::render('Settings/ApiTokens');
+        return Inertia::render('App/Settings/ApiTokens');
     }
 }

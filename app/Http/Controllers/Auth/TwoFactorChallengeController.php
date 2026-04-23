@@ -33,7 +33,7 @@ class TwoFactorChallengeController extends Controller
             return redirect()->route('login')->withErrors(['email' => '2FA session expired, please sign in again.']);
         }
 
-        return Inertia::render('Auth/TwoFactorChallenge');
+        return Inertia::render('App/Auth/TwoFactorChallenge');
     }
 
     public function store(TwoFactorChallengeRequest $request): RedirectResponse

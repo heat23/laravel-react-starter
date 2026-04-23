@@ -28,7 +28,7 @@ class AdminFeatureFlagController extends Controller
      */
     public function index(): Response
     {
-        return Inertia::render('Admin/FeatureFlags/Index', [
+        return Inertia::render('App/Admin/FeatureFlags/Index', [
             'flags' => $this->featureFlagService->getAdminSummary(),
         ]);
     }

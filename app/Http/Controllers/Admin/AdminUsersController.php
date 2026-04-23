@@ -42,7 +42,7 @@ class AdminUsersController extends Controller
 
     public function create(): Response
     {
-        return Inertia::render('Admin/Users/Create', [
+        return Inertia::render('App/Admin/Users/Create', [
             'isSuperAdmin' => auth()->user()?->isSuperAdmin() ?? false,
         ]);
     }
@@ -95,7 +95,7 @@ class AdminUsersController extends Controller
             'deleted_at' => $user->deleted_at?->toISOString(),
         ]);
 
-        return Inertia::render('Admin/Users/Index', [
+        return Inertia::render('App/Admin/Users/Index', [
             'users' => $users,
             'filters' => array_merge(
                 $request->only('search', 'admin', 'verified', 'status', 'sort', 'dir'),
@@ -153,7 +153,7 @@ class AdminUsersController extends Controller
                 'created_at' => $h->created_at->toISOString(),
             ]);
 
-        return Inertia::render('Admin/Users/Show', [
+        return Inertia::render('App/Admin/Users/Show', [
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,

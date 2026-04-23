@@ -42,7 +42,7 @@ class TwoFactorController extends Controller
             $data['secret'] = $user->twoFactorAuth->toString();
         }
 
-        return Inertia::render('Settings/Security', $data);
+        return Inertia::render('App/Settings/Security', $data);
     }
 
     public function enable(Request $request): RedirectResponse

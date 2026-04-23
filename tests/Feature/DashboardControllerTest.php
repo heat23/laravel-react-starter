@@ -11,7 +11,7 @@ it('renders dashboard for authenticated user', function () {
     $user = User::factory()->create();
 
     $this->actingAs($user)->get('/dashboard')->assertOk()
-        ->assertInertia(fn ($page) => $page->component('Dashboard'));
+        ->assertInertia(fn ($page) => $page->component('App/Dashboard'));
 });
 
 it('shows the correct plan name for a subscribed user', function () {

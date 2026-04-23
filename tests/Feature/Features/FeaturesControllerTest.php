@@ -7,7 +7,7 @@ it('renders the billing feature page for guests', function () {
 
     $response->assertOk();
     $response->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('Features/Billing')
+        ->component('Public/Features/Billing')
         ->has('title')
         ->has('metaDescription')
     );
@@ -18,7 +18,7 @@ it('renders the feature flags page for guests', function () {
 
     $response->assertOk();
     $response->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('Features/FeatureFlags')
+        ->component('Public/Features/FeatureFlags')
         ->has('title')
         ->has('metaDescription')
     );
@@ -29,7 +29,7 @@ it('renders the admin panel feature page for guests', function () {
 
     $response->assertOk();
     $response->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('Features/AdminPanel')
+        ->component('Public/Features/AdminPanel')
         ->has('title')
         ->has('metaDescription')
     );

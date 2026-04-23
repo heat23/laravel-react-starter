@@ -141,7 +141,7 @@
         <script type="application/ld+json" nonce="{{ Illuminate\Support\Facades\Vite::cspNonce() }}">{!! $webPageLd !!}</script>
 
         <!-- JSON-LD Structured Data: FAQPage (homepage only) -->
-        @if(isset($page['component']) && $page['component'] === 'Welcome')
+        @if(isset($page['component']) && $page['component'] === 'Public/Welcome')
         @php
             $faqItems = $page['props']['faqs'] ?? [];
             if (!empty($faqItems)) {

@@ -25,7 +25,7 @@ it('loads health page with check data', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Health')
+        ->component('App/Admin/Health')
         ->has('health.status')
         ->has('health.checks')
         ->has('health.timestamp')

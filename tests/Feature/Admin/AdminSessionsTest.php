@@ -9,7 +9,7 @@ it('admin can view the sessions page', function () {
     $this->actingAs($admin)
         ->get('/admin/sessions')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('Admin/Sessions/Index'));
+        ->assertInertia(fn ($page) => $page->component('App/Admin/Sessions/Index'));
 });
 
 it('admin can terminate user sessions', function () {

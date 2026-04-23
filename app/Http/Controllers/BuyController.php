@@ -11,7 +11,7 @@ class BuyController extends Controller
     {
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Buy', [
+        return Inertia::render('App/Buy', [
             'templatePrice' => config('app.template_price', '$[YOUR_PRICE]'),
             'appUrl' => $appUrl,
             'canonicalUrl' => $appUrl.'/buy',

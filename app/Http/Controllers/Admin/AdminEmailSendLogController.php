@@ -43,7 +43,7 @@ class AdminEmailSendLogController extends Controller
 
         $sequenceTypes = EmailSendLog::distinct()->orderBy('sequence_type')->pluck('sequence_type');
 
-        return Inertia::render('Admin/EmailSendLogs/Index', [
+        return Inertia::render('App/Admin/EmailSendLogs/Index', [
             'logs' => $logs,
             'sequenceTypes' => $sequenceTypes,
             'filters' => $request->only('search', 'sequence_type', 'sort', 'dir'),

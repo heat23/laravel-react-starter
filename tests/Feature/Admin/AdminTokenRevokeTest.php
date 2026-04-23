@@ -15,7 +15,7 @@ it('admin can view the tokens list page', function () {
     $this->actingAs($admin)
         ->get('/admin/tokens/list')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('Admin/Tokens/Index'));
+        ->assertInertia(fn ($page) => $page->component('App/Admin/Tokens/Index'));
 });
 
 it('admin can revoke a specific token', function () {

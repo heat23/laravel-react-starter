@@ -39,7 +39,7 @@ class AdminAuditLogController extends Controller
             return AuditLog::distinct()->pluck('event')->sort()->values();
         });
 
-        return Inertia::render('Admin/AuditLogs/Index', [
+        return Inertia::render('App/Admin/AuditLogs/Index', [
             'logs' => $logs,
             'eventTypes' => $eventTypes,
             'filters' => array_merge(
@@ -53,7 +53,7 @@ class AdminAuditLogController extends Controller
     {
         $auditLog->load('user');
 
-        return Inertia::render('Admin/AuditLogs/Show', [
+        return Inertia::render('App/Admin/AuditLogs/Show', [
             'auditLog' => $auditLog->toDetailArray(),
         ]);
     }

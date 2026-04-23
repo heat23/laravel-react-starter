@@ -29,7 +29,7 @@ it('shows subscription detail', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Billing/Show')
+        ->component('App/Admin/Billing/Show')
         ->has('subscription')
         ->where('subscription.id', $sub->id)
         ->where('subscription.user_name', $user->name)
@@ -82,7 +82,7 @@ it('shows subscription detail when owner is soft-deleted', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Billing/Show')
+        ->component('App/Admin/Billing/Show')
         ->where('subscription.user_name', $user->name)
         ->where('subscription.user_email', $user->email)
     );
@@ -98,7 +98,7 @@ it('shows subscription detail when owner is hard-deleted', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Billing/Show')
+        ->component('App/Admin/Billing/Show')
         ->where('subscription.user_name', '[Deleted User]')
         ->where('subscription.user_email', '')
     );

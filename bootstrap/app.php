@@ -172,7 +172,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return $response;
             }
 
-            return Inertia::render('Error', ['status' => $status])
+            return Inertia::render('App/Error', ['status' => $status])
                 ->toResponse($request)
                 ->setStatusCode($status);
         });

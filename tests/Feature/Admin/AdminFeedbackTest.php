@@ -33,7 +33,7 @@ it('admin can view feedback index', function () {
     $this->actingAs($admin)
         ->get('/admin/feedback')
         ->assertOk()
-        ->assertInertia(fn ($page) => $page->component('Admin/Feedback/Index'));
+        ->assertInertia(fn ($page) => $page->component('App/Admin/Feedback/Index'));
 });
 
 it('admin can filter feedback by type', function () {
@@ -89,7 +89,7 @@ it('feedback index passes per_page filter back to frontend', function () {
         ->get('/admin/feedback?per_page=10')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('Admin/Feedback/Index')
+            ->component('App/Admin/Feedback/Index')
             ->where('filters.per_page', '10')
         );
 });
@@ -100,7 +100,7 @@ it('feedback index always includes resolved per_page in filters even without que
         ->get('/admin/feedback')
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('Admin/Feedback/Index')
+            ->component('App/Admin/Feedback/Index')
             ->where('filters.per_page', (string) config('pagination.admin.feedback', 50))
         );
 });

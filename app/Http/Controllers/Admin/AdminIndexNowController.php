@@ -90,7 +90,7 @@ class AdminIndexNowController extends Controller
             ->pluck('trigger')
             ->toArray();
 
-        return Inertia::render('Admin/IndexNow/Dashboard', [
+        return Inertia::render('App/Admin/IndexNow/Dashboard', [
             'stats' => $stats,
             'submissions' => $submissions,
             'triggers' => $triggers,
@@ -107,7 +107,7 @@ class AdminIndexNowController extends Controller
     {
         abort_unless(config('features.indexnow.enabled', false), 404);
 
-        return Inertia::render('Admin/IndexNow/SubmissionDetail', [
+        return Inertia::render('App/Admin/IndexNow/SubmissionDetail', [
             'submission' => [
                 'id' => $submission->id,
                 'uuid' => $submission->uuid,

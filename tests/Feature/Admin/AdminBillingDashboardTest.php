@@ -31,7 +31,7 @@ it('loads billing dashboard with stats', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Billing/Dashboard')
+        ->component('App/Admin/Billing/Dashboard')
         ->has('stats')
         ->where('stats.active_subscriptions', 1)
         ->has('tier_distribution')

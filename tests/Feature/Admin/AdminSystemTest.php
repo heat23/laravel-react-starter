@@ -29,7 +29,7 @@ it('loads system page with PHP and Laravel versions', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/System')
+        ->component('App/Admin/System')
         ->has('system.php_version')
         ->has('system.laravel_version')
     );

@@ -27,7 +27,7 @@ class UnsubscribeController extends Controller
 
         UserSetting::setValue($user->id, 'marketing_emails', false);
 
-        return Inertia::render('Unsubscribe', [
+        return Inertia::render('App/Unsubscribe', [
             'email' => $user->email,
         ]);
     }

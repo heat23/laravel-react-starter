@@ -7,7 +7,7 @@ it('renders the laravel jetstream comparison page', function () {
 
     $response->assertOk();
     $response->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('Compare/LaravelJetstream')
+        ->component('Public/Compare/LaravelJetstream')
         ->has('features')
         ->where('competitor', 'laravel-jetstream')
         ->where('competitorName', 'Laravel Jetstream')
@@ -19,7 +19,7 @@ it('renders the laravel spark comparison page', function () {
 
     $response->assertOk();
     $response->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('Compare/LaravelSpark')
+        ->component('Public/Compare/LaravelSpark')
         ->has('features')
         ->where('competitor', 'laravel-spark')
         ->where('competitorName', 'Laravel Spark')
@@ -31,7 +31,7 @@ it('renders the saasykit comparison page', function () {
 
     $response->assertOk();
     $response->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('Compare/SaaSykit')
+        ->component('Public/Compare/SaaSykit')
         ->has('features')
         ->where('competitor', 'saasykit')
         ->where('competitorName', 'SaaSykit')
@@ -43,7 +43,7 @@ it('renders the wave comparison page', function () {
 
     $response->assertOk();
     $response->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('Compare/Wave')
+        ->component('Public/Compare/Wave')
         ->has('features')
         ->where('competitor', 'wave')
         ->where('competitorName', 'Wave')
@@ -55,7 +55,7 @@ it('renders the shipfast comparison page', function () {
 
     $response->assertOk();
     $response->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('Compare/Shipfast')
+        ->component('Public/Compare/Shipfast')
         ->has('features')
         ->where('competitor', 'shipfast')
         ->where('competitorName', 'Shipfast')
@@ -67,7 +67,7 @@ it('renders the supastarter comparison page', function () {
 
     $response->assertOk();
     $response->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('Compare/Supastarter')
+        ->component('Public/Compare/Supastarter')
         ->has('features')
         ->where('competitor', 'supastarter')
         ->where('competitorName', 'Supastarter')
@@ -79,7 +79,7 @@ it('renders the larafast comparison page', function () {
 
     $response->assertOk();
     $response->assertInertia(fn (AssertableInertia $page) => $page
-        ->component('Compare/Larafast')
+        ->component('Public/Compare/Larafast')
         ->has('features')
         ->where('competitor', 'larafast')
         ->where('competitorName', 'Larafast')

@@ -57,7 +57,7 @@ it('renders challenge page when login.id in session', function () {
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
-        ->component('Auth/TwoFactorChallenge')
+        ->component('App/Auth/TwoFactorChallenge')
     );
 });
 

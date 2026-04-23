@@ -27,7 +27,7 @@ it('loads with stats data', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Dashboard')
+        ->component('App/Admin/Dashboard')
         ->has('stats')
         ->where('stats.total_users', 4) // 3 + admin
         ->where('stats.admin_count', 1)

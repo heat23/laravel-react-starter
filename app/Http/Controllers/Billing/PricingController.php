@@ -109,7 +109,7 @@ class PricingController extends Controller
             }
         }
 
-        return Inertia::render('Pricing', [
+        return Inertia::render('Public/Pricing', [
             'tiers' => $tiers,
             'currentPlan' => $currentPlan,
             'trial' => $trial,

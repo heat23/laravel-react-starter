@@ -54,7 +54,7 @@ it('endpoints list renders correct inertia component', function () {
 
     $this->actingAs($admin)
         ->get('/admin/webhooks/endpoints')
-        ->assertInertia(fn ($page) => $page->component('Admin/Webhooks/Endpoints'));
+        ->assertInertia(fn ($page) => $page->component('App/Admin/Webhooks/Endpoints'));
 });
 
 it('non-deleted endpoint returns 422 when trying to restore', function () {

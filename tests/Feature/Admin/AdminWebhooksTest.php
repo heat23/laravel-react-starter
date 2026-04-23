@@ -73,7 +73,7 @@ it('loads webhooks dashboard with stats', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Webhooks/Dashboard')
+        ->component('App/Admin/Webhooks/Dashboard')
         ->has('stats')
         ->where('stats.total_endpoints', 0)
         ->where('stats.total_deliveries', 0)
@@ -123,7 +123,7 @@ it('loads incoming webhooks index', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Webhooks/IncomingWebhooks')
+        ->component('App/Admin/Webhooks/IncomingWebhooks')
         ->has('webhooks.data', 1)
         ->where('webhooks.data.0.provider', 'github')
         ->has('providers')

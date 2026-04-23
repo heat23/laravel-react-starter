@@ -70,7 +70,7 @@ class AdminSessionsController extends Controller
                 ]);
         }
 
-        return Inertia::render('Admin/Sessions/Index', [
+        return Inertia::render('App/Admin/Sessions/Index', [
             'sessions' => $sessions,
             'driver' => $driver,
             'driverSupported' => $driver === 'database',

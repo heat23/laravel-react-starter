@@ -119,7 +119,7 @@ test('does not intercept inertia requests', function () {
 
     // Should get an Inertia page response (has 'component' key), not our JSON envelope
     $response->assertJsonStructure(['component', 'props', 'url']);
-    $response->assertJsonPath('component', 'Error');
+    $response->assertJsonPath('component', 'App/Error');
 });
 
 test('does not leak stack traces in production', function () {

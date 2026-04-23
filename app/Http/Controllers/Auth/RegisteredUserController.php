@@ -38,7 +38,7 @@ class RegisteredUserController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return Inertia::render('Auth/Register', [
+        return Inertia::render('App/Auth/Register', [
             'features' => [
                 'socialAuth' => config('features.social_auth.enabled', false),
             ],

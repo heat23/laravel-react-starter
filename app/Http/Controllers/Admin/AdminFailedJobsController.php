@@ -44,7 +44,7 @@ class AdminFailedJobsController extends Controller
             ->values()
             ->toArray();
 
-        return Inertia::render('Admin/FailedJobs/Index', [
+        return Inertia::render('App/Admin/FailedJobs/Index', [
             'jobs' => $jobs,
             'queues' => $queues,
             'filters' => ['queue' => $request->validated('queue')],
@@ -57,7 +57,7 @@ class AdminFailedJobsController extends Controller
 
         abort_unless((bool) $job, 404);
 
-        return Inertia::render('Admin/FailedJobs/Show', [
+        return Inertia::render('App/Admin/FailedJobs/Show', [
             'job' => [
                 'id' => $job->id,
                 'uuid' => $job->uuid,

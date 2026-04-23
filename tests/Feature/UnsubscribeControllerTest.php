@@ -14,7 +14,7 @@ it('renders the Unsubscribe page with the user email for a valid signed URL', fu
     $this->get($url)
         ->assertOk()
         ->assertInertia(fn ($page) => $page
-            ->component('Unsubscribe')
+            ->component('App/Unsubscribe')
             ->where('email', $user->email)
         );
 });

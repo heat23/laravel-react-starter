@@ -10,7 +10,7 @@ class AdminConfigController extends Controller
 {
     public function __invoke(): Response
     {
-        return Inertia::render('Admin/Config', [
+        return Inertia::render('App/Admin/Config', [
             'feature_flags' => collect(config('features'))->map(fn ($feature, $key) => [
                 'key' => $key,
                 'enabled' => $feature['enabled'] ?? false,

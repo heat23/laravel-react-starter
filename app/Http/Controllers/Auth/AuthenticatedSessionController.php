@@ -28,7 +28,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return Inertia::render('Auth/Login', [
+        return Inertia::render('App/Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
             'rememberDays' => config('auth.remember.duration', 30),

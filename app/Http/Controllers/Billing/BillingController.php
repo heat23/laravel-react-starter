@@ -79,7 +79,7 @@ class BillingController extends Controller
             ];
         }
 
-        return Inertia::render('Billing/Index', [
+        return Inertia::render('App/Billing/Index', [
             'subscription' => $subscriptionInfo,
             'platformTrial' => $platformTrial,
             'incompletePayment' => $incompletePayment,

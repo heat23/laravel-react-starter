@@ -32,7 +32,7 @@ it('loads index page with all feature flags', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(function ($page) {
-        $page->component('Admin/FeatureFlags/Index');
+        $page->component('App/Admin/FeatureFlags/Index');
         $page->has('flags');
     });
 });
@@ -591,7 +591,7 @@ it('exposes blocked_by_dependency on Inertia props when a hard dep is off', func
 
     $response->assertStatus(200);
     $response->assertInertia(function ($page) {
-        $page->component('Admin/FeatureFlags/Index');
+        $page->component('App/Admin/FeatureFlags/Index');
         $flags = collect($page->toArray()['props']['flags']);
         $onboarding = $flags->firstWhere('flag', 'onboarding');
 

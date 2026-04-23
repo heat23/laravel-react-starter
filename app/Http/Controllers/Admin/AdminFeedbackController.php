@@ -53,7 +53,7 @@ class AdminFeedbackController extends Controller
         $perPage = (int) ($request->validated('per_page') ?? config('pagination.admin.feedback', 50));
         $feedback = $this->paginateAdminList($query, $request, ['created_at', 'priority', 'status', 'type'], 'created_at', 'desc', $perPage);
 
-        return Inertia::render('Admin/Feedback/Index', [
+        return Inertia::render('App/Admin/Feedback/Index', [
             'feedback' => $feedback,
             'filters' => array_merge(
                 $request->only('type', 'status', 'search', 'sort', 'dir'),
@@ -71,7 +71,7 @@ class AdminFeedbackController extends Controller
     {
         $feedback->load(['user' => fn ($q) => $q->withTrashed()]);
 
-        return Inertia::render('Admin/Feedback/Show', [
+        return Inertia::render('App/Admin/Feedback/Show', [
             'feedback' => $feedback,
         ]);
     }

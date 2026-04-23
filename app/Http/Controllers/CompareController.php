@@ -48,7 +48,7 @@ class CompareController extends Controller
     {
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Compare/Index', [
+        return Inertia::render('Public/Compare/Index', [
             'title' => 'Laravel SaaS Starter Kit Comparison 2026 — Best Boilerplates Reviewed',
             'metaDescription' => 'Compare 8 Laravel SaaS boilerplates side by side and find the right Laravel SaaS starter kit for your project. Features, pricing, and honest pros/cons.',
             'appUrl' => $appUrl,
@@ -66,7 +66,7 @@ class CompareController extends Controller
     {
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Compare/LaravelJetstream', [
+        return Inertia::render('Public/Compare/LaravelJetstream', [
             'competitor' => 'laravel-jetstream',
             'competitorName' => 'Laravel Jetstream',
             'title' => 'Laravel React Starter vs Jetstream — Side-by-Side Comparison',
@@ -100,7 +100,7 @@ class CompareController extends Controller
     {
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Compare/LaravelSpark', [
+        return Inertia::render('Public/Compare/LaravelSpark', [
             'competitor' => 'laravel-spark',
             'competitorName' => 'Laravel Spark',
             'title' => 'Laravel React Starter vs Laravel Spark — Feature & Price Comparison',
@@ -136,7 +136,7 @@ class CompareController extends Controller
     {
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Compare/SaaSykit', [
+        return Inertia::render('Public/Compare/SaaSykit', [
             'competitor' => 'saasykit',
             'competitorName' => 'SaaSykit',
             'title' => 'Laravel React Starter vs SaaSykit — React vs Filament Admin',
@@ -171,7 +171,7 @@ class CompareController extends Controller
     {
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Compare/Wave', [
+        return Inertia::render('Public/Compare/Wave', [
             'competitor' => 'wave',
             'competitorName' => 'Wave',
             'title' => 'Laravel React Starter vs Wave — SaaS Boilerplate Comparison',
@@ -207,7 +207,7 @@ class CompareController extends Controller
     {
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Compare/Shipfast', [
+        return Inertia::render('Public/Compare/Shipfast', [
             'competitor' => 'shipfast',
             'competitorName' => 'Shipfast',
             'title' => 'Laravel React Starter vs Shipfast — Laravel vs Next.js SaaS Starter',
@@ -245,7 +245,7 @@ class CompareController extends Controller
     {
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Compare/Larafast', [
+        return Inertia::render('Public/Compare/Larafast', [
             'competitor' => 'larafast',
             'competitorName' => 'Larafast',
             'title' => 'Laravel React Starter vs Larafast 2026 — Full Comparison',
@@ -286,7 +286,7 @@ class CompareController extends Controller
     {
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Compare/NextjsSaas', [
+        return Inertia::render('Public/Compare/NextjsSaas', [
             'title' => 'Laravel vs Next.js for SaaS 2026 — Full Stack Comparison',
             'metaDescription' => 'Which is better for SaaS in 2026? Laravel vs Next.js compared on developer experience, performance, ecosystem, and deployment. With starter kit recommendations.',
             'appName' => config('app.name', 'Laravel React Starter'),
@@ -303,7 +303,7 @@ class CompareController extends Controller
     {
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Compare/Supastarter', [
+        return Inertia::render('Public/Compare/Supastarter', [
             'competitor' => 'supastarter',
             'competitorName' => 'Supastarter',
             'title' => 'Laravel React Starter vs Supastarter — Laravel vs Supabase',
@@ -341,7 +341,7 @@ class CompareController extends Controller
     {
         $appUrl = rtrim(config('app.url'), '/');
 
-        return Inertia::render('Compare/Makerkit', [
+        return Inertia::render('Public/Compare/Makerkit', [
             'competitor' => 'makerkit',
             'competitorName' => 'Makerkit',
             'title' => 'Laravel React Starter vs Makerkit — Laravel vs Supabase SaaS Starter',

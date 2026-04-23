@@ -23,7 +23,7 @@ class PasswordResetLinkController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return Inertia::render('Auth/ForgotPassword', [
+        return Inertia::render('App/Auth/ForgotPassword', [
             'status' => session('status'),
         ]);
     }

@@ -23,7 +23,7 @@ it('loads config page with feature flags', function () {
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page
-        ->component('Admin/Config')
+        ->component('App/Admin/Config')
         ->has('feature_flags')
     );
 });

@@ -68,7 +68,7 @@ class AdminNpsResponsesController extends Controller
 
         $surveyTriggers = NpsResponse::distinct()->orderBy('survey_trigger')->pluck('survey_trigger');
 
-        return Inertia::render('Admin/NpsResponses/Index', [
+        return Inertia::render('App/Admin/NpsResponses/Index', [
             'responses' => $responses,
             'filters' => $request->only('category', 'survey_trigger', 'search', 'sort', 'dir'),
             'summary' => [
