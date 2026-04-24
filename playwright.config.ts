@@ -57,6 +57,11 @@ export default defineConfig({
         command: 'php artisan serve',
         url: baseURL,
         reuseExistingServer: !process.env.CI,
+        env: {
+          // Register-page specs and visual regressions assert the inline "Full name" field,
+          // which only renders when the onboarding wizard is off.
+          FEATURE_ONBOARDING: 'false',
+        },
       }
     : undefined,
 });

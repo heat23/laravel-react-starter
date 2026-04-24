@@ -445,13 +445,15 @@ class BillingService
     public function applyRetentionCoupon(User $user, string $couponId): void
     {
         $this->withLock($this->lockKey('coupon', $user), function () use ($user, $couponId) {
-            $stripeSubscriptionId = DB::transaction(function () use ($user, $couponId) {
-                $subscription = $user->subscription('default');
+            // Guard outside the transaction: throwing from DB::transaction on MySQL rolls back
+            // to a savepoint that test-suite DDL may have implicitly committed away.
+            $subscription = $user->subscription('default');
 
-                if (! $subscription || ! $subscription->active()) {
-                    throw new \DomainException('No active subscription found.');
-                }
+            if (! $subscription || ! $subscription->active()) {
+                throw new \DomainException('No active subscription found.');
+            }
 
+            $stripeSubscriptionId = DB::transaction(function () use ($user, $couponId, $subscription) {
                 $subscription->setRelation('owner', $user);
                 $subscription->loadMissing('items');
                 $subscription->items->each(fn ($item) => $item->setRelation('subscription', $subscription));
