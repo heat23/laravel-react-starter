@@ -15,7 +15,7 @@ globs:
 
 **Error symptom:** `Attempt to read property "stripe_id" on null` when calling `->cancel()` means `owner` wasn't loaded.
 
-**Pattern to follow:** See `app/Services/BillingService.php` lines 68-70 for correct eager loading pattern.
+**Pattern to follow:** See `BillingService::ensureSubscriptionLoaded()` (or equivalent helper at the top of mutation methods) for the canonical eager-load call.
 
 **Billing route middleware:** `LoadBillingContext` middleware is applied to the billing route group in `routes/app.php`. It calls `$user->loadMissing('subscriptions.items')` once per request. Do NOT add per-method `loadMissing` calls in billing controllers — the middleware handles it.
 

@@ -6,11 +6,8 @@ globs:
 
 # Migration Conventions
 
-Follow global CLAUDE.md > Database Safety rules (nullable columns, constrained FKs, two-phase deploys, `Schema::hasColumn()` checks).
+Global CLAUDE.md > Database Safety covers nullable defaults, FKs, two-phase deploys, `Schema::hasColumn()` checks. Project-specific addition:
 
-Additionally:
-- Feature-conditional migrations: only for whole-table creation (`Schema::hasTable` check). Never gate column additions/removals on feature flags — causes schema drift.
-- New columns on existing tables: always nullable or with default (never bare NOT NULL)
-- Foreign keys: `->constrained()->cascadeOnDelete()` + index
-- Hard deletes on all models by default (no `SoftDeletes`). Project-level overrides for specific models only.
-- Two-phase deploys for destructive schema changes: deploy code that stops using column first, drop column in next deploy
+- **Feature-conditional migrations:** Only gate WHOLE-TABLE creation behind feature flags (use `Schema::hasTable` check). Never gate column add/drop on flags — causes schema drift between environments.
+- **Migration column modify** must include ALL previously defined attributes (Laravel drops anything omitted).
+- **`SoftDeletes` is opt-in per model.** Default = hard delete. Explicit project overrides only (e.g., `Site` model).
