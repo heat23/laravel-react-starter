@@ -20,7 +20,7 @@
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.7",
         "fakerphp/faker": "^1.23",
-        "infection/infection": "^0.32.4",
+        "infection/infection": "^0.33.1",
         "larastan/larastan": "^3.9",
         "laravel/boost": "^2.3",
         "laravel/breeze": "^2.3",
